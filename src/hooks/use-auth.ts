@@ -1,15 +1,17 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { defaultApiClient } from '../lib/api-client';
+import { jwtDecode } from 'jwt-decode';
 import {
   AuthConfig,
   AuthUser,
   AuthSession,
   AuthState,
   AuthStatus,
-  AuthRequestData,
   AuthResponse,
 } from '../components/auth/types';
 import { useSaaSOS } from '../providers/ContextProvider';
+
+const TOKEN_PARAM = 'token';
 
 const AUTH_USER_KEY = 'saas_os_auth_user';
 const AUTH_SESSION_KEY = 'saas_os_auth_session';
@@ -20,6 +22,19 @@ export interface UseAuthOptions {
   onAuthStateChange?: (user: AuthUser | null) => void;
 }
 
+function saveCredentials(user: AuthUser, session: AuthSession) {
+  // make it secure
+  document.cookie = `${AUTH_USER_KEY}=${JSON.stringify(user)}; path=/; secure;`;
+  document.cookie = `${AUTH_SESSION_KEY}=${JSON.stringify(session)}; path=/; secure;`;
+  document.cookie = `${AUTH_TOKEN_KEY}=${session.accessToken}; path=/; secure;`;
+}
+
+function removeCredentials() {
+  document.cookie = `${AUTH_USER_KEY}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; secure;`;
+  document.cookie = `${AUTH_SESSION_KEY}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; secure;`;
+  document.cookie = `${AUTH_TOKEN_KEY}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; secure;`;
+}
+
 export function useAuth() {
   const { context } = useSaaSOS();
 
@@ -28,6 +43,7 @@ export function useAuth() {
   const orgId = context?.getOrgId();
   const clientId = auth?.clientId;
   const redirectUrl = auth?.redirectUrl;
+
   const onAuthStateChange = auth?.onAuthStateChange;
 
   const [state, setState] = useState<AuthState>({
@@ -41,7 +57,6 @@ export function useAuth() {
   // Check if we're in a browser environment
   const isBrowser = typeof window !== 'undefined';
 
-  // Load user from localStorage on mount
   useEffect(() => {
     if (!isBrowser) {
       setState(prev => ({ ...prev, isLoading: false, isAuthenticated: false }));
@@ -50,13 +65,13 @@ export function useAuth() {
 
     const loadUser = () => {
       try {
-        const userStr = localStorage.getItem(AUTH_USER_KEY);
-        const sessionStr = localStorage.getItem(AUTH_SESSION_KEY);
-
-        if (userStr && sessionStr) {
-          const user: AuthUser = JSON.parse(userStr);
-          const session: AuthSession = JSON.parse(sessionStr);
-
+        const cookies = document.cookie.split(';').map(cookie => cookie.trim());
+        const userStr = cookies.find(cookie => cookie.includes(AUTH_USER_KEY));
+        const sessionStr = cookies.find(cookie => cookie.includes(AUTH_SESSION_KEY));
+        const tokenStr = cookies.find(cookie => cookie.includes(AUTH_TOKEN_KEY));
+        if (userStr && sessionStr && tokenStr) {
+          const user: AuthUser = JSON.parse(userStr.split('=')[1]);
+          const session: AuthSession = JSON.parse(sessionStr.split('=')[1]);
           // Check if session is expired
           if (new Date(session.expires) > new Date()) {
             setState({
@@ -70,18 +85,14 @@ export function useAuth() {
             return;
           } else {
             // Session expired, clear storage
-            localStorage.removeItem(AUTH_USER_KEY);
-            localStorage.removeItem(AUTH_SESSION_KEY);
-            localStorage.removeItem(AUTH_TOKEN_KEY);
+            removeCredentials();
             onAuthStateChange?.(null);
           }
         }
       } catch (error) {
         console.error('Error loading auth state:', error);
         // Clear corrupted data
-        localStorage.removeItem(AUTH_USER_KEY);
-        localStorage.removeItem(AUTH_SESSION_KEY);
-        localStorage.removeItem(AUTH_TOKEN_KEY);
+        removeCredentials();
         onAuthStateChange?.(null);
       }
       setState(prev => ({ ...prev, isLoading: false, isAuthenticated: false }));
@@ -90,13 +101,10 @@ export function useAuth() {
     loadUser();
   }, [isBrowser, onAuthStateChange]);
 
-  // Save user to localStorage
   const saveUser = useCallback(
     (user: AuthUser, session: AuthSession) => {
       if (!isBrowser) return;
-      localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
-      localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify(session));
-      localStorage.setItem(AUTH_TOKEN_KEY, session.accessToken);
+      saveCredentials(user, session);
       onAuthStateChange?.(user);
     },
     [isBrowser]
@@ -106,9 +114,7 @@ export function useAuth() {
   const clearUser = useCallback(() => {
     if (!isBrowser) return;
 
-    localStorage.removeItem(AUTH_USER_KEY);
-    localStorage.removeItem(AUTH_SESSION_KEY);
-    localStorage.removeItem(AUTH_TOKEN_KEY);
+    removeCredentials();
 
     setState({
       user: null,
@@ -126,15 +132,6 @@ export function useAuth() {
     setState(prev => ({ ...prev, isRedirecting: true }));
 
     try {
-      // https://v2.cms.jagodana.org/api/v1/auth/request
-      // let t = {
-      //   orgId: '66db2553285efef0a32d3b14',
-      //   clientId: 'SZATTPK99mnqvmS9bF4v6mdUdbwsBuiDqX9TfllW',
-      //   redirect: {
-      //     success: 'https://api.imejis.io/auth-redirect',
-      //     error: 'https://api.imejis.io/auth-redirect',
-      //   },
-      // };
       const response = await defaultApiClient.post<AuthResponse>(
         `${serverUrl}/api/v1/auth/request`,
         {
@@ -212,6 +209,37 @@ export function useAuth() {
     },
     [serverUrl, saveUser, clearUser, onAuthStateChange]
   );
+
+  useEffect(() => {
+    const href = window.location.href;
+    let url = null;
+    try {
+      url = new URL(href);
+      const token = url.searchParams.get(TOKEN_PARAM);
+      if (token) {
+        const user = jwtDecode<AuthUser>(token);
+        if (user) {
+          const session: AuthSession = {
+            user,
+            accessToken: token,
+            expires: new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString(), // 72 hours
+          };
+          saveUser(user, session);
+          setState({
+            user,
+            session,
+            isLoading: false,
+            isAuthenticated: true,
+            isRedirecting: false,
+          });
+          // REMOVE THE TOKEN FROM THE URL
+          const newUrl = new URL(window.location.href);
+          newUrl.searchParams.delete(TOKEN_PARAM);
+          window.history.replaceState({}, '', newUrl.toString());
+        }
+      }
+    } catch (e) {}
+  }, []);
 
   // Computed values
   const status: AuthStatus = useMemo(() => {
