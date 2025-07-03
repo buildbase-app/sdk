@@ -46,7 +46,7 @@ export class BetaForm {
 
   async fetchConfig(): Promise<IBetaConfig> {
     const response = await fetch(
-      `${this.serverUrl}/${this.version}/beta/config?orgId=${this.orgId}`
+      `${this.serverUrl}/api/${this.version}/beta/config?orgId=${this.orgId}`
     );
     if (!response.ok) {
       throw new Error(`Failed to fetch beta form configuration: ${response.statusText}`);
