@@ -19,7 +19,8 @@
     "prepublishOnly": "npm run build",
     "yalc:add": "yalc add",
     "yalc:push": "yalc push",
-    "yalc:remove": "yalc remove"
+    "yalc:remove": "yalc remove",
+    "format": "prettier --write ."
   },
   "peerDependencies": {
     "react": "^18.0.0",
@@ -76,8 +77,11 @@
     "@types/react": "^18.0.0",
     "@types/react-dom": "^18.0.0",
     "autoprefixer": "^10.4.16",
+    "eslint-config-prettier": "^9.0.0",
     "postcss": "^8.4.31",
-    "postcss-prefixwrap": "^2.1.1",
+    "postcss-prefixwrap": "^1.55.0",
+    "prettier": "^3.0.3",
+    "prettier-plugin-tailwindcss": "^0.5.6",
     "rimraf": "^5.0.0",
     "rollup": "^4.0.0",
     "rollup-plugin-dts": "^6.0.0",

@@ -1,14 +1,14 @@
-import resolve from '@rollup/plugin-node-resolve'
-import commonjs from '@rollup/plugin-commonjs'
-import typescript from '@rollup/plugin-typescript'
-import postcss from 'rollup-plugin-postcss'
-import terser from '@rollup/plugin-terser'
-import dts from 'rollup-plugin-dts'
-import json from '@rollup/plugin-json'
-import { createRequire } from 'module'
+import resolve from '@rollup/plugin-node-resolve';
+import commonjs from '@rollup/plugin-commonjs';
+import typescript from '@rollup/plugin-typescript';
+import postcss from 'rollup-plugin-postcss';
+import terser from '@rollup/plugin-terser';
+import dts from 'rollup-plugin-dts';
+import json from '@rollup/plugin-json';
+import { createRequire } from 'module';
 
-const require = createRequire(import.meta.url)
-const packageJson = require('./package.json')
+const require = createRequire(import.meta.url);
+const packageJson = require('./package.json');
 
 export default [
   {
@@ -17,27 +17,27 @@ export default [
       {
         file: packageJson.main,
         format: 'cjs',
-        sourcemap: true
+        sourcemap: true,
       },
       {
         file: packageJson.module,
         format: 'esm',
-        sourcemap: true
-      }
+        sourcemap: true,
+      },
     ],
     plugins: [
       resolve({
         browser: true,
-        preferBuiltins: false
+        preferBuiltins: false,
       }),
       commonjs({
-        transformMixedEsModules: true
+        transformMixedEsModules: true,
       }),
       json(),
       typescript({ tsconfig: './tsconfig.json' }),
       postcss({
         config: {
-          path: './postcss.config.cjs'
+          path: './postcss.config.cjs',
         },
         extensions: ['.css'],
         minimize: true,
@@ -45,23 +45,23 @@ export default [
         extract: 'saas-os.css',
         modules: {
           scopeBehaviour: 'local',
-          generateScopedName: 'saas-os-[name]__[local]'
-        }
+          generateScopedName: 'saas-os-[name]__[local]',
+        },
       }),
-      terser()
+      terser(),
     ],
     external: [
       ...Object.keys(packageJson.peerDependencies || {}),
       'react',
       'react/jsx-runtime',
       'react/jsx-dev-runtime',
-      'react-dom'
-    ]
+      'react-dom',
+    ],
   },
   {
     input: 'dist/types/index.d.ts',
     output: [{ file: 'dist/index.d.ts', format: 'esm' }],
     plugins: [dts()],
-    external: [/\.css$/]
-  }
-]
+    external: [/\.css$/],
+  },
+];
