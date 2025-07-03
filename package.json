@@ -1,0 +1,61 @@
+{
+  "name": "@saas-os/react",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "A React library with shadcn components, Tailwind CSS, and axios",
+  "main": "dist/index.js",
+  "module": "dist/index.esm.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "rollup -c",
+    "dev": "rollup -c -w",
+    "clean": "rimraf dist",
+    "prebuild": "npm run clean",
+    "prepublishOnly": "npm run build",
+    "yalc:add": "yalc add",
+    "yalc:push": "yalc push",
+    "yalc:remove": "yalc remove"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0"
+  },
+  "dependencies": {
+    "axios": "^1.6.0",
+    "class-variance-authority": "^0.7.0",
+    "clsx": "^2.0.0",
+    "lucide-react": "^0.294.0",
+    "tailwind-merge": "^2.0.0"
+  },
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^25.0.0",
+    "@rollup/plugin-json": "^6.1.0",
+    "@rollup/plugin-node-resolve": "^15.0.0",
+    "@rollup/plugin-terser": "^0.4.0",
+    "@rollup/plugin-typescript": "^11.0.0",
+    "@types/react": "^18.0.0",
+    "@types/react-dom": "^18.0.0",
+    "autoprefixer": "^10.4.16",
+    "postcss": "^8.4.31",
+    "rimraf": "^5.0.0",
+    "rollup": "^4.0.0",
+    "rollup-plugin-dts": "^6.0.0",
+    "rollup-plugin-postcss": "^4.0.0",
+    "tailwindcss": "^3.3.5",
+    "tslib": "^2.8.1",
+    "typescript": "^5.2.0"
+  },
+  "keywords": [
+    "react",
+    "shadcn",
+    "tailwind",
+    "axios",
+    "ui-components"
+  ],
+  "author": "Your Name",
+  "license": "MIT"
+}
