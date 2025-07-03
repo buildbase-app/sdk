@@ -141,7 +141,7 @@ export function DatePickerWithRange({
     }
   }
   return (
-    <div className={cn('saas-os-grid gasaas-os-p-2', className)}>
+    <div className={cn('grid gap-2', className)}>
       <Popover
         open={open}
         onOpenChange={(open) => {
@@ -153,11 +153,11 @@ export function DatePickerWithRange({
             id='date'
             variant={'outline'}
             className={cn(
-              'w-[300px] saas-os-justify-start saas-os-text-left font-normal',
-              !date && 'saas-os-text-muted-foreground'
+              'w-[300px] justify-start text-left font-normal',
+              !date && 'text-muted-foreground'
             )}
           >
-            <CalendarIcon className='saas-os-mr-2 saas-os-h-4 saas-os-w-4' />
+            <CalendarIcon className='mr-2 h-4 w-4' />
             {date?.from ? (
               date.to ? (
                 <>
@@ -172,15 +172,15 @@ export function DatePickerWithRange({
             )}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className='saas-os-w-auto saas-os-p-0' align='start'>
-          <div className='saas-os-flex saas-os-justify-between saas-os-items-center saas-os-p-1.5'>
-            <div className='saas-os-flex saas-os-items-center saas-os-flex-col saas-os-h-full'>
+        <PopoverContent className='w-auto p-0' align='start'>
+          <div className='flex justify-between items-center p-1.5'>
+            <div className='flex items-center flex-col h-full'>
               {options.map((option, index) => (
                 <Button
                   className={cn({
-                    'saas-os-w-full saas-os-rounded-md': true,
-                    'saas-os-rounded-t-none': index !== 0,
-                    'saas-os-rounded-b-none': index !== options.length - 1
+                    'w-full rounded-md': true,
+                    'rounded-t-none': index !== 0,
+                    'rounded-b-none': index !== options.length - 1
                   })}
                   key={option}
                   size={'sm'}
@@ -205,7 +205,7 @@ export function DatePickerWithRange({
               numberOfMonths={2}
             />
           </div>
-          <div className='saas-os-flex saas-os-justify-end saas-os-px-3 pb-2'>
+          <div className='flex justify-end px-3 pb-2'>
             <Button
               onClick={() => {
                 if (date) {
@@ -214,7 +214,7 @@ export function DatePickerWithRange({
                 }
               }}
               size={'sm'}
-              className='saas-os-my-1'
+              className='my-1'
               variant='default'
             >
               Apply

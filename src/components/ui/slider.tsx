@@ -11,13 +11,13 @@ const Slider = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <SliderPrimitive.Root
     ref={ref}
-    className={cn('saas-os-relative saas-os-flex saas-os-w-full touch-none saas-os-select-none saas-os-items-center', className)}
+    className={cn('relative flex w-full touch-none select-none items-center', className)}
     {...props}
   >
-    <SliderPrimitive.Track className="saas-os-relative saas-os-h-1.5 saas-os-w-full grow overflow-saas-os-hidden saas-os-rounded-full saas-os-bg-primary/20">
-      <SliderPrimitive.Range className="saas-os-absolute saas-os-h-full saas-os-bg-primary" />
+    <SliderPrimitive.Track className="relative h-1.5 w-full grow overflow-hidden rounded-full bg-primary/20">
+      <SliderPrimitive.Range className="absolute h-full bg-primary" />
     </SliderPrimitive.Track>
-    <SliderPrimitive.Thumb className="saas-os-block saas-os-h-4 saas-os-w-4 saas-os-rounded-full saas-os-border saas-os-border-primary/50 saas-os-bg-background saas-os-shadow saas-os-transition-colors focus-visible:saas-os-outline-none focus-visible:saas-os-ring-1 focus-visible:saas-os-ring-ring disabled:saas-os-pointer-events-none disabled:saas-os-opacity-50" />
+    <SliderPrimitive.Thumb className="block h-4 w-4 rounded-full border border-primary/50 bg-background shadow transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50" />
   </SliderPrimitive.Root>
 ));
 Slider.displayName = SliderPrimitive.Root.displayName;

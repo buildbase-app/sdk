@@ -11,10 +11,10 @@ const ScrollArea = React.forwardRef<
 >(({ className, children, ...props }, ref) => (
   <ScrollAreaPrimitive.Root
     ref={ref}
-    className={cn('saas-os-relative overflow-saas-os-hidden', className)}
+    className={cn('relative overflow-hidden', className)}
     {...props}
   >
-    <ScrollAreaPrimitive.Viewport className="saas-os-h-full saas-os-w-full saas-os-rounded-[inherit]">
+    <ScrollAreaPrimitive.Viewport className="h-full w-full rounded-[inherit]">
       {children}
     </ScrollAreaPrimitive.Viewport>
     <ScrollBar />
@@ -31,15 +31,15 @@ const ScrollBar = React.forwardRef<
     ref={ref}
     orientation={orientation}
     className={cn(
-      'saas-os-flex touch-none saas-os-select-none saas-os-transition-colors',
-      orientation === 'vertical' && 'saas-os-h-full saas-os-w-2.5 saas-os-border-l saas-os-border-l-transparent p-[1px]',
-      orientation === 'horizontal' && 'saas-os-h-2.5 saas-os-border-t saas-os-border-t-transparent p-[1px]',
+      'flex touch-none select-none transition-colors',
+      orientation === 'vertical' && 'h-full w-2.5 border-l border-l-transparent p-[1px]',
+      orientation === 'horizontal' && 'h-2.5 border-t border-t-transparent p-[1px]',
       className
     )}
     {...props}
   >
     <ScrollAreaPrimitive.ScrollAreaThumb
-      className={cn('saas-os-relative saas-os-rounded-full saas-os-bg-saas-os-border', orientation === 'vertical' && 'saas-os-flex-1')}
+      className={cn('relative rounded-full bg-border', orientation === 'vertical' && 'flex-1')}
     />
   </ScrollAreaPrimitive.ScrollAreaScrollbar>
 ));

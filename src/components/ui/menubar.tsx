@@ -23,7 +23,7 @@ const Menubar = React.forwardRef<
   <MenubarPrimitive.Root
     ref={ref}
     className={cn(
-      'saas-os-flex saas-os-h-9 saas-os-items-center space-x-1 saas-os-rounded-md saas-os-border saas-os-bg-background saas-os-p-1 saas-os-shadow-sm',
+      'flex h-9 items-center space-x-1 rounded-md border bg-background p-1 shadow-sm',
       className
     )}
     {...props}
@@ -38,7 +38,7 @@ const MenubarTrigger = React.forwardRef<
   <MenubarPrimitive.Trigger
     ref={ref}
     className={cn(
-      'saas-os-flex saas-os-cursor-default saas-os-select-none saas-os-items-center saas-os-rounded-sm saas-os-px-3 saas-os-py-1 saas-os-text-sm saas-os-font-medium saas-os-outline-none focus:saas-os-bg-accent focus:saas-os-text-accent-foreground data-[state=open]:saas-os-bg-accent data-[state=open]:saas-os-text-accent-foreground',
+      'flex cursor-default select-none items-center rounded-sm px-3 py-1 text-sm font-medium outline-none focus:bg-accent focus:text-accent-foreground data-[state=open]:bg-accent data-[state=open]:text-accent-foreground',
       className
     )}
     {...props}
@@ -55,14 +55,14 @@ const MenubarSubTrigger = React.forwardRef<
   <MenubarPrimitive.SubTrigger
     ref={ref}
     className={cn(
-      'saas-os-flex saas-os-cursor-default saas-os-select-none saas-os-items-center saas-os-rounded-sm saas-os-px-2 saas-os-py-1.5 saas-os-text-sm saas-os-outline-none focus:saas-os-bg-accent focus:saas-os-text-accent-foreground data-[state=open]:saas-os-bg-accent data-[state=open]:saas-os-text-accent-foreground',
+      'flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[state=open]:bg-accent data-[state=open]:text-accent-foreground',
       inset && 'pl-8',
       className
     )}
     {...props}
   >
     {children}
-    <ChevronRightIcon className="saas-os-ml-auto saas-os-h-4 saas-os-w-4" />
+    <ChevronRightIcon className="ml-auto h-4 w-4" />
   </MenubarPrimitive.SubTrigger>
 ));
 MenubarSubTrigger.displayName = MenubarPrimitive.SubTrigger.displayName;
@@ -74,7 +74,7 @@ const MenubarSubContent = React.forwardRef<
   <MenubarPrimitive.SubContent
     ref={ref}
     className={cn(
-      'saas-os-z-50 min-w-[8rem] overflow-saas-os-hidden saas-os-rounded-md saas-os-border saas-os-bg-popover saas-os-p-1 saas-os-text-popover-foreground saas-os-shadow-lg data-[state=open]:saas-os-animate-in data-[state=closed]:saas-os-animate-out data-[state=closed]:saas-os-fade-out-0 data-[state=open]:saas-os-fade-in-0 data-[state=closed]:saas-os-zoom-out-95 data-[state=open]:saas-os-zoom-in-95 data-[side=bottom]:slide-in-from-tosaas-os-p-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottosaas-os-m-2',
+      'z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-lg data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2',
       className
     )}
     {...props}
@@ -93,7 +93,7 @@ const MenubarContent = React.forwardRef<
       alignOffset={alignOffset}
       sideOffset={sideOffset}
       className={cn(
-        'saas-os-z-50 min-w-[12rem] overflow-saas-os-hidden saas-os-rounded-md saas-os-border saas-os-bg-popover saas-os-p-1 saas-os-text-popover-foreground saas-os-shadow-md data-[state=open]:saas-os-animate-in data-[state=closed]:saas-os-fade-out-0 data-[state=open]:saas-os-fade-in-0 data-[state=closed]:saas-os-zoom-out-95 data-[state=open]:saas-os-zoom-in-95 data-[side=bottom]:slide-in-from-tosaas-os-p-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottosaas-os-m-2',
+        'z-50 min-w-[12rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md data-[state=open]:animate-in data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2',
         className
       )}
       {...props}
@@ -111,7 +111,7 @@ const MenubarItem = React.forwardRef<
   <MenubarPrimitive.Item
     ref={ref}
     className={cn(
-      'saas-os-relative saas-os-flex saas-os-cursor-default saas-os-select-none saas-os-items-center saas-os-rounded-sm saas-os-px-2 saas-os-py-1.5 saas-os-text-sm saas-os-outline-none focus:saas-os-bg-accent focus:saas-os-text-accent-foreground data-[disabled]:saas-os-pointer-events-none data-[disabled]:saas-os-opacity-50',
+      'relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
       inset && 'pl-8',
       className
     )}
@@ -127,15 +127,15 @@ const MenubarCheckboxItem = React.forwardRef<
   <MenubarPrimitive.CheckboxItem
     ref={ref}
     className={cn(
-      'saas-os-relative saas-os-flex saas-os-cursor-default saas-os-select-none saas-os-items-center saas-os-rounded-sm saas-os-py-1.5 pl-8 pr-2 saas-os-text-sm saas-os-outline-none focus:saas-os-bg-accent focus:saas-os-text-accent-foreground data-[disabled]:saas-os-pointer-events-none data-[disabled]:saas-os-opacity-50',
+      'relative flex cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
       className
     )}
     checked={checked}
     {...props}
   >
-    <span className="saas-os-absolute left-2 saas-os-flex saas-os-h-3.5 saas-os-w-3.5 saas-os-items-center saas-os-justify-center">
+    <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
       <MenubarPrimitive.ItemIndicator>
-        <CheckIcon className="saas-os-h-4 saas-os-w-4" />
+        <CheckIcon className="h-4 w-4" />
       </MenubarPrimitive.ItemIndicator>
     </span>
     {children}
@@ -150,14 +150,14 @@ const MenubarRadioItem = React.forwardRef<
   <MenubarPrimitive.RadioItem
     ref={ref}
     className={cn(
-      'saas-os-relative saas-os-flex saas-os-cursor-default saas-os-select-none saas-os-items-center saas-os-rounded-sm saas-os-py-1.5 pl-8 pr-2 saas-os-text-sm saas-os-outline-none focus:saas-os-bg-accent focus:saas-os-text-accent-foreground data-[disabled]:saas-os-pointer-events-none data-[disabled]:saas-os-opacity-50',
+      'relative flex cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
       className
     )}
     {...props}
   >
-    <span className="saas-os-absolute left-2 saas-os-flex saas-os-h-3.5 saas-os-w-3.5 saas-os-items-center saas-os-justify-center">
+    <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
       <MenubarPrimitive.ItemIndicator>
-        <DotFilledIcon className="saas-os-h-4 saas-os-w-4 fill-current" />
+        <DotFilledIcon className="h-4 w-4 fill-current" />
       </MenubarPrimitive.ItemIndicator>
     </span>
     {children}
@@ -173,7 +173,7 @@ const MenubarLabel = React.forwardRef<
 >(({ className, inset, ...props }, ref) => (
   <MenubarPrimitive.Label
     ref={ref}
-    className={cn('saas-os-px-2 saas-os-py-1.5 saas-os-text-sm saas-os-font-semibold', inset && 'pl-8', className)}
+    className={cn('px-2 py-1.5 text-sm font-semibold', inset && 'pl-8', className)}
     {...props}
   />
 ));
@@ -185,7 +185,7 @@ const MenubarSeparator = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <MenubarPrimitive.Separator
     ref={ref}
-    className={cn('-saas-ossaas-os--mx-1 saas-os-my-1 saas-os-h-px saas-os-bg-muted', className)}
+    className={cn('-mx-1 my-1 h-px bg-muted', className)}
     {...props}
   />
 ));
@@ -194,7 +194,7 @@ MenubarSeparator.displayName = MenubarPrimitive.Separator.displayName;
 const MenubarShortcut = ({ className, ...props }: React.HTMLAttributes<HTMLSpanElement>) => {
   return (
     <span
-      className={cn('saas-os-ml-auto saas-os-text-xs saas-os-tracking-widest saas-os-text-muted-foreground', className)}
+      className={cn('ml-auto text-xs tracking-widest text-muted-foreground', className)}
       {...props}
     />
   );

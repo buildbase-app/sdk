@@ -14,7 +14,7 @@ const TabsList = React.forwardRef<
   <TabsPrimitive.List
     ref={ref}
     className={cn(
-      'saas-os-inline-saas-os-flex saas-os-h-9 saas-os-items-center saas-os-justify-center saas-os-rounded-lg saas-os-bg-muted saas-os-p-1 saas-os-text-muted-foreground',
+      'inline-flex h-9 items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground',
       className
     )}
     {...props}
@@ -29,7 +29,7 @@ const TabsTrigger = React.forwardRef<
   <TabsPrimitive.Trigger
     ref={ref}
     className={cn(
-      'saas-os-inline-saas-os-flex saas-os-items-center saas-os-justify-center whitespace-nowrap saas-os-rounded-md saas-os-px-3 saas-os-py-1 saas-os-text-sm saas-os-font-medium saas-os-ring-offset-background saas-os-transition-all focus-visible:saas-os-outline-none focus-visible:saas-os-ring-2 focus-visible:saas-os-ring-ring focus-visible:saas-os-ring-offset-2 disabled:saas-os-pointer-events-none disabled:saas-os-opacity-50 data-[state=active]:saas-os-bg-background data-[state=active]:saas-os-text-foreground data-[state=active]:saas-os-shadow',
+      'inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow',
       className
     )}
     {...props}
@@ -44,7 +44,7 @@ const TabsContent = React.forwardRef<
   <TabsPrimitive.Content
     ref={ref}
     className={cn(
-      'saas-os-mt-2 saas-os-ring-offset-background focus-visible:saas-os-outline-none focus-visible:saas-os-ring-2 focus-visible:saas-os-ring-ring focus-visible:saas-os-ring-offset-2',
+      'mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
       className
     )}
     {...props}
