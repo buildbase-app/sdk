@@ -13,6 +13,9 @@ export interface ApiResponse<T = any> {
   headers: any;
 }
 
+// Helper function to check if we're in a browser environment
+const isBrowser = typeof window !== 'undefined';
+
 export class ApiClient {
   private client: AxiosInstance;
 
@@ -57,12 +60,14 @@ export class ApiClient {
   }
 
   private getAuthToken(): string | null {
-    // This can be customized based on your auth strategy
+    // Only access localStorage in browser environment
+    if (!isBrowser) return null;
     return localStorage.getItem('auth_token');
   }
 
   private handleUnauthorized(): void {
-    // Handle unauthorized access
+    // Only access localStorage in browser environment
+    if (!isBrowser) return;
     localStorage.removeItem('auth_token');
     // You can emit an event or call a callback here
   }
@@ -118,10 +123,12 @@ export class ApiClient {
   }
 
   setAuthToken(token: string): void {
+    if (!isBrowser) return;
     localStorage.setItem('auth_token', token);
   }
 
   removeAuthToken(): void {
+    if (!isBrowser) return;
     localStorage.removeItem('auth_token');
   }
 

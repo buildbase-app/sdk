@@ -19,6 +19,14 @@ npm install @saas-os/react
 
 ## Usage
 
+To use the components with proper styles, **import the CSS file in your app's root file** (e.g., `src/app/layout.tsx`, `src/app/globals.css`, or `pages/_app.tsx` for Next.js):
+
+```js
+import '@saas-os/react/dist/saas-os.css';
+```
+
+This ensures all SaaS OS component styles are applied.
+
 ### Basic Setup
 
 ```tsx

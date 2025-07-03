@@ -5,6 +5,7 @@
   "description": "A React library with shadcn components, Tailwind CSS, and axios",
   "main": "dist/index.js",
   "module": "dist/index.esm.js",
+  "browser": "dist/index.esm.js",
   "types": "dist/index.d.ts",
   "files": [
     "dist",
