@@ -6,6 +6,7 @@ import terser from '@rollup/plugin-terser';
 import dts from 'rollup-plugin-dts';
 import json from '@rollup/plugin-json';
 import { createRequire } from 'module';
+import tailwindPrefix from './rollup-plugin-tailwind-prefix.js';
 const require = createRequire(import.meta.url);
 const packageJson = require('./package.json');
 
@@ -33,10 +34,14 @@ export default [
         transformMixedEsModules: true,
       }),
       json(),
+      tailwindPrefix({
+        include: ['src/**/*.tsx', 'src/**/*.ts'],
+        exclude: ['node_modules/**']
+      }),
       typescript({ tsconfig: './tsconfig.json' }),
       postcss({
         config: {
-          path: './postcss.config.js',
+          path: './postcss.config.cjs',
         },
         extensions: ['.css'],
         minimize: true,

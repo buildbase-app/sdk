@@ -1,0 +1,85 @@
+import { useState, useCallback, useEffect } from 'react'
+import { useSaaSOS } from '../providers/ContextProvider'
+import { BetaFormData, BetaFormResponse } from '../types'
+import { IBetaConfig } from '../api'
+import { BetaForm } from '../components/beta/api'
+
+export const useBetaForm = () => {
+  const { context: saasOS } = useSaaSOS()
+
+  const [config, setConfig] = useState<IBetaConfig | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState(false)
+  const [message, setMessage] = useState<string | null>(null)
+
+  useEffect(() => {
+    const fetchConfig = async () => {
+      setIsLoading(true)
+      const betaForm = new BetaForm(saasOS)
+      const config = await betaForm.fetchConfig()
+      setConfig(config)
+      setIsLoading(false)
+    }
+    fetchConfig()
+  }, [saasOS])
+
+  const submitBetaForm = useCallback(
+    async (data: BetaFormData): Promise<BetaFormResponse> => {
+      if (!saasOS) {
+        const errorMessage = 'SaaS OS context is not initialized'
+        setError(errorMessage)
+        return {
+          success: false,
+          message: errorMessage
+        }
+      }
+
+      try {
+        setIsSubmitting(true)
+        setError(null)
+        setSuccess(false)
+        setMessage(null)
+
+        const betaForm = new BetaForm(saasOS)
+        const response = await betaForm.submitBetaUser({
+          name: data.name || '',
+          email: data.email
+        })
+
+        const isSuccess = response.status === 'success'
+        setSuccess(isSuccess)
+        setMessage(response.message)
+
+        return {
+          success: isSuccess,
+          message: response.message
+        }
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : 'Failed to submit beta form'
+        setError(errorMessage)
+        setSuccess(false)
+        setMessage(errorMessage)
+        return {
+          success: false,
+          message: errorMessage
+        }
+      } finally {
+        setIsSubmitting(false)
+      }
+    },
+    [saasOS]
+  )
+
+  return {
+    isLoading,
+    isSubmitting,
+    config,
+    error,
+    success,
+    message,
+    submitBetaForm
+  }
+}

@@ -51,9 +51,9 @@
 
 @layer base {
   * {
-    @apply saas-os-border-border;
+    @apply border-border;
   }
   body {
-    @apply saas-os-bg-background saas-os-text-foreground;
+    @apply bg-background text-foreground;
   }
-} 
+}
