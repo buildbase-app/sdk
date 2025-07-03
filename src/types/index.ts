@@ -1,11 +1,13 @@
 import { Context } from '../api';
 import { ReactNode } from 'react';
+import { IAuth } from '../api/context';
 
 // Provider Props
 export interface SaaSOSProviderProps {
   serverUrl: string;
   version: string;
   orgId: string;
+  auth?: IAuth;
   children: ReactNode;
 }
 

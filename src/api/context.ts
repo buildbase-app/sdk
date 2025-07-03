@@ -1,11 +1,21 @@
+import { AuthUser } from '../components/auth';
+
+export interface IAuth {
+  clientId: string;
+  redirectUrl: string;
+  onAuthStateChange?: (user: AuthUser | null) => void;
+}
+
 export class Context {
   private serverUrl: string;
   private version: string;
   private orgId: string;
 
+  private auth: IAuth;
+
   private static VALID_VERSIONS: string[] = ['v1'];
 
-  constructor(serverUrl: string, version: string, orgId: string) {
+  constructor(serverUrl: string, version: string, orgId: string, auth?: IAuth) {
     version = String(version).trim();
     orgId = String(orgId).trim();
     if (!serverUrl) {
@@ -37,6 +47,7 @@ export class Context {
     this.serverUrl = serverUrl.replace(/\/$/, '');
     this.version = version;
     this.orgId = orgId;
+    this.auth = auth || { clientId: '', redirectUrl: '', onAuthStateChange: undefined };
   }
 
   getServerUrl(): string {
@@ -49,5 +60,9 @@ export class Context {
 
   getOrgId(): string {
     return this.orgId;
+  }
+
+  getAuth(): IAuth {
+    return this.auth;
   }
 }

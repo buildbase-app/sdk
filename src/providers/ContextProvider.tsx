@@ -3,6 +3,7 @@ import { SaaSOSProviderProps, SaaSOSContextValue } from '../types';
 import { Context } from '../api';
 import '../styles/globals.css';
 import PortalProvider from './portalProvider';
+import { AuthProvider } from './AuthProvider';
 
 const SaaSOSContext = createContext<SaaSOSContextValue | null>(null);
 
@@ -50,19 +51,37 @@ export const SaaSOSProvider: React.FC<SaaSOSProviderProps> = ({
   serverUrl,
   version,
   orgId,
+  auth,
   children,
 }) => {
   const contextValue = useMemo(
     () => ({
-      context: new Context(serverUrl, version, orgId),
+      context: new Context(serverUrl, version, orgId, auth),
     }),
-    [serverUrl, version, orgId]
+    [serverUrl, version, orgId, auth]
   );
 
   return (
     <FormErrorBoundary>
       <SaaSOSContext.Provider value={contextValue}>
-        <PortalProvider>{children}</PortalProvider>
+        <PortalProvider>
+          {auth && (
+            <AuthProvider
+              config={{
+                api_url: serverUrl,
+                auth: {
+                  server_url: serverUrl,
+                  org_id: orgId,
+                  client_id: auth.clientId,
+                },
+              }}
+              onAuthStateChange={auth.onAuthStateChange}
+            >
+              {children}
+            </AuthProvider>
+          )}
+          {!auth && <>{children}</>}
+        </PortalProvider>
       </SaaSOSContext.Provider>
     </FormErrorBoundary>
   );
