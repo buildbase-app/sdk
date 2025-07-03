@@ -16,6 +16,7 @@ import {
 import { formSchema, formValuesType } from './schema'
 import { Input } from '../ui/input'
 import { Button } from '../ui/button'
+import { cn } from '../../lib/utils'
 
 type Language = 'en' | 'es' | 'fr' | 'de' | 'zh' | 'ja' | 'ko'
 
@@ -105,7 +106,7 @@ interface BetaFormProps {
 export const BetaForm: React.FC<BetaFormProps> = ({
   onSuccess,
   onError,
-  className = 'w-full mx-auto',
+  className = 'w-full',
   fieldClassName = 'flex flex-col gap-1.5 w-full',
   language: propLanguage,
   customTexts = {},
@@ -189,11 +190,24 @@ export const BetaForm: React.FC<BetaFormProps> = ({
   }
 
   const isFormValid = form.formState.isValid && !isSubmitting
-
   return (
-    <div className='saas-os-ui'>
+    <div
+      className='saas-os-ui'
+      style={{
+        width: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}
+    >
       {isLoading ? (
-        <div className='flex flex-col items-center justify-center w-full space-y-4 px-8 sm:px-16 py-8 sm:py-16 gap-y-2'>
+        <div
+          className={cn(
+            'flex flex-col items-center justify-center w-full px-2.5 sm:px-6 py-2.5 sm:py-6 gap-y-2.5 sm:gap-y-4',
+            className
+          )}
+        >
           {/* Logo skeleton */}
           <Skeleton className='h-24 w-24 rounded-lg' />
           {/* Name skeleton */}
