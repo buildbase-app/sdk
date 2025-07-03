@@ -4,44 +4,44 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        border: 'hsl(var(--saas-os-border))',
-        input: 'hsl(var(--saas-os-input))',
-        ring: 'hsl(var(--saas-os-ring))',
-        background: 'hsl(var(--saas-os-background))',
-        foreground: 'hsl(var(--saas-os-foreground))',
+        border: 'hsl(var(--border))',
+        input: 'hsl(var(--input))',
+        ring: 'hsl(var(--ring))',
+        background: 'hsl(var(--background))',
+        foreground: 'hsl(var(--foreground))',
         primary: {
-          DEFAULT: 'hsl(var(--saas-os-primary))',
-          foreground: 'hsl(var(--saas-os-primary-foreground))'
+          DEFAULT: 'hsl(var(--primary))',
+          foreground: 'hsl(var(--primary-foreground))'
         },
         secondary: {
-          DEFAULT: 'hsl(var(--saas-os-secondary))',
-          foreground: 'hsl(var(--saas-os-secondary-foreground))'
+          DEFAULT: 'hsl(var(--secondary))',
+          foreground: 'hsl(var(--secondary-foreground))'
         },
         destructive: {
-          DEFAULT: 'hsl(var(--saas-os-destructive))',
-          foreground: 'hsl(var(--saas-os-destructive-foreground))'
+          DEFAULT: 'hsl(var(--destructive))',
+          foreground: 'hsl(var(--destructive-foreground))'
         },
         muted: {
-          DEFAULT: 'hsl(var(--saas-os-muted))',
-          foreground: 'hsl(var(--saas-os-muted-foreground))'
+          DEFAULT: 'hsl(var(--muted))',
+          foreground: 'hsl(var(--muted-foreground))'
         },
         accent: {
-          DEFAULT: 'hsl(var(--saas-os-accent))',
-          foreground: 'hsl(var(--saas-os-accent-foreground))'
+          DEFAULT: 'hsl(var(--accent))',
+          foreground: 'hsl(var(--accent-foreground))'
         },
         popover: {
-          DEFAULT: 'hsl(var(--saas-os-popover))',
-          foreground: 'hsl(var(--saas-os-popover-foreground))'
+          DEFAULT: 'hsl(var(--popover))',
+          foreground: 'hsl(var(--popover-foreground))'
         },
         card: {
-          DEFAULT: 'hsl(var(--saas-os-card))',
-          foreground: 'hsl(var(--saas-os-card-foreground))'
+          DEFAULT: 'hsl(var(--card))',
+          foreground: 'hsl(var(--card-foreground))'
         }
       },
       borderRadius: {
-        lg: 'var(--saas-os-radius)',
-        md: 'calc(var(--saas-os-radius) - 2px)',
-        sm: 'calc(var(--saas-os-radius) - 4px)'
+        lg: 'var(--radius)',
+        md: 'calc(var(--radius) - 2px)',
+        sm: 'calc(var(--radius) - 4px)'
       }
     }
   },

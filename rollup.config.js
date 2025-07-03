@@ -1,14 +1,14 @@
-import resolve from '@rollup/plugin-node-resolve';
-import commonjs from '@rollup/plugin-commonjs';
-import typescript from '@rollup/plugin-typescript';
-import postcss from 'rollup-plugin-postcss';
-import terser from '@rollup/plugin-terser';
-import dts from 'rollup-plugin-dts';
-import json from '@rollup/plugin-json';
-import { createRequire } from 'module';
-import tailwindPrefix from './rollup-plugin-tailwind-prefix.js';
-const require = createRequire(import.meta.url);
-const packageJson = require('./package.json');
+import resolve from '@rollup/plugin-node-resolve'
+import commonjs from '@rollup/plugin-commonjs'
+import typescript from '@rollup/plugin-typescript'
+import postcss from 'rollup-plugin-postcss'
+import terser from '@rollup/plugin-terser'
+import dts from 'rollup-plugin-dts'
+import json from '@rollup/plugin-json'
+import { createRequire } from 'module'
+
+const require = createRequire(import.meta.url)
+const packageJson = require('./package.json')
 
 export default [
   {
@@ -17,31 +17,27 @@ export default [
       {
         file: packageJson.main,
         format: 'cjs',
-        sourcemap: true,
+        sourcemap: true
       },
       {
         file: packageJson.module,
         format: 'esm',
-        sourcemap: true,
-      },
+        sourcemap: true
+      }
     ],
     plugins: [
       resolve({
         browser: true,
-        preferBuiltins: false,
+        preferBuiltins: false
       }),
       commonjs({
-        transformMixedEsModules: true,
+        transformMixedEsModules: true
       }),
       json(),
-      tailwindPrefix({
-        include: ['src/**/*.tsx', 'src/**/*.ts'],
-        exclude: ['node_modules/**']
-      }),
       typescript({ tsconfig: './tsconfig.json' }),
       postcss({
         config: {
-          path: './postcss.config.cjs',
+          path: './postcss.config.cjs'
         },
         extensions: ['.css'],
         minimize: true,
@@ -49,56 +45,23 @@ export default [
         extract: 'saas-os.css',
         modules: {
           scopeBehaviour: 'local',
-          generateScopedName: 'saas-os-[name]__[local]',
-        },
+          generateScopedName: 'saas-os-[name]__[local]'
+        }
       }),
-      terser(),
+      terser()
     ],
     external: [
       ...Object.keys(packageJson.peerDependencies || {}),
-      // React and React JSX runtime
       'react',
       'react/jsx-runtime',
       'react/jsx-dev-runtime',
-      'react-dom',
-      // Node.js built-in modules that should not be bundled
-      'fs',
-      'path',
-      'http',
-      'https',
-      'crypto',
-      'stream',
-      'util',
-      'url',
-      'assert',
-      'zlib',
-      'events',
-      'buffer',
-      'querystring',
-      'os',
-      'child_process',
-      'cluster',
-      'dgram',
-      'dns',
-      'domain',
-      'module',
-      'net',
-      'readline',
-      'repl',
-      'string_decoder',
-      'sys',
-      'timers',
-      'tls',
-      'tty',
-      'v8',
-      'vm',
-      'worker_threads',
-    ],
+      'react-dom'
+    ]
   },
   {
-    input: 'dist/esm/types/index.d.ts',
+    input: 'dist/types/index.d.ts',
     output: [{ file: 'dist/index.d.ts', format: 'esm' }],
     plugins: [dts()],
-    external: [/\.css$/],
-  },
-]; 
+    external: [/\.css$/]
+  }
+]
