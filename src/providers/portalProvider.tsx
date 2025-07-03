@@ -15,7 +15,15 @@ export default function PortalProvider({ children }: { children: React.ReactNode
   return (
     <PortalContext.Provider value={{ container, setContainer }}>
       {children}
-      <div ref={setContainer} id="saas-os-portal" className="saas-os-ui" />
+      <div
+        ref={setContainer}
+        id="saas-os-portal"
+        className="saas-os-ui"
+        style={{
+          width: '100vw',
+          height: '100vh',
+        }}
+      />
     </PortalContext.Provider>
   );
 }
