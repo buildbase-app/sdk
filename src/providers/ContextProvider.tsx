@@ -6,6 +6,7 @@ import React, {
 import { SaaSOSProviderProps, SaaSOSContextValue } from '../types'
 import { Context } from '../api'
 import '../styles/globals.css'
+import PortalProvider from './portalProvider'
 
 const SaaSOSContext = createContext<SaaSOSContextValue | null>(null)
 
@@ -72,7 +73,7 @@ export const SaaSOSProvider: React.FC<SaaSOSProviderProps> = ({
   return (
     <FormErrorBoundary>
       <SaaSOSContext.Provider value={contextValue}>
-        {children}
+        <PortalProvider>{children}</PortalProvider>
       </SaaSOSContext.Provider>
     </FormErrorBoundary>
   )
