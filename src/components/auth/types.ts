@@ -1,10 +1,10 @@
 export interface AuthConfig {
   auth: {
-    server_url: string;
-    org_id: string;
-    client_id: string;
+    serverUrl: string;
+    orgId: string;
+    clientId: string;
   };
-  api_url: string;
+  apiUrl: string;
 }
 
 export interface AuthUser {

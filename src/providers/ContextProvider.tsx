@@ -68,11 +68,11 @@ export const SaaSOSProvider: React.FC<SaaSOSProviderProps> = ({
           {auth && (
             <AuthProvider
               config={{
-                api_url: serverUrl,
+                apiUrl: serverUrl,
                 auth: {
-                  server_url: serverUrl,
-                  org_id: orgId,
-                  client_id: auth.clientId,
+                  serverUrl: serverUrl,
+                  orgId: orgId,
+                  clientId: auth.clientId,
                 },
               }}
               onAuthStateChange={auth.onAuthStateChange}
