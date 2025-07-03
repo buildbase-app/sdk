@@ -60,26 +60,20 @@ export const SaaSOSProvider: React.FC<SaaSOSProviderProps> = ({
   serverUrl,
   version,
   orgId,
-  children,
-  components,
-  defaultProps = {}
+  children
 }) => {
   const contextValue = useMemo(
     () => ({
-      context: new Context(serverUrl, version, orgId),
-      components,
-      defaultProps
+      context: new Context(serverUrl, version, orgId)
     }),
-    [serverUrl, version, orgId, components, defaultProps]
+    [serverUrl, version, orgId]
   )
 
   return (
     <FormErrorBoundary>
-      <div className='saas-os-ui'>
-        <SaaSOSContext.Provider value={contextValue}>
-          {children}
-        </SaaSOSContext.Provider>
-      </div>
+      <SaaSOSContext.Provider value={contextValue}>
+        {children}
+      </SaaSOSContext.Provider>
     </FormErrorBoundary>
   )
 }

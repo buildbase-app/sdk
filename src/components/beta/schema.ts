@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-export const betaFormSchema = z.object({
+export const formSchema = z.object({
   name: z
     .string()
     .min(1, 'Please enter your name')
@@ -17,4 +17,4 @@ export const betaFormSchema = z.object({
     )
 })
 
-export type BetaFormValues = z.infer<typeof betaFormSchema>
+export type formValuesType = z.infer<typeof formSchema>

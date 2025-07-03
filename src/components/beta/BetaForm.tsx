@@ -2,21 +2,20 @@ import React, { useEffect, useState } from 'react'
 import { useForm, FormProvider } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 
-import { useSaaSOS } from '../../providers/ContextProvider'
-
 import { Skeleton } from '../ui/skeleton'
-import { FormMessageProps, FormButtonProps } from '../../types'
-import { cn } from '../../lib/utils'
 import { IBetaConfig } from './api'
-import { useBetaForm } from '../../hooks/useBetaForm'
+import { useBetaForm } from './hooks'
 import {
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage
 } from '../ui/form'
-import { betaFormSchema, BetaFormValues } from './beta-form'
+import { formSchema, formValuesType } from './schema'
+import { Input } from '../ui/input'
+import { Button } from '../ui/button'
 
 type Language = 'en' | 'es' | 'fr' | 'de' | 'zh' | 'ja' | 'ko'
 
@@ -96,48 +95,24 @@ interface BetaFormProps {
   fieldClassName?: string
   language?: Language
   customTexts?: Partial<FormText>
-  components?: {
-    Message?: React.ComponentType<FormMessageProps>
-    Button?: React.ComponentType<FormButtonProps>
-  }
   autoFocus?: boolean
   showSuccessMessage?: boolean
   successMessageDuration?: number
-}
-
-// Animation styles
-const alertBoxClass =
-  'inline-flex flex-col items-center justify-center px-6 py-6 rounded-lg shadow-2xl bg-white border animate-fade-in-scale max-w-[90vw] sm:max-w-md'
-
-// Add animation keyframes (inject into document head if not present)
-if (
-  typeof window !== 'undefined' &&
-  !document.getElementById('fade-in-scale-keyframes')
-) {
-  const style = document.createElement('style')
-  style.id = 'fade-in-scale-keyframes'
-  style.innerHTML = `
-    @keyframes fade-in-scale {
-      0% { opacity: 0; transform: scale(0.95); }
-      100% { opacity: 1; transform: scale(1); }
-    }
-    .animate-fade-in-scale {
-      animation: fade-in-scale 0.5s cubic-bezier(0.4,0,0.2,1);
-    }
-  `
-  document.head.appendChild(style)
+  hideLogo?: boolean
+  hideTitles?: boolean
 }
 
 export const BetaForm: React.FC<BetaFormProps> = ({
   onSuccess,
   onError,
-  className = '',
-  fieldClassName = 'mb-4',
+  className = 'w-full mx-auto',
+  fieldClassName = 'flex flex-col gap-1.5 w-full',
   language: propLanguage,
   customTexts = {},
-  components: customComponents,
   autoFocus = true,
-  showSuccessMessage = true
+  showSuccessMessage = true,
+  hideLogo = false,
+  hideTitles = false
 }) => {
   const [detectedLanguage, setDetectedLanguage] = useState<Language>('en')
   const [showSuccess, setShowSuccess] = useState(false)
@@ -151,7 +126,6 @@ export const BetaForm: React.FC<BetaFormProps> = ({
     success,
     message
   } = useBetaForm()
-  const { components: contextComponents } = useSaaSOS()
 
   useEffect(() => {
     setDetectedLanguage(getBrowserLanguage())
@@ -174,13 +148,8 @@ export const BetaForm: React.FC<BetaFormProps> = ({
     ...customTexts
   }
 
-  const components = {
-    Message: customComponents?.Message || contextComponents.Message,
-    Button: customComponents?.Button || contextComponents.Button
-  }
-
-  const form = useForm<BetaFormValues>({
-    resolver: zodResolver(betaFormSchema),
+  const form = useForm<formValuesType>({
+    resolver: zodResolver(formSchema),
     defaultValues: { email: '', name: '' },
     mode: 'onChange',
     reValidateMode: 'onChange'
@@ -194,7 +163,7 @@ export const BetaForm: React.FC<BetaFormProps> = ({
     return undefined
   }, [autoFocus, form])
 
-  const onSubmit = async (data: BetaFormValues) => {
+  const onSubmit = async (data: formValuesType) => {
     try {
       const response = await submitBetaForm(data)
       if (response.success) {
@@ -220,10 +189,9 @@ export const BetaForm: React.FC<BetaFormProps> = ({
   }
 
   const isFormValid = form.formState.isValid && !isSubmitting
-  const hasErrors = Object.keys(form.formState.errors).length > 0
 
   return (
-    <div>
+    <div className='saas-os-ui'>
       {isLoading ? (
         <div className='flex flex-col items-center justify-center w-full space-y-4 px-8 sm:px-16 py-8 sm:py-16 gap-y-2'>
           {/* Logo skeleton */}
@@ -244,11 +212,13 @@ export const BetaForm: React.FC<BetaFormProps> = ({
           </div>
         </div>
       ) : (
-        <div className='flex flex-col items-center justify-center w-full px-8 sm:px-16 py-8 sm:py-16'>
-          <div className='flex flex-col items-center justify-center w-full'>
-            {betaFormConfig?.logo && <Logo logo={betaFormConfig?.logo} />}
-            <div>{betaFormConfig?.name}</div>
-          </div>
+        <div className='flex flex-col items-center justify-center w-full px-2.5 sm:px-6 py-2.5 sm:py-6 gap-y-2.5 sm:gap-y-4'>
+          {!hideLogo && (
+            <div className='flex flex-col items-center justify-center w-full'>
+              {betaFormConfig?.logo && <Logo logo={betaFormConfig?.logo} />}
+              {betaFormConfig?.name && <div>{betaFormConfig?.name}</div>}
+            </div>
+          )}
           <FormProvider {...form}>
             <form
               onSubmit={form.handleSubmit(onSubmit)}
@@ -258,54 +228,52 @@ export const BetaForm: React.FC<BetaFormProps> = ({
             >
               {!formHidden && (
                 <>
-                  {betaFormConfig?.screen?.register && (
+                  {!hideTitles && betaFormConfig?.screen?.register && (
                     <Screen screen={betaFormConfig?.screen?.register} />
                   )}
-                  <FormField name='name'>
-                    <FormItem className={fieldClassName}>
-                      <FormLabel required>{texts.nameLabel}</FormLabel>
-                      <FormControl />
-                      <FormMessage>
-                        {form.formState.errors.name?.message}
-                      </FormMessage>
-                    </FormItem>
-                  </FormField>
+                  <FormField
+                    control={form.control}
+                    name='name'
+                    render={({ field }) => (
+                      <FormItem className={fieldClassName}>
+                        <FormLabel>{texts.nameLabel}</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormDescription />
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                  <FormField name='email'>
-                    <FormItem className={fieldClassName}>
-                      <FormLabel required>{texts.emailLabel}</FormLabel>
-                      <FormControl />
-                      <FormMessage>
-                        {form.formState.errors.email?.message}
-                      </FormMessage>
-                    </FormItem>
-                  </FormField>
+                  <FormField
+                    control={form.control}
+                    name='email'
+                    render={({ field }) => (
+                      <FormItem className={fieldClassName}>
+                        <FormLabel>{texts.emailLabel}</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormDescription />
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                  <FormField name='submit'>
-                    <FormItem className={fieldClassName}>
-                      <components.Button
-                        type='submit'
-                        disabled={!isFormValid}
-                        className={fieldClassName}
-                        aria-busy={isSubmitting}
-                        aria-disabled={!isFormValid}
-                        aria-invalid={hasErrors}
-                      >
-                        {isSubmitting ? texts.submittingText : texts.submitText}
-                      </components.Button>
-                    </FormItem>
-                  </FormField>
+                  <Button
+                    type='submit'
+                    disabled={!isFormValid}
+                    className={fieldClassName}
+                  >
+                    {isSubmitting ? texts.submittingText : texts.submitText}
+                  </Button>
                 </>
               )}
               {formHidden && error && (
                 <div className='flex flex-col items-center justify-center w-full'>
-                  <components.Message
-                    type='error'
-                    className={cn(
-                      alertBoxClass.replace('border', ''),
-                      'border-red-300',
-                      'text-red-700'
-                    )}
+                  <div
+                    className='border-red-300 text-red-700'
                     role='alert'
                     aria-live='assertive'
                     aria-atomic={true}
@@ -318,83 +286,37 @@ export const BetaForm: React.FC<BetaFormProps> = ({
                       ❗
                     </span>
                     {error}
-                  </components.Message>
+                  </div>
                   <div className='mt-4 flex justify-center'>
-                    <components.Button
+                    <Button
                       type='button'
                       onClick={handleRetry}
                       className={fieldClassName}
                     >
                       Try Again
-                    </components.Button>
+                    </Button>
                   </div>
                 </div>
               )}
               {formHidden && showSuccess && message && (
-                <div className='flex flex-col items-center justify-center w-full'>
-                  <components.Message
-                    type='success'
-                    className={cn(
-                      alertBoxClass.replace('border', ''),
-                      'text-green-700',
-                      'border-green-300',
-                      'text-center'
-                    )}
-                    role='status'
-                    aria-live='polite'
-                    aria-atomic={true}
-                  >
-                    <span
-                      style={{
-                        fontSize: '64px',
-                        marginBottom: '16px'
-                      }}
-                    >
-                      ✅
-                    </span>
-                    {betaFormConfig?.screen?.thankYou && (
-                      <Screen screen={betaFormConfig?.screen?.thankYou} />
-                    )}
-                  </components.Message>
+                <div className='flex flex-col items-center justify-center w-full text-green-700 border-green-300 text-center'>
+                  {betaFormConfig?.screen?.thankYou && (
+                    <Screen screen={betaFormConfig?.screen?.thankYou} />
+                  )}
                 </div>
               )}
             </form>
           </FormProvider>
           {!formHidden && (
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '100%',
-                marginTop: '0.75rem',
-                marginBottom: '0.75rem',
-                paddingTop: '0.75rem',
-                paddingBottom: '0.75rem',
-                borderTop: '1px solid #e5e7eb'
-              }}
-            >
+            <div>
               {/* privacy notice*/}
-              <div
-                style={{
-                  fontSize: '0.875rem',
-                  textAlign: 'center'
-                }}
-              >
+              <div>
                 By submitting this form, you consent to our{' '}
                 <a
                   href={betaFormConfig?.privacyPolicy}
                   target='_blank'
                   rel='noopener noreferrer'
-                  style={{
-                    color: '#1e40af',
-                    textDecoration: 'underline',
-                    fontWeight: 500,
-                    cursor: 'pointer'
-                  }}
-                  onMouseOver={(e) => (e.currentTarget.style.color = '#1e3a8a')}
-                  onMouseOut={(e) => (e.currentTarget.style.color = '#1e40af')}
+                  className='text-blue-600 hover:text-blue-700'
                 >
                   Privacy Policy
                 </a>{' '}
@@ -403,14 +325,7 @@ export const BetaForm: React.FC<BetaFormProps> = ({
                   href={betaFormConfig?.termsOfService}
                   target='_blank'
                   rel='noopener noreferrer'
-                  style={{
-                    color: '#1e40af',
-                    textDecoration: 'underline',
-                    fontWeight: 500,
-                    cursor: 'pointer'
-                  }}
-                  onMouseOver={(e) => (e.currentTarget.style.color = '#1e3a8a')}
-                  onMouseOut={(e) => (e.currentTarget.style.color = '#1e40af')}
+                  className='text-blue-600 hover:text-blue-700'
                 >
                   Terms of Service
                 </a>
@@ -427,38 +342,15 @@ export const BetaForm: React.FC<BetaFormProps> = ({
 function Screen({ screen }: { screen: IBetaConfig['screen']['register'] }) {
   return (
     <div className='flex flex-col items-center justify-center w-full'>
-      <p
-        style={{
-          fontSize: '24px'
-        }}
-      >
-        {screen?.title}
-      </p>
-      <p
-        style={{
-          fontSize: '16px',
-          color: '#666'
-        }}
-      >
-        {screen?.description}
-      </p>
+      <p className='text-2xl font-bold'>{screen?.title}</p>
+      <p className='text-sm text-muted-foreground'>{screen?.description}</p>
     </div>
   )
 }
 
 function Logo({ logo }: { logo: IBetaConfig['logo'] }) {
   if (typeof logo === 'string') {
-    return (
-      <img
-        src={logo}
-        alt='Logo'
-        style={{
-          maxHeight: '100px'
-        }}
-      />
-    )
+    return <img src={logo} alt='Logo' className='max-h-24' />
   }
-  return (
-    <img src={logo.bucket?.url} alt='Logo' style={{ maxHeight: '100px' }} />
-  )
+  return <img src={logo.bucket?.url} alt='Logo' className='max-h-24' />
 }
