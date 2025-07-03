@@ -1,2 +1,2 @@
-export type { IBetaConfig } from '../components/beta/api'
-export { Context } from './context'
+export type { IBetaConfig } from '../components/beta/api';
+export { Context } from './context';

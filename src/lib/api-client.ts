@@ -31,7 +31,7 @@ export class ApiClient {
 
     // Request interceptor
     this.client.interceptors.request.use(
-      (config) => {
+      config => {
         // Add auth token if available
         const token = this.getAuthToken();
         if (token) {
@@ -39,7 +39,7 @@ export class ApiClient {
         }
         return config;
       },
-      (error) => {
+      error => {
         return Promise.reject(error);
       }
     );
@@ -49,7 +49,7 @@ export class ApiClient {
       (response: AxiosResponse) => {
         return response;
       },
-      (error) => {
+      error => {
         // Handle common errors
         if (error.response?.status === 401) {
           this.handleUnauthorized();
@@ -82,7 +82,11 @@ export class ApiClient {
     };
   }
 
-  async post<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
+  async post<T = any>(
+    url: string,
+    data?: any,
+    config?: AxiosRequestConfig
+  ): Promise<ApiResponse<T>> {
     const response = await this.client.post<T>(url, data, config);
     return {
       data: response.data,
@@ -92,7 +96,11 @@ export class ApiClient {
     };
   }
 
-  async put<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
+  async put<T = any>(
+    url: string,
+    data?: any,
+    config?: AxiosRequestConfig
+  ): Promise<ApiResponse<T>> {
     const response = await this.client.put<T>(url, data, config);
     return {
       data: response.data,
@@ -112,7 +120,11 @@ export class ApiClient {
     };
   }
 
-  async patch<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
+  async patch<T = any>(
+    url: string,
+    data?: any,
+    config?: AxiosRequestConfig
+  ): Promise<ApiResponse<T>> {
     const response = await this.client.patch<T>(url, data, config);
     return {
       data: response.data,
@@ -146,4 +158,4 @@ export class ApiClient {
 }
 
 // Create a default instance
-export const defaultApiClient = new ApiClient(); 
+export const defaultApiClient = new ApiClient();

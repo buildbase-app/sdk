@@ -1,9 +1,9 @@
 // Import styles
-import './styles/globals.css'
+import './styles/globals.css';
 
 // export
 // SaaSOSProvider
-export { SaaSOSProvider } from './providers/ContextProvider'
+export { SaaSOSProvider } from './providers/ContextProvider';
 
 // Export custom components
-export { BetaForm } from './components/beta/BetaForm'
+export { BetaForm } from './components/beta/BetaForm';
