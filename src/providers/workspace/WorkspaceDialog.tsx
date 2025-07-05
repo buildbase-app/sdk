@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogFooter, DialogClose } from '../../components/ui/dialog';
 import { Button } from '../../components/ui/button';
+import { Dialog, DialogClose, DialogContent, DialogFooter } from '../../components/ui/dialog';
 import { Input } from '../../components/ui/input';
 import { useSaaSWorkspaces } from './hooks';
 

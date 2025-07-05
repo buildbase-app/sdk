@@ -1,5 +1,5 @@
 import { Context } from '../../api/context';
-import type { IWorkspace, IWorkspaceUser, IWorkspaceRole } from './types';
+import type { IWorkspace, IWorkspaceRole, IWorkspaceUser } from './types';
 
 export class WorkspaceApi {
   private version: string;

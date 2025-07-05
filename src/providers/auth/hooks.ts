@@ -1,14 +1,14 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { defaultApiClient } from '../../lib/api-client';
 import { jwtDecode } from 'jwt-decode';
-import { AuthConfig, AuthUser, AuthSession, AuthState, AuthStatus, AuthResponse } from './types';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { defaultApiClient } from '../../lib/api-client';
+import { AuthConfig, AuthResponse, AuthSession, AuthState, AuthStatus, AuthUser } from './types';
 import {
-  saveCredentials,
-  removeCredentials,
-  loadUserFromCookies,
-  getTokenFromUrl,
-  removeTokenFromUrl,
   createSession,
+  getTokenFromUrl,
+  loadUserFromCookies,
+  removeCredentials,
+  removeTokenFromUrl,
+  saveCredentials,
 } from './utils';
 
 export interface UseAuthOptions {

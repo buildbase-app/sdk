@@ -1,8 +1,8 @@
-import { useState, useCallback, useEffect } from 'react';
-import { useSaaSOS } from '../../providers/contextProvider';
-import { BetaFormData, BetaFormResponse } from './types';
+import { useCallback, useEffect, useState } from 'react';
 import { IBetaConfig } from '../../api';
+import { useSaaSOS } from '../../providers/contextProvider';
 import { BetaForm } from './api';
+import { BetaFormData, BetaFormResponse } from './types';
 
 export const useBetaForm = () => {
   const { context: saasOS } = useSaaSOS();

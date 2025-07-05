@@ -20,7 +20,7 @@
     "yalc:add": "yalc add",
     "yalc:push": "yalc push",
     "yalc:remove": "yalc remove",
-    "format": "prettier --write .",
+    "format": "prettier --write . --plugin=prettier-plugin-organize-imports",
     "push:sdk": "npm run build && yalc push"
   },
   "peerDependencies": {

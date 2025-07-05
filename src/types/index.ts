@@ -1,5 +1,5 @@
-import { Context } from '../api';
 import { ReactNode } from 'react';
+import { Context } from '../api';
 import { IAuth } from '../api/context';
 
 // Provider Props

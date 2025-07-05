@@ -1,9 +1,9 @@
-import React, { createContext, useContext as useReactContext, useMemo } from 'react';
-import { SaaSOSProviderProps, SaaSOSContextValue } from '../types';
+import React, { createContext, useMemo, useContext as useReactContext } from 'react';
 import { Context } from '../api';
 import '../styles/globals.css';
-import PortalProvider from './portalProvider';
+import { SaaSOSContextValue, SaaSOSProviderProps } from '../types';
 import { AuthProvider } from './auth/provider';
+import PortalProvider from './portalProvider';
 import { WorkspaceProvider } from './workspace/provider';
 
 const SaaSOSContext = createContext<SaaSOSContextValue | null>(null);

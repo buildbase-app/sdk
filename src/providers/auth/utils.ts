@@ -1,4 +1,4 @@
-import { AuthUser, AuthSession } from './types';
+import { AuthSession, AuthUser } from './types';
 
 const TOKEN_PARAM = 'token';
 const AUTH_USER_KEY = 'saas_os_auth_user';

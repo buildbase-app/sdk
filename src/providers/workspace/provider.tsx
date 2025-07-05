@@ -1,15 +1,7 @@
-import React, {
-  createContext,
-  useContext,
-  useState,
-  useCallback,
-  useEffect,
-  ReactNode,
-  useMemo,
-} from 'react';
+import { createContext, ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 import { WorkspaceDialog } from './WorkspaceDialog';
-import type { WorkspaceContextValue } from './types';
 import { useSaaSWorkspaces } from './hooks';
+import type { WorkspaceContextValue } from './types';
 
 const WorkspaceContext = createContext<WorkspaceContextValue | undefined>(undefined);
 

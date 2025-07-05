@@ -1,9 +1,8 @@
 'use client';
 
-import * as React from 'react';
-import { useEffect } from 'react';
 import TimeAgo from 'javascript-time-ago';
 import en from 'javascript-time-ago/locale/en.json';
+import { useEffect } from 'react';
 
 import {
   Toast,
