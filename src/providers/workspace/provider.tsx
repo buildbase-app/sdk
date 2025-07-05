@@ -3,11 +3,45 @@ import { WorkspaceDialog } from './WorkspaceDialog';
 import { useSaaSWorkspaces } from './hooks';
 import type { WorkspaceContextValue } from './types';
 
+// Add this at the top of the file to extend the Window interface
+declare global {
+  interface Window {
+    __saas_workspace_provider_mounted?: number;
+  }
+}
+
 const WorkspaceContext = createContext<WorkspaceContextValue | undefined>(undefined);
+
+// Singleton guard for context and fetch
+let hasFetchedWorkspaces = false;
 
 export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
   const { workspaces, loading, error, fetchWorkspaces, refreshWorkspaces, loadingRefresh } =
     useSaaSWorkspaces();
+
+  // Only fetch workspaces once per app session, even if provider is mounted multiple times
+  useEffect(() => {
+    if (!hasFetchedWorkspaces) {
+      fetchWorkspaces();
+      hasFetchedWorkspaces = true;
+    }
+    // Warn in dev if multiple providers are mounted (browser only)
+    if (typeof window !== 'undefined') {
+      if (!(window.__saas_workspace_provider_mounted ?? 0)) {
+        window.__saas_workspace_provider_mounted = 1;
+      } else {
+        window.__saas_workspace_provider_mounted = (window.__saas_workspace_provider_mounted ?? 0) + 1;
+        if ((window.__saas_workspace_provider_mounted ?? 0) > 1 && window.location.hostname === 'localhost') {
+          // eslint-disable-next-line no-console
+          console.warn('Warning: Multiple WorkspaceProvider instances detected. Only one should be mounted.');
+        }
+      }
+      return () => {
+        window.__saas_workspace_provider_mounted = (window.__saas_workspace_provider_mounted ?? 1) - 1;
+      };
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Track dialog open state
   const [dialogOpen, setDialogOpen] = useState(false);
