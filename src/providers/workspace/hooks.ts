@@ -3,6 +3,28 @@ import { useSaaSOS } from '../contextProvider';
 import { WorkspaceApi } from './api';
 import { IWorkspace, IWorkspaceRole } from './types';
 
+/**
+ * Hook for managing SaaS workspaces
+ * 
+ * IMPORTANT: This hook does NOT automatically fetch workspaces on mount.
+ * You must call fetchWorkspaces() manually when you need to load workspace data.
+ * 
+ * Example usage:
+ * ```tsx
+ * const { workspaces, loading, fetchWorkspaces } = useSaaSWorkspaces();
+ * 
+ * // Load workspaces when needed (e.g., on button click or component mount)
+ * useEffect(() => {
+ *   fetchWorkspaces();
+ * }, []);
+ * 
+ * // Or trigger manually
+ * const handleLoadWorkspaces = () => {
+ *   fetchWorkspaces();
+ * };
+ * ```
+ */
+
 export const useSaaSWorkspaces = () => {
   const { context } = useSaaSOS();
   const [workspaces, setWorkspaces] = useState<IWorkspace[]>([]);

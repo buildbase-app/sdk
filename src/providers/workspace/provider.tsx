@@ -27,12 +27,10 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [currentWorkspaceId]);
 
-  // Fetch workspaces on mount/dialog open
-  useEffect(() => {
-    fetchWorkspaces();
-  }, []);
+  // Note: fetchWorkspaces is not called automatically
+  // Call fetchWorkspaces() manually when you need to load workspaces
 
-  // Set default workspace if none selected
+  // Set default workspace if none selected and workspaces are available
   useEffect(() => {
     if (!currentWorkspaceId && workspaces.length > 0) {
       setCurrentWorkspaceId(workspaces[0]._id);
@@ -82,6 +80,7 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
     workspacesDropdownProps,
     refreshWorkspaces,
     loadingRefresh,
+    fetchWorkspaces, // Expose fetchWorkspaces for manual triggering
   };
 
   return (

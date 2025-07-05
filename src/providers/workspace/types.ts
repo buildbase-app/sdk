@@ -35,6 +35,7 @@ export interface WorkspaceContextValue {
   };
   refreshWorkspaces: () => Promise<void>;
   loadingRefresh: boolean;
+  fetchWorkspaces: () => Promise<void>; // Manual trigger to fetch workspaces
 }
 
 // Import IUser from your main types if needed

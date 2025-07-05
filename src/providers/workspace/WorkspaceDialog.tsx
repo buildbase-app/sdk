@@ -27,6 +27,7 @@ export const WorkspaceDialog: React.FC<WorkspaceDialogProps> = ({
     addWorkspaceUser,
     removeWorkspaceUser,
     updateWorkspaceUserRole,
+    loading: loadingWorkspaces,
   } = useSaaSWorkspaces();
 
   const [selectedSection, setSelectedSection] = useState('preferences');
@@ -41,9 +42,8 @@ export const WorkspaceDialog: React.FC<WorkspaceDialogProps> = ({
     'workspace_user'
   );
 
-  React.useEffect(() => {
-    if (open) fetchWorkspaces();
-  }, [open, fetchWorkspaces]);
+  // Note: fetchWorkspaces is not called automatically when dialog opens
+  // Call fetchWorkspaces() manually when you need to load workspaces
 
   // When dialog opens, reset to Preferences
   React.useEffect(() => {
@@ -77,6 +77,10 @@ export const WorkspaceDialog: React.FC<WorkspaceDialogProps> = ({
   );
 
   // --- People Section ---
+  const handleLoadWorkspaces = () => {
+    fetchWorkspaces();
+  };
+
   const handleSelectWorkspace = async (id: string) => {
     setSelectedWorkspace(id);
     setUserLoading(true);
@@ -114,20 +118,32 @@ export const WorkspaceDialog: React.FC<WorkspaceDialogProps> = ({
     <div>
       <h2 className="text-lg font-semibold mb-4">People</h2>
       <div className="mb-2">Select a workspace to manage users:</div>
-      <ul className="mb-4">
-        {workspaces.map(ws => (
-          <li key={ws._id} className="flex items-center justify-between py-1 border-b">
-            <span>{ws.name}</span>
-            <Button
-              size="sm"
-              variant={selectedWorkspace === ws._id ? 'default' : 'outline'}
-              onClick={() => handleSelectWorkspace(ws._id)}
-            >
-              {selectedWorkspace === ws._id ? 'Selected' : 'Manage Users'}
-            </Button>
-          </li>
-        ))}
-      </ul>
+
+      {loadingWorkspaces ? (
+        <div className="mb-4">Loading workspaces...</div>
+      ) : workspaces.length === 0 ? (
+        <div className="mb-4">
+          <div className="text-sm text-muted-foreground mb-2">No workspaces loaded</div>
+          <Button size="sm" onClick={handleLoadWorkspaces}>
+            Load Workspaces
+          </Button>
+        </div>
+      ) : (
+        <ul className="mb-4">
+          {workspaces.map(ws => (
+            <li key={ws._id} className="flex items-center justify-between py-1 border-b">
+              <span>{ws.name}</span>
+              <Button
+                size="sm"
+                variant={selectedWorkspace === ws._id ? 'default' : 'outline'}
+                onClick={() => handleSelectWorkspace(ws._id)}
+              >
+                {selectedWorkspace === ws._id ? 'Selected' : 'Manage Users'}
+              </Button>
+            </li>
+          ))}
+        </ul>
+      )}
       {selectedWorkspace && (
         <div className="border-t pt-4">
           <h4 className="font-semibold mb-2">Users</h4>
