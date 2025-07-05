@@ -15,6 +15,7 @@ export const useSaaSWorkspaces = () => {
 
   // Fetch and update workspaces (main fetch)
   const fetchWorkspaces = useCallback(async () => {
+    if (loading) return;
     setLoading(true);
     setError(null);
     try {
@@ -30,6 +31,7 @@ export const useSaaSWorkspaces = () => {
 
   // Background refresh (does not block UI, updates memo/data)
   const refreshWorkspaces = useCallback(async () => {
+    if (loadingRefresh) return;
     setLoadingRefresh(true);
     try {
       const data = await api.getWorkspaces();

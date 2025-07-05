@@ -1,4 +1,5 @@
 import { Context } from '../../api/context';
+import { getAccessToken } from '../auth/utils';
 import type { IWorkspace, IWorkspaceRole, IWorkspaceUser } from './types';
 
 export class WorkspaceApi {
@@ -12,16 +13,27 @@ export class WorkspaceApi {
     this.serverUrl = context.getServerUrl();
   }
 
+  getAuthHeader() {
+    const token = getAccessToken();
+    let headers: Record<string, string> = {};
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+    return headers;
+  }
+
   async getWorkspaces(): Promise<IWorkspace[]> {
-    const response = await fetch(`${this.serverUrl}/api/${this.version}/workspaces`);
+    const response = await fetch(`${this.serverUrl}/api/${this.version}/public/workspaces`, {
+      headers: this.getAuthHeader(),
+    });
     if (!response.ok) throw new Error('Failed to fetch workspaces');
     return response.json();
   }
 
   async createWorkspace(data: { name: string; image?: string }): Promise<IWorkspace> {
-    const response = await fetch(`${this.serverUrl}/api/${this.version}/workspaces`, {
+    const response = await fetch(`${this.serverUrl}/api/${this.version}/public/workspaces`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...this.getAuthHeader() },
       body: JSON.stringify(data),
     });
     if (!response.ok) throw new Error('Failed to create workspace');
@@ -29,9 +41,9 @@ export class WorkspaceApi {
   }
 
   async updateWorkspace(id: string, data: Partial<IWorkspace>): Promise<IWorkspace> {
-    const response = await fetch(`${this.serverUrl}/api/${this.version}/workspaces/${id}`, {
+    const response = await fetch(`${this.serverUrl}/api/${this.version}/public/workspaces/${id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...this.getAuthHeader() },
       body: JSON.stringify(data),
     });
     if (!response.ok) throw new Error('Failed to update workspace');
@@ -39,8 +51,9 @@ export class WorkspaceApi {
   }
 
   async deleteWorkspace(id: string): Promise<{ success: boolean }> {
-    const response = await fetch(`${this.serverUrl}/api/${this.version}/workspaces/${id}`, {
+    const response = await fetch(`${this.serverUrl}/api/${this.version}/public/workspaces/${id}`, {
       method: 'DELETE',
+      headers: this.getAuthHeader(),
     });
     if (!response.ok) throw new Error('Failed to delete workspace');
     return response.json();
@@ -48,7 +61,10 @@ export class WorkspaceApi {
 
   async getWorkspaceUsers(workspaceId: string): Promise<IWorkspaceUser[]> {
     const response = await fetch(
-      `${this.serverUrl}/api/${this.version}/workspaces/${workspaceId}/users`
+      `${this.serverUrl}/api/${this.version}/public/workspaces/${workspaceId}/users`,
+      {
+        headers: this.getAuthHeader(),
+      }
     );
     if (!response.ok) throw new Error('Failed to fetch workspace users');
     return response.json();
@@ -60,10 +76,10 @@ export class WorkspaceApi {
     role: IWorkspaceRole
   ): Promise<IWorkspaceUser> {
     const response = await fetch(
-      `${this.serverUrl}/api/${this.version}/workspaces/${workspaceId}/users`,
+      `${this.serverUrl}/api/${this.version}/public/workspaces/${workspaceId}/users`,
       {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...this.getAuthHeader() },
         body: JSON.stringify({ orgId: this.orgId, userId, role }),
       }
     );
@@ -73,9 +89,10 @@ export class WorkspaceApi {
 
   async removeWorkspaceUser(workspaceId: string, userId: string): Promise<{ success: boolean }> {
     const response = await fetch(
-      `${this.serverUrl}/api/${this.version}/workspaces/${workspaceId}/users/${userId}`,
+      `${this.serverUrl}/api/${this.version}/public/workspaces/${workspaceId}/users/${userId}`,
       {
         method: 'DELETE',
+        headers: this.getAuthHeader(),
       }
     );
     if (!response.ok) throw new Error('Failed to remove workspace user');
@@ -88,10 +105,10 @@ export class WorkspaceApi {
     role: IWorkspaceRole
   ): Promise<IWorkspaceUser> {
     const response = await fetch(
-      `${this.serverUrl}/api/${this.version}/workspaces/${workspaceId}/users/${userId}`,
+      `${this.serverUrl}/api/${this.version}/public/workspaces/${workspaceId}/users/${userId}`,
       {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...this.getAuthHeader() },
         body: JSON.stringify({ orgId: this.orgId, role }),
       }
     );

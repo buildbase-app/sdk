@@ -38,10 +38,10 @@ export function useSaaSAuth() {
     }
 
     const loadUser = () => {
-      const { user, session } = loadUserFromCookies();
-      if (user && session) {
+      const { session } = loadUserFromCookies();
+      if (session) {
         setState({
-          user,
+          user: session.user,
           session,
           isLoading: false,
           isAuthenticated: true,
@@ -56,9 +56,9 @@ export function useSaaSAuth() {
   }, [isBrowser]);
 
   const saveUser = useCallback(
-    (user: AuthUser, session: AuthSession) => {
+    (session: AuthSession) => {
       if (!isBrowser) return;
-      saveCredentials(user, session);
+      saveCredentials(session);
     },
     [isBrowser]
   );
@@ -139,7 +139,7 @@ export function useSaaSAuth() {
         const user = response.data.user;
         const session = createSession(user, token, 24);
 
-        saveUser(user, session);
+        saveUser(session);
         setState({
           user,
           session,
@@ -163,7 +163,7 @@ export function useSaaSAuth() {
         const user = jwtDecode<AuthUser>(token);
         if (user) {
           const session = createSession(user, token, 72);
-          saveUser(user, session);
+          saveUser(session);
           setState({
             user,
             session,
@@ -172,6 +172,7 @@ export function useSaaSAuth() {
             isRedirecting: false,
           });
           removeTokenFromUrl();
+          auth?.handleAuthentication?.(token);
         }
       } catch (e) {
         console.error('Error processing token from URL:', e);

@@ -30,7 +30,7 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
   // Fetch workspaces on mount/dialog open
   useEffect(() => {
     fetchWorkspaces();
-  }, [fetchWorkspaces]);
+  }, []);
 
   // Set default workspace if none selected
   useEffect(() => {

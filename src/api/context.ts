@@ -1,8 +1,7 @@
-import { AuthUser } from '../providers/auth';
-
 export interface IAuth {
   clientId: string;
   redirectUrl: string;
+  handleAuthentication: (token: string) => Promise<void>;
 }
 
 export class Context {
@@ -46,7 +45,11 @@ export class Context {
     this.serverUrl = serverUrl.replace(/\/$/, '');
     this.version = version;
     this.orgId = orgId;
-    this.auth = auth || { clientId: '', redirectUrl: '' };
+    this.auth = auth || {
+      clientId: '',
+      redirectUrl: '',
+      handleAuthentication: () => Promise.resolve(),
+    };
   }
 
   getServerUrl(): string {

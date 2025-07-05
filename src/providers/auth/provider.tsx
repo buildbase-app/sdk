@@ -41,10 +41,10 @@ export function AuthProvider({ children, config }: AuthProviderProps) {
     }
 
     const loadUser = () => {
-      const { user, session } = loadUserFromCookies();
-      if (user && session) {
+      const { session } = loadUserFromCookies();
+      if (session) {
         setState({
-          user,
+          user: session.user,
           session,
           isLoading: false,
           isAuthenticated: true,
@@ -59,9 +59,9 @@ export function AuthProvider({ children, config }: AuthProviderProps) {
   }, [isBrowser]);
 
   const saveUser = useCallback(
-    (user: AuthUser, session: AuthSession) => {
+    (session: AuthSession) => {
       if (!isBrowser) return;
-      saveCredentials(user, session);
+      saveCredentials(session);
     },
     [isBrowser]
   );
@@ -105,17 +105,11 @@ export function AuthProvider({ children, config }: AuthProviderProps) {
 
   const signOut = useCallback(async () => {
     try {
-      if (state.session?.accessToken) {
-        await defaultApiClient.post(`${config.apiUrl}/api/v1/auth/logout`, {
-          token: state.session.accessToken,
-        });
-      }
+      clearUser();
     } catch (error) {
       console.error('Logout error:', error);
-    } finally {
-      clearUser();
     }
-  }, [state.session, config.apiUrl, clearUser]);
+  }, [clearUser]);
 
   const handleAuthRedirect = useCallback(
     async (token: string) => {
@@ -127,7 +121,7 @@ export function AuthProvider({ children, config }: AuthProviderProps) {
         const user = response.data.user;
         const session = createSession(user, token, 24);
 
-        saveUser(user, session);
+        saveUser(session);
         setState({
           user,
           session,

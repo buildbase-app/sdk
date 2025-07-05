@@ -1,36 +1,38 @@
 import { AuthSession, AuthUser } from './types';
 
 const TOKEN_PARAM = 'token';
-const AUTH_USER_KEY = 'saas_os_auth_user';
-const AUTH_SESSION_KEY = 'saas_os_auth_session';
-const AUTH_TOKEN_KEY = 'saas_os_auth_token';
+export const AUTH_TOKEN_KEY = 'saas_os_auth_token';
 
-export function saveCredentials(user: AuthUser, session: AuthSession) {
-  document.cookie = `${AUTH_USER_KEY}=${JSON.stringify(user)}; path=/; secure;`;
-  document.cookie = `${AUTH_SESSION_KEY}=${JSON.stringify(session)}; path=/; secure;`;
-  document.cookie = `${AUTH_TOKEN_KEY}=${session.accessToken}; path=/; secure;`;
+export function saveCredentials(session: AuthSession) {
+  console.log('saving credentials', session);
+  localStorage.setItem(AUTH_TOKEN_KEY, JSON.stringify(session));
 }
 
 export function removeCredentials() {
-  document.cookie = `${AUTH_USER_KEY}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; secure;`;
-  document.cookie = `${AUTH_SESSION_KEY}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; secure;`;
-  document.cookie = `${AUTH_TOKEN_KEY}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; secure;`;
+  localStorage.removeItem(AUTH_TOKEN_KEY);
 }
 
-export function loadUserFromCookies(): { user: AuthUser | null; session: AuthSession | null } {
+export function getAccessToken() {
+  const token = localStorage.getItem(AUTH_TOKEN_KEY);
   try {
-    const cookies = document.cookie.split(';').map(cookie => cookie.trim());
-    const userStr = cookies.find(cookie => cookie.includes(AUTH_USER_KEY));
-    const sessionStr = cookies.find(cookie => cookie.includes(AUTH_SESSION_KEY));
-    const tokenStr = cookies.find(cookie => cookie.includes(AUTH_TOKEN_KEY));
+    if (!token) return null;
+    const session: AuthSession = JSON.parse(token);
+    return session.accessToken;
+  } catch (e) {
+    return null;
+  }
+}
 
-    if (userStr && sessionStr && tokenStr) {
-      const user: AuthUser = JSON.parse(userStr.split('=')[1]);
-      const session: AuthSession = JSON.parse(sessionStr.split('=')[1]);
+export function loadUserFromCookies(): { session: AuthSession | null } {
+  try {
+    const token = localStorage.getItem(AUTH_TOKEN_KEY);
+
+    if (token) {
+      const session: AuthSession = JSON.parse(token);
 
       // Check if session is expired
       if (new Date(session.expires) > new Date()) {
-        return { user, session };
+        return { session };
       } else {
         // Session expired, clear storage
         removeCredentials();
@@ -42,7 +44,7 @@ export function loadUserFromCookies(): { user: AuthUser | null; session: AuthSes
     removeCredentials();
   }
 
-  return { user: null, session: null };
+  return { session: null };
 }
 
 export function getTokenFromUrl(): string | null {
@@ -74,7 +76,5 @@ export function createSession(user: AuthUser, token: string, hours: number = 24)
 
 export const AUTH_CONSTANTS = {
   TOKEN_PARAM,
-  AUTH_USER_KEY,
-  AUTH_SESSION_KEY,
   AUTH_TOKEN_KEY,
 };

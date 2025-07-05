@@ -22,11 +22,7 @@ export const WorkspaceDialog: React.FC<WorkspaceDialogProps> = ({
 }) => {
   const {
     workspaces,
-    loading,
-    error,
     fetchWorkspaces,
-    createWorkspace,
-    deleteWorkspace,
     getWorkspaceUsers,
     addWorkspaceUser,
     removeWorkspaceUser,

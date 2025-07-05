@@ -4,6 +4,7 @@ export interface AuthConfig {
     orgId: string;
     clientId: string;
     redirectUrl?: string;
+    handleAuthentication: (token: string) => Promise<void>;
   };
   apiUrl: string;
 }
