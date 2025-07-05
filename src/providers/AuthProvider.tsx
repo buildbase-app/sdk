@@ -1,5 +1,5 @@
 import React, { createContext, useContext, ReactNode } from 'react';
-import { useAuth } from '../hooks/use-auth';
+import { useSaaSAuth } from '../hooks/use-auth';
 import { AuthConfig, AuthUser } from '../components/auth/types';
 
 interface AuthContextType {
@@ -23,7 +23,7 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({ children, config, onAuthStateChange }: AuthProviderProps) {
-  const auth = useAuth();
+  const auth = useSaaSAuth();
 
   return <AuthContext.Provider value={auth}>{children}</AuthContext.Provider>;
 }

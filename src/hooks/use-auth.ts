@@ -35,7 +35,7 @@ function removeCredentials() {
   document.cookie = `${AUTH_TOKEN_KEY}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; secure;`;
 }
 
-export function useAuth() {
+export function useSaaSAuth() {
   const { context } = useSaaSOS();
 
   const serverUrl = context?.getServerUrl();

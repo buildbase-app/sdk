@@ -31,7 +31,7 @@ export class Context {
     // Validate that the URL is a valid HTTPS URL
     try {
       const url = new URL(serverUrl);
-      if (url.protocol !== 'https:') {
+      if (url.protocol !== 'https:' && url.protocol !== 'http:') {
         throw new Error('serverUrl must be a valid HTTPS URL.');
       }
     } catch (e) {
