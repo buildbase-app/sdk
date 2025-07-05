@@ -3,7 +3,6 @@ import { AuthUser } from '../providers/auth';
 export interface IAuth {
   clientId: string;
   redirectUrl: string;
-  onAuthStateChange?: (user: AuthUser | null) => void;
 }
 
 export class Context {
@@ -47,7 +46,7 @@ export class Context {
     this.serverUrl = serverUrl.replace(/\/$/, '');
     this.version = version;
     this.orgId = orgId;
-    this.auth = auth || { clientId: '', redirectUrl: '', onAuthStateChange: undefined };
+    this.auth = auth || { clientId: '', redirectUrl: '' };
   }
 
   getServerUrl(): string {

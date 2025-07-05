@@ -2,6 +2,7 @@ import { createContext, ReactNode, useCallback, useContext, useEffect, useState 
 import { defaultApiClient } from '../../lib/api-client';
 import { AuthConfig, AuthSession, AuthUser } from './types';
 import { createSession, loadUserFromCookies, removeCredentials, saveCredentials } from './utils';
+import { WorkspaceProvider } from '../workspace/provider';
 
 interface AuthContextType {
   user: AuthUser | null;
@@ -20,10 +21,9 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 interface AuthProviderProps {
   children: ReactNode;
   config: AuthConfig;
-  onAuthStateChange?: (user: AuthUser | null) => void;
 }
 
-export function AuthProvider({ children, config, onAuthStateChange }: AuthProviderProps) {
+export function AuthProvider({ children, config }: AuthProviderProps) {
   const [state, setState] = useState({
     user: null as AuthUser | null,
     session: null as any,
@@ -50,23 +50,20 @@ export function AuthProvider({ children, config, onAuthStateChange }: AuthProvid
           isAuthenticated: true,
           isRedirecting: false,
         });
-        onAuthStateChange?.(user);
       } else {
         setState(prev => ({ ...prev, isLoading: false, isAuthenticated: false }));
-        onAuthStateChange?.(null);
       }
     };
 
     loadUser();
-  }, [isBrowser, onAuthStateChange]);
+  }, [isBrowser]);
 
   const saveUser = useCallback(
     (user: AuthUser, session: AuthSession) => {
       if (!isBrowser) return;
       saveCredentials(user, session);
-      onAuthStateChange?.(user);
     },
-    [isBrowser, onAuthStateChange]
+    [isBrowser]
   );
 
   const clearUser = useCallback(() => {
@@ -79,8 +76,7 @@ export function AuthProvider({ children, config, onAuthStateChange }: AuthProvid
       isAuthenticated: false,
       isRedirecting: false,
     });
-    onAuthStateChange?.(null);
-  }, [isBrowser, onAuthStateChange]);
+  }, [isBrowser]);
 
   const signIn = useCallback(async () => {
     setState(prev => ({ ...prev, isRedirecting: true }));
@@ -160,7 +156,12 @@ export function AuthProvider({ children, config, onAuthStateChange }: AuthProvid
     handleAuthRedirect,
   };
 
-  return <AuthContext.Provider value={authValue}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={authValue}>
+      {authValue.isAuthenticated && <WorkspaceProvider>{children}</WorkspaceProvider>}
+      {!authValue.isAuthenticated && children}
+    </AuthContext.Provider>
+  );
 }
 
 export function useAuthContext() {

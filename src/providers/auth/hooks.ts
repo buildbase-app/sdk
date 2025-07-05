@@ -1,7 +1,7 @@
 import { jwtDecode } from 'jwt-decode';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { defaultApiClient } from '../../lib/api-client';
-import { AuthConfig, AuthResponse, AuthSession, AuthState, AuthStatus, AuthUser } from './types';
+import { AuthResponse, AuthSession, AuthState, AuthStatus, AuthUser } from './types';
 import {
   createSession,
   getTokenFromUrl,
@@ -10,19 +10,13 @@ import {
   removeTokenFromUrl,
   saveCredentials,
 } from './utils';
+import { useSaaSOS } from '../contextProvider';
 
-export interface UseAuthOptions {
-  config: AuthConfig;
-  onAuthStateChange?: (user: AuthUser | null) => void;
-}
-
-export function useSaaSAuth(
-  config?: AuthConfig,
-  onAuthStateChange?: (user: AuthUser | null) => void
-) {
-  const serverUrl = config?.apiUrl;
-  const auth = config?.auth;
-  const orgId = auth?.orgId;
+export function useSaaSAuth() {
+  const { context } = useSaaSOS();
+  const serverUrl = context.getServerUrl();
+  const auth = context.getAuth();
+  const orgId = context.getOrgId();
   const clientId = auth?.clientId;
   const redirectUrl = auth?.redirectUrl;
 
@@ -53,21 +47,18 @@ export function useSaaSAuth(
           isAuthenticated: true,
           isRedirecting: false,
         });
-        onAuthStateChange?.(user);
       } else {
         setState(prev => ({ ...prev, isLoading: false, isAuthenticated: false }));
-        onAuthStateChange?.(null);
       }
     };
 
     loadUser();
-  }, [isBrowser, onAuthStateChange]);
+  }, [isBrowser]);
 
   const saveUser = useCallback(
     (user: AuthUser, session: AuthSession) => {
       if (!isBrowser) return;
       saveCredentials(user, session);
-      onAuthStateChange?.(user);
     },
     [isBrowser]
   );
@@ -85,8 +76,6 @@ export function useSaaSAuth(
       isAuthenticated: false,
       isRedirecting: false,
     });
-
-    onAuthStateChange?.(null);
   }, [isBrowser]);
 
   // Login function
@@ -133,7 +122,7 @@ export function useSaaSAuth(
     } finally {
       clearUser();
     }
-  }, [state.session, serverUrl, clearUser, onAuthStateChange]);
+  }, [state.session, serverUrl, clearUser]);
 
   // Handle auth redirect (called after successful authentication)
   const handleAuthRedirect = useCallback(
@@ -158,14 +147,13 @@ export function useSaaSAuth(
           isAuthenticated: true,
           isRedirecting: false,
         });
-        onAuthStateChange?.(user);
       } catch (error) {
         console.error('Auth redirect error:', error);
         clearUser();
         setState(prev => ({ ...prev, isLoading: false, isAuthenticated: false }));
       }
     },
-    [serverUrl, saveUser, clearUser, onAuthStateChange]
+    [serverUrl, saveUser, clearUser]
   );
 
   useEffect(() => {
