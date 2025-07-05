@@ -38,4 +38,4 @@ export interface WorkspaceContextValue {
 }
 
 // Import IUser from your main types if needed
-import type { IUser } from '../../api/types'; 
+import type { IUser } from '../../api/types';

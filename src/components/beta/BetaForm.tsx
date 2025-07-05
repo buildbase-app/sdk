@@ -257,7 +257,7 @@ export const BetaForm: React.FC<BetaFormProps> = ({
                   <FormField
                     control={form.control}
                     name="name"
-                    render={({ field }) => (
+                    render={({ field }: { field: any }) => (
                       <FormItem className={fieldClassName}>
                         <FormLabel>{texts.nameLabel}</FormLabel>
                         <FormControl>
@@ -272,7 +272,7 @@ export const BetaForm: React.FC<BetaFormProps> = ({
                   <FormField
                     control={form.control}
                     name="email"
-                    render={({ field }) => (
+                    render={({ field }: { field: any }) => (
                       <FormItem className={fieldClassName}>
                         <FormLabel>{texts.emailLabel}</FormLabel>
                         <FormControl>

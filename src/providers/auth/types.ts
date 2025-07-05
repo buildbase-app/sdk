@@ -3,6 +3,7 @@ export interface AuthConfig {
     serverUrl: string;
     orgId: string;
     clientId: string;
+    redirectUrl?: string;
   };
   apiUrl: string;
 }

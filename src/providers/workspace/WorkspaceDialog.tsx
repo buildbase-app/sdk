@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogFooter, DialogClose } from '../ui/dialog';
-import { Button } from '../ui/button';
-import { Input } from '../ui/input';
-import { useSaaSWorkspaces } from '../../hooks/use-workspace';
+import { Dialog, DialogContent, DialogFooter, DialogClose } from '../../components/ui/dialog';
+import { Button } from '../../components/ui/button';
+import { Input } from '../../components/ui/input';
+import { useSaaSWorkspaces } from './hooks';
 
 interface WorkspaceDialogProps {
   open: boolean;

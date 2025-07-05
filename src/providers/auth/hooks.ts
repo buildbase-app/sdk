@@ -1,50 +1,30 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { defaultApiClient } from '../lib/api-client';
+import { defaultApiClient } from '../../lib/api-client';
 import { jwtDecode } from 'jwt-decode';
+import { AuthConfig, AuthUser, AuthSession, AuthState, AuthStatus, AuthResponse } from './types';
 import {
-  AuthConfig,
-  AuthUser,
-  AuthSession,
-  AuthState,
-  AuthStatus,
-  AuthResponse,
-} from '../components/auth/types';
-import { useSaaSOS } from '../providers/ContextProvider';
-
-const TOKEN_PARAM = 'token';
-
-const AUTH_USER_KEY = 'saas_os_auth_user';
-const AUTH_SESSION_KEY = 'saas_os_auth_session';
-const AUTH_TOKEN_KEY = 'saas_os_auth_token';
+  saveCredentials,
+  removeCredentials,
+  loadUserFromCookies,
+  getTokenFromUrl,
+  removeTokenFromUrl,
+  createSession,
+} from './utils';
 
 export interface UseAuthOptions {
   config: AuthConfig;
   onAuthStateChange?: (user: AuthUser | null) => void;
 }
 
-function saveCredentials(user: AuthUser, session: AuthSession) {
-  // make it secure
-  document.cookie = `${AUTH_USER_KEY}=${JSON.stringify(user)}; path=/; secure;`;
-  document.cookie = `${AUTH_SESSION_KEY}=${JSON.stringify(session)}; path=/; secure;`;
-  document.cookie = `${AUTH_TOKEN_KEY}=${session.accessToken}; path=/; secure;`;
-}
-
-function removeCredentials() {
-  document.cookie = `${AUTH_USER_KEY}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; secure;`;
-  document.cookie = `${AUTH_SESSION_KEY}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; secure;`;
-  document.cookie = `${AUTH_TOKEN_KEY}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; secure;`;
-}
-
-export function useSaaSAuth() {
-  const { context } = useSaaSOS();
-
-  const serverUrl = context?.getServerUrl();
-  const auth = context?.getAuth();
-  const orgId = context?.getOrgId();
+export function useSaaSAuth(
+  config?: AuthConfig,
+  onAuthStateChange?: (user: AuthUser | null) => void
+) {
+  const serverUrl = config?.apiUrl;
+  const auth = config?.auth;
+  const orgId = auth?.orgId;
   const clientId = auth?.clientId;
   const redirectUrl = auth?.redirectUrl;
-
-  const onAuthStateChange = auth?.onAuthStateChange;
 
   const [state, setState] = useState<AuthState>({
     user: null,
@@ -64,38 +44,20 @@ export function useSaaSAuth() {
     }
 
     const loadUser = () => {
-      try {
-        const cookies = document.cookie.split(';').map(cookie => cookie.trim());
-        const userStr = cookies.find(cookie => cookie.includes(AUTH_USER_KEY));
-        const sessionStr = cookies.find(cookie => cookie.includes(AUTH_SESSION_KEY));
-        const tokenStr = cookies.find(cookie => cookie.includes(AUTH_TOKEN_KEY));
-        if (userStr && sessionStr && tokenStr) {
-          const user: AuthUser = JSON.parse(userStr.split('=')[1]);
-          const session: AuthSession = JSON.parse(sessionStr.split('=')[1]);
-          // Check if session is expired
-          if (new Date(session.expires) > new Date()) {
-            setState({
-              user,
-              session,
-              isLoading: false,
-              isAuthenticated: true,
-              isRedirecting: false,
-            });
-            onAuthStateChange?.(user);
-            return;
-          } else {
-            // Session expired, clear storage
-            removeCredentials();
-            onAuthStateChange?.(null);
-          }
-        }
-      } catch (error) {
-        console.error('Error loading auth state:', error);
-        // Clear corrupted data
-        removeCredentials();
+      const { user, session } = loadUserFromCookies();
+      if (user && session) {
+        setState({
+          user,
+          session,
+          isLoading: false,
+          isAuthenticated: true,
+          isRedirecting: false,
+        });
+        onAuthStateChange?.(user);
+      } else {
+        setState(prev => ({ ...prev, isLoading: false, isAuthenticated: false }));
         onAuthStateChange?.(null);
       }
-      setState(prev => ({ ...prev, isLoading: false, isAuthenticated: false }));
     };
 
     loadUser();
@@ -186,11 +148,7 @@ export function useSaaSAuth() {
         );
 
         const user = response.data.user;
-        const session: AuthSession = {
-          user,
-          accessToken: token,
-          expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 hours
-        };
+        const session = createSession(user, token, 24);
 
         saveUser(user, session);
         setState({
@@ -211,19 +169,12 @@ export function useSaaSAuth() {
   );
 
   useEffect(() => {
-    const href = window.location.href;
-    let url = null;
-    try {
-      url = new URL(href);
-      const token = url.searchParams.get(TOKEN_PARAM);
-      if (token) {
+    const token = getTokenFromUrl();
+    if (token) {
+      try {
         const user = jwtDecode<AuthUser>(token);
         if (user) {
-          const session: AuthSession = {
-            user,
-            accessToken: token,
-            expires: new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString(), // 72 hours
-          };
+          const session = createSession(user, token, 72);
           saveUser(user, session);
           setState({
             user,
@@ -232,13 +183,12 @@ export function useSaaSAuth() {
             isAuthenticated: true,
             isRedirecting: false,
           });
-          // REMOVE THE TOKEN FROM THE URL
-          const newUrl = new URL(window.location.href);
-          newUrl.searchParams.delete(TOKEN_PARAM);
-          window.history.replaceState({}, '', newUrl.toString());
+          removeTokenFromUrl();
         }
+      } catch (e) {
+        console.error('Error processing token from URL:', e);
       }
-    } catch (e) {}
+    }
   }, []);
 
   // Computed values

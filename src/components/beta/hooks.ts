@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { useSaaSOS } from '../../providers/ContextProvider';
+import { useSaaSOS } from '../../providers/contextProvider';
 import { BetaFormData, BetaFormResponse } from './types';
 import { IBetaConfig } from '../../api';
 import { BetaForm } from './api';

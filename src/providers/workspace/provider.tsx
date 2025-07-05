@@ -7,29 +7,22 @@ import React, {
   ReactNode,
   useMemo,
 } from 'react';
-import { WorkspaceDialog } from '../components/workspace/WorkspaceDialog';
-import type { WorkspaceContextValue } from '../components/workspace/types';
-import { useSaaSWorkspaces } from '../hooks/use-workspace';
+import { WorkspaceDialog } from './WorkspaceDialog';
+import type { WorkspaceContextValue } from './types';
+import { useSaaSWorkspaces } from './hooks';
 
 const WorkspaceContext = createContext<WorkspaceContextValue | undefined>(undefined);
 
-
 export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
-  const {
-    workspaces,
-    loading,
-    error,
-    fetchWorkspaces,
-    refreshWorkspaces,
-    loadingRefresh,
-  } = useSaaSWorkspaces();
+  const { workspaces, loading, error, fetchWorkspaces, refreshWorkspaces, loadingRefresh } =
+    useSaaSWorkspaces();
 
   // Track dialog open state
   const [dialogOpen, setDialogOpen] = useState(false);
 
   // Track current workspace (persist in localStorage)
-  const [currentWorkspaceId, setCurrentWorkspaceId] = useState<string | null>(
-    () => (typeof window !== 'undefined' ? localStorage.getItem('saas_current_workspace') : null)
+  const [currentWorkspaceId, setCurrentWorkspaceId] = useState<string | null>(() =>
+    typeof window !== 'undefined' ? localStorage.getItem('saas_current_workspace') : null
   );
 
   // Track switching state
@@ -102,7 +95,11 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
   return (
     <WorkspaceContext.Provider value={contextValue}>
       {children}
-      <WorkspaceDialog open={dialogOpen} onOpenChange={setDialogOpen} onClose={closeWorkspaceSettings} />
+      <WorkspaceDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        onClose={closeWorkspaceSettings}
+      />
     </WorkspaceContext.Provider>
   );
-}; 
+};

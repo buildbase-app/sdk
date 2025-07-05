@@ -1,4 +1,4 @@
-import { AuthUser } from '../components/auth';
+import { AuthUser } from '../providers/auth';
 
 export interface IAuth {
   clientId: string;

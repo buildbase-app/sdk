@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef } from 'react';
-import { useSaaSOS } from '../providers/ContextProvider';
-import { IWorkspace, IWorkspaceRole } from '../components/workspace/types';
-import { WorkspaceApi } from '../components/workspace/api';
+import { useSaaSOS } from '../contextProvider';
+import { IWorkspace, IWorkspaceRole } from './types';
+import { WorkspaceApi } from './api';
 
 export const useSaaSWorkspaces = () => {
   const { context } = useSaaSOS();

@@ -3,7 +3,8 @@ import { SaaSOSProviderProps, SaaSOSContextValue } from '../types';
 import { Context } from '../api';
 import '../styles/globals.css';
 import PortalProvider from './portalProvider';
-import { AuthProvider } from './AuthProvider';
+import { AuthProvider } from './auth/provider';
+import { WorkspaceProvider } from './workspace/provider';
 
 const SaaSOSContext = createContext<SaaSOSContextValue | null>(null);
 
@@ -77,7 +78,7 @@ export const SaaSOSProvider: React.FC<SaaSOSProviderProps> = ({
               }}
               onAuthStateChange={auth.onAuthStateChange}
             >
-              {children}
+              <WorkspaceProvider>{children}</WorkspaceProvider>
             </AuthProvider>
           )}
           {!auth && <>{children}</>}
