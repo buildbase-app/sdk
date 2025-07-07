@@ -74,6 +74,7 @@ export const SaaSOSProvider: React.FC<SaaSOSProviderProps> = ({
                   orgId: orgId,
                   clientId: auth.clientId,
                   handleAuthentication: auth.handleAuthentication,
+                  verifyToken: auth.verifyToken,
                 },
               }}
             >

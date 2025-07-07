@@ -2,6 +2,7 @@ export interface IAuth {
   clientId: string;
   redirectUrl: string;
   handleAuthentication: (token: string) => Promise<void>;
+  verifyToken: (token: string) => Promise<boolean>;
 }
 
 export class Context {
@@ -49,6 +50,7 @@ export class Context {
       clientId: '',
       redirectUrl: '',
       handleAuthentication: () => Promise.resolve(),
+      verifyToken: () => Promise.resolve(false),
     };
   }
 

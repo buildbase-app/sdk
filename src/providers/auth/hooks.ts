@@ -111,18 +111,11 @@ export function useSaaSAuth() {
   // Logout function
   const signOut = useCallback(async () => {
     try {
-      // Call logout endpoint if available
-      if (state.session?.accessToken) {
-        await defaultApiClient.post(`${serverUrl}/api/v1/auth/logout`, {
-          token: state.session.accessToken,
-        });
-      }
+      clearUser();
     } catch (error) {
       console.error('Logout error:', error);
-    } finally {
-      clearUser();
     }
-  }, [state.session, serverUrl, clearUser]);
+  }, [clearUser]);
 
   // Handle auth redirect (called after successful authentication)
   const handleAuthRedirect = useCallback(
@@ -172,7 +165,14 @@ export function useSaaSAuth() {
             isRedirecting: false,
           });
           removeTokenFromUrl();
-          auth?.handleAuthentication?.(token);
+          auth?.verifyToken?.(token).then(isValid => {
+            if (!isValid) {
+              clearUser();
+              setState(prev => ({ ...prev, isLoading: false, isAuthenticated: false }));
+            } else {
+              auth?.handleAuthentication?.(token);
+            }
+          });
         }
       } catch (e) {
         console.error('Error processing token from URL:', e);
