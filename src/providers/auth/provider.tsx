@@ -3,6 +3,7 @@ import { defaultApiClient } from '../../lib/api-client';
 import { AuthConfig, AuthSession, AuthUser } from './types';
 import { createSession, loadUserFromCookies, removeCredentials, saveCredentials } from './utils';
 import { WorkspaceProvider } from '../workspace/provider';
+import { workspaceStorage } from '../workspace/utils';
 
 interface AuthContextType {
   user: AuthUser | null;
@@ -69,6 +70,7 @@ export function AuthProvider({ children, config }: AuthProviderProps) {
   const clearUser = useCallback(() => {
     if (!isBrowser) return;
     removeCredentials();
+    workspaceStorage.clearCurrentWorkspace();
     setState({
       user: null,
       session: null,

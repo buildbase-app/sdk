@@ -9,4 +9,6 @@ export { BetaForm } from './components/beta/BetaForm';
 
 // Export hooks
 export { useSaaSAuth } from './providers/auth';
-export { useSaaSWorkspaces } from './providers/workspace/hooks';
+
+// Export workspace provider and dialog
+export { WorkspaceSwitcher } from './providers/workspace/provider';
