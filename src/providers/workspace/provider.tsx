@@ -1,9 +1,11 @@
 import { createContext, ReactNode, useEffect, useState } from 'react';
 import { useSaaSWorkspaces } from './hooks';
+import { z } from 'zod';
 import type { IWorkspace, WorkspaceContextValue } from './types';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -14,8 +16,33 @@ import { Badge } from '../../components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar';
 import { ScrollArea } from '../../components/ui/scroll-area';
 import { Separator } from '../../components/ui/separator';
-import { Building2, Search, Users, Check, Loader2, Plus, Settings, Crown } from 'lucide-react';
+import {
+  Building2,
+  Search,
+  Users,
+  Check,
+  Loader2,
+  Plus,
+  Settings,
+  Crown,
+  Image,
+  Smile,
+  EditIcon,
+} from 'lucide-react';
 import { useSaaSAuth } from '../auth';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '../../components/ui/form';
+import { RadioGroup, RadioGroupItem } from '../../components/ui/radio-group';
+import { Label } from '../../components/ui/label';
 
 const WorkspaceContext = createContext<WorkspaceContextValue | undefined>(undefined);
 
@@ -105,8 +132,10 @@ export function WorkspaceSwitcher(props: {
             <div className="space-y-2">
               <div className="text-sm font-medium text-muted-foreground">Current Workspace</div>
               <div className="flex items-center gap-3 rounded-lg border-2 p-3 border-border bg-muted text-muted-foreground">
-                <Avatar className="h-10 w-10">
-                  <AvatarImage src={currentWorkspace.image} />
+                <Avatar className="h-8 w-8 flex items-center justify-center">
+                  <div>
+                    <AvatarImage src={currentWorkspace.image} />
+                  </div>
                   <AvatarFallback>{getWorkspaceInitials(currentWorkspace.name)}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
@@ -146,56 +175,54 @@ export function WorkspaceSwitcher(props: {
               </div>
             ) : (
               <ScrollArea className="h-64">
-                <div className="space-y-2 pr-4">
-                  {filteredWorkspaces
-                    .filter(workspace => workspace._id !== currentWorkspace?._id)
-                    .map(workspace => {
-                      const usersCount = workspace?.users?.length || 0;
-                      const isAdmin = workspace.createdBy === user?.id;
-
-                      return (
-                        <Button
-                          key={workspace._id}
-                          variant="outline"
-                          className="w-full justify-start h-auto p-3 rounded-none"
-                          onClick={async () => {
-                            await props.onWorkspaceChange(workspace);
-                            setCurrentWorkspace(workspace);
-                            setOpen(false);
-                          }}
-                        >
-                          <Avatar className="h-8 w-8 mr-3">
-                            <AvatarImage src={workspace.image} />
-                            <AvatarFallback>{getWorkspaceInitials(workspace.name)}</AvatarFallback>
-                          </Avatar>
-
-                          <div className="flex-1 min-w-0 text-left">
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium truncate">{workspace.name}</span>
-                              {isAdmin && <Crown className="h-3 w-3 text-amber-500" />}
-                            </div>
-                            <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                              <Users className="h-3 w-3" />
-                              <span>
-                                {usersCount} member{usersCount !== 1 ? 's' : ''}
-                              </span>
-                            </div>
+                <div className="space-y-2">
+                  {filteredWorkspaces.map(workspace => {
+                    const usersCount = workspace?.users?.length || 0;
+                    const isAdmin = workspace.createdBy === user?.id;
+                    const isCurrentWorkspace = workspace._id === currentWorkspace?._id;
+                    return (
+                      <div
+                        key={workspace._id}
+                        className="w-full justify-start h-auto p-3 rounded-none flex border border-border "
+                      >
+                        <Avatar className="h-8 w-8 mr-3">
+                          <AvatarImage src={workspace.image} />
+                          <AvatarFallback>{getWorkspaceInitials(workspace.name)}</AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0 text-left">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium truncate">{workspace.name}</span>
+                            {isAdmin && <Crown className="h-3 w-3 text-amber-500" />}
                           </div>
-
+                          <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                            <Users className="h-3 w-3" />
+                            <span>
+                              {usersCount} member{usersCount !== 1 ? 's' : ''}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
                           <Button
                             size="sm"
-                            variant="ghost"
-                            className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100"
-                            onClick={e => {
-                              e.stopPropagation();
-                              // Handle settings
+                            disabled={isCurrentWorkspace}
+                            onClick={async () => {
+                              await props.onWorkspaceChange(workspace);
+                              setCurrentWorkspace(workspace);
+                              setOpen(false);
                             }}
                           >
-                            <Settings className="h-4 w-4" />
+                            {isCurrentWorkspace ? 'Current Workspace' : 'Switch'}
                           </Button>
-                        </Button>
-                      );
-                    })}
+                          <UpdateWorkspaceDialog
+                            onUpdated={() => {
+                              fetchWorkspaces();
+                            }}
+                            workspace={workspace}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </ScrollArea>
             )}
@@ -203,17 +230,579 @@ export function WorkspaceSwitcher(props: {
 
           {/* Create New Workspace */}
           <Separator />
-          <Button
-            className="w-full rounded-none"
-            onClick={() => {
-              // Handle create new workspace
-              console.log('Create new workspace');
+          <CreateWorkspaceDialog
+            onCreated={() => {
+              fetchWorkspaces();
             }}
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Create New Workspace
-          </Button>
+          />
         </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function getSvgImage(emoji: string) {
+  return `data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text x="50%" y="50%" dominant-baseline="middle" alignment-baseline="middle" text-anchor="middle" font-size="50" font-family="sans-serif">${emoji}</text></svg>`;
+}
+
+const workspaceEmojis = [
+  // Business & Office
+  '🏢',
+  '🏬',
+  '🏣',
+  '🏤',
+  '🏦',
+  '🏛️',
+  '🏠',
+  '🏡',
+  '🏭',
+  '🏗️',
+  '🏪',
+  '🏨',
+  '🏫',
+  '🏥',
+  '💼',
+  '📊',
+  '📈',
+  '📉',
+  '📋',
+  '📁',
+  '📂',
+  '🗂️',
+  '🗃️',
+  '🗄️',
+  '📅',
+  '🗓️',
+  '📝',
+  '🖋️',
+  '✏️',
+  '🖊️',
+  '🖌️',
+  '🖍️',
+  '📇',
+  '📌',
+  '📍',
+  '📎',
+  '🖇️',
+
+  // Tech & Digital
+  '💻',
+  '🖥️',
+  '🖨️',
+  '🖱️',
+  '⌨️',
+  '📱',
+  '📲',
+  '📡',
+  '🌐',
+  '🔗',
+  '🔒',
+  '🔓',
+  '⚙️',
+  '🔧',
+  '🛠️',
+  '🧑‍💻',
+  '👨‍💻',
+  '👩‍💻',
+  '🕹️',
+  '💾',
+  '📟',
+  '🖥️',
+  '🖲️',
+
+  // Innovation & Creativity
+  '🚀',
+  '💡',
+  '🎨',
+  '🖼️',
+  '🧪',
+  '🔬',
+  '🧬',
+  '🎯',
+  '⚡',
+  '🎲',
+  '🎮',
+  '🧩',
+  '📷',
+  '🎥',
+
+  // Communication & Collaboration
+  '✉️',
+  '📨',
+  '📩',
+  '📧',
+  '📞',
+  '☎️',
+  '📠',
+  '🗣️',
+  '💬',
+  '🗨️',
+  '📢',
+  '📣',
+  '🔔',
+  '🛎️',
+
+  // Finance & Legal
+  '💰',
+  '💸',
+  '💳',
+  '🏦',
+  '📈',
+  '📉',
+  '⚖️',
+  '🧾',
+  '🪙',
+  '🏛️',
+
+  // Science, Health, Environment
+  '⚗️',
+  '🧪',
+  '🔭',
+  '🔬',
+  '🩺',
+  '🧬',
+  '🩻',
+  '🏥',
+  '🌱',
+  '🌍',
+  '🌏',
+  '🌎',
+  '🌡️',
+
+  // People & Roles
+  '👨‍💼',
+  '👩‍💼',
+  '👨‍🏫',
+  '👩‍🏫',
+  '👨‍🔬',
+  '👩‍🔬',
+  '👨‍🎨',
+  '👩‍🎨',
+  '👨‍🔧',
+  '👩‍🔧',
+  '👨‍🚀',
+  '👩‍🚀',
+  '👨‍⚖️',
+  '👩‍⚖️',
+
+  // Misc & Fun
+  '🏅',
+  '🎖️',
+  '🥇',
+  '🥈',
+  '🥉',
+  '🏆',
+  '🎗️',
+  '🔑',
+  '🗝️',
+  '🧭',
+  '🛡️',
+  '🚩',
+  '🏳️‍🌈',
+  '🎟️',
+  '🎫',
+];
+
+function CreateWorkspaceDialog(props: { onCreated: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [imageType, setImageType] = useState<'emoji' | 'url'>('emoji');
+  const [selectedEmoji, setSelectedEmoji] = useState('🏢');
+  const [isCreating, setIsCreating] = useState(false);
+  const { createWorkspace } = useSaaSWorkspaces();
+
+  const formSchema = z.object({
+    name: z.string().min(2, {
+      message: 'Workspace name must be at least 2 characters.',
+    }),
+    image: z.string().optional(),
+  });
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: '',
+      image: '',
+    },
+  });
+
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    let imageUrl = '';
+
+    if (imageType === 'emoji') {
+      // update this to make sure emojis is in center of the image
+      imageUrl = getSvgImage(selectedEmoji);
+    } else if (imageType === 'url' && values.image) {
+      try {
+        new URL(values.image);
+        imageUrl = values.image;
+      } catch {
+        form.setError('image', { message: 'Please enter a valid URL' });
+        return;
+      }
+    }
+
+    setIsCreating(true);
+    try {
+      await createWorkspace(values.name, imageUrl);
+      setOpen(false);
+      form.reset();
+      setSelectedEmoji('🏢');
+      setImageType('emoji');
+      props?.onCreated?.();
+    } catch (error) {
+      console.error('Failed to create workspace:', error);
+    } finally {
+      setIsCreating(false);
+    }
+  }
+
+  const handleEmojiSelect = (emoji: string) => {
+    setSelectedEmoji(emoji);
+    form.setValue('image', getSvgImage(emoji));
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button className="w-full rounded-none">
+          <Plus className="h-4 w-4 mr-2" />
+          Create New Workspace
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[500px]">
+        <DialogHeader>
+          <DialogTitle>Create New Workspace</DialogTitle>
+          <DialogDescription>Create a new workspace to get started.</DialogDescription>
+        </DialogHeader>
+
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Workspace Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="My Awesome Workspace" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="space-y-4">
+              <div>
+                <Label className="text-sm font-medium">Workspace Icon</Label>
+                <FormDescription>
+                  Choose an emoji or upload a custom image for your workspace.
+                </FormDescription>
+              </div>
+
+              <RadioGroup
+                value={imageType}
+                onValueChange={value => setImageType(value as 'emoji' | 'url')}
+                className="flex flex-col space-y-3"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="emoji" id="emoji" />
+                  <Label htmlFor="emoji" className="flex items-center gap-2">
+                    <Smile className="h-4 w-4" />
+                    Choose Emoji
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="url" id="url" />
+                  <Label htmlFor="url" className="flex items-center gap-2">
+                    <Image className="h-4 w-4" />
+                    Custom Image URL
+                  </Label>
+                </div>
+              </RadioGroup>
+
+              {imageType === 'emoji' && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-medium">Preview:</span>
+                    <div className="w-12 h-12 rounded-lg border-2 border-border flex items-center justify-center text-2xl bg-muted">
+                      {selectedEmoji}
+                    </div>
+                  </div>
+                  <ScrollArea className="h-32 w-full rounded-md border">
+                    <div className="p-4 grid grid-cols-8 gap-2">
+                      {workspaceEmojis.map((emoji, index) => (
+                        <button
+                          key={index}
+                          type="button"
+                          onClick={() => handleEmojiSelect(emoji)}
+                          className={`w-8 h-8 rounded flex items-center justify-center text-lg hover:bg-muted transition-colors ${
+                            selectedEmoji === emoji ? 'bg-primary text-primary-foreground' : ''
+                          }`}
+                        >
+                          {emoji}
+                        </button>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                </div>
+              )}
+
+              {imageType === 'url' && (
+                <div className="space-y-3">
+                  <FormField
+                    control={form.control}
+                    name="image"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Image URL</FormLabel>
+                        <FormControl>
+                          <Input placeholder="https://example.com/image.png" {...field} />
+                        </FormControl>
+                        <FormDescription>
+                          Enter a valid URL for your workspace image. Supports PNG, JPG, and SVG
+                          formats.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  {form.watch('image') && (
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm font-medium">Preview:</span>
+                      <div className="w-12 h-12 rounded-lg border-2 border-border overflow-hidden bg-muted">
+                        <img
+                          src={form.watch('image')}
+                          alt="Workspace preview"
+                          className="w-full h-full object-cover"
+                          onError={e => {
+                            e.currentTarget.style.display = 'none';
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end gap-3 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setOpen(false);
+                  form.reset();
+                  setSelectedEmoji('🏢');
+                  setImageType('emoji');
+                }}
+                disabled={isCreating}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isCreating}>
+                {isCreating ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  'Create Workspace'
+                )}
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function UpdateWorkspaceDialog(props: { onUpdated: () => void; workspace: IWorkspace }) {
+  const [open, setOpen] = useState(false);
+  const [imageType, setImageType] = useState<'emoji' | 'url'>('emoji');
+  const [selectedEmoji, setSelectedEmoji] = useState('🏢');
+  const [isUpdating, setIsUpdating] = useState(false);
+  const { updateWorkspace } = useSaaSWorkspaces();
+
+  const formSchema = z.object({
+    name: z.string().min(2, {
+      message: 'Workspace name must be at least 2 characters.',
+    }),
+    image: z.string().optional(),
+  });
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: props.workspace.name,
+      image: props.workspace.image,
+    },
+  });
+
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    setIsUpdating(true);
+    try {
+      await updateWorkspace(props.workspace, values);
+      props?.onUpdated?.();
+    } catch (error) {
+      console.error('Failed to update workspace:', error);
+    } finally {
+      setIsUpdating(false);
+    }
+  }
+  const handleEmojiSelect = (emoji: string) => {
+    setSelectedEmoji(emoji);
+    form.setValue('image', getSvgImage(emoji));
+  };
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="icon">
+          <EditIcon className="h-4 w-4" />
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[500px]">
+        <DialogHeader>
+          <DialogTitle>Update Workspace</DialogTitle>
+          <DialogDescription>Update your workspace to keep it up to date.</DialogDescription>
+        </DialogHeader>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Workspace Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="My Awesome Workspace" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="space-y-4">
+              <div>
+                <Label className="text-sm font-medium">Workspace Icon</Label>
+                <FormDescription>
+                  Choose an emoji or upload a custom image for your workspace.
+                </FormDescription>
+              </div>
+
+              <RadioGroup
+                value={imageType}
+                onValueChange={value => setImageType(value as 'emoji' | 'url')}
+                className="flex flex-col space-y-3"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="emoji" id="emoji" />
+                  <Label htmlFor="emoji" className="flex items-center gap-2">
+                    <Smile className="h-4 w-4" />
+                    Choose Emoji
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="url" id="url" />
+                  <Label htmlFor="url" className="flex items-center gap-2">
+                    <Image className="h-4 w-4" />
+                    Custom Image URL
+                  </Label>
+                </div>
+              </RadioGroup>
+
+              {imageType === 'emoji' && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-medium">Preview:</span>
+                    <div className="w-12 h-12 rounded-lg border-2 border-border flex items-center justify-center text-2xl bg-muted">
+                      {selectedEmoji}
+                    </div>
+                  </div>
+                  <ScrollArea className="h-32 w-full rounded-md border">
+                    <div className="p-4 grid grid-cols-8 gap-2">
+                      {workspaceEmojis.map((emoji, index) => (
+                        <button
+                          key={index}
+                          type="button"
+                          onClick={() => handleEmojiSelect(emoji)}
+                          className={`w-8 h-8 rounded flex items-center justify-center text-lg hover:bg-muted transition-colors ${
+                            selectedEmoji === emoji ? 'bg-primary text-primary-foreground' : ''
+                          }`}
+                        >
+                          {emoji}
+                        </button>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                </div>
+              )}
+
+              {imageType === 'url' && (
+                <div className="space-y-3">
+                  <FormField
+                    control={form.control}
+                    name="image"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Image URL</FormLabel>
+                        <FormControl>
+                          <Input placeholder="https://example.com/image.png" {...field} />
+                        </FormControl>
+                        <FormDescription>
+                          Enter a valid URL for your workspace image. Supports PNG, JPG, and SVG
+                          formats.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  {form.watch('image') && (
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm font-medium">Preview:</span>
+                      <div className="w-12 h-12 rounded-lg border-2 border-border overflow-hidden bg-muted">
+                        <img
+                          src={form.watch('image')}
+                          alt="Workspace preview"
+                          className="w-full h-full object-cover"
+                          onError={e => {
+                            e.currentTarget.style.display = 'none';
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end gap-3 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setOpen(false);
+                  form.reset();
+                  setSelectedEmoji('🏢');
+                  setImageType('emoji');
+                }}
+                disabled={isUpdating}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isUpdating}>
+                {isUpdating ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Updating...
+                  </>
+                ) : (
+                  'Update Workspace'
+                )}
+              </Button>
+            </div>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );

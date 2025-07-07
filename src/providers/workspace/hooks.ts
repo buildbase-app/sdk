@@ -23,7 +23,6 @@ export const useSaaSWorkspaces = () => {
   // Load saved workspace ID on initialization
   useEffect(() => {
     if (!isInitialized) {
-      console.log('loading saved workspace');
       const savedWorkspaceId = workspaceStorage.loadCurrentWorkspace();
       savedWorkspaceIdRef.current = savedWorkspaceId;
       setIsInitialized(true);
@@ -58,7 +57,7 @@ export const useSaaSWorkspaces = () => {
           }
         } else if (data.length > 0) {
           // If no valid saved workspace, select the first available workspace
-          setCurrentWorkspace(data[0]);
+          if (!currentWorkspace) setCurrentWorkspace(data[0]);
         }
       }
     } catch (err) {
@@ -83,6 +82,22 @@ export const useSaaSWorkspaces = () => {
     }
   }, [api]);
 
+  const createWorkspace = useCallback(
+    async (name: string, image: string) => {
+      const data = await api.createWorkspace({ name, image });
+      setWorkspaces([...workspaces, data]);
+    },
+    [api]
+  );
+
+  const updateWorkspace = useCallback(
+    async (workspace: IWorkspace, _data: Partial<IWorkspace>) => {
+      const data = await api.updateWorkspace(workspace._id, _data);
+      setWorkspaces(workspaces.map(ws => (ws._id === workspace._id ? data : ws)));
+    },
+    [api]
+  );
+
   useEffect(() => {
     if (currentWorkspace?._id) {
       const workspace = workspaces.find(ws => ws._id === currentWorkspace?._id);
@@ -104,6 +119,8 @@ export const useSaaSWorkspaces = () => {
     WorkspaceSwitcher,
     currentWorkspace,
     setCurrentWorkspace: setCurrentWorkspaceWithStorage,
+    createWorkspace,
     switching,
+    updateWorkspace,
   };
 };
