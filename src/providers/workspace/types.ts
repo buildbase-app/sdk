@@ -23,20 +23,12 @@ export interface WorkspaceContextValue {
   currentWorkspace: IWorkspace | null;
   loading: boolean;
   switching: boolean;
+  refreshing: boolean;
   error: string | null;
-  switchWorkspace: (id: string) => void;
-  openWorkspaceSettings: () => void;
-  workspacesDropdownProps: {
-    value: string | undefined;
-    onChange: (id: string) => void;
-    options: { value: string; label: string }[];
-    loading: boolean;
-    switching: boolean;
-  };
-  refreshWorkspaces: () => Promise<void>;
-  loadingRefresh: boolean;
   fetchWorkspaces: () => Promise<void>; // Manual trigger to fetch workspaces
+  refreshWorkspaces: () => Promise<void>;
 }
 
+import { ReactNode } from 'react';
 // Import IUser from your main types if needed
 import type { IUser } from '../../api/types';

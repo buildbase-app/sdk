@@ -1,15 +1,17 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSaaSOS } from '../contextProvider';
 import { WorkspaceApi } from './api';
 import { IWorkspace, IWorkspaceRole } from './types';
-
+import { WorkspaceSwitcher } from './provider';
 
 export const useSaaSWorkspaces = () => {
   const { context } = useSaaSOS();
   const [workspaces, setWorkspaces] = useState<IWorkspace[]>([]);
+  const [currentWorkspace, setCurrentWorkspace] = useState<IWorkspace | null>(null);
+  const [switching, setSwitching] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [loadingRefresh, setLoadingRefresh] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const memoRef = useRef<IWorkspace[]>([]);
 
   const api = new WorkspaceApi(context);
@@ -32,8 +34,8 @@ export const useSaaSWorkspaces = () => {
 
   // Background refresh (does not block UI, updates memo/data)
   const refreshWorkspaces = useCallback(async () => {
-    if (loadingRefresh) return;
-    setLoadingRefresh(true);
+    if (refreshing) return;
+    setRefreshing(true);
     try {
       const data = await api.getWorkspaces();
       setWorkspaces(data);
@@ -41,7 +43,7 @@ export const useSaaSWorkspaces = () => {
     } catch (err) {
       // Optionally set error, but don't block UI
     } finally {
-      setLoadingRefresh(false);
+      setRefreshing(false);
     }
   }, [api]);
 
@@ -166,19 +168,27 @@ export const useSaaSWorkspaces = () => {
     [api]
   );
 
+  useEffect(() => {
+    if (currentWorkspace?._id) {
+      const workspace = workspaces.find(ws => ws._id === currentWorkspace?._id);
+      if (workspace) {
+        setCurrentWorkspace(workspace);
+      } else {
+        setCurrentWorkspace(null);
+      }
+    }
+  }, [currentWorkspace?._id, workspaces]);
+
   return {
     workspaces,
     loading,
     error,
     fetchWorkspaces,
     refreshWorkspaces,
-    loadingRefresh,
-    createWorkspace,
-    updateWorkspace,
-    deleteWorkspace,
-    getWorkspaceUsers,
-    addWorkspaceUser,
-    removeWorkspaceUser,
-    updateWorkspaceUserRole,
+    refreshing,
+    WorkspaceSwitcher,
+    currentWorkspace,
+    setCurrentWorkspace,
+    switching,
   };
 };
