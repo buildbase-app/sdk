@@ -21,7 +21,9 @@
     "yalc:push": "yalc push",
     "yalc:remove": "yalc remove",
     "format": "prettier --write . --plugin=prettier-plugin-organize-imports",
-    "push:sdk": "npm run build && yalc push"
+    "push:sdk": "npm run build && yalc push",
+    "watch:push": "nodemon",
+    "watch:push:light": "chokidar \"src/**/*\" -c \"npm run push:sdk\" --initial --ignore dist"
   },
   "peerDependencies": {
     "react": "^18.0.0",
@@ -92,7 +94,9 @@
     "rollup-plugin-postcss": "^4.0.0",
     "tailwindcss": "^3.3.5",
     "tslib": "^2.8.1",
-    "typescript": "^5.2.0"
+    "typescript": "^5.2.0",
+    "nodemon": "^3.0.0",
+    "chokidar-cli": "^3.0.0"
   },
   "keywords": [
     "react",
