@@ -34,7 +34,7 @@ export default function SaaSConfigProvider({ children, config, auth }: IProps) {
   }
 
   const showWorkspaceProvider =
-    config.auth && config.auth.clientId && config.auth.redirectUrl && config.auth?.callbacks;
+    saasOSConfig.auth && saasOSConfig.auth.clientId && saasOSConfig.auth.redirectUrl;
 
   return (
     <>
