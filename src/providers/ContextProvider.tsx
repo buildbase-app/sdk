@@ -7,28 +7,6 @@ import PortalProvider from './portalProvider';
 
 const SaaSOSContext = createContext<SaaSOSContextValue | null>(null);
 
-// Error boundary for form components
-class FormErrorBoundary extends React.Component<
-  { children: React.ReactNode; fallback?: React.ReactNode },
-  { hasError: boolean }
-> {
-  constructor(props: { children: React.ReactNode; fallback?: React.ReactNode }) {
-    super(props);
-    this.state = { hasError: false };
-  }
-
-  static getDerivedStateFromError() {
-    return { hasError: true };
-  }
-
-  render() {
-    if (this.state.hasError) {
-      return this.props.fallback || <div>Something went wrong with the form component.</div>;
-    }
-    return this.props.children;
-  }
-}
-
 /**
  * Hook to access the SaaS OS SDK context
  * @returns The SaaS OS SDK context instance
@@ -62,28 +40,26 @@ export const SaaSOSProvider: React.FC<SaaSOSProviderProps> = ({
   );
 
   return (
-    <FormErrorBoundary>
-      <SaaSOSContext.Provider value={contextValue}>
-        <PortalProvider>
-          {auth && (
-            <AuthProvider
-              config={{
-                apiUrl: serverUrl,
-                auth: {
-                  serverUrl: serverUrl,
-                  orgId: orgId,
-                  clientId: auth.clientId,
-                  handleAuthentication: auth.handleAuthentication,
-                  verifyToken: auth.verifyToken,
-                },
-              }}
-            >
-              {children}
-            </AuthProvider>
-          )}
-          {!auth && <>{children}</>}
-        </PortalProvider>
-      </SaaSOSContext.Provider>
-    </FormErrorBoundary>
+    <SaaSOSContext.Provider value={contextValue}>
+      <PortalProvider>
+        {auth && (
+          <AuthProvider
+            config={{
+              apiUrl: serverUrl,
+              auth: {
+                serverUrl: serverUrl,
+                orgId: orgId,
+                clientId: auth.clientId,
+                handleAuthentication: auth.handleAuthentication,
+                verifyToken: auth.verifyToken,
+              },
+            }}
+          >
+            {children}
+          </AuthProvider>
+        )}
+        {!auth && <>{children}</>}
+      </PortalProvider>
+    </SaaSOSContext.Provider>
   );
 };
