@@ -27,6 +27,7 @@ import {
   Image,
   Smile,
   EditIcon,
+  RefreshCcw,
 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -53,17 +54,26 @@ export function WorkspaceSwitcher(props: {
   onWorkspaceChange: (workspace: IWorkspace) => Promise<void>;
 }) {
   const dispatch = useAppDispatch();
-  const { workspaces, currentWorkspace, loading } = useAppSelector(state => state.workspaces);
+  const { workspaces, currentWorkspace, loading, refreshing } = useAppSelector(
+    state => state.workspaces
+  );
   const { user } = useAppSelector(state => state.auth);
   const [open, setOpen] = useState(false);
+  const [reloadWorkspacesCount, setReloadWorkspacesCount] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
-  const { fetchWorkspaces } = useSaaSWorkspaces();
+  const { fetchWorkspaces, refreshWorkspaces } = useSaaSWorkspaces();
 
   useEffect(() => {
-    if (workspaces.length === 0) {
-      fetchWorkspaces();
-    }
-  }, [workspaces]);
+    fetchWorkspaces();
+  }, []);
+
+  useEffect(() => {
+    refreshWorkspaces();
+  }, [reloadWorkspacesCount]);
+
+  function reloadWorkspaces() {
+    setReloadWorkspacesCount(prev => prev + 1);
+  }
 
   // Filter workspaces based on search query
   const filteredWorkspaces = workspaces.filter(workspace =>
@@ -133,8 +143,21 @@ export function WorkspaceSwitcher(props: {
 
           {/* Workspaces List */}
           <div className="space-y-2">
-            <div className="text-sm font-medium text-muted-foreground">
-              Available Workspaces ({filteredWorkspaces.length})
+            <div className="flex items-center justify-between">
+              <div className="text-sm font-medium text-muted-foreground">
+                Available Workspaces ({filteredWorkspaces.length})
+              </div>
+              <div>
+                <Button
+                  progress={refreshing}
+                  disabled={refreshing}
+                  variant="outline"
+                  onClick={reloadWorkspaces}
+                  startIcon={<RefreshCcw />}
+                >
+                  {refreshing ? 'Refreshing...' : 'Refresh'}
+                </Button>
+              </div>
             </div>
 
             {loading ? (
