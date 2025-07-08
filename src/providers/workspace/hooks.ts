@@ -28,6 +28,10 @@ export const useSaaSWorkspaces = () => {
       if (savedWorkspaceId) {
         const workspace = workspaces.find(ws => ws._id === savedWorkspaceId);
         if (workspace) {
+          // check if the workspace is the same as the current workspace
+          if (workspace._id === currentWorkspace?._id) {
+            return;
+          }
           dispatch(setCurrentWorkspace(workspace));
         }
       }
@@ -36,6 +40,10 @@ export const useSaaSWorkspaces = () => {
 
   // Custom setCurrentWorkspace that saves to localStorage
   const setCurrentWorkspaceWithStorage = useCallback((workspace: IWorkspace) => {
+    // check if the workspace is the same as the current workspace
+    if (workspace._id === currentWorkspace?._id) {
+      return;
+    }
     if (workspace) {
       dispatch(setCurrentWorkspace(workspace));
     }
@@ -106,9 +114,17 @@ export const useSaaSWorkspaces = () => {
     if (currentWorkspace?._id) {
       const workspace = workspaces.find(ws => ws._id === currentWorkspace?._id);
       if (workspace) {
+        // check if the workspace is the same as the current workspace
+        if (workspace._id === currentWorkspace._id) {
+          return;
+        }
         dispatch(setCurrentWorkspace(workspace));
       } else {
         if (workspaces.length > 0) {
+          // check if the workspace is the same as the current workspace
+          if (workspaces[0]._id === currentWorkspace._id) {
+            return;
+          }
           dispatch(setCurrentWorkspace(workspaces[0]));
         }
       }
