@@ -12,3 +12,4 @@ export { useSaaSAuth } from './providers/auth/hooks';
 
 // Export workspace provider and dialog
 export { WorkspaceSwitcher } from './providers/workspace/provider';
+export { useSaaSWorkspaces } from './providers/workspace/hooks';
