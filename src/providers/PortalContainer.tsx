@@ -22,8 +22,8 @@ export default function PortalProvider({ children }: { children: React.ReactNode
         id="saas-os-portal"
         className="saas-os-ui"
         style={{
-          width: '100vw',
-          height: '100vh',
+          width: '100%',
+          height: '100%',
         }}
       />
     </PortalContext.Provider>

@@ -33,10 +33,13 @@ export default function SaaSConfigProvider({ children, config, auth }: IProps) {
     return null;
   }
 
+  const showWorkspaceProvider =
+    config.auth && config.auth.clientId && config.auth.redirectUrl && config.auth?.callbacks;
+
   return (
     <>
-      {auth && <AuthProvider callbacks={auth.callbacks}>{children}</AuthProvider>}
-      {!config.auth && <>{children}</>}
+      {showWorkspaceProvider && <AuthProvider callbacks={auth?.callbacks}>{children}</AuthProvider>}
+      {!showWorkspaceProvider && <>{children}</>}
     </>
   );
 }
