@@ -1,5 +1,5 @@
-import { Context } from '../../api/context';
 import { getAccessToken } from '../auth/utils';
+import { IOsConfig } from '../os/types';
 import type { IWorkspace, IWorkspaceRole, IWorkspaceUser } from './types';
 
 export class WorkspaceApi {
@@ -7,10 +7,10 @@ export class WorkspaceApi {
   private orgId: string;
   private serverUrl: string;
 
-  constructor(context: Context) {
-    this.version = context.getVersion();
-    this.orgId = context.getOrgId();
-    this.serverUrl = context.getServerUrl();
+  constructor(config: IOsConfig) {
+    this.version = config.version;
+    this.orgId = config.orgId;
+    this.serverUrl = config.serverUrl;
   }
 
   getAuthHeader() {

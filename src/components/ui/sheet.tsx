@@ -6,7 +6,7 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import * as React from 'react';
 
 import { cn } from '../../lib/utils';
-import { PortalContext } from '../../providers/portalProvider';
+import { PortalContext } from '../../providers/PortalContainer';
 
 const Sheet = SheetPrimitive.Root;
 

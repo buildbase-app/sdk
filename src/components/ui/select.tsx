@@ -5,7 +5,7 @@ import * as SelectPrimitive from '@radix-ui/react-select';
 import * as React from 'react';
 
 import { cn } from '../../lib/utils';
-import { PortalContext } from '../../providers/portalProvider';
+import { PortalContext } from '../../providers/PortalContainer';
 
 const Select = SelectPrimitive.Root;
 

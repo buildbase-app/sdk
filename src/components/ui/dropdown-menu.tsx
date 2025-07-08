@@ -5,7 +5,7 @@ import { CheckIcon, ChevronRightIcon, DotFilledIcon } from '@radix-ui/react-icon
 import * as React from 'react';
 
 import { cn } from '../../lib/utils';
-import { PortalContext } from '../../providers/portalProvider';
+import { PortalContext } from '../../providers/PortalContainer';
 
 const DropdownMenu = DropdownMenuPrimitive.Root;
 

@@ -1,203 +1,60 @@
-import { jwtDecode } from 'jwt-decode';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback } from 'react';
 import { defaultApiClient } from '../../lib/api-client';
-import { AuthResponse, AuthSession, AuthState, AuthStatus, AuthUser } from './types';
-import {
-  createSession,
-  getTokenFromUrl,
-  loadUserFromCookies,
-  removeCredentials,
-  removeTokenFromUrl,
-  saveCredentials,
-} from './utils';
-import { useSaaSOS } from '../contextProvider';
+import { useAppDispatch, useAppSelector } from '../../store/hooks';
+import { authenticationFailed, authenticationStarted, removeSession } from './reducer';
 
 export function useSaaSAuth() {
-  const { context } = useSaaSOS();
-  const serverUrl = context.getServerUrl();
-  const auth = context.getAuth();
-  const orgId = context.getOrgId();
-  const clientId = auth?.clientId;
-  const redirectUrl = auth?.redirectUrl;
+  const dispatch = useAppDispatch();
+  const auth = useAppSelector(state => state.auth);
+  const os = useAppSelector(state => state.os);
+  const { serverUrl, orgId, auth: authConfig } = os;
 
-  const [state, setState] = useState<AuthState>({
-    user: null,
-    session: null,
-    isLoading: true,
-    isAuthenticated: false,
-    isRedirecting: false,
-  });
-
-  // Check if we're in a browser environment
-  const isBrowser = typeof window !== 'undefined';
-
-  useEffect(() => {
-    if (!isBrowser) {
-      setState(prev => ({ ...prev, isLoading: false, isAuthenticated: false }));
-      return;
-    }
-
-    const loadUser = () => {
-      const { session } = loadUserFromCookies();
-      if (session) {
-        setState({
-          user: session.user,
-          session,
-          isLoading: false,
-          isAuthenticated: true,
-          isRedirecting: false,
-        });
-      } else {
-        setState(prev => ({ ...prev, isLoading: false, isAuthenticated: false }));
-      }
-    };
-
-    loadUser();
-  }, [isBrowser]);
-
-  const saveUser = useCallback(
-    (session: AuthSession) => {
-      if (!isBrowser) return;
-      saveCredentials(session);
-    },
-    [isBrowser]
-  );
-
-  // Clear user from localStorage
-  const clearUser = useCallback(() => {
-    if (!isBrowser) return;
-
-    removeCredentials();
-
-    setState({
-      user: null,
-      session: null,
-      isLoading: false,
-      isAuthenticated: false,
-      isRedirecting: false,
-    });
-  }, [isBrowser]);
-
-  // Login function
   const signIn = useCallback(async () => {
-    setState(prev => ({ ...prev, isRedirecting: true }));
-
+    dispatch(authenticationStarted());
     try {
-      const response = await defaultApiClient.post<AuthResponse>(
-        `${serverUrl}/api/v1/auth/request`,
-        {
-          orgId: orgId,
-          clientId: clientId,
-          redirect: {
-            success: redirectUrl,
-            error: redirectUrl,
-          },
-        }
-      );
+      const response = await defaultApiClient.post(`${serverUrl}/api/v1/auth/request`, {
+        orgId: orgId,
+        clientId: authConfig?.clientId,
+        redirect: {
+          success: authConfig?.redirectUrl || window.location.href,
+          error: authConfig?.redirectUrl || window.location.href,
+        },
+      });
 
       if (response.data.success) {
         window.location.href = response.data.data.redirectUrl;
       } else {
-        setState(prev => ({ ...prev, isRedirecting: false, isAuthenticated: false }));
+        dispatch(authenticationFailed());
         throw new Error(response.data.message || 'Authentication failed');
       }
     } catch (error) {
-      setState(prev => ({ ...prev, isRedirecting: false }));
+      dispatch(authenticationFailed());
       console.error('Sign in error:', error);
       throw error;
     }
-  }, [serverUrl, orgId, clientId, redirectUrl]);
+  }, [serverUrl, orgId, authConfig, dispatch]);
 
-  // Logout function
   const signOut = useCallback(async () => {
     try {
-      clearUser();
+      dispatch(removeSession());
     } catch (error) {
       console.error('Logout error:', error);
     }
-  }, [clearUser]);
-
-  // Handle auth redirect (called after successful authentication)
-  const handleAuthRedirect = useCallback(
-    async (token: string) => {
-      try {
-        // Verify token and get user info
-        const response = await defaultApiClient.get<{ user: AuthUser }>(
-          `${serverUrl}/api/v1/auth/verify`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
-
-        const user = response.data.user;
-        const session = createSession(user, token, 24);
-
-        saveUser(session);
-        setState({
-          user,
-          session,
-          isLoading: false,
-          isAuthenticated: true,
-          isRedirecting: false,
-        });
-      } catch (error) {
-        console.error('Auth redirect error:', error);
-        clearUser();
-        setState(prev => ({ ...prev, isLoading: false, isAuthenticated: false }));
-      }
-    },
-    [serverUrl, saveUser, clearUser]
-  );
-
-  useEffect(() => {
-    const token = getTokenFromUrl();
-    if (token) {
-      try {
-        const user = jwtDecode<AuthUser>(token);
-        if (user) {
-          const session = createSession(user, token, 72);
-          saveUser(session);
-          setState({
-            user,
-            session,
-            isLoading: false,
-            isAuthenticated: true,
-            isRedirecting: false,
-          });
-          removeTokenFromUrl();
-          auth?.verifyToken?.(token).then(isValid => {
-            if (!isValid) {
-              clearUser();
-              setState(prev => ({ ...prev, isLoading: false, isAuthenticated: false }));
-            } else {
-              auth?.handleAuthentication?.(token);
-            }
-          });
-        }
-      } catch (e) {
-        console.error('Error processing token from URL:', e);
-      }
-    }
-  }, []);
+  }, [dispatch]);
 
   // Computed values
-  const status: AuthStatus = useMemo(() => {
-    if (state.isLoading) return 'loading';
-    return state.isAuthenticated ? 'authenticated' : 'unauthenticated';
-  }, [state.isLoading, state.isAuthenticated]);
 
   return {
     // State
-    user: state.user,
-    session: state.session,
-    isLoading: state.isLoading,
-    isAuthenticated: state.isAuthenticated,
-    isRedirecting: state.isRedirecting,
-    status,
+    user: auth.user,
+    session: auth.session,
+    isLoading: auth.isLoading,
+    isAuthenticated: auth.isAuthenticated,
+    isRedirecting: auth.isRedirecting,
+    status: auth.status,
 
     // Actions
     signIn,
     signOut,
-    handleAuthRedirect,
   };
 }

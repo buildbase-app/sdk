@@ -1,5 +1,5 @@
-import { Context } from '../../api/context';
 import { IAsset, IDocument } from '../../api/types';
+import { IOsConfig } from '../../providers/os/types';
 
 interface IScreenDetail {
   title: string;
@@ -38,10 +38,10 @@ export class BetaForm {
   private orgId: string;
   private serverUrl: string;
 
-  constructor(context: Context) {
-    this.version = context.getVersion();
-    this.orgId = context.getOrgId();
-    this.serverUrl = context.getServerUrl();
+  constructor(config: IOsConfig) {
+    this.version = config.version;
+    this.orgId = config.orgId;
+    this.serverUrl = config.serverUrl;
   }
 
   async fetchConfig(): Promise<IBetaConfig> {

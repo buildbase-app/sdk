@@ -1,14 +1,4 @@
-export interface AuthConfig {
-  auth: {
-    serverUrl: string;
-    orgId: string;
-    clientId: string;
-    redirectUrl?: string;
-    handleAuthentication: (token: string) => Promise<void>;
-    verifyToken: (token: string) => Promise<boolean>;
-  };
-  apiUrl: string;
-}
+export type AuthStatus = 'loading' | 'authenticated' | 'unauthenticated' | 'authenticating';
 
 export interface AuthUser {
   id: string;
@@ -23,29 +13,23 @@ export interface AuthSession {
   expires: string;
 }
 
-export interface AuthRequestData {
-  orgId: string;
-  clientId: string;
-  redirect: {
-    success: string;
-    error: string;
-  };
-}
-
-export interface AuthResponse {
-  success: boolean;
-  data: {
-    redirectUrl: string;
-  };
-  message?: string;
-}
-
-export interface AuthState {
+// Define a type for the slice state
+export interface IAuthState {
   user: AuthUser | null;
   session: AuthSession | null;
   isLoading: boolean;
   isAuthenticated: boolean;
   isRedirecting: boolean;
+  status: AuthStatus;
 }
 
-export type AuthStatus = 'loading' | 'authenticated' | 'unauthenticated';
+export interface IAuthConfig {
+  clientId: string;
+  redirectUrl: string;
+  callbacks?: IAuthCallbacks;
+}
+
+export interface IAuthCallbacks {
+  handleAuthentication: (token: string) => Promise<void>;
+  verifyToken: (token: string) => Promise<boolean>;
+}

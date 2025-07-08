@@ -6,7 +6,7 @@ import * as React from 'react';
 import { buttonVariants } from './button';
 
 import { cn } from '../../lib/utils';
-import { PortalContext } from '../../providers/portalProvider';
+import { PortalContext } from '../../providers/PortalContainer';
 
 const AlertDialog = AlertDialogPrimitive.Root;
 

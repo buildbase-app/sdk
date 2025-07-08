@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import { IBetaConfig } from '../../api';
-import { useSaaSOS } from '../../providers/contextProvider';
 import { BetaForm } from './api';
 import { BetaFormData, BetaFormResponse } from './types';
+import { useAppSelector } from '../../store/hooks';
 
 export const useBetaForm = () => {
-  const { context: saasOS } = useSaaSOS();
+  const osState = useAppSelector(state => state.os);
 
   const [config, setConfig] = useState<IBetaConfig | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -17,17 +17,17 @@ export const useBetaForm = () => {
   useEffect(() => {
     const fetchConfig = async () => {
       setIsLoading(true);
-      const betaForm = new BetaForm(saasOS);
+      const betaForm = new BetaForm(osState);
       const config = await betaForm.fetchConfig();
       setConfig(config);
       setIsLoading(false);
     };
     fetchConfig();
-  }, [saasOS]);
+  }, [osState]);
 
   const submitBetaForm = useCallback(
     async (data: BetaFormData): Promise<BetaFormResponse> => {
-      if (!saasOS) {
+      if (!osState) {
         const errorMessage = 'SaaS OS context is not initialized';
         setError(errorMessage);
         return {
@@ -42,7 +42,7 @@ export const useBetaForm = () => {
         setSuccess(false);
         setMessage(null);
 
-        const betaForm = new BetaForm(saasOS);
+        const betaForm = new BetaForm(osState);
         const response = await betaForm.submitBetaUser({
           name: data.name || '',
           email: data.email,
@@ -69,7 +69,7 @@ export const useBetaForm = () => {
         setIsSubmitting(false);
       }
     },
-    [saasOS]
+    [osState]
   );
 
   return {

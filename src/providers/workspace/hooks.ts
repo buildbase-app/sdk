@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useSaaSOS } from '../contextProvider';
 import { WorkspaceApi } from './api';
 import { IWorkspace } from './types';
 import { WorkspaceSwitcher } from './provider';
 import { workspaceStorage } from './utils';
+import { useAppSelector } from '../../store/hooks';
 
 export const useSaaSWorkspaces = () => {
-  const { context } = useSaaSOS();
+  const os = useAppSelector(state => state.os);
+  const api = new WorkspaceApi(os);
 
   const [workspaces, setWorkspaces] = useState<IWorkspace[]>([]);
   const [currentWorkspace, setCurrentWorkspace] = useState<IWorkspace | null>(null);
@@ -17,8 +18,6 @@ export const useSaaSWorkspaces = () => {
   const memoRef = useRef<IWorkspace[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
   const savedWorkspaceIdRef = useRef<string | null>(null);
-
-  const api = new WorkspaceApi(context);
 
   // Load saved workspace ID on initialization
   useEffect(() => {

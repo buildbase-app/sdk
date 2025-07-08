@@ -23,13 +23,11 @@ import {
   Check,
   Loader2,
   Plus,
-  Settings,
   Crown,
   Image,
   Smile,
   EditIcon,
 } from 'lucide-react';
-import { useSaaSAuth } from '../auth';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
@@ -43,6 +41,7 @@ import {
 } from '../../components/ui/form';
 import { RadioGroup, RadioGroupItem } from '../../components/ui/radio-group';
 import { Label } from '../../components/ui/label';
+import { useAppSelector } from '../../store/hooks';
 
 const WorkspaceContext = createContext<WorkspaceContextValue | undefined>(undefined);
 
@@ -77,7 +76,7 @@ export function WorkspaceSwitcher(props: {
   trigger: (currentWorkspace: IWorkspace | null) => ReactNode;
   onWorkspaceChange: (workspace: IWorkspace) => Promise<void>;
 }) {
-  const { user } = useSaaSAuth();
+  const { user } = useAppSelector(state => state.auth);
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const { workspaces, setCurrentWorkspace, currentWorkspace, fetchWorkspaces, loading } =

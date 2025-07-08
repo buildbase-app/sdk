@@ -5,7 +5,7 @@ import { Cross2Icon } from '@radix-ui/react-icons';
 import * as React from 'react';
 
 import { cn } from '../../lib/utils';
-import { PortalContext } from '../../providers/portalProvider';
+import { PortalContext } from '../../providers/PortalContainer';
 
 const Dialog = DialogPrimitive.Root;
 

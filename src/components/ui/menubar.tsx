@@ -5,7 +5,7 @@ import * as MenubarPrimitive from '@radix-ui/react-menubar';
 import * as React from 'react';
 
 import { cn } from '../../lib/utils';
-import { PortalContext } from '../../providers/portalProvider';
+import { PortalContext } from '../../providers/PortalContainer';
 
 const MenubarMenu = MenubarPrimitive.Menu;
 
