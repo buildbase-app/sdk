@@ -18,7 +18,6 @@ export function AuthProvider({ children, callbacks }: IProps) {
   const authState = useAppSelector(state => state.auth);
   const os = useAppSelector(state => state.os);
   const { serverUrl } = os;
-  console.log('os', os);
 
   const handleAuthRedirect = useCallback(
     async (token: string) => {
