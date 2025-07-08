@@ -1,7 +1,7 @@
-import { createContext, ReactNode, useEffect, useState } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 import { useSaaSWorkspaces } from './hooks';
 import { z } from 'zod';
-import type { IWorkspace, WorkspaceContextValue } from './types';
+import type { IWorkspace } from './types';
 import {
   Dialog,
   DialogContent,
@@ -41,46 +41,23 @@ import {
 } from '../../components/ui/form';
 import { RadioGroup, RadioGroupItem } from '../../components/ui/radio-group';
 import { Label } from '../../components/ui/label';
-import { useAppSelector } from '../../store/hooks';
-
-const WorkspaceContext = createContext<WorkspaceContextValue | undefined>(undefined);
+import { useAppDispatch, useAppSelector } from '../../store/hooks';
+import { setCurrentWorkspace } from './reducer';
 
 export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
-  const {
-    workspaces,
-    loading,
-    error,
-    currentWorkspace,
-    fetchWorkspaces,
-    refreshWorkspaces,
-    refreshing,
-    switching,
-  } = useSaaSWorkspaces();
-
-  // Context value
-  const contextValue: WorkspaceContextValue = {
-    workspaces,
-    currentWorkspace,
-    loading,
-    switching,
-    error,
-    refreshing,
-    refreshWorkspaces,
-    fetchWorkspaces,
-  };
-
-  return <WorkspaceContext.Provider value={contextValue}>{children}</WorkspaceContext.Provider>;
+  return <>{children}</>;
 };
 
 export function WorkspaceSwitcher(props: {
   trigger: (currentWorkspace: IWorkspace | null) => ReactNode;
   onWorkspaceChange: (workspace: IWorkspace) => Promise<void>;
 }) {
+  const dispatch = useAppDispatch();
+  const { workspaces, currentWorkspace, loading } = useAppSelector(state => state.workspaces);
   const { user } = useAppSelector(state => state.auth);
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const { workspaces, setCurrentWorkspace, currentWorkspace, fetchWorkspaces, loading } =
-    useSaaSWorkspaces();
+  const { fetchWorkspaces } = useSaaSWorkspaces();
 
   useEffect(() => {
     if (workspaces.length === 0) {
@@ -206,7 +183,7 @@ export function WorkspaceSwitcher(props: {
                             disabled={isCurrentWorkspace}
                             onClick={async () => {
                               await props.onWorkspaceChange(workspace);
-                              setCurrentWorkspace(workspace);
+                              dispatch(setCurrentWorkspace(workspace));
                               setOpen(false);
                             }}
                           >
