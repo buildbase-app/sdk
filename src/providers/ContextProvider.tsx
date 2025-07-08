@@ -32,12 +32,11 @@ export const SaaSOSProvider: React.FC<SaaSOSProviderProps> = ({
   auth,
   children,
 }) => {
-  const contextValue = useMemo(
-    () => ({
+  const contextValue = useMemo(() => {
+    return {
       context: new Context(serverUrl, version, orgId, auth),
-    }),
-    [serverUrl, version, orgId, auth]
-  );
+    };
+  }, [serverUrl, version, orgId, auth]);
 
   return (
     <SaaSOSContext.Provider value={contextValue}>
