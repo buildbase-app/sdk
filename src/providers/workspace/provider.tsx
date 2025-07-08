@@ -44,6 +44,7 @@ import { RadioGroup, RadioGroupItem } from '../../components/ui/radio-group';
 import { Label } from '../../components/ui/label';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { setCurrentWorkspace } from './reducer';
+import WorkspaceSettingsDialog from './ui/SettingsDialog';
 
 export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
   return <>{children}</>;
@@ -218,6 +219,7 @@ export function WorkspaceSwitcher(props: {
                             }}
                             workspace={workspace}
                           />
+                          <WorkspaceSettingsDialog workspace={workspace} />
                         </div>
                       </div>
                     );
