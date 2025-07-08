@@ -13,14 +13,6 @@ import {
   FormMessage,
 } from '../ui/form';
 import { Input } from '../ui/input';
-import {
-  Sheet,
-  SheetContent,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from '../ui/sheet';
 import { Skeleton } from '../ui/skeleton';
 import { IBetaConfig } from './api';
 import { useBetaForm } from './hooks';
@@ -207,7 +199,6 @@ export const BetaForm: React.FC<BetaFormProps> = ({
         justifyContent: 'center',
       }}
     >
-      <DropdownMenu />
       {isLoading ? (
         <div
           className={cn(
@@ -362,23 +353,4 @@ function Logo({ logo }: { logo: IBetaConfig['logo'] }) {
     return <img src={logo} alt="Logo" className="max-h-24" />;
   }
   return <img src={logo.bucket?.url} alt="Logo" className="max-h-24" />;
-}
-
-function DropdownMenu() {
-  const [open, setOpen] = useState(false);
-  return (
-    <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger asChild>
-        <Button>Open</Button>
-      </SheetTrigger>
-      <SheetContent>
-        <SheetHeader>
-          <SheetTitle>Dropdown Menu</SheetTitle>
-        </SheetHeader>
-        <SheetFooter>
-          <Button onClick={() => setOpen(false)}>Close</Button>
-        </SheetFooter>
-      </SheetContent>
-    </Sheet>
-  );
 }
