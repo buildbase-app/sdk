@@ -17,11 +17,7 @@ const Sidebar: React.FC<Props> = ({ workspace, section, setSection }) => {
         <div className="mb-6 pb-4 border-b">
           <div className="flex items-center space-x-2 mb-2">
             <div className="w-8 h-8 bg-blue-100 rounded flex items-center justify-center text-blue-600 font-medium">
-              <img
-                src={workspace.image}
-                alt={workspace.name}
-                className="w-full h-full object-cover"
-              />
+              <img src={workspace.image} className="w-full h-full object-cover" />
             </div>
             <div>
               <div className="font-medium text-sm">{workspace.name}</div>
@@ -32,7 +28,9 @@ const Sidebar: React.FC<Props> = ({ workspace, section, setSection }) => {
       )}
 
       <div className="mb-6">
-        <div className="text-xs font-bold mb-2 text-gray-500 uppercase tracking-wide">Account</div>
+        <div className="text-xs font-bold mb-2 text-gray-500 uppercase tracking-wide px-2">
+          Account
+        </div>
         <button
           className={cn(
             'flex w-full text-left px-2 py-1 rounded text-sm items-center gap-x-2',
@@ -45,7 +43,7 @@ const Sidebar: React.FC<Props> = ({ workspace, section, setSection }) => {
       </div>
 
       <div>
-        <div className="text-xs font-bold mb-2 text-gray-500 uppercase tracking-wide">
+        <div className="text-xs font-bold mb-2 text-gray-500 uppercase tracking-wide px-2">
           Workspace
         </div>
         <button

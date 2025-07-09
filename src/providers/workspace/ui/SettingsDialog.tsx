@@ -10,7 +10,10 @@ import { IWorkspace } from '../types';
 
 export type WorkspaceSettingsSection = 'profile' | 'general' | 'users';
 
-const WorkspaceSettingsDialog: React.FC<{ workspace: IWorkspace }> = ({ workspace }) => {
+const WorkspaceSettingsDialog: React.FC<{
+  workspace: IWorkspace;
+  onClose: () => void;
+}> = ({ workspace, onClose }) => {
   const [open, setOpen] = useState(false);
   const [section, setSection] = useState<WorkspaceSettingsSection>('profile');
 
@@ -20,7 +23,15 @@ const WorkspaceSettingsDialog: React.FC<{ workspace: IWorkspace }> = ({ workspac
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog
+      open={open}
+      onOpenChange={e => {
+        setOpen(e);
+        if (!e) {
+          onClose();
+        }
+      }}
+    >
       <DialogTrigger>
         <Button variant="outline" size="icon">
           <Settings className="h-4 w-4" />

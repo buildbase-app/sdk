@@ -46,6 +46,7 @@ import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { setCurrentWorkspace } from './reducer';
 import WorkspaceSettingsDialog from './ui/SettingsDialog';
 import { cn } from '../../lib/utils';
+import { getSvgImage, workspaceEmojis } from './ui/utils';
 
 export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
   return <>{children}</>;
@@ -215,7 +216,19 @@ export function WorkspaceSwitcher(props: {
                           >
                             {isCurrentWorkspace ? 'Current' : 'Switch to'}
                           </Button>
-                          <WorkspaceSettingsDialog workspace={workspace} />
+                          <WorkspaceSettingsDialog
+                            workspace={workspace}
+                            onClose={() => {
+                              if (currentWorkspace) {
+                                const index = workspaces.findIndex(
+                                  w => w._id?.toString() === currentWorkspace._id?.toString()
+                                );
+                                if (index !== -1) {
+                                  dispatch(setCurrentWorkspace(workspaces[index]));
+                                }
+                              }
+                            }}
+                          />
                         </div>
                       </div>
                     );
@@ -237,168 +250,6 @@ export function WorkspaceSwitcher(props: {
     </Dialog>
   );
 }
-
-function getSvgImage(emoji: string) {
-  return `data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text x="50%" y="50%" dominant-baseline="middle" alignment-baseline="middle" text-anchor="middle" font-size="50" font-family="sans-serif">${emoji}</text></svg>`;
-}
-
-const workspaceEmojis = [
-  // Business & Office
-  '🏢',
-  '🏬',
-  '🏣',
-  '🏤',
-  '🏦',
-  '🏛️',
-  '🏠',
-  '🏡',
-  '🏭',
-  '🏗️',
-  '🏪',
-  '🏨',
-  '🏫',
-  '🏥',
-  '💼',
-  '📊',
-  '📈',
-  '📉',
-  '📋',
-  '📁',
-  '📂',
-  '🗂️',
-  '🗃️',
-  '🗄️',
-  '📅',
-  '🗓️',
-  '📝',
-  '🖋️',
-  '✏️',
-  '🖊️',
-  '🖌️',
-  '🖍️',
-  '📇',
-  '📌',
-  '📍',
-  '📎',
-  '🖇️',
-
-  // Tech & Digital
-  '💻',
-  '🖥️',
-  '🖨️',
-  '🖱️',
-  '⌨️',
-  '📱',
-  '📲',
-  '📡',
-  '🌐',
-  '🔗',
-  '🔒',
-  '🔓',
-  '⚙️',
-  '🔧',
-  '🛠️',
-  '🧑‍💻',
-  '👨‍💻',
-  '👩‍💻',
-  '🕹️',
-  '💾',
-  '📟',
-  '🖥️',
-  '🖲️',
-
-  // Innovation & Creativity
-  '🚀',
-  '💡',
-  '🎨',
-  '🖼️',
-  '🧪',
-  '🔬',
-  '🧬',
-  '🎯',
-  '⚡',
-  '🎲',
-  '🎮',
-  '🧩',
-  '📷',
-  '🎥',
-
-  // Communication & Collaboration
-  '✉️',
-  '📨',
-  '📩',
-  '📧',
-  '📞',
-  '☎️',
-  '📠',
-  '🗣️',
-  '💬',
-  '🗨️',
-  '📢',
-  '📣',
-  '🔔',
-  '🛎️',
-
-  // Finance & Legal
-  '💰',
-  '💸',
-  '💳',
-  '🏦',
-  '📈',
-  '📉',
-  '⚖️',
-  '🧾',
-  '🪙',
-  '🏛️',
-
-  // Science, Health, Environment
-  '⚗️',
-  '🧪',
-  '🔭',
-  '🔬',
-  '🩺',
-  '🧬',
-  '🩻',
-  '🏥',
-  '🌱',
-  '🌍',
-  '🌏',
-  '🌎',
-  '🌡️',
-
-  // People & Roles
-  '👨‍💼',
-  '👩‍💼',
-  '👨‍🏫',
-  '👩‍🏫',
-  '👨‍🔬',
-  '👩‍🔬',
-  '👨‍🎨',
-  '👩‍🎨',
-  '👨‍🔧',
-  '👩‍🔧',
-  '👨‍🚀',
-  '👩‍🚀',
-  '👨‍⚖️',
-  '👩‍⚖️',
-
-  // Misc & Fun
-  '🏅',
-  '🎖️',
-  '🥇',
-  '🥈',
-  '🥉',
-  '🏆',
-  '🎗️',
-  '🔑',
-  '🗝️',
-  '🧭',
-  '🛡️',
-  '🚩',
-  '🏳️‍🌈',
-  '🎟️',
-  '🎫',
-];
 
 function CreateWorkspaceDialog(props: { onCreated: () => void }) {
   const [open, setOpen] = useState(false);
@@ -604,197 +455,6 @@ function CreateWorkspaceDialog(props: { onCreated: () => void }) {
                   </>
                 ) : (
                   'Create Workspace'
-                )}
-              </Button>
-            </div>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function UpdateWorkspaceDialog(props: { onUpdated: () => void; workspace: IWorkspace }) {
-  const [open, setOpen] = useState(false);
-  const [imageType, setImageType] = useState<'emoji' | 'url'>('emoji');
-  const [selectedEmoji, setSelectedEmoji] = useState('🏢');
-  const [isUpdating, setIsUpdating] = useState(false);
-  const { updateWorkspace } = useSaaSWorkspaces();
-
-  const formSchema = z.object({
-    name: z.string().min(2, {
-      message: 'Workspace name must be at least 2 characters.',
-    }),
-    image: z.string().optional(),
-  });
-
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      name: props.workspace.name,
-      image: props.workspace.image,
-    },
-  });
-
-  async function onSubmit(values: z.infer<typeof formSchema>) {
-    setIsUpdating(true);
-    try {
-      await updateWorkspace(props.workspace, values);
-      props?.onUpdated?.();
-    } catch (error) {
-      console.error('Failed to update workspace:', error);
-    } finally {
-      setIsUpdating(false);
-    }
-  }
-  const handleEmojiSelect = (emoji: string) => {
-    setSelectedEmoji(emoji);
-    form.setValue('image', getSvgImage(emoji));
-  };
-  return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="icon">
-          <EditIcon className="h-4 w-4" />
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle>Update Workspace</DialogTitle>
-          <DialogDescription>Update your workspace to keep it up to date.</DialogDescription>
-        </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Workspace Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="My Awesome Workspace" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="space-y-4">
-              <div>
-                <Label className="text-sm font-medium">Workspace Icon</Label>
-                <FormDescription>
-                  Choose an emoji or upload a custom image for your workspace.
-                </FormDescription>
-              </div>
-
-              <RadioGroup
-                value={imageType}
-                onValueChange={value => setImageType(value as 'emoji' | 'url')}
-                className="flex flex-col space-y-3"
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="emoji" id="emoji" />
-                  <Label htmlFor="emoji" className="flex items-center gap-2">
-                    <Smile className="h-4 w-4" />
-                    Choose Emoji
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="url" id="url" />
-                  <Label htmlFor="url" className="flex items-center gap-2">
-                    <Image className="h-4 w-4" />
-                    Custom Image URL
-                  </Label>
-                </div>
-              </RadioGroup>
-
-              {imageType === 'emoji' && (
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm font-medium">Preview:</span>
-                    <div className="w-12 h-12 rounded-lg border-2 border-border flex items-center justify-center text-2xl bg-muted">
-                      {selectedEmoji}
-                    </div>
-                  </div>
-                  <ScrollArea className="h-32 w-full rounded-md border">
-                    <div className="p-4 grid grid-cols-8 gap-2">
-                      {workspaceEmojis.map((emoji, index) => (
-                        <button
-                          key={index}
-                          type="button"
-                          onClick={() => handleEmojiSelect(emoji)}
-                          className={`w-8 h-8 rounded flex items-center justify-center text-lg hover:bg-muted transition-colors ${
-                            selectedEmoji === emoji ? 'bg-primary text-primary-foreground' : ''
-                          }`}
-                        >
-                          {emoji}
-                        </button>
-                      ))}
-                    </div>
-                  </ScrollArea>
-                </div>
-              )}
-
-              {imageType === 'url' && (
-                <div className="space-y-3">
-                  <FormField
-                    control={form.control}
-                    name="image"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Image URL</FormLabel>
-                        <FormControl>
-                          <Input placeholder="https://example.com/image.png" {...field} />
-                        </FormControl>
-                        <FormDescription>
-                          Enter a valid URL for your workspace image. Supports PNG, JPG, and SVG
-                          formats.
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  {form.watch('image') && (
-                    <div className="flex items-center gap-3">
-                      <span className="text-sm font-medium">Preview:</span>
-                      <div className="w-12 h-12 rounded-lg border-2 border-border overflow-hidden bg-muted">
-                        <img
-                          src={form.watch('image')}
-                          alt="Workspace preview"
-                          className="w-full h-full object-cover"
-                          onError={e => {
-                            e.currentTarget.style.display = 'none';
-                          }}
-                        />
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            <div className="flex justify-end gap-3 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setOpen(false);
-                  form.reset();
-                  setSelectedEmoji('🏢');
-                  setImageType('emoji');
-                }}
-                disabled={isUpdating}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isUpdating}>
-                {isUpdating ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Updating...
-                  </>
-                ) : (
-                  'Update Workspace'
                 )}
               </Button>
             </div>
