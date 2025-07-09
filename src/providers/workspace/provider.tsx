@@ -45,6 +45,7 @@ import { Label } from '../../components/ui/label';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { setCurrentWorkspace } from './reducer';
 import WorkspaceSettingsDialog from './ui/SettingsDialog';
+import { cn } from '../../lib/utils';
 
 export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
   return <>{children}</>;
@@ -128,14 +129,12 @@ export function WorkspaceSwitcher(props: {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="font-medium truncate">{currentWorkspace.name}</span>
-                    <Badge variant="secondary">Active</Badge>
                   </div>
                   <div className="flex items-center gap-1 text-sm text-muted-foreground">
                     <Users className="h-3 w-3" />
                     <span>{currentWorkspace.users?.length || 0} members</span>
                   </div>
                 </div>
-                <Check className="h-5 w-5 text-primary" />
               </div>
             </div>
           )}
@@ -183,7 +182,10 @@ export function WorkspaceSwitcher(props: {
                     return (
                       <div
                         key={workspace._id}
-                        className="w-full justify-start h-auto p-3 rounded-none flex border border-border "
+                        className={cn(
+                          'w-full justify-start h-auto p-3 rounded-none flex border border-border ',
+                          isCurrentWorkspace && 'bg-muted'
+                        )}
                       >
                         <Avatar className="h-8 w-8 mr-3">
                           <AvatarImage src={workspace.image} />
