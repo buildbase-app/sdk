@@ -32,13 +32,12 @@ export const useSaaSWorkspaces = () => {
           if (workspace._id === currentWorkspace?._id) {
             return;
           }
-          dispatch(setCurrentWorkspace(workspace));
+          setCurrentWorkspaceWithStorage(workspace);
         }
       }
     }
   }, [isInitialized]);
 
-  // Custom setCurrentWorkspace that saves to localStorage
   const setCurrentWorkspaceWithStorage = useCallback((workspace: IWorkspace) => {
     // check if the workspace is the same as the current workspace
     if (workspace._id === currentWorkspace?._id) {
@@ -66,11 +65,11 @@ export const useSaaSWorkspaces = () => {
           // Find the full workspace object from the fetched data
           const fullWorkspace = data.find(ws => ws._id === savedWorkspaceId);
           if (fullWorkspace) {
-            dispatch(setCurrentWorkspace(fullWorkspace));
+            setCurrentWorkspaceWithStorage(fullWorkspace);
           }
         } else if (data.length > 0) {
           // If no valid saved workspace, select the first available workspace
-          if (!currentWorkspace) dispatch(setCurrentWorkspace(data[0]));
+          if (!currentWorkspace) setCurrentWorkspaceWithStorage(data[0]);
         }
       }
     } catch (err) {
@@ -118,14 +117,14 @@ export const useSaaSWorkspaces = () => {
         if (workspace._id === currentWorkspace._id) {
           return;
         }
-        dispatch(setCurrentWorkspace(workspace));
+        setCurrentWorkspaceWithStorage(workspace);
       } else {
         if (workspaces.length > 0) {
           // check if the workspace is the same as the current workspace
           if (workspaces[0]._id === currentWorkspace._id) {
             return;
           }
-          dispatch(setCurrentWorkspace(workspaces[0]));
+          setCurrentWorkspaceWithStorage(workspaces[0]);
         }
       }
     }

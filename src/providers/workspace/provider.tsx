@@ -43,7 +43,6 @@ import {
 import { RadioGroup, RadioGroupItem } from '../../components/ui/radio-group';
 import { Label } from '../../components/ui/label';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
-import { setCurrentWorkspace } from './reducer';
 import WorkspaceSettingsDialog from './ui/SettingsDialog';
 import { cn } from '../../lib/utils';
 import { getSvgImage, workspaceEmojis } from './ui/utils';
@@ -64,7 +63,7 @@ export function WorkspaceSwitcher(props: {
   const [open, setOpen] = useState(false);
   const [reloadWorkspacesCount, setReloadWorkspacesCount] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
-  const { fetchWorkspaces, refreshWorkspaces } = useSaaSWorkspaces();
+  const { fetchWorkspaces, refreshWorkspaces, setCurrentWorkspace } = useSaaSWorkspaces();
 
   useEffect(() => {
     fetchWorkspaces();
@@ -210,7 +209,7 @@ export function WorkspaceSwitcher(props: {
                             disabled={isCurrentWorkspace}
                             onClick={async () => {
                               await props.onWorkspaceChange(workspace);
-                              dispatch(setCurrentWorkspace(workspace));
+                              setCurrentWorkspace(workspace);
                               setOpen(false);
                             }}
                           >
@@ -224,7 +223,7 @@ export function WorkspaceSwitcher(props: {
                                   w => w._id?.toString() === currentWorkspace._id?.toString()
                                 );
                                 if (index !== -1) {
-                                  dispatch(setCurrentWorkspace(workspaces[index]));
+                                  setCurrentWorkspace(workspaces[index]);
                                 }
                               }
                             }}
