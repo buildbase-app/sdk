@@ -93,7 +93,7 @@ export function WorkspaceSwitcher(props: {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{props.trigger?.(currentWorkspace)}</DialogTrigger>
+      <DialogTrigger>{props.trigger?.(currentWorkspace)}</DialogTrigger>
       {/* Dialog Content */}
       <DialogContent>
         <DialogHeader>
