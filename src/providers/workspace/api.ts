@@ -1,6 +1,6 @@
 import { getAccessToken } from '../auth/utils';
 import { IOsConfig } from '../os/types';
-import type { IWorkspace, IWorkspaceRole, IWorkspaceUser } from './types';
+import type { IWorkspace, IWorkspaceUser } from './types';
 
 export class WorkspaceApi {
   private version: string;
@@ -70,24 +70,26 @@ export class WorkspaceApi {
     return response.json();
   }
 
-  async addWorkspaceUser(
+  async addUser(
     workspaceId: string,
-    userId: string,
-    role: IWorkspaceRole
+    config: { email: string; role: string }
   ): Promise<IWorkspaceUser> {
     const response = await fetch(
-      `${this.serverUrl}/api/${this.version}/public/workspaces/${workspaceId}/users`,
+      `${this.serverUrl}/api/${this.version}/public/workspaces/${workspaceId}/users/add`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...this.getAuthHeader() },
-        body: JSON.stringify({ orgId: this.orgId, userId, role }),
+        body: JSON.stringify(config),
       }
     );
-    if (!response.ok) throw new Error('Failed to add workspace user');
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to invite member');
+    }
     return response.json();
   }
 
-  async removeWorkspaceUser(workspaceId: string, userId: string): Promise<{ success: boolean }> {
+  async removeUser(workspaceId: string, userId: string): Promise<{ success: boolean }> {
     const response = await fetch(
       `${this.serverUrl}/api/${this.version}/public/workspaces/${workspaceId}/users/${userId}`,
       {
@@ -95,24 +97,30 @@ export class WorkspaceApi {
         headers: this.getAuthHeader(),
       }
     );
-    if (!response.ok) throw new Error('Failed to remove workspace user');
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to remove user');
+    }
     return response.json();
   }
 
-  async updateWorkspaceUserRole(
+  async updateUser(
     workspaceId: string,
     userId: string,
-    role: IWorkspaceRole
+    data: Partial<IWorkspaceUser>
   ): Promise<IWorkspaceUser> {
     const response = await fetch(
       `${this.serverUrl}/api/${this.version}/public/workspaces/${workspaceId}/users/${userId}`,
       {
-        method: 'PUT',
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json', ...this.getAuthHeader() },
-        body: JSON.stringify({ orgId: this.orgId, role }),
+        body: JSON.stringify(data),
       }
     );
-    if (!response.ok) throw new Error('Failed to update workspace user role');
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to update user');
+    }
     return response.json();
   }
 }

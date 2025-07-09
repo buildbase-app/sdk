@@ -211,14 +211,8 @@ export function WorkspaceSwitcher(props: {
                               setOpen(false);
                             }}
                           >
-                            {isCurrentWorkspace ? 'Current Workspace' : 'Switch'}
+                            {isCurrentWorkspace ? 'Current' : 'Switch to'}
                           </Button>
-                          <UpdateWorkspaceDialog
-                            onUpdated={() => {
-                              fetchWorkspaces();
-                            }}
-                            workspace={workspace}
-                          />
                           <WorkspaceSettingsDialog workspace={workspace} />
                         </div>
                       </div>

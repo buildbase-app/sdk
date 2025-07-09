@@ -6,16 +6,15 @@ export interface IWorkspace {
   image?: string;
   workspaceId: string;
   users: (string | IUser)[];
+  roles: string[];
   createdBy: string | IUser;
 }
-
-export type IWorkspaceRole = 'workspace_admin' | 'workspace_user';
 
 export interface IWorkspaceUser {
   _id: string;
   workspace: string | IWorkspace;
   user: string | IUser;
-  role: IWorkspaceRole;
+  role: string;
 }
 
 export interface WorkspaceContextValue {

@@ -1,6 +1,6 @@
 import { useCallback, useEffect } from 'react';
 import { WorkspaceApi } from './api';
-import { IWorkspace } from './types';
+import { IWorkspace, IWorkspaceUser } from './types';
 import { WorkspaceSwitcher } from './provider';
 import { workspaceStorage } from './utils';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
@@ -131,6 +131,41 @@ export const useSaaSWorkspaces = () => {
     }
   }, [currentWorkspace?._id, workspaces]);
 
+  const getUsers = useCallback(
+    async (workspaceId: string) => {
+      const data = await api.getWorkspaceUsers(workspaceId);
+      return data;
+    },
+    [api]
+  );
+
+  const addUser = useCallback(
+    async (email: string, role: string) => {
+      if (!currentWorkspace) throw new Error('Current workspace not found');
+      const data = await api.addUser(currentWorkspace._id.toString(), { email, role });
+      return data;
+    },
+    [api]
+  );
+
+  const removeUser = useCallback(
+    async (userId: string) => {
+      if (!currentWorkspace) throw new Error('Current workspace not found');
+      const data = await api.removeUser(currentWorkspace._id.toString(), userId);
+      return data;
+    },
+    [api]
+  );
+
+  const updateUser = useCallback(
+    async (userId: string, config: Partial<IWorkspaceUser>) => {
+      if (!currentWorkspace) throw new Error('Current workspace not found');
+      const data = await api.updateUser(currentWorkspace._id.toString(), userId, config);
+      return data;
+    },
+    [api]
+  );
+
   return {
     workspaces,
     loading,
@@ -144,5 +179,9 @@ export const useSaaSWorkspaces = () => {
     createWorkspace,
     switching,
     updateWorkspace,
+    getUsers,
+    addUser,
+    removeUser,
+    updateUser,
   };
 };
