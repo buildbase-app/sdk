@@ -80,9 +80,11 @@ const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace
   return (
     <div>
       <h2 className="text-xl font-bold mb-4">Workspace Members</h2>
-      <div className="mb-4">
-        <InviteMember onInvite={refresh} />
-      </div>
+      {amIAdmin && (
+        <div className="mb-4">
+          <InviteMember onInvite={refresh} />
+        </div>
+      )}
       <div className="mb-4 flex items-center justify-between">
         <div>
           <div className="text-sm text-gray-600 mb-2">
