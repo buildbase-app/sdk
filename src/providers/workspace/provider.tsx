@@ -102,149 +102,156 @@ export function WorkspaceSwitcher(props: {
             Switch Workspace
           </DialogTitle>
         </DialogHeader>
+        {!user && (
+          <div className="space-y-4 flex flex-col items-center justify-center h-full py-4 sm:py-8">
+            <div className="text-sm font-medium text-muted-foreground">
+              Looks like you are not logged in. Please login to continue.
+            </div>
+          </div>
+        )}
+        {user && (
+          <div className="space-y-4">
+            {/* Search */}
+            <div className="relative">
+              <Search className="absolute left-3 top-2/3 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+              <Input
+                placeholder="Search workspaces..."
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            {/* Current Workspace */}
+            {currentWorkspace && (
+              <div className="space-y-2">
+                <div className="text-sm font-medium text-muted-foreground">Current Workspace</div>
+                <div className="flex items-center gap-3 rounded-lg border-2 p-3 border-border bg-muted text-muted-foreground">
+                  <Avatar className="h-8 w-8 flex items-center justify-center">
+                    <div>
+                      <AvatarImage src={currentWorkspace.image} />
+                    </div>
+                    <AvatarFallback>{getWorkspaceInitials(currentWorkspace.name)}</AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium truncate">{currentWorkspace.name}</span>
+                    </div>
+                    <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                      <Users className="h-3 w-3" />
+                      <span>{currentWorkspace.users?.length || 0} members</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
-        <div className="space-y-4">
-          {/* Search */}
-          <div className="relative">
-            <Search className="absolute left-3 top-2/3 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-            <Input
-              placeholder="Search workspaces..."
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              className="pl-10"
+            <Separator />
+
+            {/* Workspaces List */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="text-sm font-medium text-muted-foreground">
+                  Available Workspaces ({filteredWorkspaces.length})
+                </div>
+                <div>
+                  <Button
+                    progress={refreshing}
+                    disabled={refreshing}
+                    variant="outline"
+                    onClick={reloadWorkspaces}
+                    startIcon={<RefreshCcw />}
+                  >
+                    {refreshing ? 'Refreshing...' : 'Refresh'}
+                  </Button>
+                </div>
+              </div>
+
+              {loading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                  <span className="ml-2 text-sm text-muted-foreground">Loading workspaces...</span>
+                </div>
+              ) : filteredWorkspaces.length === 0 ? (
+                <div className="text-center py-8">
+                  <Building2 className="mx-auto h-12 w-12 text-muted-foreground" />
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    {searchQuery ? 'No workspaces found' : 'No workspaces available'}
+                  </p>
+                </div>
+              ) : (
+                <ScrollArea className="h-64">
+                  <div className="space-y-2">
+                    {filteredWorkspaces.map(workspace => {
+                      const usersCount = workspace?.users?.length || 0;
+                      const isAdmin = workspace.createdBy === user?.id;
+                      const isCurrentWorkspace = workspace._id === currentWorkspace?._id;
+                      return (
+                        <div
+                          key={workspace._id}
+                          className={cn(
+                            'w-full justify-start h-auto p-3 rounded-none flex border border-border ',
+                            isCurrentWorkspace && 'bg-muted'
+                          )}
+                        >
+                          <Avatar className="h-8 w-8 mr-3">
+                            <AvatarImage src={workspace.image} />
+                            <AvatarFallback>{getWorkspaceInitials(workspace.name)}</AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0 text-left">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium truncate">{workspace.name}</span>
+                              {isAdmin && <Crown className="h-3 w-3 text-amber-500" />}
+                            </div>
+                            <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                              <Users className="h-3 w-3" />
+                              <span>
+                                {usersCount} member{usersCount !== 1 ? 's' : ''}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              size="sm"
+                              disabled={isCurrentWorkspace}
+                              onClick={async () => {
+                                await props.onWorkspaceChange(workspace);
+                                setCurrentWorkspace(workspace);
+                                setOpen(false);
+                              }}
+                            >
+                              {isCurrentWorkspace ? 'Current' : 'Switch to'}
+                            </Button>
+                            <WorkspaceSettingsDialog
+                              workspace={workspace}
+                              onClose={() => {
+                                if (currentWorkspace) {
+                                  const index = workspaces.findIndex(
+                                    w => w._id?.toString() === currentWorkspace._id?.toString()
+                                  );
+                                  if (index !== -1) {
+                                    setCurrentWorkspace(workspaces[index]);
+                                  }
+                                }
+                              }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </ScrollArea>
+              )}
+            </div>
+
+            {/* Create New Workspace */}
+            <Separator />
+            <CreateWorkspaceDialog
+              onCreated={() => {
+                fetchWorkspaces();
+              }}
             />
           </div>
-
-          {/* Current Workspace */}
-          {currentWorkspace && (
-            <div className="space-y-2">
-              <div className="text-sm font-medium text-muted-foreground">Current Workspace</div>
-              <div className="flex items-center gap-3 rounded-lg border-2 p-3 border-border bg-muted text-muted-foreground">
-                <Avatar className="h-8 w-8 flex items-center justify-center">
-                  <div>
-                    <AvatarImage src={currentWorkspace.image} />
-                  </div>
-                  <AvatarFallback>{getWorkspaceInitials(currentWorkspace.name)}</AvatarFallback>
-                </Avatar>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium truncate">{currentWorkspace.name}</span>
-                  </div>
-                  <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                    <Users className="h-3 w-3" />
-                    <span>{currentWorkspace.users?.length || 0} members</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          <Separator />
-
-          {/* Workspaces List */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <div className="text-sm font-medium text-muted-foreground">
-                Available Workspaces ({filteredWorkspaces.length})
-              </div>
-              <div>
-                <Button
-                  progress={refreshing}
-                  disabled={refreshing}
-                  variant="outline"
-                  onClick={reloadWorkspaces}
-                  startIcon={<RefreshCcw />}
-                >
-                  {refreshing ? 'Refreshing...' : 'Refresh'}
-                </Button>
-              </div>
-            </div>
-
-            {loading ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                <span className="ml-2 text-sm text-muted-foreground">Loading workspaces...</span>
-              </div>
-            ) : filteredWorkspaces.length === 0 ? (
-              <div className="text-center py-8">
-                <Building2 className="mx-auto h-12 w-12 text-muted-foreground" />
-                <p className="mt-2 text-sm text-muted-foreground">
-                  {searchQuery ? 'No workspaces found' : 'No workspaces available'}
-                </p>
-              </div>
-            ) : (
-              <ScrollArea className="h-64">
-                <div className="space-y-2">
-                  {filteredWorkspaces.map(workspace => {
-                    const usersCount = workspace?.users?.length || 0;
-                    const isAdmin = workspace.createdBy === user?.id;
-                    const isCurrentWorkspace = workspace._id === currentWorkspace?._id;
-                    return (
-                      <div
-                        key={workspace._id}
-                        className={cn(
-                          'w-full justify-start h-auto p-3 rounded-none flex border border-border ',
-                          isCurrentWorkspace && 'bg-muted'
-                        )}
-                      >
-                        <Avatar className="h-8 w-8 mr-3">
-                          <AvatarImage src={workspace.image} />
-                          <AvatarFallback>{getWorkspaceInitials(workspace.name)}</AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 min-w-0 text-left">
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium truncate">{workspace.name}</span>
-                            {isAdmin && <Crown className="h-3 w-3 text-amber-500" />}
-                          </div>
-                          <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                            <Users className="h-3 w-3" />
-                            <span>
-                              {usersCount} member{usersCount !== 1 ? 's' : ''}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            size="sm"
-                            disabled={isCurrentWorkspace}
-                            onClick={async () => {
-                              await props.onWorkspaceChange(workspace);
-                              setCurrentWorkspace(workspace);
-                              setOpen(false);
-                            }}
-                          >
-                            {isCurrentWorkspace ? 'Current' : 'Switch to'}
-                          </Button>
-                          <WorkspaceSettingsDialog
-                            workspace={workspace}
-                            onClose={() => {
-                              if (currentWorkspace) {
-                                const index = workspaces.findIndex(
-                                  w => w._id?.toString() === currentWorkspace._id?.toString()
-                                );
-                                if (index !== -1) {
-                                  setCurrentWorkspace(workspaces[index]);
-                                }
-                              }
-                            }}
-                          />
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </ScrollArea>
-            )}
-          </div>
-
-          {/* Create New Workspace */}
-          <Separator />
-          <CreateWorkspaceDialog
-            onCreated={() => {
-              fetchWorkspaces();
-            }}
-          />
-        </div>
+        )}
       </DialogContent>
     </Dialog>
   );
