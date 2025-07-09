@@ -4,6 +4,7 @@ const TOKEN_PARAM = 'token';
 export const AUTH_TOKEN_KEY = 'saas_os_auth_token';
 
 export function getAccessToken() {
+  if (typeof window === 'undefined') return null;
   const token = localStorage.getItem(AUTH_TOKEN_KEY);
   try {
     if (!token) return null;

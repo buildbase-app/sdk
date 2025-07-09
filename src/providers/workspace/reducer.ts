@@ -33,6 +33,9 @@ export const slice = createSlice({
     setCurrentWorkspace: (state, action: PayloadAction<IWorkspace>) => {
       state.currentWorkspace = action.payload;
     },
+    resetCurrentWorkspace: state => {
+      state.currentWorkspace = null;
+    },
     setIsInitialized: (state, action: PayloadAction<boolean>) => {
       state.isInitialized = action.payload;
     },
@@ -59,6 +62,7 @@ export const {
   setError,
   setRefreshing,
   setSwitching,
+  resetCurrentWorkspace,
 } = slice.actions;
 
 export default slice.reducer;

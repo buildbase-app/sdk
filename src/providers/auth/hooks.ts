@@ -2,12 +2,14 @@ import { useCallback } from 'react';
 import { defaultApiClient } from '../../lib/api-client';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { authenticationFailed, authenticationStarted, removeSession } from './reducer';
+import { useSaaSWorkspaces } from '../workspace/hooks';
 
 export function useSaaSAuth() {
   const dispatch = useAppDispatch();
   const auth = useAppSelector(state => state.auth);
   const os = useAppSelector(state => state.os);
   const { serverUrl, orgId, auth: authConfig } = os;
+  const { resetCurrentWorkspace } = useSaaSWorkspaces();
 
   const signIn = useCallback(async () => {
     dispatch(authenticationStarted());
@@ -37,6 +39,7 @@ export function useSaaSAuth() {
   const signOut = useCallback(async () => {
     try {
       dispatch(removeSession());
+      resetCurrentWorkspace();
     } catch (error) {
       console.error('Logout error:', error);
     }

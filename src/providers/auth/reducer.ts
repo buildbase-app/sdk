@@ -6,8 +6,8 @@ export const AUTH_TOKEN_KEY = 'saas_os_auth_token';
 
 export function loadUserFromCookies(): { session: AuthSession | null } {
   try {
+    if (typeof window === 'undefined') return { session: null };
     const token = localStorage.getItem(AUTH_TOKEN_KEY);
-
     if (token) {
       const session: AuthSession = JSON.parse(token);
 

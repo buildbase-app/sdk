@@ -4,6 +4,7 @@ const WORKSPACE_STORAGE_KEY = 'saas-workspace-current';
 
 export const workspaceStorage = {
   saveCurrentWorkspace: (workspace: IWorkspace | null): void => {
+    if (typeof window === 'undefined') return;
     try {
       if (workspace) {
         localStorage.setItem(WORKSPACE_STORAGE_KEY, workspace._id);
@@ -16,6 +17,7 @@ export const workspaceStorage = {
   },
 
   loadCurrentWorkspace: (): string | null => {
+    if (typeof window === 'undefined') return null;
     try {
       const stored = localStorage.getItem(WORKSPACE_STORAGE_KEY);
       if (stored) {
@@ -30,6 +32,7 @@ export const workspaceStorage = {
   },
 
   clearCurrentWorkspace: (): void => {
+    if (typeof window === 'undefined') return;
     try {
       localStorage.removeItem(WORKSPACE_STORAGE_KEY);
     } catch (error) {

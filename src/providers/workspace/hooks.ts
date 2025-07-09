@@ -5,6 +5,7 @@ import { WorkspaceSwitcher } from './provider';
 import { workspaceStorage } from './utils';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import {
+  resetCurrentWorkspace,
   setCurrentWorkspace,
   setError,
   setIsInitialized,
@@ -47,6 +48,11 @@ export const useSaaSWorkspaces = () => {
       dispatch(setCurrentWorkspace(workspace));
     }
     workspaceStorage.saveCurrentWorkspace(workspace);
+  }, []);
+
+  const resetCurrentWorkspaceWithStorage = useCallback(() => {
+    dispatch(resetCurrentWorkspace());
+    workspaceStorage.clearCurrentWorkspace();
   }, []);
 
   // Fetch and update workspaces (main fetch)
@@ -175,6 +181,7 @@ export const useSaaSWorkspaces = () => {
     WorkspaceSwitcher,
     currentWorkspace,
     setCurrentWorkspace: setCurrentWorkspaceWithStorage,
+    resetCurrentWorkspace: resetCurrentWorkspaceWithStorage,
     createWorkspace,
     switching,
     updateWorkspace,
