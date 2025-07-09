@@ -16,8 +16,8 @@ const Sidebar: React.FC<Props> = ({ workspace, section, setSection }) => {
       {workspace && (
         <div className="mb-6 pb-4 border-b">
           <div className="flex items-center space-x-2 mb-2">
-            <div className="w-8 h-8 bg-blue-100 rounded flex items-center justify-center text-blue-600 font-medium">
-              <img src={workspace.image} className="w-full h-full object-cover" />
+            <div className="w-12 h-12 bg-blue-100 rounded flex items-center justify-center text-blue-600 font-medium px-0.5 py-0.5">
+              <img src={workspace.image} className="w-full h-full object-contain" />
             </div>
             <div>
               <div className="font-medium text-sm">{workspace.name}</div>
