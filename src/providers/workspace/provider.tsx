@@ -61,7 +61,7 @@ export function WorkspaceSwitcher(props: {
   );
   const { user } = useAppSelector(state => state.auth);
   const [open, setOpen] = useState(false);
-  const [reloadWorkspacesCount, setReloadWorkspacesCount] = useState(0);
+  const [reloadWorkspacesCount, setReloadWorkspacesCount] = useState<number>(0);
   const [searchQuery, setSearchQuery] = useState('');
   const { fetchWorkspaces, refreshWorkspaces, setCurrentWorkspace } = useSaaSWorkspaces();
 
