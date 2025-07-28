@@ -89,7 +89,7 @@ export class BetaForm {
         ? Intl.NumberFormat().resolvedOptions().currency
         : undefined);
 
-    const response = await fetch(`${this.serverUrl}/${this.version}/beta/submit`, {
+    const response = await fetch(`${this.serverUrl}/api/${this.version}/beta/submit`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
