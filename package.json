@@ -1,5 +1,5 @@
 {
-  "name": "@saas-os/react",
+  "name": "react-saas-os-sdk",
   "version": "1.0.0",
   "type": "module",
   "description": "A React library with shadcn components, Tailwind CSS, and axios",
@@ -107,6 +107,17 @@
     "axios",
     "ui-components"
   ],
-  "author": "Your Name",
-  "license": "MIT"
+  "author": "Test SaaS OS",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/test-saas-os/react-saas-os-sdk.git"
+  },
+  "bugs": {
+    "url": "https://github.com/test-saas-os/react-saas-os-sdk/issues"
+  },
+  "homepage": "https://github.com/test-saas-os/react-saas-os-sdk#readme",
+  "engines": {
+    "node": ">=16.0.0"
+  }
 }
