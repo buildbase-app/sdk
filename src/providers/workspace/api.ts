@@ -1,6 +1,6 @@
 import { getAccessToken } from '../auth/utils';
 import { IOsConfig } from '../os/types';
-import type { IWorkspace, IWorkspaceUser } from './types';
+import type { IWorkspace, IWorkspaceFeature, IWorkspaceUser } from './types';
 
 export class WorkspaceApi {
   private version: string;
@@ -121,6 +121,41 @@ export class WorkspaceApi {
       const error = await response.json();
       throw new Error(error.message || 'Failed to update user');
     }
+    return response.json();
+  }
+
+  async getFeatures(): Promise<IWorkspaceFeature[]> {
+    const response = await fetch(
+      `${this.serverUrl}/api/${this.version}/public/workspaces/features`,
+      {
+        headers: this.getAuthHeader(),
+      }
+    );
+    if (!response.ok) throw new Error('Failed to fetch features');
+    return response.json();
+  }
+
+  async updateFeature(workspaceId: string, key: string, value: boolean): Promise<IWorkspace> {
+    const response = await fetch(
+      `${this.serverUrl}/api/${this.version}/public/workspaces/${workspaceId}/features`,
+      {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', ...this.getAuthHeader() },
+        body: JSON.stringify({ features: { [key]: value } }),
+      }
+    );
+    if (!response.ok) throw new Error('Failed to update feature');
+    return response.json();
+  }
+
+  async getWorkspace(workspaceId: string): Promise<IWorkspace> {
+    const response = await fetch(
+      `${this.serverUrl}/api/${this.version}/public/workspaces/${workspaceId}`,
+      {
+        headers: this.getAuthHeader(),
+      }
+    );
+    if (!response.ok) throw new Error('Failed to fetch workspace');
     return response.json();
   }
 }

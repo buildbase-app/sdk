@@ -1,5 +1,5 @@
 {
-  "name": "react-saas-os-sdk",
+  "name": "@saas-os/react",
   "version": "1.0.0",
   "type": "module",
   "description": "A React library with shadcn components, Tailwind CSS, and axios",

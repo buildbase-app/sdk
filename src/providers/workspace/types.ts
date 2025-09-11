@@ -8,6 +8,18 @@ export interface IWorkspace {
   users: (string | IUser)[];
   roles: string[];
   createdBy: string | IUser;
+  features: Record<string, boolean>;
+}
+export interface IWorkspaceFeature {
+  _id: string;
+  name: string;
+  description: string;
+  userManaged: boolean; // if true, the feature is managed by the user on the workspace setting page
+  defaultValue: boolean;
+  slug: string;
+  category: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface IWorkspaceUser {

@@ -63,14 +63,17 @@ export function WorkspaceSwitcher(props: {
   const [open, setOpen] = useState(false);
   const [reloadWorkspacesCount, setReloadWorkspacesCount] = useState<number>(0);
   const [searchQuery, setSearchQuery] = useState('');
-  const { fetchWorkspaces, refreshWorkspaces, setCurrentWorkspace } = useSaaSWorkspaces();
+  const { fetchWorkspaces, getFeatures, refreshWorkspaces, setCurrentWorkspace } =
+    useSaaSWorkspaces();
 
   useEffect(() => {
     fetchWorkspaces();
+    getFeatures();
   }, []);
 
   useEffect(() => {
     refreshWorkspaces();
+    getFeatures();
   }, [reloadWorkspacesCount]);
 
   function reloadWorkspaces() {

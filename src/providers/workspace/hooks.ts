@@ -6,6 +6,7 @@ import { workspaceStorage } from './utils';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import {
   resetCurrentWorkspace,
+  setAllFeatures,
   setCurrentWorkspace,
   setError,
   setIsInitialized,
@@ -18,8 +19,16 @@ export const useSaaSWorkspaces = () => {
   const os = useAppSelector(state => state.os);
   const api = new WorkspaceApi(os);
   const dispatch = useAppDispatch();
-  const { workspaces, currentWorkspace, loading, error, refreshing, switching, isInitialized } =
-    useAppSelector(state => state.workspaces);
+  const {
+    workspaces,
+    currentWorkspace,
+    loading,
+    error,
+    refreshing,
+    switching,
+    isInitialized,
+    allFeatures,
+  } = useAppSelector(state => state.workspaces);
 
   // Load saved workspace ID on initialization
   useEffect(() => {
@@ -115,6 +124,20 @@ export const useSaaSWorkspaces = () => {
     [api]
   );
 
+  const getFeatures = useCallback(async () => {
+    const data = await api.getFeatures();
+    dispatch(setAllFeatures(data));
+    return data;
+  }, [api]);
+
+  const updateFeature = useCallback(
+    async (workspaceId: string, key: string, value: boolean) => {
+      const data = await api.updateFeature(workspaceId, key, value);
+      return data;
+    },
+    [api]
+  );
+
   useEffect(() => {
     if (currentWorkspace?._id) {
       const workspace = workspaces.find(ws => ws._id === currentWorkspace?._id);
@@ -171,6 +194,14 @@ export const useSaaSWorkspaces = () => {
     [api]
   );
 
+  const getWorkspace = useCallback(
+    async (workspaceId: string) => {
+      const data = await api.getWorkspace(workspaceId);
+      return data;
+    },
+    [api]
+  );
+
   return {
     workspaces,
     loading,
@@ -183,6 +214,10 @@ export const useSaaSWorkspaces = () => {
     setCurrentWorkspace: setCurrentWorkspaceWithStorage,
     resetCurrentWorkspace: resetCurrentWorkspaceWithStorage,
     createWorkspace,
+    allFeatures,
+    getFeatures,
+    updateFeature,
+    getWorkspace,
     switching,
     updateWorkspace,
     getUsers,

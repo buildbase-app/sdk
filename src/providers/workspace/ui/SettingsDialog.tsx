@@ -3,12 +3,13 @@ import { Dialog, DialogContent, DialogTrigger } from '../../../components/ui/dia
 import WorkspaceSettingsSidebar from './Sidebar';
 import WorkspaceSettingsProfile from './SettingsProfile';
 import WorkspaceSettingsGeneral from './SettingsGeneral';
+import WorkspaceSettingsFeatures from './SettingsFeatures';
 import WorkspaceSettingsUsers from './SettingsUsers';
 import { Button } from '../../../components/ui/button';
 import { Settings } from 'lucide-react';
 import { IWorkspace } from '../types';
 
-export type WorkspaceSettingsSection = 'profile' | 'general' | 'users';
+export type WorkspaceSettingsSection = 'profile' | 'general' | 'users' | 'features';
 
 const WorkspaceSettingsDialog: React.FC<{
   workspace: IWorkspace;
@@ -43,6 +44,9 @@ const WorkspaceSettingsDialog: React.FC<{
           {section === 'profile' && <WorkspaceSettingsProfile workspace={workspace} />}
           {section === 'general' && <WorkspaceSettingsGeneral workspace={workspace} />}
           {section === 'users' && <WorkspaceSettingsUsers workspace={workspace} />}
+          {section === 'features' && (
+            <WorkspaceSettingsFeatures workspaceId={workspace._id?.toString()} />
+          )}
         </div>
       </DialogContent>
     </Dialog>

@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { IWorkspace } from './types';
+import { IWorkspace, IWorkspaceFeature } from './types';
 
 export interface IState {
   workspaces: IWorkspace[];
@@ -9,6 +9,7 @@ export interface IState {
   refreshing: boolean;
   switching: boolean;
   isInitialized: boolean;
+  allFeatures: IWorkspaceFeature[];
 }
 // Define the initial state using that type
 const initialState = (): IState => {
@@ -20,6 +21,7 @@ const initialState = (): IState => {
     refreshing: false,
     switching: false,
     isInitialized: false,
+    allFeatures: [],
   };
 };
 
@@ -29,6 +31,9 @@ export const slice = createSlice({
   reducers: {
     setWorkspaces: (state, action: PayloadAction<IWorkspace[]>) => {
       state.workspaces = action.payload;
+    },
+    setAllFeatures: (state, action: PayloadAction<IWorkspaceFeature[]>) => {
+      state.allFeatures = action.payload;
     },
     setCurrentWorkspace: (state, action: PayloadAction<IWorkspace>) => {
       state.currentWorkspace = action.payload;
@@ -62,6 +67,7 @@ export const {
   setError,
   setRefreshing,
   setSwitching,
+  setAllFeatures,
   resetCurrentWorkspace,
 } = slice.actions;
 

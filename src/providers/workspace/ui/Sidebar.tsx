@@ -1,6 +1,6 @@
 import React from 'react';
 import type { WorkspaceSettingsSection } from './SettingsDialog';
-import { SettingsIcon, UserIcon, UsersIcon } from 'lucide-react';
+import { SettingsIcon, ToggleRight, UserIcon, UsersIcon } from 'lucide-react';
 import { cn } from '../../../lib/utils';
 import { IWorkspace } from '../types';
 
@@ -63,6 +63,15 @@ const Sidebar: React.FC<Props> = ({ workspace, section, setSection }) => {
           onClick={() => setSection('users')}
         >
           <UsersIcon className="h-4 w-4" /> Users
+        </button>
+        <button
+          className={cn(
+            'flex w-full text-left px-2 py-1 rounded text-sm items-center gap-x-2',
+            section === 'features' ? 'bg-blue-100 text-blue-700 font-medium' : 'hover:bg-gray-100'
+          )}
+          onClick={() => setSection('features')}
+        >
+          <ToggleRight className="h-4 w-4" /> Features
         </button>
       </div>
     </div>
