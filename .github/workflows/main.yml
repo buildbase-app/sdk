@@ -61,3 +61,9 @@ jobs:
           name: dist-files
           path: dist/
           retention-days: 30
+
+      - name: Publish to npm
+        if: startsWith(github.ref, 'refs/tags/')
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

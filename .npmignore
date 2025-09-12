@@ -1,0 +1,57 @@
+# Source files
+src/
+*.ts
+*.tsx
+!*.d.ts
+
+# Development files
+.github/
+.vscode/
+.idea/
+*.log
+*.tgz
+*.tar.gz
+
+# Build tools
+rollup.config.js
+tsconfig.json
+tailwind.config.js
+postcss.config.cjs
+nodemon.json
+
+# Development dependencies
+node_modules/
+yalc.lock
+
+# Testing
+coverage/
+*.test.*
+*.spec.*
+__tests__/
+test/
+
+# Documentation (keep README.md)
+docs/
+*.md
+!README.md
+
+# Git
+.git/
+.gitignore
+
+# Environment files
+.env*
+!.env.example
+
+# IDE files
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+tmp/
+temp/
