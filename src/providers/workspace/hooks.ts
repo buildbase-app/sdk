@@ -14,6 +14,7 @@ import {
   setRefreshing,
   setWorkspaces,
 } from './reducer';
+import { IUser } from '../../api/types';
 
 export const useSaaSWorkspaces = () => {
   const os = useAppSelector(state => state.os);
@@ -191,6 +192,19 @@ export const useSaaSWorkspaces = () => {
     [api]
   );
 
+  const updateUserProfile = useCallback(
+    async (config: Partial<IUser>) => {
+      const data = await api.updateUserProfile(config);
+      return data;
+    },
+    [api]
+  );
+
+  const getProfile = useCallback(async () => {
+    const data = await api.getProfile();
+    return data;
+  }, [api]);
+
   const getWorkspace = useCallback(
     async (workspaceId: string) => {
       const data = await api.getWorkspace(workspaceId);
@@ -221,5 +235,7 @@ export const useSaaSWorkspaces = () => {
     addUser,
     removeUser,
     updateUser,
+    getProfile,
+    updateUserProfile,
   };
 };

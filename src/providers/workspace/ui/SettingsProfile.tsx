@@ -1,5 +1,4 @@
-import React, { useState } from 'react';
-import { useAppSelector } from '../../../store/hooks';
+import React, { useEffect, useState } from 'react';
 import { IWorkspace } from '../types';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -7,7 +6,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -15,37 +13,84 @@ import {
 } from '../../../components/ui/form';
 import { Input } from '../../../components/ui/input';
 import { Button } from '../../../components/ui/button';
+import { useSaaSWorkspaces } from '../hooks';
+import { IUser } from '../../../api/types';
+import { SelectCountry } from '../../../components/dropdowns/country/selectCountry';
+import { SelectCurrency } from '../../../components/dropdowns/currency/selectCurrency';
+import { SelectLanguage } from '../../../components/dropdowns/language/selectLanguage';
+import { SelectTimeZone } from '../../../components/dropdowns/timezone/selectTimeZone';
 
 const WorkspaceSettingsProfile: React.FC<{ workspace: IWorkspace }> = ({ workspace }) => {
-  const { user } = useAppSelector(state => state.auth);
-  const [oldName, setOldName] = useState(user?.name || '');
+  const { updateUserProfile, getProfile } = useSaaSWorkspaces();
   const [isSaving, setIsSaving] = useState(false);
+  const [user, setUser] = useState<IUser>();
+  const [reloadCounter, setReloadCounter] = useState(0);
 
   const formSchema = z.object({
     name: z.string().min(2, {
       message: 'Name must be at least 2 characters.',
     }),
+    country: z.string().optional(),
+    timezone: z.string().optional(),
+    language: z.string().optional(),
+    currency: z.string().optional(),
   });
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: user?.name || '',
+      country: user?.country || '',
+      timezone: user?.timezone || '',
+      language: user?.language || '',
+      currency: user?.currency || '',
     },
   });
 
+  useEffect(() => {
+    getProfile().then((user: IUser) => {
+      setUser(user);
+      form.setValue('name', user.name);
+      form.setValue('country', user.country);
+      form.setValue('timezone', user.timezone);
+      form.setValue('language', user.language);
+      form.setValue('currency', user.currency);
+    });
+  }, [reloadCounter]);
+
+  function reloadProfile() {
+    setReloadCounter(prev => prev + 1);
+  }
+
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSaving(true);
-    // await updateUser(values.name);
+    await updateUserProfile({
+      name: values.name,
+      country: values.country,
+      timezone: values.timezone,
+      language: values.language,
+      currency: values.currency,
+    });
     setIsSaving(false);
-    console.log(values);
+  }
+
+  if (!user) {
+    return <div>Loading...</div>;
   }
 
   return (
     <div>
       <div className="space-y-4">
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Email</label>
+              <Input
+                disabled
+                className="w-full border rounded px-3 py-2 bg-gray-100"
+                value={user?.email}
+              />
+            </div>
             <FormField
               disabled={isSaving}
               control={form.control}
@@ -57,36 +102,56 @@ const WorkspaceSettingsProfile: React.FC<{ workspace: IWorkspace }> = ({ workspa
                     <Input {...field} />
                   </FormControl>
                   <FormMessage />
-                  <FormDescription>
-                    This is your name. It will be displayed to other users.
-                  </FormDescription>
                 </FormItem>
               )}
             />
-            <div>
-              <label className="block text-sm font-medium mb-1">Email</label>
-              <Input
-                disabled
-                className="w-full border rounded px-3 py-2 bg-gray-100"
-                value={user?.email}
-              />
+            <div className="flex gap-y-2 my-4 flex-col">
+              <div className="flex flex-col gap-0.5">
+                <div className="text-sm font-medium">Language</div>
+                <SelectLanguage
+                  value={form.getValues('language')}
+                  onChange={newValue => {
+                    form.setValue('language', newValue);
+                  }}
+                />
+              </div>
+              <div className="flex flex-col gap-0.5">
+                <div className="text-sm font-medium">Country</div>
+                <SelectCountry
+                  value={form.getValues('country')}
+                  onChange={newValue => {
+                    form.setValue('country', newValue);
+                  }}
+                />
+              </div>
+              <div className="flex flex-col gap-0.5">
+                <div className="text-sm font-medium">Currency</div>
+                <SelectCurrency
+                  value={form.getValues('currency')}
+                  onChange={newValue => {
+                    form.setValue('currency', newValue);
+                  }}
+                />
+              </div>
+              <div className="flex flex-col gap-0.5">
+                <div className="text-sm font-medium">Timezone</div>
+                <SelectTimeZone
+                  value={form.getValues('timezone')}
+                  onChange={newValue => {
+                    form.setValue('timezone', newValue);
+                  }}
+                />
+              </div>
             </div>
             <div className="flex justify-end gap-x-2">
-              <Button
-                type="submit"
-                progress={isSaving}
-                disabled={isSaving || oldName === form.getValues('name')}
-              >
+              <Button type="submit" progress={isSaving} disabled={isSaving}>
                 Save
               </Button>
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => {
-                  setOldName(user?.name || '');
-                  form.reset({
-                    name: user?.name || '',
-                  });
+                  reloadProfile();
                 }}
                 disabled={isSaving}
               >

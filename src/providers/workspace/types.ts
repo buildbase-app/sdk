@@ -5,7 +5,7 @@ export interface IWorkspace {
   name: string;
   image?: string;
   workspaceId: string;
-  users: (string | IUser)[];
+  users: IUser[];
   roles: string[];
   createdBy: string | IUser;
   features: Record<string, boolean>;

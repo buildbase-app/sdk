@@ -20,12 +20,14 @@ import { Label } from '../../../components/ui/label';
 import { ImageIcon, Loader2, Smile } from 'lucide-react';
 import { ScrollArea } from '../../../components/ui/scroll-area';
 import { Button } from '../../../components/ui/button';
+import { useAppSelector } from '../../../store/hooks';
 
 const WorkspaceSettingsGeneral: React.FC<{ workspace: IWorkspace }> = ({ workspace }) => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [imageType, setImageType] = useState<'emoji' | 'url'>('emoji');
   const [selectedEmoji, setSelectedEmoji] = useState<string>();
   const { updateWorkspace } = useSaaSWorkspaces();
+  const { user: currentUser } = useAppSelector(state => state.auth);
 
   const formSchema = z.object({
     name: z.string().min(2, {
@@ -65,8 +67,18 @@ const WorkspaceSettingsGeneral: React.FC<{ workspace: IWorkspace }> = ({ workspa
     );
   }
 
+  const myRole = workspace?.users.find(user => {
+    const id = typeof user === 'string' ? user : user._id;
+    return id === currentUser?.id;
+  })?.role as string;
+
+  const amIAdmin = myRole?.toLowerCase() === 'admin';
+
   return (
     <div>
+      {!amIAdmin && (
+        <div className="text-red-500">Only workspace admin can change the workspace settings.</div>
+      )}
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <FormField
@@ -76,7 +88,7 @@ const WorkspaceSettingsGeneral: React.FC<{ workspace: IWorkspace }> = ({ workspa
               <FormItem>
                 <FormLabel>Name</FormLabel>
                 <FormControl>
-                  <Input placeholder="My Awesome Workspace" {...field} />
+                  <Input placeholder="My Awesome Workspace" {...field} disabled={!amIAdmin} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -93,6 +105,7 @@ const WorkspaceSettingsGeneral: React.FC<{ workspace: IWorkspace }> = ({ workspa
 
             <RadioGroup
               value={imageType}
+              disabled={!amIAdmin}
               onValueChange={value => setImageType(value as 'emoji' | 'url')}
               className="flex flex-col space-y-3"
             >
@@ -128,6 +141,7 @@ const WorkspaceSettingsGeneral: React.FC<{ workspace: IWorkspace }> = ({ workspa
                         key={index}
                         type="button"
                         onClick={() => handleEmojiSelect(emoji)}
+                        disabled={!amIAdmin}
                         className={`w-8 h-8 rounded flex items-center justify-center text-lg hover:bg-muted transition-colors ${
                           selectedEmoji === emoji ? 'bg-primary text-primary-foreground' : ''
                         }`}
@@ -149,7 +163,11 @@ const WorkspaceSettingsGeneral: React.FC<{ workspace: IWorkspace }> = ({ workspa
                     <FormItem>
                       <FormLabel>Image URL</FormLabel>
                       <FormControl>
-                        <Input placeholder="https://example.com/image.png" {...field} />
+                        <Input
+                          placeholder="https://example.com/image.png"
+                          {...field}
+                          disabled={!amIAdmin}
+                        />
                       </FormControl>
                       <FormDescription>
                         Enter a valid URL for your workspace image. Supports PNG, JPG, and SVG
@@ -172,9 +190,11 @@ const WorkspaceSettingsGeneral: React.FC<{ workspace: IWorkspace }> = ({ workspa
           </div>
 
           <div className="flex justify-end gap-3 pt-4">
-            <Button type="submit" disabled={isUpdating} progress={isUpdating}>
-              Update Workspace
-            </Button>
+            {amIAdmin && (
+              <Button type="submit" disabled={isUpdating} progress={isUpdating}>
+                Update Workspace
+              </Button>
+            )}
           </div>
         </form>
       </Form>

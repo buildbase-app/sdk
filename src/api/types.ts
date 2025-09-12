@@ -15,6 +15,12 @@ export interface IUser extends IDocument {
   _id: string;
   name: string;
   email: string;
+  image: string;
+  role: string;
+  country: string;
+  timezone: string;
+  language: string;
+  currency: string;
 }
 
 export interface IAsset extends IDocument {

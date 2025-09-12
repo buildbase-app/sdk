@@ -3,11 +3,13 @@ import { IWorkspace } from '../types';
 import { useSaaSWorkspaces } from '../hooks';
 import { Switch } from '../../../components/ui/switch';
 import { Skeleton } from '../../../components/ui/skeleton';
+import { useAppSelector } from '../../../store/hooks';
 
 const WorkspaceSettingsFeatures: React.FC<{ workspaceId: string }> = ({ workspaceId }) => {
   const [updatingFeatures, setUpdatingFeatures] = useState<Record<string, boolean>>({});
   const { allFeatures, updateFeature, getWorkspace } = useSaaSWorkspaces();
   const [workspace, setWorkspace] = useState<IWorkspace | null>(null);
+  const { user: currentUser } = useAppSelector(state => state.auth);
 
   useEffect(() => {
     getWorkspace(workspaceId).then(setWorkspace);
@@ -31,9 +33,19 @@ const WorkspaceSettingsFeatures: React.FC<{ workspaceId: string }> = ({ workspac
     );
   }
 
+  const myRole = workspace?.users.find(user => {
+    const id = typeof user === 'string' ? user : user._id;
+    return id === currentUser?.id;
+  })?.role as string;
+
+  const amIAdmin = myRole?.toLowerCase() === 'admin';
+
   return (
     <div>
       <div className="flex flex-col gap-y-3.5 pr-4">
+        {!amIAdmin && (
+          <div className="text-red-500">Only workspace admin can change the features.</div>
+        )}
         {allFeatures.map(feature => {
           const state = workspace?.features?.[feature.slug];
           return (
@@ -43,7 +55,7 @@ const WorkspaceSettingsFeatures: React.FC<{ workspaceId: string }> = ({ workspac
                 <p className="text-muted-foreground">{feature.description}</p>
               </div>
               <Switch
-                disabled={updatingFeatures[feature.slug]}
+                disabled={updatingFeatures[feature.slug] || !amIAdmin}
                 checked={state ?? feature.defaultValue}
                 onCheckedChange={value => _updateFeature(feature.slug, value)}
               />

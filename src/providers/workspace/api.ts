@@ -1,3 +1,4 @@
+import { IUser } from '../../api/types';
 import { getAccessToken } from '../auth/utils';
 import { IOsConfig } from '../os/types';
 import type { IWorkspace, IWorkspaceFeature, IWorkspaceUser } from './types';
@@ -156,6 +157,24 @@ export class WorkspaceApi {
       }
     );
     if (!response.ok) throw new Error('Failed to fetch workspace');
+    return response.json();
+  }
+
+  async getProfile(): Promise<IUser> {
+    const response = await fetch(`${this.serverUrl}/api/${this.version}/public/profile`, {
+      headers: this.getAuthHeader(),
+    });
+    if (!response.ok) throw new Error('Failed to fetch profile');
+    return response.json();
+  }
+
+  async updateUserProfile(config: Partial<IUser>): Promise<IUser> {
+    const response = await fetch(`${this.serverUrl}/api/${this.version}/public/profile`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', ...this.getAuthHeader() },
+      body: JSON.stringify(config),
+    });
+    if (!response.ok) throw new Error('Failed to update user profile');
     return response.json();
   }
 }

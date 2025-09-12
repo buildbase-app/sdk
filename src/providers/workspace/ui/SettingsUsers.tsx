@@ -78,6 +78,9 @@ const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace
 
   return (
     <div>
+      {!amIAdmin && (
+        <div className="text-red-500">Only workspace admin can manage users and roles.</div>
+      )}
       {amIAdmin && (
         <div className="mb-4">
           <InviteMember onInvite={refresh} workspaceId={workspace._id} />
