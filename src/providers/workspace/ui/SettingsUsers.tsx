@@ -15,7 +15,7 @@ const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace
   const [refreshCounter, setRefreshCounter] = useState(0);
   const [loading, setLoading] = useState(false);
   const [workspaceUsers, setWorkspaceUsers] = useState<IWorkspaceUser[]>([]);
-  const { getUsers, removeUser, updateUser, currentWorkspace } = useSaaSWorkspaces();
+  const { getUsers, removeUser, updateUser } = useSaaSWorkspaces();
 
   useEffect(() => {
     if (!workspace) return;
@@ -39,7 +39,6 @@ const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace
   if (!workspace) {
     return (
       <div>
-        <h2 className="text-xl font-bold mb-4">Workspace Members</h2>
         <div className="text-gray-500">Loading workspace members...</div>
       </div>
     );
@@ -59,13 +58,13 @@ const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace
   }));
 
   const handleRemoveUser = (userId: string) => {
-    removeUser(userId).then(() => {
+    removeUser(workspace._id, userId).then(() => {
       refresh();
     });
   };
 
-  const handleUpdateRole = (userId: string, role: string) => {
-    updateUser(userId, { role }).then(() => {
+  const handleUpdateRole = (workspaceId: string, userId: string, role: string) => {
+    updateUser(workspaceId, userId, { role }).then(() => {
       refresh();
     });
   };
@@ -79,10 +78,9 @@ const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace
 
   return (
     <div>
-      <h2 className="text-xl font-bold mb-4">Workspace Members</h2>
       {amIAdmin && (
         <div className="mb-4">
-          <InviteMember onInvite={refresh} />
+          <InviteMember onInvite={refresh} workspaceId={workspace._id} />
         </div>
       )}
       <div className="mb-4 flex items-center justify-between">
@@ -123,13 +121,13 @@ const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace
                   <Select
                     disabled={myself || !amIAdmin}
                     value={member.role}
-                    onValueChange={value => handleUpdateRole(member.id, value)}
+                    onValueChange={value => handleUpdateRole(workspace._id, member.id, value)}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select a role" />
                     </SelectTrigger>
                     <SelectContent>
-                      {currentWorkspace?.roles.map(role => (
+                      {workspace?.roles.map(role => (
                         <SelectItem key={role} value={role}>
                           {role}
                         </SelectItem>
@@ -162,13 +160,19 @@ const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace
   );
 };
 
-function InviteMember({ onInvite }: { onInvite: () => void }) {
+function InviteMember({ onInvite, workspaceId }: { onInvite: () => void; workspaceId: string }) {
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<string>('admin');
   const [inviting, setInviting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const { addUser, currentWorkspace } = useSaaSWorkspaces();
+  const { addUser, getWorkspace } = useSaaSWorkspaces();
+  const [workspace, setWorkspace] = useState<IWorkspace | null>(null);
+
+  useEffect(() => {
+    if (!workspaceId) return;
+    getWorkspace(workspaceId).then(setWorkspace);
+  }, [workspaceId]);
 
   const handleInvite = async () => {
     const emailValue = email.trim();
@@ -186,7 +190,7 @@ function InviteMember({ onInvite }: { onInvite: () => void }) {
 
     setInviting(true);
 
-    await addUser(emailValue, role)
+    await addUser(workspaceId, emailValue, role)
       .then(() => {
         setSuccess('User invited successfully');
         onInvite?.();
@@ -231,7 +235,7 @@ function InviteMember({ onInvite }: { onInvite: () => void }) {
             <SelectValue placeholder="Select a role" />
           </SelectTrigger>
           <SelectContent>
-            {currentWorkspace?.roles.map(role => (
+            {workspace?.roles.map(role => (
               <SelectItem key={role} value={role}>
                 {role}
               </SelectItem>

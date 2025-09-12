@@ -168,27 +168,24 @@ export const useSaaSWorkspaces = () => {
   );
 
   const addUser = useCallback(
-    async (email: string, role: string) => {
-      if (!currentWorkspace) throw new Error('Current workspace not found');
-      const data = await api.addUser(currentWorkspace._id.toString(), { email, role });
+    async (workspaceId: string, email: string, role: string) => {
+      const data = await api.addUser(workspaceId, { email, role });
       return data;
     },
     [api]
   );
 
   const removeUser = useCallback(
-    async (userId: string) => {
-      if (!currentWorkspace) throw new Error('Current workspace not found');
-      const data = await api.removeUser(currentWorkspace._id.toString(), userId);
+    async (workspaceId: string, userId: string) => {
+      const data = await api.removeUser(workspaceId, userId);
       return data;
     },
     [api]
   );
 
   const updateUser = useCallback(
-    async (userId: string, config: Partial<IWorkspaceUser>) => {
-      if (!currentWorkspace) throw new Error('Current workspace not found');
-      const data = await api.updateUser(currentWorkspace._id.toString(), userId, config);
+    async (workspaceId: string, userId: string, config: Partial<IWorkspaceUser>) => {
+      const data = await api.updateUser(workspaceId, userId, config);
       return data;
     },
     [api]

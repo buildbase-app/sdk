@@ -60,7 +60,6 @@ const WorkspaceSettingsGeneral: React.FC<{ workspace: IWorkspace }> = ({ workspa
   if (!workspace) {
     return (
       <div>
-        <h2 className="text-xl font-bold mb-4">Workspace Settings</h2>
         <div className="text-gray-500">Loading workspace settings...</div>
       </div>
     );
@@ -68,7 +67,6 @@ const WorkspaceSettingsGeneral: React.FC<{ workspace: IWorkspace }> = ({ workspa
 
   return (
     <div>
-      <h2 className="text-xl font-bold mb-4">Workspace Settings</h2>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <FormField

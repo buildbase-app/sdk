@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { IWorkspace } from '../types';
 import { useSaaSWorkspaces } from '../hooks';
 import { Switch } from '../../../components/ui/switch';
+import { Skeleton } from '../../../components/ui/skeleton';
 
 const WorkspaceSettingsFeatures: React.FC<{ workspaceId: string }> = ({ workspaceId }) => {
   const [updatingFeatures, setUpdatingFeatures] = useState<Record<string, boolean>>({});
@@ -15,37 +16,37 @@ const WorkspaceSettingsFeatures: React.FC<{ workspaceId: string }> = ({ workspac
   async function _updateFeature(key: string, value: boolean) {
     if (!workspace) return;
     setUpdatingFeatures(prev => ({ ...prev, [key]: value }));
-    await updateFeature(workspace._id, key, value);
+    const data = await updateFeature(workspace._id, key, value);
+    setWorkspace(data);
     setUpdatingFeatures(prev => ({ ...prev, [key]: false }));
   }
 
   if (!workspace) {
     return (
-      <div>
-        <h2 className="text-xl font-bold mb-4">Features</h2>
-        <div className="text-gray-500">Loading features...</div>
+      <div className="space-y-3.5">
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-10 w-full" />
       </div>
     );
   }
 
   return (
     <div>
-      <h2 className="text-xl font-bold mb-4">Features</h2>
-      <div className="flex flex-col gap-y-2">
+      <div className="flex flex-col gap-y-3.5 pr-4">
         {allFeatures.map(feature => {
           const state = workspace?.features?.[feature.slug];
           return (
-            <div key={feature._id}>
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-bold text-ellipsis">{feature.name}</h3>
-                <Switch
-                  disabled={updatingFeatures[feature.slug]}
-                  checked={state ?? feature.defaultValue}
-                  onCheckedChange={value => _updateFeature(feature.slug, value)}
-                />
-                {/* {updatingFeatures[feature.slug] && <Loader2 className="w-4 h-4 animate-spin" />} */}
+            <div key={feature._id} className="flex items-center gap-x-2 justify-between w-full">
+              <div className="flex gap-x-2 flex-col">
+                <h3 className="font-medium text-ellipsis">{feature.name}</h3>
+                <p className="text-muted-foreground">{feature.description}</p>
               </div>
-              <p className="text-gray-500">{feature.description}</p>
+              <Switch
+                disabled={updatingFeatures[feature.slug]}
+                checked={state ?? feature.defaultValue}
+                onCheckedChange={value => _updateFeature(feature.slug, value)}
+              />
             </div>
           );
         })}

@@ -43,7 +43,6 @@ const WorkspaceSettingsProfile: React.FC<{ workspace: IWorkspace }> = ({ workspa
 
   return (
     <div>
-      <h2 className="text-xl font-bold mb-4">Profile</h2>
       <div className="space-y-4">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">

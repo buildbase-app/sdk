@@ -40,13 +40,21 @@ const WorkspaceSettingsDialog: React.FC<{
       </DialogTrigger>
       <DialogContent className="flex min-w-[800px] min-h-full sm:min-h-[600px] p-0 divide-x">
         <WorkspaceSettingsSidebar workspace={workspace} section={section} setSection={setSection} />
-        <div className="flex-1 p-6 overflow-auto">
-          {section === 'profile' && <WorkspaceSettingsProfile workspace={workspace} />}
-          {section === 'general' && <WorkspaceSettingsGeneral workspace={workspace} />}
-          {section === 'users' && <WorkspaceSettingsUsers workspace={workspace} />}
-          {section === 'features' && (
-            <WorkspaceSettingsFeatures workspaceId={workspace._id?.toString()} />
-          )}
+        <div className="flex-1 p-6 overflow-auto flex flex-col">
+          <h2 className="text-xl font-bold mb-4 capitalize">
+            {section === 'profile' && 'Account'}
+            {section === 'general' && 'Workspace Settings'}
+            {section === 'users' && 'Workspace Members'}
+            {section === 'features' && 'Workspace Features'}
+          </h2>
+          <div className="max-h-[500px] overflow-y-auto">
+            {section === 'profile' && <WorkspaceSettingsProfile workspace={workspace} />}
+            {section === 'general' && <WorkspaceSettingsGeneral workspace={workspace} />}
+            {section === 'users' && <WorkspaceSettingsUsers workspace={workspace} />}
+            {section === 'features' && (
+              <WorkspaceSettingsFeatures workspaceId={workspace._id?.toString()} />
+            )}
+          </div>
         </div>
       </DialogContent>
     </Dialog>

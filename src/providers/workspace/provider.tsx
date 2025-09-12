@@ -12,7 +12,6 @@ import {
 } from '../../components/ui/dialog';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
-import { Badge } from '../../components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar';
 import { ScrollArea } from '../../components/ui/scroll-area';
 import { Separator } from '../../components/ui/separator';
@@ -20,13 +19,11 @@ import {
   Building2,
   Search,
   Users,
-  Check,
   Loader2,
   Plus,
   Crown,
   Image,
   Smile,
-  EditIcon,
   RefreshCcw,
 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
@@ -55,7 +52,6 @@ export function WorkspaceSwitcher(props: {
   trigger: (currentWorkspace: IWorkspace | null) => ReactNode;
   onWorkspaceChange: (workspace: IWorkspace) => Promise<void>;
 }) {
-  const dispatch = useAppDispatch();
   const { workspaces, currentWorkspace, loading, refreshing } = useAppSelector(
     state => state.workspaces
   );
@@ -320,7 +316,7 @@ function CreateWorkspaceDialog(props: { onCreated: () => void }) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
+      <DialogTrigger>
         <Button className="w-full rounded-none">
           <Plus className="h-4 w-4 mr-2" />
           Create New Workspace
