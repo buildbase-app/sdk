@@ -12,7 +12,7 @@ interface Props {
 
 const Sidebar: React.FC<Props> = ({ workspace, section, setSection }) => {
   return (
-    <div className="w-56 pl-4 py-4 bg-gray-50 h-full">
+    <div className="w-56 h-full flex flex-col px-2 py-2">
       {workspace && (
         <div className="mb-6 pb-4 border-b">
           <div className="flex items-center space-x-2 mb-2">

@@ -38,9 +38,9 @@ const WorkspaceSettingsDialog: React.FC<{
           <Settings className="h-4 w-4" />
         </Button>
       </DialogTrigger>
-      <DialogContent className="flex min-w-[800px] min-h-full sm:min-h-[600px] p-0 divide-x">
+      <DialogContent className="flex max-w-2xl min-w-full sm:min-w-[800px] p-0 m-0 bg-muted sm:min-h-[600px] min-h-full">
         <WorkspaceSettingsSidebar workspace={workspace} section={section} setSection={setSection} />
-        <div className="flex-1 p-6 overflow-auto flex flex-col">
+        <div className="flex-1 p-6 overflow-auto flex flex-col bg-background">
           <h2 className="text-xl font-bold mb-4 capitalize">
             {section === 'profile' && 'Account'}
             {section === 'general' && 'Workspace Settings'}

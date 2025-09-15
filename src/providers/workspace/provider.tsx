@@ -94,7 +94,7 @@ export function WorkspaceSwitcher(props: {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger>{props.trigger?.(currentWorkspace)}</DialogTrigger>
       {/* Dialog Content */}
-      <DialogContent>
+      <DialogContent className="max-w-2xl min-w-full sm:min-w-[800px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Building2 className="h-5 w-5" />
@@ -102,17 +102,17 @@ export function WorkspaceSwitcher(props: {
           </DialogTitle>
         </DialogHeader>
         {!user && (
-          <div className="space-y-4 flex flex-col items-center justify-center h-full py-4 sm:py-8">
+          <div className="flex flex-col items-center justify-center h-full py-4 sm:py-8">
             <div className="text-sm font-medium text-muted-foreground">
               Looks like you are not logged in. Please login to continue.
             </div>
           </div>
         )}
         {user && (
-          <div className="space-y-4">
+          <div className="flex flex-col gap-4">
             {/* Search */}
             <div className="relative">
-              <Search className="absolute left-3 top-2/3 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
               <Input
                 placeholder="Search workspaces..."
                 value={searchQuery}
@@ -122,7 +122,7 @@ export function WorkspaceSwitcher(props: {
             </div>
             {/* Current Workspace */}
             {currentWorkspace && (
-              <div className="space-y-2">
+              <div>
                 <div className="text-sm font-medium text-muted-foreground">Current Workspace</div>
                 <div className="flex items-center gap-3 rounded-lg border-2 p-3 border-border bg-muted text-muted-foreground">
                   <Avatar className="h-8 w-8 flex items-center justify-center">
@@ -147,7 +147,7 @@ export function WorkspaceSwitcher(props: {
             <Separator />
 
             {/* Workspaces List */}
-            <div className="space-y-2">
+            <div>
               <div className="flex items-center justify-between">
                 <div className="text-sm font-medium text-muted-foreground">
                   Available Workspaces ({filteredWorkspaces.length})
@@ -179,7 +179,7 @@ export function WorkspaceSwitcher(props: {
                 </div>
               ) : (
                 <ScrollArea className="h-64">
-                  <div className="space-y-2">
+                  <div className="flex flex-col gap-2 my-2.5">
                     {filteredWorkspaces.map(workspace => {
                       const usersCount = workspace?.users?.length || 0;
                       const isAdmin = workspace.createdBy === user?.id;
@@ -322,14 +322,14 @@ function CreateWorkspaceDialog(props: { onCreated: () => void }) {
           Create New Workspace
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="max-w-xl min-w-full sm:min-w-[600px]">
         <DialogHeader>
           <DialogTitle>Create New Workspace</DialogTitle>
           <DialogDescription>Create a new workspace to get started.</DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={form.handleSubmit(onSubmit)}>
             <FormField
               control={form.control}
               name="name"
@@ -344,7 +344,7 @@ function CreateWorkspaceDialog(props: { onCreated: () => void }) {
               )}
             />
 
-            <div className="space-y-4">
+            <div className="flex flex-col gap-y-2 my-2">
               <div>
                 <Label className="text-sm font-medium">Workspace Icon</Label>
                 <FormDescription>
@@ -355,16 +355,16 @@ function CreateWorkspaceDialog(props: { onCreated: () => void }) {
               <RadioGroup
                 value={imageType}
                 onValueChange={value => setImageType(value as 'emoji' | 'url')}
-                className="flex flex-col space-y-3"
+                className="flex flex-col gap-y-2"
               >
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center gap-x-2 my-1">
                   <RadioGroupItem value="emoji" id="emoji" />
                   <Label htmlFor="emoji" className="flex items-center gap-2">
                     <Smile className="h-4 w-4" />
                     Choose Emoji
                   </Label>
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center gap-x-2 my-1">
                   <RadioGroupItem value="url" id="url" />
                   <Label htmlFor="url" className="flex items-center gap-2">
                     <Image className="h-4 w-4" />
@@ -374,7 +374,7 @@ function CreateWorkspaceDialog(props: { onCreated: () => void }) {
               </RadioGroup>
 
               {imageType === 'emoji' && (
-                <div className="space-y-3">
+                <div className="flex flex-col gap-y-2">
                   <div className="flex items-center gap-3">
                     <span className="text-sm font-medium">Preview:</span>
                     <div className="w-12 h-12 rounded-lg border-2 border-border flex items-center justify-center text-2xl bg-muted">
@@ -401,7 +401,7 @@ function CreateWorkspaceDialog(props: { onCreated: () => void }) {
               )}
 
               {imageType === 'url' && (
-                <div className="space-y-3">
+                <div className="flex flex-col gap-y-2">
                   <FormField
                     control={form.control}
                     name="image"

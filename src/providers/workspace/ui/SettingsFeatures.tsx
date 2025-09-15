@@ -46,22 +46,29 @@ const WorkspaceSettingsFeatures: React.FC<{ workspaceId: string }> = ({ workspac
         {!amIAdmin && (
           <div className="text-red-500">Only workspace admin can change the features.</div>
         )}
-        {allFeatures.map(feature => {
-          const state = workspace?.features?.[feature.slug];
-          return (
-            <div key={feature._id} className="flex items-center gap-x-2 justify-between w-full">
-              <div className="flex gap-x-2 flex-col">
-                <h3 className="font-medium text-ellipsis">{feature.name}</h3>
-                <p className="text-muted-foreground">{feature.description}</p>
-              </div>
-              <Switch
-                disabled={updatingFeatures[feature.slug] || !amIAdmin}
-                checked={state ?? feature.defaultValue}
-                onCheckedChange={value => _updateFeature(feature.slug, value)}
-              />
-            </div>
-          );
-        })}
+        {!allFeatures.length && (
+          <div className="text-muted-foreground">Workspace has no features to manage.</div>
+        )}
+        {allFeatures.length > 0 && (
+          <div className="flex flex-col gap-y-3.5">
+            {allFeatures.map(feature => {
+              const state = workspace?.features?.[feature.slug];
+              return (
+                <div key={feature._id} className="flex items-center gap-x-2 justify-between w-full">
+                  <div className="flex gap-x-2 flex-col">
+                    <h3 className="font-medium text-ellipsis">{feature.name}</h3>
+                    <p className="text-muted-foreground">{feature.description}</p>
+                  </div>
+                  <Switch
+                    disabled={updatingFeatures[feature.slug] || !amIAdmin}
+                    checked={state ?? feature.defaultValue}
+                    onCheckedChange={value => _updateFeature(feature.slug, value)}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
