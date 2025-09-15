@@ -34,7 +34,12 @@ export default [
         transformMixedEsModules: true,
       }),
       json(),
-      typescript({ tsconfig: './tsconfig.json' }),
+      typescript({ 
+        tsconfig: './tsconfig.json',
+        declaration: true,
+        declarationDir: 'dist/types',
+        outDir: undefined
+      }),
       postcss({
         config: {
           path: './postcss.config.cjs',

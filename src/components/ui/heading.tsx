@@ -34,8 +34,8 @@ export interface HeadingProps
     VariantProps<typeof headingVariants> {}
 
 const Heading = React.forwardRef<HTMLHeadingElement, HeadingProps>(({ variant, ...props }, ref) => {
-  const Component = variant as keyof JSX.IntrinsicElements;
-  return React.createElement(Component, {
+  const Component = variant as keyof React.JSX.IntrinsicElements;
+  return React.createElement(Component as string, {
     className: cn(
       headingVariants({
         variant,
