@@ -1,9 +1,18 @@
-export type AuthStatus = 'loading' | 'authenticated' | 'unauthenticated' | 'authenticating';
+export enum AuthStatus {
+  loading = 'loading',
+  authenticated = 'authenticated',
+  unauthenticated = 'unauthenticated',
+  authenticating = 'authenticating',
+}
 
 export interface AuthUser {
   id: string;
   name: string;
+  org: string;
   email: string;
+  emailVerified: boolean;
+  clientId: string;
+  role: string;
   image?: string;
 }
 

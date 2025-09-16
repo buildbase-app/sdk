@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { IWorkspace } from '../types';
-import { useSaaSWorkspaces } from '../hooks';
-import { Switch } from '../../../components/ui/switch';
 import { Skeleton } from '../../../components/ui/skeleton';
+import { Switch } from '../../../components/ui/switch';
 import { useAppSelector } from '../../../store/hooks';
+import { useSaaSWorkspaces } from '../hooks';
+import { IWorkspace } from '../types';
 
 const WorkspaceSettingsFeatures: React.FC<{ workspaceId: string }> = ({ workspaceId }) => {
   const [updatingFeatures, setUpdatingFeatures] = useState<Record<string, boolean>>({});

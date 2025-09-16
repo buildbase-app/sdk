@@ -34,11 +34,11 @@ export default [
         transformMixedEsModules: true,
       }),
       json(),
-      typescript({ 
+      typescript({
         tsconfig: './tsconfig.json',
         declaration: true,
         declarationDir: 'dist/types',
-        outDir: undefined
+        outDir: undefined,
       }),
       postcss({
         config: {

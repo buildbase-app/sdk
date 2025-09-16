@@ -1,6 +1,6 @@
-import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
-import { AuthSession, IAuthState } from './types';
+import { createSlice } from '@reduxjs/toolkit';
+import { AuthSession, AuthStatus, IAuthState } from './types';
 
 export const AUTH_TOKEN_KEY = 'saas_os_auth_token';
 
@@ -49,7 +49,7 @@ const initialState = (): IAuthState => {
     isLoading: false,
     isAuthenticated: session ? true : false,
     isRedirecting: false,
-    status: session ? 'authenticated' : 'unauthenticated',
+    status: session ? AuthStatus.authenticated : AuthStatus.unauthenticated,
   };
 };
 
@@ -61,13 +61,13 @@ export const slice = createSlice({
       state.isLoading = true;
       state.isAuthenticated = false;
       state.isRedirecting = true;
-      state.status = 'authenticating';
+      state.status = AuthStatus.authenticating;
     },
     authenticationFailed: state => {
       state.isLoading = false;
       state.isAuthenticated = false;
       state.isRedirecting = false;
-      state.status = 'unauthenticated';
+      state.status = AuthStatus.unauthenticated;
     },
     setSession: (state, action: PayloadAction<AuthSession>) => {
       state.session = action.payload;
@@ -75,7 +75,7 @@ export const slice = createSlice({
       state.user = action.payload.user;
       state.isRedirecting = false;
       state.isLoading = false;
-      state.status = 'authenticated';
+      state.status = AuthStatus.authenticated;
       saveCredentials(action.payload);
     },
     removeSession: state => {
@@ -84,7 +84,7 @@ export const slice = createSlice({
       state.isLoading = false;
       state.isAuthenticated = false;
       state.isRedirecting = false;
-      state.status = 'unauthenticated';
+      state.status = AuthStatus.unauthenticated;
       removeCredentials();
     },
   },

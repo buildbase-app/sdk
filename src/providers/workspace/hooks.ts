@@ -1,9 +1,8 @@
 import { useCallback, useEffect } from 'react';
-import { WorkspaceApi } from './api';
-import { IWorkspace, IWorkspaceUser } from './types';
-import { WorkspaceSwitcher } from './provider';
-import { workspaceStorage } from './utils';
+import { IUser } from '../../api/types';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
+import { WorkspaceApi } from './api';
+import { WorkspaceSwitcher } from './provider';
 import {
   resetCurrentWorkspace,
   setAllFeatures,
@@ -14,7 +13,8 @@ import {
   setRefreshing,
   setWorkspaces,
 } from './reducer';
-import { IUser } from '../../api/types';
+import { IWorkspace, IWorkspaceUser } from './types';
+import { workspaceStorage } from './utils';
 
 export const useSaaSWorkspaces = () => {
   const os = useAppSelector(state => state.os);

@@ -1,13 +1,13 @@
-import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogTrigger } from '../../../components/ui/dialog';
-import WorkspaceSettingsSidebar from './Sidebar';
-import WorkspaceSettingsProfile from './SettingsProfile';
-import WorkspaceSettingsGeneral from './SettingsGeneral';
-import WorkspaceSettingsFeatures from './SettingsFeatures';
-import WorkspaceSettingsUsers from './SettingsUsers';
-import { Button } from '../../../components/ui/button';
 import { Settings } from 'lucide-react';
+import React, { useState } from 'react';
+import { Button } from '../../../components/ui/button';
+import { Dialog, DialogContent, DialogTrigger } from '../../../components/ui/dialog';
 import { IWorkspace } from '../types';
+import WorkspaceSettingsFeatures from './SettingsFeatures';
+import WorkspaceSettingsGeneral from './SettingsGeneral';
+import WorkspaceSettingsProfile from './SettingsProfile';
+import WorkspaceSettingsUsers from './SettingsUsers';
+import WorkspaceSettingsSidebar from './Sidebar';
 
 export type WorkspaceSettingsSection = 'profile' | 'general' | 'users' | 'features';
 

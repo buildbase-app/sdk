@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
-import { IWorkspace } from '../types';
-import { useSaaSWorkspaces } from '../hooks';
-import { z } from 'zod';
-import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { getSvgImage, workspaceEmojis } from './utils';
+import { ImageIcon, Smile } from 'lucide-react';
+import React, { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { Button } from '../../../components/ui/button';
 import {
   Form,
   FormControl,
@@ -15,12 +14,13 @@ import {
   FormMessage,
 } from '../../../components/ui/form';
 import { Input } from '../../../components/ui/input';
-import { RadioGroup, RadioGroupItem } from '../../../components/ui/radio-group';
 import { Label } from '../../../components/ui/label';
-import { ImageIcon, Loader2, Smile } from 'lucide-react';
+import { RadioGroup, RadioGroupItem } from '../../../components/ui/radio-group';
 import { ScrollArea } from '../../../components/ui/scroll-area';
-import { Button } from '../../../components/ui/button';
 import { useAppSelector } from '../../../store/hooks';
+import { useSaaSWorkspaces } from '../hooks';
+import { IWorkspace } from '../types';
+import { getSvgImage, workspaceEmojis } from './utils';
 
 const WorkspaceSettingsGeneral: React.FC<{ workspace: IWorkspace }> = ({ workspace }) => {
   const [isUpdating, setIsUpdating] = useState(false);

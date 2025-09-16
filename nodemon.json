@@ -1,15 +1,10 @@
 {
   "watch": ["src"],
   "ext": "ts,tsx,js,jsx,css,json",
-  "ignore": [
-    "dist/**/*",
-    "node_modules/**/*",
-    "*.log",
-    "coverage/**/*"
-  ],
+  "ignore": ["dist/**/*", "node_modules/**/*", "*.log", "coverage/**/*"],
   "exec": "npm run push:sdk",
   "delay": "1000",
   "env": {
     "NODE_ENV": "development"
   }
-} 
+}

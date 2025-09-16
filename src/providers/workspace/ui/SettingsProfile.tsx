@@ -1,8 +1,13 @@
-import React, { useEffect, useState } from 'react';
-import { IWorkspace } from '../types';
-import { z } from 'zod';
-import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import React, { useEffect, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { IUser } from '../../../api/types';
+import { SelectCountry } from '../../../components/dropdowns/country/selectCountry';
+import { SelectCurrency } from '../../../components/dropdowns/currency/selectCurrency';
+import { SelectLanguage } from '../../../components/dropdowns/language/selectLanguage';
+import { SelectTimeZone } from '../../../components/dropdowns/timezone/selectTimeZone';
+import { Button } from '../../../components/ui/button';
 import {
   Form,
   FormControl,
@@ -12,13 +17,8 @@ import {
   FormMessage,
 } from '../../../components/ui/form';
 import { Input } from '../../../components/ui/input';
-import { Button } from '../../../components/ui/button';
 import { useSaaSWorkspaces } from '../hooks';
-import { IUser } from '../../../api/types';
-import { SelectCountry } from '../../../components/dropdowns/country/selectCountry';
-import { SelectCurrency } from '../../../components/dropdowns/currency/selectCurrency';
-import { SelectLanguage } from '../../../components/dropdowns/language/selectLanguage';
-import { SelectTimeZone } from '../../../components/dropdowns/timezone/selectTimeZone';
+import { IWorkspace } from '../types';
 
 const WorkspaceSettingsProfile: React.FC<{ workspace: IWorkspace }> = ({ workspace }) => {
   const { updateUserProfile, getProfile } = useSaaSWorkspaces();

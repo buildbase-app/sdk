@@ -1,14 +1,14 @@
-import React, { useEffect, useState } from 'react';
-import { useAppSelector } from '../../../store/hooks';
-import { Button } from '../../../components/ui/button';
-import { IUser } from '../../../api/types';
-import { IWorkspace, IWorkspaceUser } from '../types';
-import { Input } from '../../../components/ui/input';
-import { Label } from '../../../components/ui/label';
-import { useSaaSWorkspaces } from '../hooks';
-import { Select, SelectContent, SelectItem, SelectTrigger } from '../../../components/ui/select';
 import { SelectValue } from '@radix-ui/react-select';
 import { RefreshCcwIcon, TrashIcon } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { IUser } from '../../../api/types';
+import { Button } from '../../../components/ui/button';
+import { Input } from '../../../components/ui/input';
+import { Label } from '../../../components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger } from '../../../components/ui/select';
+import { useAppSelector } from '../../../store/hooks';
+import { useSaaSWorkspaces } from '../hooks';
+import { IWorkspace, IWorkspaceUser } from '../types';
 
 const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace }) => {
   const { user: currentUser } = useAppSelector(state => state.auth);

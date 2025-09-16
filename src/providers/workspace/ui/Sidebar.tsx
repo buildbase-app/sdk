@@ -1,8 +1,8 @@
-import React from 'react';
-import type { WorkspaceSettingsSection } from './SettingsDialog';
 import { SettingsIcon, ToggleRight, UserIcon, UsersIcon } from 'lucide-react';
+import React from 'react';
 import { cn } from '../../../lib/utils';
 import { IWorkspace } from '../types';
+import type { WorkspaceSettingsSection } from './SettingsDialog';
 
 interface Props {
   workspace: IWorkspace;

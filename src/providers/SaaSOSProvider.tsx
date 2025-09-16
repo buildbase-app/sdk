@@ -1,12 +1,12 @@
 'use client';
 
 import React from 'react';
-import '../styles/globals.css';
-import PortalProvider from './PortalContainer';
 import { Provider as ReduxProvider } from 'react-redux';
 import { store } from '../store';
+import '../styles/globals.css';
 import SaaSConfigProvider from './os/provider';
 import { IOsState } from './os/types';
+import PortalProvider from './PortalContainer';
 
 export const SaaSOSProvider: React.FC<IOsState & { children: React.ReactNode }> = ({
   serverUrl,

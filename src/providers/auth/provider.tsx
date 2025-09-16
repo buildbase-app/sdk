@@ -1,12 +1,12 @@
 'use client';
 
-import { ReactNode, useCallback, useEffect } from 'react';
-import { AuthUser, IAuthCallbacks } from './types';
-import { WorkspaceProvider } from '../workspace/provider';
-import { useAppDispatch, useAppSelector } from '../../store/hooks';
-import { createSession, getTokenFromUrl, removeTokenFromUrl } from './utils';
 import { jwtDecode } from 'jwt-decode';
+import { ReactNode, useCallback, useEffect } from 'react';
+import { useAppDispatch, useAppSelector } from '../../store/hooks';
+import { WorkspaceProvider } from '../workspace/provider';
 import { authenticationFailed, setSession } from './reducer';
+import { AuthUser, IAuthCallbacks } from './types';
+import { createSession, getTokenFromUrl, removeTokenFromUrl } from './utils';
 
 interface IProps {
   children: ReactNode;

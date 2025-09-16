@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
 import { CheckCheck, ChevronsUpDown } from 'lucide-react';
+import { useState } from 'react';
 
 import { Button } from '../../ui/button';
 import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '../../ui/command';

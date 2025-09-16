@@ -1,7 +1,20 @@
+import { zodResolver } from '@hookform/resolvers/zod';
+import {
+  Building2,
+  Crown,
+  Image,
+  Loader2,
+  Plus,
+  RefreshCcw,
+  Search,
+  Smile,
+  Users,
+} from 'lucide-react';
 import { ReactNode, useEffect, useState } from 'react';
-import { useSaaSWorkspaces } from './hooks';
+import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import type { IWorkspace } from './types';
+import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar';
+import { Button } from '../../components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -10,24 +23,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '../../components/ui/dialog';
-import { Button } from '../../components/ui/button';
-import { Input } from '../../components/ui/input';
-import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar';
-import { ScrollArea } from '../../components/ui/scroll-area';
-import { Separator } from '../../components/ui/separator';
-import {
-  Building2,
-  Search,
-  Users,
-  Loader2,
-  Plus,
-  Crown,
-  Image,
-  Smile,
-  RefreshCcw,
-} from 'lucide-react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Form,
   FormControl,
@@ -37,11 +32,16 @@ import {
   FormLabel,
   FormMessage,
 } from '../../components/ui/form';
-import { RadioGroup, RadioGroupItem } from '../../components/ui/radio-group';
+import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
-import { useAppDispatch, useAppSelector } from '../../store/hooks';
-import WorkspaceSettingsDialog from './ui/SettingsDialog';
+import { RadioGroup, RadioGroupItem } from '../../components/ui/radio-group';
+import { ScrollArea } from '../../components/ui/scroll-area';
+import { Separator } from '../../components/ui/separator';
 import { cn } from '../../lib/utils';
+import { useAppSelector } from '../../store/hooks';
+import { useSaaSWorkspaces } from './hooks';
+import type { IWorkspace } from './types';
+import WorkspaceSettingsDialog from './ui/SettingsDialog';
 import { getSvgImage, workspaceEmojis } from './ui/utils';
 
 export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {

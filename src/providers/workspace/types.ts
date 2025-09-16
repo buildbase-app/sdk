@@ -40,6 +40,5 @@ export interface WorkspaceContextValue {
   refreshWorkspaces: () => Promise<void>;
 }
 
-import { ReactNode } from 'react';
 // Import IUser from your main types if needed
 import type { IUser } from '../../api/types';

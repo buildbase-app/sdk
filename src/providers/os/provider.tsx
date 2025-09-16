@@ -1,11 +1,11 @@
 'use client';
 
 import React, { useEffect } from 'react';
-import { IOsState } from './types';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
-import { setSaaSOSConfig } from './reducer';
 import { AuthProvider } from '../auth/provider';
 import { IAuthConfig } from '../auth/types';
+import { setSaaSOSConfig } from './reducer';
+import { IOsState } from './types';
 
 interface IProps {
   children: React.ReactNode;

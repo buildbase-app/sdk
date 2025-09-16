@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { IBetaConfig } from '../../api';
+import { useAppSelector } from '../../store/hooks';
 import { BetaForm } from './api';
 import { BetaFormData, BetaFormResponse } from './types';
-import { useAppSelector } from '../../store/hooks';
 
 export const useBetaForm = () => {
   const osState = useAppSelector(state => state.os);

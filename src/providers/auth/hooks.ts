@@ -1,8 +1,8 @@
 import { useCallback } from 'react';
 import { defaultApiClient } from '../../lib/api-client';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
-import { authenticationFailed, authenticationStarted, removeSession } from './reducer';
 import { useSaaSWorkspaces } from '../workspace/hooks';
+import { authenticationFailed, authenticationStarted, removeSession } from './reducer';
 
 export function useSaaSAuth() {
   const dispatch = useAppDispatch();

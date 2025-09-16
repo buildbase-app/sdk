@@ -17,11 +17,13 @@ For local development and testing, this project uses [yalc](https://github.com/w
 #### Setup
 
 1. Install yalc globally:
+
 ```bash
 npm install -g yalc
 ```
 
 2. Install dependencies:
+
 ```bash
 npm install
 ```
@@ -44,6 +46,7 @@ npm run watch:push
 ```
 
 This will:
+
 1. Watch all files in the `src/` directory
 2. Automatically rebuild when files change
 3. Push the updated package to yalc
