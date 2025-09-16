@@ -306,7 +306,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🆘 Support
 
 - 📧 Email: support@buildbase.app
-- 📖 Documentation: [BuildBase Docs](https://www.buildbase.app/)
+- 📖 Documentation: [BuildBase Docs](https://docs.buildbase.app/)
 - 🐛 Issues: [GitHub Issues](https://github.com/test-saas-os/react-saas-os-sdk/issues)
 
 ## 🔗 Links
