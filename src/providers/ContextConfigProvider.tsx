@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useEffect } from 'react';
-import { useOSDispatch } from '../contexts';
+import { useAppDispatch } from '../contexts';
+import { osActions } from '../contexts/actionCreators';
 import type { IAuthConfig } from './auth/types';
 import type { IOsState } from './os/types';
 
@@ -21,19 +22,18 @@ export const ContextConfigProvider: React.FC<ContextConfigProviderProps> = ({
   auth,
   children,
 }) => {
-  const dispatch = useOSDispatch();
+  const dispatch = useAppDispatch();
 
   useEffect(() => {
-    dispatch({
-      type: 'SET_SAAS_OS_CONFIG',
-      payload: {
+    dispatch.os(
+      osActions.setSaaSOSConfig({
         ...config,
         auth: {
           clientId: auth?.clientId || '',
           redirectUrl: auth?.redirectUrl || '',
         },
-      },
-    });
+      })
+    );
   }, [config, auth, dispatch]);
 
   return <>{children}</>;

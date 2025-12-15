@@ -37,7 +37,7 @@ import { Label } from '../../components/ui/label';
 import { RadioGroup, RadioGroupItem } from '../../components/ui/radio-group';
 import { ScrollArea } from '../../components/ui/scroll-area';
 import { Separator } from '../../components/ui/separator';
-import { useAuthSelector, useWorkspaceSelector } from '../../contexts';
+import { useAppSelector } from '../../contexts';
 import { cn } from '../../lib/utils';
 import { useSaaSWorkspaces } from './hooks';
 import type { IWorkspace } from './types';
@@ -52,8 +52,10 @@ export function WorkspaceSwitcher(props: {
   trigger: (currentWorkspace: IWorkspace | null) => ReactNode;
   onWorkspaceChange: (workspace: IWorkspace) => Promise<void>;
 }) {
-  const { workspaces, currentWorkspace, loading, refreshing } = useWorkspaceSelector();
-  const user = useAuthSelector(state => state.user);
+  const { workspaces, currentWorkspace, loading, refreshing } = useAppSelector(
+    state => state.workspaces
+  );
+  const user = useAppSelector(state => state.auth.user);
   const [open, setOpen] = useState(false);
   const [reloadWorkspacesCount, setReloadWorkspacesCount] = useState<number>(0);
   const [searchQuery, setSearchQuery] = useState('');

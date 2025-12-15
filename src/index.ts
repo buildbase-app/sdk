@@ -23,3 +23,11 @@ export { useSaaSAuth } from './providers/auth/hooks';
 // Export workspace provider and dialog
 export { useSaaSWorkspaces } from './providers/workspace/hooks';
 export { WorkspaceSwitcher } from './providers/workspace/provider';
+
+// Export combined selector
+export { useAppSelector } from './contexts/useAppSelector';
+export type { SDKState } from './contexts/useAppSelector';
+
+// Export combined dispatch
+export { useAppDispatch } from './contexts/useAppDispatch';
+export type { SDKDispatch } from './contexts/useAppDispatch';

@@ -2,7 +2,7 @@
 
 import { jwtDecode } from 'jwt-decode';
 import { ReactNode, useCallback, useEffect } from 'react';
-import { useAuthDispatch, useAuthSelector, useOSSelector } from '../../contexts';
+import { useAppDispatch, useAppSelector } from '../../contexts';
 import { authActions } from '../../contexts/actionCreators';
 import { WorkspaceProvider } from '../workspace/provider';
 import { AuthUser, IAuthCallbacks } from './types';
@@ -14,9 +14,9 @@ interface IProps {
 }
 
 export function AuthProvider({ children, callbacks }: IProps) {
-  const authState = useAuthSelector();
-  const authDispatch = useAuthDispatch();
-  const os = useOSSelector();
+  const dispatch = useAppDispatch();
+  const authState = useAppSelector(state => state.auth);
+  const os = useAppSelector(state => state.os);
   const { serverUrl } = os;
 
   const handleAuthRedirect = useCallback(
@@ -29,11 +29,11 @@ export function AuthProvider({ children, callbacks }: IProps) {
         // const user = response.data.user;
         const user = jwtDecode(token) as AuthUser;
         const session = createSession(user, token, 24);
-        authDispatch(authActions.setSession(session));
+        dispatch.auth(authActions.setSession(session));
         if (callbacks?.verifyToken) {
           const isValid = await callbacks.verifyToken(token);
           if (!isValid) {
-            authDispatch(authActions.authenticationFailed());
+            dispatch.auth(authActions.authenticationFailed());
             return;
           }
           if (callbacks?.handleAuthentication) {
@@ -43,11 +43,11 @@ export function AuthProvider({ children, callbacks }: IProps) {
         removeTokenFromUrl();
       } catch (error) {
         console.error('Auth redirect error:', error);
-        authDispatch(authActions.authenticationFailed());
+        dispatch.auth(authActions.authenticationFailed());
         throw error;
       }
     },
-    [serverUrl, authDispatch, callbacks]
+    [serverUrl, dispatch, callbacks]
   );
 
   useEffect(() => {

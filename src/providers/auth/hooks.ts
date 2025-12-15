@@ -1,18 +1,18 @@
 import { useCallback, useMemo } from 'react';
-import { useAuthDispatch, useAuthSelector, useOSSelector } from '../../contexts';
+import { useAppDispatch, useAppSelector } from '../../contexts';
 import { authActions } from '../../contexts/actionCreators';
 import { defaultApiClient } from '../../lib/api-client';
 import { useSaaSWorkspaces } from '../workspace/hooks';
 
 export function useSaaSAuth() {
-  const authDispatch = useAuthDispatch();
-  const auth = useAuthSelector();
-  const os = useOSSelector();
+  const dispatch = useAppDispatch();
+  const auth = useAppSelector(state => state.auth);
+  const os = useAppSelector(state => state.os);
   const { serverUrl, orgId, auth: authConfig } = os;
   const { resetCurrentWorkspace } = useSaaSWorkspaces();
 
   const signIn = useCallback(async () => {
-    authDispatch(authActions.authenticationStarted());
+    dispatch.auth(authActions.authenticationStarted());
     try {
       const response = await defaultApiClient.post(`${serverUrl}/api/v1/auth/request`, {
         orgId: orgId,
@@ -26,24 +26,24 @@ export function useSaaSAuth() {
       if (response.data.success) {
         window.location.href = response.data.data.redirectUrl;
       } else {
-        authDispatch(authActions.authenticationFailed());
+        dispatch.auth(authActions.authenticationFailed());
         throw new Error(response.data.message || 'Authentication failed');
       }
     } catch (error) {
-      authDispatch(authActions.authenticationFailed());
+      dispatch.auth(authActions.authenticationFailed());
       console.error('Sign in error:', error);
       throw error;
     }
-  }, [serverUrl, orgId, authConfig, authDispatch]);
+  }, [serverUrl, orgId, authConfig, dispatch]);
 
   const signOut = useCallback(async () => {
     try {
-      authDispatch(authActions.removeSession());
+      dispatch.auth(authActions.removeSession());
       resetCurrentWorkspace();
     } catch (error) {
       console.error('Logout error:', error);
     }
-  }, [authDispatch, resetCurrentWorkspace]);
+  }, [dispatch, resetCurrentWorkspace]);
 
   // Memoize return value to prevent unnecessary re-renders
   return useMemo(
