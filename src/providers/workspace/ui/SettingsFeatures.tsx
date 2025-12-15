@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Skeleton } from '../../../components/ui/skeleton';
 import { Switch } from '../../../components/ui/switch';
-import { useAppSelector } from '../../../store/hooks';
+import { useAuthSelector } from '../../../contexts';
 import { useSaaSWorkspaces } from '../hooks';
 import { IWorkspace } from '../types';
 
@@ -9,7 +9,7 @@ const WorkspaceSettingsFeatures: React.FC<{ workspaceId: string }> = ({ workspac
   const [updatingFeatures, setUpdatingFeatures] = useState<Record<string, boolean>>({});
   const { allFeatures, updateFeature, getWorkspace } = useSaaSWorkspaces();
   const [workspace, setWorkspace] = useState<IWorkspace | null>(null);
-  const { user: currentUser } = useAppSelector(state => state.auth);
+  const currentUser = useAuthSelector(state => state.user);
 
   useEffect(() => {
     getWorkspace(workspaceId).then(setWorkspace);

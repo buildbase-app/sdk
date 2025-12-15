@@ -2,9 +2,9 @@
 
 import { jwtDecode } from 'jwt-decode';
 import { ReactNode, useCallback, useEffect } from 'react';
-import { useAppDispatch, useAppSelector } from '../../store/hooks';
+import { useAuthDispatch, useAuthSelector, useOSSelector } from '../../contexts';
+import { authActions } from '../../contexts/actionCreators';
 import { WorkspaceProvider } from '../workspace/provider';
-import { authenticationFailed, setSession } from './reducer';
 import { AuthUser, IAuthCallbacks } from './types';
 import { createSession, getTokenFromUrl, removeTokenFromUrl } from './utils';
 
@@ -14,9 +14,9 @@ interface IProps {
 }
 
 export function AuthProvider({ children, callbacks }: IProps) {
-  const dispatch = useAppDispatch();
-  const authState = useAppSelector(state => state.auth);
-  const os = useAppSelector(state => state.os);
+  const authState = useAuthSelector();
+  const authDispatch = useAuthDispatch();
+  const os = useOSSelector();
   const { serverUrl } = os;
 
   const handleAuthRedirect = useCallback(
@@ -29,11 +29,11 @@ export function AuthProvider({ children, callbacks }: IProps) {
         // const user = response.data.user;
         const user = jwtDecode(token) as AuthUser;
         const session = createSession(user, token, 24);
-        dispatch(setSession(session));
+        authDispatch(authActions.setSession(session));
         if (callbacks?.verifyToken) {
           const isValid = await callbacks.verifyToken(token);
           if (!isValid) {
-            dispatch(authenticationFailed());
+            authDispatch(authActions.authenticationFailed());
             return;
           }
           if (callbacks?.handleAuthentication) {
@@ -43,11 +43,11 @@ export function AuthProvider({ children, callbacks }: IProps) {
         removeTokenFromUrl();
       } catch (error) {
         console.error('Auth redirect error:', error);
-        dispatch(authenticationFailed());
+        authDispatch(authActions.authenticationFailed());
         throw error;
       }
     },
-    [serverUrl, dispatch]
+    [serverUrl, authDispatch, callbacks]
   );
 
   useEffect(() => {

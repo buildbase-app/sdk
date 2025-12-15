@@ -1,27 +1,31 @@
 'use client';
 
 import React from 'react';
-import { Provider as ReduxProvider } from 'react-redux';
-import { store } from '../store';
+import { SDKContextProvider } from '../contexts';
 import '../styles/globals.css';
-import SaaSConfigProvider from './os/provider';
+import { ContextConfigProvider } from './ContextConfigProvider';
 import { IOsState } from './os/types';
 import PortalProvider from './PortalContainer';
 
-export const SaaSOSProvider: React.FC<IOsState & { children: React.ReactNode }> = ({
+export interface SaaSOSProviderProps extends IOsState {
+  children: React.ReactNode;
+}
+
+export const SaaSOSProvider: React.FC<SaaSOSProviderProps> = ({
   serverUrl,
   version,
   orgId,
   auth,
   children,
 }) => {
+  const config = { serverUrl, version, orgId };
   return (
-    <ReduxProvider store={store}>
+    <SDKContextProvider>
       <PortalProvider>
-        <SaaSConfigProvider config={{ serverUrl, version, orgId }} auth={auth}>
+        <ContextConfigProvider config={config} auth={auth}>
           {children}
-        </SaaSConfigProvider>
+        </ContextConfigProvider>
       </PortalProvider>
-    </ReduxProvider>
+    </SDKContextProvider>
   );
 };

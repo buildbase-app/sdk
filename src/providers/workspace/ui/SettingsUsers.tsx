@@ -6,12 +6,12 @@ import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
 import { Label } from '../../../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '../../../components/ui/select';
-import { useAppSelector } from '../../../store/hooks';
+import { useAuthSelector } from '../../../contexts';
 import { useSaaSWorkspaces } from '../hooks';
 import { IWorkspace, IWorkspaceUser } from '../types';
 
 const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace }) => {
-  const { user: currentUser } = useAppSelector(state => state.auth);
+  const currentUser = useAuthSelector(state => state.user);
   const [refreshCounter, setRefreshCounter] = useState(0);
   const [loading, setLoading] = useState(false);
   const [workspaceUsers, setWorkspaceUsers] = useState<IWorkspaceUser[]>([]);

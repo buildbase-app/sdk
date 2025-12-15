@@ -17,7 +17,7 @@ import { Input } from '../../../components/ui/input';
 import { Label } from '../../../components/ui/label';
 import { RadioGroup, RadioGroupItem } from '../../../components/ui/radio-group';
 import { ScrollArea } from '../../../components/ui/scroll-area';
-import { useAppSelector } from '../../../store/hooks';
+import { useAuthSelector } from '../../../contexts';
 import { useSaaSWorkspaces } from '../hooks';
 import { IWorkspace } from '../types';
 import { getSvgImage, workspaceEmojis } from './utils';
@@ -27,7 +27,7 @@ const WorkspaceSettingsGeneral: React.FC<{ workspace: IWorkspace }> = ({ workspa
   const [imageType, setImageType] = useState<'emoji' | 'url'>('emoji');
   const [selectedEmoji, setSelectedEmoji] = useState<string>();
   const { updateWorkspace } = useSaaSWorkspaces();
-  const { user: currentUser } = useAppSelector(state => state.auth);
+  const currentUser = useAuthSelector(state => state.user);
 
   const formSchema = z.object({
     name: z.string().min(2, {
