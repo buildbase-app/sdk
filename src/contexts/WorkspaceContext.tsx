@@ -1,0 +1,20 @@
+'use client';
+
+import { createContextProvider } from './createContext';
+import { getInitialWorkspaceState, workspaceReducer } from './reducers/workspaceReducer';
+import type { WorkspaceAction, WorkspaceContextValue, WorkspaceState } from './types';
+
+const { Provider, useContext, useState, useDispatch, useSelector } = createContextProvider<
+  WorkspaceState,
+  WorkspaceAction
+>({
+  name: 'Workspace',
+  initialState: getInitialWorkspaceState(),
+  reducer: workspaceReducer,
+});
+
+export const WorkspaceProvider = Provider;
+export const useWorkspaceContext = (): WorkspaceContextValue => useContext();
+export const useWorkspaceState = useState;
+export const useWorkspaceDispatch = useDispatch;
+export const useWorkspaceSelector = useSelector;

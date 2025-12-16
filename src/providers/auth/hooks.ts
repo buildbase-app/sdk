@@ -1,8 +1,8 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
+import { useAppDispatch, useAppSelector } from '../../contexts';
+import { authActions } from '../../contexts/actionCreators';
 import { defaultApiClient } from '../../lib/api-client';
-import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { useSaaSWorkspaces } from '../workspace/hooks';
-import { authenticationFailed, authenticationStarted, removeSession } from './reducer';
 
 export function useSaaSAuth() {
   const dispatch = useAppDispatch();
@@ -12,7 +12,7 @@ export function useSaaSAuth() {
   const { resetCurrentWorkspace } = useSaaSWorkspaces();
 
   const signIn = useCallback(async () => {
-    dispatch(authenticationStarted());
+    dispatch.auth(authActions.authenticationStarted());
     try {
       const response = await defaultApiClient.post(`${serverUrl}/api/v1/auth/request`, {
         orgId: orgId,
@@ -26,11 +26,11 @@ export function useSaaSAuth() {
       if (response.data.success) {
         window.location.href = response.data.data.redirectUrl;
       } else {
-        dispatch(authenticationFailed());
+        dispatch.auth(authActions.authenticationFailed());
         throw new Error(response.data.message || 'Authentication failed');
       }
     } catch (error) {
-      dispatch(authenticationFailed());
+      dispatch.auth(authActions.authenticationFailed());
       console.error('Sign in error:', error);
       throw error;
     }
@@ -38,26 +38,28 @@ export function useSaaSAuth() {
 
   const signOut = useCallback(async () => {
     try {
-      dispatch(removeSession());
+      dispatch.auth(authActions.removeSession());
       resetCurrentWorkspace();
     } catch (error) {
       console.error('Logout error:', error);
     }
-  }, [dispatch]);
+  }, [dispatch, resetCurrentWorkspace]);
 
-  // Computed values
+  // Memoize return value to prevent unnecessary re-renders
+  return useMemo(
+    () => ({
+      // State
+      user: auth.user,
+      session: auth.session,
+      isLoading: auth.isLoading,
+      isAuthenticated: auth.isAuthenticated,
+      isRedirecting: auth.isRedirecting,
+      status: auth.status,
 
-  return {
-    // State
-    user: auth.user,
-    session: auth.session,
-    isLoading: auth.isLoading,
-    isAuthenticated: auth.isAuthenticated,
-    isRedirecting: auth.isRedirecting,
-    status: auth.status,
-
-    // Actions
-    signIn,
-    signOut,
-  };
+      // Actions
+      signIn,
+      signOut,
+    }),
+    [auth, signIn, signOut]
+  );
 }

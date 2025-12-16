@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { IBetaConfig } from '../../api';
-import { useAppSelector } from '../../store/hooks';
+import { useAppSelector } from '../../contexts';
 import { BetaForm } from './api';
 import { BetaFormData, BetaFormResponse } from './types';
 
