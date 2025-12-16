@@ -1,6 +1,6 @@
 {
   "name": "@buildbase/sdk-test",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "type": "module",
   "description": "A SDK for Buildbase",
   "main": "dist/index.js",
