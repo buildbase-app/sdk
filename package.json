@@ -1,6 +1,6 @@
 {
-  "name": "@buildbase/sdk-test",
-  "version": "1.0.5",
+  "name": "@buildbase/sdk",
+  "version": "0.0.1",
   "type": "module",
   "description": "A SDK for Buildbase",
   "main": "dist/index.js",
@@ -110,16 +110,8 @@
     "axios",
     "ui-components"
   ],
-  "author": "Test SaaS OS",
+  "author": "Buildbase",
   "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/test-saas-os/react-saas-os-sdk.git"
-  },
-  "bugs": {
-    "url": "https://github.com/test-saas-os/react-saas-os-sdk/issues"
-  },
-  "homepage": "https://github.com/test-saas-os/react-saas-os-sdk#readme",
   "engines": {
     "node": ">=16.0.0"
   },
