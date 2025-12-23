@@ -1,4 +1,4 @@
-# @buildbase/sdk-test
+# @buildbase/sdk
 
 A React SDK for [BuildBase](https://www.buildbase.app/) that provides essential components to build SaaS applications faster. Skip the plumbing and focus on your core product with built-in authentication, workspace management, and user management.
 
@@ -12,7 +12,7 @@ A React SDK for [BuildBase](https://www.buildbase.app/) that provides essential 
 ## 📦 Installation
 
 ```bash
-npm install @buildbase/sdk-test
+npm install @buildbase/sdk
 ```
 
 ### Peer Dependencies
@@ -30,7 +30,7 @@ npm install react@^19.0.0 react-dom@^19.0.0
 First, import the required CSS file in your app:
 
 ```tsx
-import '@buildbase/sdk-test/dist/saas-os.css';
+import '@buildbase/sdk/dist/saas-os.css';
 ```
 
 ### 2. Create Client Provider
@@ -40,7 +40,7 @@ Create a client-side provider component:
 ```tsx
 'use client';
 
-import { SaaSOSProvider } from '@buildbase/sdk-test';
+import { SaaSOSProvider } from '@buildbase/sdk';
 import React from 'react';
 
 export default function SaaSProvider(props: { children: React.ReactNode }) {
@@ -119,7 +119,7 @@ The WorkspaceSwitcher component uses a render prop pattern, giving you full cont
 
 ```tsx
 import React from 'react';
-import { WorkspaceSwitcher } from '@buildbase/sdk-test';
+import { WorkspaceSwitcher } from '@buildbase/sdk';
 
 function WorkspaceExample() {
   return (
@@ -163,7 +163,7 @@ function WorkspaceExample() {
 Use the `useSaaSAuth` hook to manage authentication state and actions:
 
 ```tsx
-import { useSaaSAuth } from '@buildbase/sdk-test';
+import { useSaaSAuth } from '@buildbase/sdk';
 
 function AuthExample() {
   const { user, isAuthenticated, signIn, signOut, status } = useSaaSAuth();
@@ -207,7 +207,7 @@ const {
 For declarative rendering, use the conditional components:
 
 ```tsx
-import { WhenAuthenticated, WhenUnauthenticated } from '@buildbase/sdk-test';
+import { WhenAuthenticated, WhenUnauthenticated } from '@buildbase/sdk';
 
 function App() {
   return (
@@ -231,7 +231,7 @@ function App() {
 Control access based on user roles:
 
 ```tsx
-import { WhenRoles, WhenWorkspaceRoles } from '@buildbase/sdk-test';
+import { WhenRoles, WhenWorkspaceRoles } from '@buildbase/sdk';
 
 function AdminPanel() {
   return (
@@ -260,7 +260,7 @@ function AdminPanel() {
 Control feature visibility based on workspace settings:
 
 ```tsx
-import { WhenWorkspaceFeatureEnabled, WhenWorkspaceFeatureDisabled } from '@buildbase/sdk-test';
+import { WhenWorkspaceFeatureEnabled, WhenWorkspaceFeatureDisabled } from '@buildbase/sdk';
 
 function FeatureExample() {
   return (
@@ -293,12 +293,11 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - 📧 Email: support@buildbase.app
 - 📖 Documentation: [BuildBase Docs](https://docs.buildbase.app/)
-- 🐛 Issues: [GitHub Issues](https://github.com/test-saas-os/react-saas-os-sdk/issues)
 
 ## 🔗 Links
 
 - **Homepage**: [BuildBase](https://www.buildbase.app/)
-- **NPM Package**: [@buildbase/sdk-test](https://www.npmjs.com/package/@buildbase/sdk-test)
+- **NPM Package**: [@buildbase/sdk](https://www.npmjs.com/package/@buildbase/sdk)
 
 ---
 
