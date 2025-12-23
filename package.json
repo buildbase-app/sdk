@@ -1,5 +1,5 @@
 {
-  "name": "@buildbase/sdk-test",
+  "name": "@buildbase/sdk",
   "version": "1.0.5",
   "type": "module",
   "description": "A SDK for Buildbase",
