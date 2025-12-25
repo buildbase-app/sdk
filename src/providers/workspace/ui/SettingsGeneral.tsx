@@ -21,6 +21,7 @@ import { useAppSelector } from '../../../contexts';
 import { useSaaSWorkspaces } from '../hooks';
 import { IWorkspace } from '../types';
 import { getSvgImage, workspaceEmojis } from './utils';
+import SettingSkeleton from './Skeleton';
 
 const WorkspaceSettingsGeneral: React.FC<{ workspace: IWorkspace }> = ({ workspace }) => {
   const [isUpdating, setIsUpdating] = useState(false);
@@ -60,20 +61,14 @@ const WorkspaceSettingsGeneral: React.FC<{ workspace: IWorkspace }> = ({ workspa
   };
 
   if (!workspace) {
-    return (
-      <div>
-        <div className="text-gray-500">Loading workspace settings...</div>
-      </div>
-    );
+    return <SettingSkeleton />;
   }
 
   const myRole = workspace?.users.find(user => {
     const id = typeof user === 'object' && user !== null ? user._id : user;
     return id === currentUser?.id;
   })?.role as string;
-  console.log('myRole', myRole);
-  console.log('workspace', workspace);
-  console.log('currentUser', currentUser);
+
   const amIAdmin = myRole?.toLowerCase() === 'admin';
 
   return (

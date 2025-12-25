@@ -4,6 +4,7 @@ import { Switch } from '../../../components/ui/switch';
 import { useAppSelector } from '../../../contexts';
 import { useSaaSWorkspaces } from '../hooks';
 import { IWorkspace } from '../types';
+import SettingSkeleton from './Skeleton';
 
 const WorkspaceSettingsFeatures: React.FC<{ workspaceId: string }> = ({ workspaceId }) => {
   const [updatingFeatures, setUpdatingFeatures] = useState<Record<string, boolean>>({});
@@ -24,13 +25,7 @@ const WorkspaceSettingsFeatures: React.FC<{ workspaceId: string }> = ({ workspac
   }
 
   if (!workspace) {
-    return (
-      <div className="space-y-3.5">
-        <Skeleton className="h-10 w-full" />
-        <Skeleton className="h-10 w-full" />
-        <Skeleton className="h-10 w-full" />
-      </div>
-    );
+    return <SettingSkeleton />;
   }
 
   const myRole = workspace?.users.find(user => {

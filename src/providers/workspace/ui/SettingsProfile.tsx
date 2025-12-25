@@ -19,6 +19,7 @@ import {
 import { Input } from '../../../components/ui/input';
 import { useSaaSWorkspaces } from '../hooks';
 import { IWorkspace } from '../types';
+import SettingSkeleton from './Skeleton';
 
 const WorkspaceSettingsProfile: React.FC<{ workspace: IWorkspace }> = ({ workspace }) => {
   const { updateUserProfile, getProfile } = useSaaSWorkspaces();
@@ -75,7 +76,7 @@ const WorkspaceSettingsProfile: React.FC<{ workspace: IWorkspace }> = ({ workspa
   }
 
   if (!user) {
-    return <div>Loading...</div>;
+    return <SettingSkeleton />;
   }
 
   return (

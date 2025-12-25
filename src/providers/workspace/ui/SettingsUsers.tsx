@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger } from '../../../compo
 import { useAppSelector } from '../../../contexts';
 import { useSaaSWorkspaces } from '../hooks';
 import { IWorkspace, IWorkspaceUser } from '../types';
+import SettingSkeleton from './Skeleton';
 
 const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace }) => {
   const currentUser = useAppSelector(state => state.auth.user);
@@ -36,12 +37,8 @@ const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace
     setRefreshCounter(prev => prev + 1);
   };
 
-  if (!workspace) {
-    return (
-      <div>
-        <div className="text-gray-500">Loading workspace members...</div>
-      </div>
-    );
+  if (loading || !workspace) {
+    return <SettingSkeleton />;
   }
 
   // Helper function to get user display info
