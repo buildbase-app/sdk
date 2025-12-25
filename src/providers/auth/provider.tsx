@@ -1,7 +1,7 @@
 'use client';
 
 import { jwtDecode } from 'jwt-decode';
-import { ReactNode, useCallback, useEffect, useMemo } from 'react';
+import React, { ReactNode, useCallback, useEffect, useMemo } from 'react';
 import { useAppDispatch, useAppSelector } from '../../contexts';
 import { authActions, AUTH_TOKEN_KEY } from '../../contexts';
 import { getStorageJSON } from '../../contexts/shared/utils/storage';
@@ -18,11 +18,11 @@ interface IProps {
  * AuthProvider wrapper that adds authentication logic
  * This wraps the AuthContextProvider and adds token handling, callbacks, etc.
  */
-export function AuthProviderWrapper({ children, callbacks }: IProps) {
+export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) => {
   const dispatch = useAppDispatch();
+  // Only select what we need to minimize re-renders
   const authState = useAppSelector(state => state.auth);
-  const os = useAppSelector(state => state.os);
-  const { serverUrl } = os;
+  const serverUrl = useAppSelector(state => state.os.serverUrl);
 
   // Memoize callbacks to prevent unnecessary re-renders
   const memoizedCallbacks = useMemo(() => callbacks, [callbacks]);
@@ -94,8 +94,12 @@ export function AuthProviderWrapper({ children, callbacks }: IProps) {
 
   // WorkspaceProvider is already in SDKContextProvider, so we don't need to wrap here
   // Just return children - the context providers handle the state management
-  return <>{children}</>;
-}
+  // Memoize children to prevent unnecessary re-renders
+  const memoizedChildren = useMemo(() => children, [children]);
+  return <>{memoizedChildren}</>;
+});
+
+AuthProviderWrapper.displayName = 'AuthProviderWrapper';
 
 // Export AuthProvider for backward compatibility
 export const AuthProvider = AuthProviderWrapper;

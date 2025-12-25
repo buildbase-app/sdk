@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo } from 'react';
 import { IUser } from '../../api/types';
 import { useAppDispatch, useAppSelector } from '../../contexts';
 import { workspaceActions } from '../../contexts';
@@ -50,9 +50,16 @@ export const useSaaSWorkspaces = () => {
     dispatch.workspaces(workspaceActions.resetCurrentWorkspace());
   }, [dispatch]);
 
+  // Request deduplication refs
+  const fetchingRef = React.useRef(false);
+  const fetchingFeaturesRef = React.useRef(false);
+
   // Fetch and update workspaces (main fetch)
   const fetchWorkspaces = useCallback(async () => {
-    if (workspace.loading) return;
+    // Prevent duplicate requests
+    if (workspace.loading || fetchingRef.current) return;
+    
+    fetchingRef.current = true;
     dispatch.workspaces(workspaceActions.setLoading(true));
     dispatch.workspaces(workspaceActions.setError(null));
     try {
@@ -79,6 +86,7 @@ export const useSaaSWorkspaces = () => {
       );
     } finally {
       dispatch.workspaces(workspaceActions.setLoading(false));
+      fetchingRef.current = false;
     }
   }, [
     api,
@@ -90,7 +98,10 @@ export const useSaaSWorkspaces = () => {
 
   // Background refresh (does not block UI, updates memo/data)
   const refreshWorkspaces = useCallback(async () => {
-    if (workspace.refreshing) return;
+    // Prevent duplicate requests
+    if (workspace.refreshing || fetchingRef.current) return;
+    
+    fetchingRef.current = true;
     dispatch.workspaces(workspaceActions.setRefreshing(true));
     try {
       const data = await api.getWorkspaces();
@@ -99,6 +110,7 @@ export const useSaaSWorkspaces = () => {
       // Optionally set error, but don't block UI
     } finally {
       dispatch.workspaces(workspaceActions.setRefreshing(false));
+      fetchingRef.current = false;
     }
   }, [api, workspace.refreshing, dispatch]);
 
@@ -121,10 +133,29 @@ export const useSaaSWorkspaces = () => {
   );
 
   const getFeatures = useCallback(async () => {
-    const data = await api.getFeatures();
-    dispatch.workspaces(workspaceActions.setAllFeatures(data));
-    return data;
-  }, [api, dispatch]);
+    // Prevent duplicate requests - check if features already exist or request in progress
+    if (fetchingFeaturesRef.current) {
+      // If request is in progress, return existing features or null
+      return workspace.allFeatures.length > 0 ? workspace.allFeatures : null;
+    }
+    
+    // If features already loaded, return them immediately without making a request
+    if (workspace.allFeatures.length > 0) {
+      return workspace.allFeatures;
+    }
+    
+    fetchingFeaturesRef.current = true;
+    try {
+      const data = await api.getFeatures();
+      dispatch.workspaces(workspaceActions.setAllFeatures(data));
+      return data;
+    } catch (err) {
+      console.error('Failed to fetch features:', err);
+      return null;
+    } finally {
+      fetchingFeaturesRef.current = false;
+    }
+  }, [api, dispatch, workspace.allFeatures]);
 
   const updateFeature = useCallback(
     async (workspaceId: string, key: string, value: boolean) => {

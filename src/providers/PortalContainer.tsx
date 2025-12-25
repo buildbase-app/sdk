@@ -11,12 +11,21 @@ export const PortalContext = createContext<{
   setContainer: () => {},
 });
 
-export default function PortalProvider({ children }: { children: React.ReactNode }) {
+const PortalProvider = React.memo(({ children }: { children: React.ReactNode }) => {
   const [container, setContainer] = React.useState<HTMLDivElement | null>(null);
 
+  // Memoize context value to prevent unnecessary re-renders
+  const contextValue = React.useMemo(
+    () => ({ container, setContainer }),
+    [container]
+  );
+
+  // Memoize children to prevent unnecessary re-renders
+  const memoizedChildren = React.useMemo(() => children, [children]);
+
   return (
-    <PortalContext.Provider value={{ container, setContainer }}>
-      {children}
+    <PortalContext.Provider value={contextValue}>
+      {memoizedChildren}
       <div
         ref={setContainer}
         id="saas-os-portal"
@@ -28,4 +37,8 @@ export default function PortalProvider({ children }: { children: React.ReactNode
       />
     </PortalContext.Provider>
   );
-}
+});
+
+PortalProvider.displayName = 'PortalProvider';
+
+export default PortalProvider;

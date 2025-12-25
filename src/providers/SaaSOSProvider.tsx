@@ -12,7 +12,7 @@ export interface SaaSOSProviderProps extends IOsState {
   children: React.ReactNode;
 }
 
-export const SaaSOSProvider: React.FC<SaaSOSProviderProps> = ({
+export const SaaSOSProvider: React.FC<SaaSOSProviderProps> = React.memo(({
   serverUrl,
   version,
   orgId,
@@ -24,15 +24,24 @@ export const SaaSOSProvider: React.FC<SaaSOSProviderProps> = ({
     () => ({ serverUrl, version, orgId }),
     [serverUrl, version, orgId]
   );
+  
+  // Memoize callbacks to prevent unnecessary re-renders
+  const memoizedCallbacks = React.useMemo(() => auth?.callbacks, [auth?.callbacks]);
+  
+  // Memoize children to prevent unnecessary re-renders
+  const memoizedChildren = React.useMemo(() => children, [children]);
+  
   return (
     <SDKContextProvider>
-      <AuthProviderWrapper callbacks={auth?.callbacks}>
+      <AuthProviderWrapper callbacks={memoizedCallbacks}>
         <PortalProvider>
           <ContextConfigProvider config={config} auth={auth}>
-            {children}
+            {memoizedChildren}
           </ContextConfigProvider>
         </PortalProvider>
       </AuthProviderWrapper>
     </SDKContextProvider>
   );
-};
+});
+
+SaaSOSProvider.displayName = 'SaaSOSProvider';

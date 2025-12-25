@@ -68,10 +68,12 @@ const WorkspaceSettingsGeneral: React.FC<{ workspace: IWorkspace }> = ({ workspa
   }
 
   const myRole = workspace?.users.find(user => {
-    const id = typeof user === 'string' ? user : user._id;
+    const id = typeof user === 'object' && user !== null ? user._id : user;
     return id === currentUser?.id;
   })?.role as string;
-
+  console.log('myRole', myRole);
+  console.log('workspace', workspace);
+  console.log('currentUser', currentUser);
   const amIAdmin = myRole?.toLowerCase() === 'admin';
 
   return (

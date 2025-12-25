@@ -52,32 +52,47 @@ export function WorkspaceSwitcher(props: {
   trigger: (currentWorkspace: IWorkspace | null) => ReactNode;
   onWorkspaceChange: (workspace: IWorkspace) => Promise<void>;
 }) {
-  const { workspaces, currentWorkspace, loading, refreshing } = useAppSelector(
+  const { workspaces: workspacesFromState, currentWorkspace, loading, refreshing } = useAppSelector(
     state => state.workspaces
   );
   const user = useAppSelector(state => state.auth.user);
   const [open, setOpen] = useState(false);
   const [reloadWorkspacesCount, setReloadWorkspacesCount] = useState<number>(0);
   const [searchQuery, setSearchQuery] = useState('');
-  const { fetchWorkspaces, getFeatures, refreshWorkspaces, setCurrentWorkspace } =
+  const { fetchWorkspaces, getFeatures, refreshWorkspaces, setCurrentWorkspace, workspaces } =
     useSaaSWorkspaces();
 
+  // Fetch workspaces and features only once on mount, and only if not already loaded
   useEffect(() => {
-    fetchWorkspaces();
-    getFeatures();
-  }, []);
+    // Only fetch if workspaces are empty (not already loaded)
+    if (workspaces.length === 0) {
+      fetchWorkspaces();
+      getFeatures();
+    } else {
+      // If workspaces are already loaded, just ensure features are loaded
+      getFeatures();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Intentionally empty - only run on mount
 
+  // Refresh workspaces when reloadWorkspacesCount changes (but don't fetch features again)
   useEffect(() => {
-    refreshWorkspaces();
-    getFeatures();
-  }, [reloadWorkspacesCount]);
+    if (reloadWorkspacesCount > 0) {
+      refreshWorkspaces();
+      // Don't call getFeatures here - features don't need to be refreshed
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reloadWorkspacesCount]); // Only refresh workspaces, not features
 
   function reloadWorkspaces() {
     setReloadWorkspacesCount(prev => prev + 1);
   }
 
+  // Use workspaces from hook (which comes from state)
+  const workspacesToUse = workspaces.length > 0 ? workspaces : workspacesFromState;
+  
   // Filter workspaces based on search query
-  const filteredWorkspaces = workspaces.filter(workspace =>
+  const filteredWorkspaces = workspacesToUse.filter(workspace =>
     workspace.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -224,11 +239,11 @@ export function WorkspaceSwitcher(props: {
                               workspace={workspace}
                               onClose={() => {
                                 if (currentWorkspace) {
-                                  const index = workspaces.findIndex(
+                                  const index = workspacesToUse.findIndex(
                                     w => w._id?.toString() === currentWorkspace._id?.toString()
                                   );
                                   if (index !== -1) {
-                                    setCurrentWorkspace(workspaces[index]);
+                                    setCurrentWorkspace(workspacesToUse[index]);
                                   }
                                 }
                               }}

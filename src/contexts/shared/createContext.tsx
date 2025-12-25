@@ -27,21 +27,26 @@ export function createContextProvider<State, Action>({
   const DispatchContext = createContext<Dispatch<Action> | null>(null);
   const CombinedContext = createContext<{ state: State; dispatch: Dispatch<Action> } | null>(null);
 
-  const Provider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const Provider: React.FC<{ children: ReactNode }> = React.memo(({ children }) => {
     const [state, dispatch] = useReducer(reducer, initialState, initializer || (state => state));
 
     // Memoize context values to prevent unnecessary re-renders
     // dispatch is already stable from useReducer, but we memoize the object
     const combinedValue = useMemo(() => ({ state, dispatch }), [state, dispatch]);
+    
+    // Memoize children to prevent unnecessary re-renders
+    const memoizedChildren = useMemo(() => children, [children]);
 
     return (
       <CombinedContext.Provider value={combinedValue}>
         <StateContext.Provider value={state}>
-          <DispatchContext.Provider value={dispatch}>{children}</DispatchContext.Provider>
+          <DispatchContext.Provider value={dispatch}>{memoizedChildren}</DispatchContext.Provider>
         </StateContext.Provider>
       </CombinedContext.Provider>
     );
-  };
+  });
+  
+  Provider.displayName = `${name}Provider`;
 
   const useContext = (): { state: State; dispatch: Dispatch<Action> } => {
     const context = React.useContext(CombinedContext);
@@ -78,7 +83,7 @@ export function createContextProvider<State, Action>({
 
   /**
    * Selector hook - only re-renders when selected value changes
-   * Uses useState and useEffect to track selected value changes
+   * Optimized to avoid double renders using useMemo with proper dependency tracking
    *
    * @param selector Optional function that selects a value from state. If not provided, returns entire state.
    * @param equalityFn Optional equality function for comparison (default: Object.is)
@@ -108,32 +113,37 @@ export function createContextProvider<State, Action>({
     const actualSelector = selector || ((s: State) => s as unknown as Selected);
     const selectorRef = React.useRef(actualSelector);
     const prevSelectedRef = React.useRef<Selected | undefined>(undefined);
+    const prevStateRef = React.useRef<State>(state);
 
     // Update selector ref if it changed
     if (selector) {
       selectorRef.current = actualSelector;
     }
 
-    // Compute selected value
-    const selected = useMemo(() => selectorRef.current(state), [state]);
-
-    // Use useState to trigger re-renders when selected value changes
-    const [selectedValue, setSelectedValue] = React.useState<Selected>(() => selected);
-
-    // Update selected value only if it changed (using equality function)
-    React.useEffect(() => {
-      const isEqual =
-        prevSelectedRef.current !== undefined
-          ? (equalityFn || Object.is)(prevSelectedRef.current, selected)
-          : false;
-
-      if (!isEqual) {
-        prevSelectedRef.current = selected;
-        setSelectedValue(selected);
+    // Compute selected value with memoization
+    const selected = useMemo(() => {
+      const result = selectorRef.current(state);
+      
+      // Check if value changed using equality function
+      if (prevSelectedRef.current !== undefined) {
+        const isEqual = equalityFn
+          ? equalityFn(prevSelectedRef.current, result)
+          : Object.is(prevSelectedRef.current, result);
+        
+        if (isEqual && prevStateRef.current === state) {
+          // Return previous value if equal and state reference unchanged
+          return prevSelectedRef.current;
+        }
       }
-    }, [selected, equalityFn]);
+      
+      // Update refs
+      prevSelectedRef.current = result;
+      prevStateRef.current = state;
+      
+      return result;
+    }, [state, equalityFn]);
 
-    return selectedValue;
+    return selected;
   };
 
   return {

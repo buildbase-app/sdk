@@ -64,31 +64,36 @@ export function useAppSelector<Selected = SDKState>(
   const actualSelector = selector || ((s: SDKState) => s as unknown as Selected);
   const selectorRef = React.useRef(actualSelector);
   const prevSelectedRef = React.useRef<Selected | undefined>(undefined);
+  const prevStateRef = React.useRef<SDKState>(combinedState);
 
   // Update selector ref if it changed
   if (selector) {
     selectorRef.current = actualSelector;
   }
 
-  // Compute selected value
-  const selected = useMemo(() => selectorRef.current(combinedState), [combinedState]);
-
-  // Use useState to trigger re-renders when selected value changes
-  const [selectedValue, setSelectedValue] = React.useState<Selected>(() => selected);
-
-  // Update selected value only if it changed (using equality function)
-  React.useEffect(() => {
-    const isEqual =
-      prevSelectedRef.current !== undefined
-        ? (equalityFn || Object.is)(prevSelectedRef.current, selected)
-        : false;
-
-    if (!isEqual) {
-      prevSelectedRef.current = selected;
-      setSelectedValue(selected);
+  // Compute selected value with optimized memoization
+  const selected = useMemo(() => {
+    const result = selectorRef.current(combinedState);
+    
+    // Check if value changed using equality function
+    if (prevSelectedRef.current !== undefined) {
+      const isEqual = equalityFn
+        ? equalityFn(prevSelectedRef.current, result)
+        : Object.is(prevSelectedRef.current, result);
+      
+      if (isEqual && prevStateRef.current === combinedState) {
+        // Return previous value if equal and state reference unchanged
+        return prevSelectedRef.current;
+      }
     }
-  }, [selected, equalityFn]);
+    
+    // Update refs
+    prevSelectedRef.current = result;
+    prevStateRef.current = combinedState;
+    
+    return result;
+  }, [combinedState, equalityFn]);
 
-  return selectedValue;
+  return selected;
 }
 
