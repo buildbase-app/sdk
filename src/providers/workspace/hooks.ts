@@ -1,78 +1,63 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { IUser } from '../../api/types';
-import { useAppDispatch, useAppSelector } from '../../store/hooks';
+import { useAppDispatch, useAppSelector } from '../../contexts';
+import { workspaceActions } from '../../contexts/actionCreators';
 import { WorkspaceApi } from './api';
 import { WorkspaceSwitcher } from './provider';
-import {
-  resetCurrentWorkspace,
-  setAllFeatures,
-  setCurrentWorkspace,
-  setError,
-  setIsInitialized,
-  setLoading,
-  setRefreshing,
-  setWorkspaces,
-} from './reducer';
 import { IWorkspace, IWorkspaceUser } from './types';
 import { workspaceStorage } from './utils';
 
 export const useSaaSWorkspaces = () => {
-  const os = useAppSelector(state => state.os);
-  const api = new WorkspaceApi(os);
   const dispatch = useAppDispatch();
-  const {
-    workspaces,
-    currentWorkspace,
-    loading,
-    error,
-    refreshing,
-    switching,
-    isInitialized,
-    allFeatures,
-  } = useAppSelector(state => state.workspaces);
+  const os = useAppSelector(state => state.os);
+  const api = useMemo(() => new WorkspaceApi(os), [os]);
+
+  // Select all workspace state at once - only re-renders when any selected field changes
+  const workspace = useAppSelector(state => state.workspaces);
 
   // Load saved workspace ID on initialization
   useEffect(() => {
-    if (!isInitialized) {
+    if (!workspace.isInitialized) {
       const savedWorkspaceId = workspaceStorage.loadCurrentWorkspace();
-      dispatch(setIsInitialized(true));
+      dispatch.workspaces(workspaceActions.setIsInitialized(true));
       if (savedWorkspaceId) {
-        const workspace = workspaces.find(ws => ws._id === savedWorkspaceId);
-        if (workspace) {
+        const savedWorkspace = workspace.workspaces.find(ws => ws._id === savedWorkspaceId);
+        if (savedWorkspace) {
           // check if the workspace is the same as the current workspace
-          if (workspace._id === currentWorkspace?._id) {
+          if (savedWorkspace._id === workspace.currentWorkspace?._id) {
             return;
           }
-          setCurrentWorkspaceWithStorage(workspace);
+          setCurrentWorkspaceWithStorage(savedWorkspace);
         }
       }
     }
-  }, [isInitialized]);
+  }, [workspace.isInitialized, workspace.workspaces, workspace.currentWorkspace, dispatch]);
 
-  const setCurrentWorkspaceWithStorage = useCallback((workspace: IWorkspace) => {
-    // check if the workspace is the same as the current workspace
-    if (workspace._id === currentWorkspace?._id) {
-      return;
-    }
-    if (workspace) {
-      dispatch(setCurrentWorkspace(workspace));
-    }
-    workspaceStorage.saveCurrentWorkspace(workspace);
-  }, []);
+  const setCurrentWorkspaceWithStorage = useCallback(
+    (ws: IWorkspace) => {
+      // check if the workspace is the same as the current workspace
+      if (ws._id === workspace.currentWorkspace?._id) {
+        return;
+      }
+      if (ws) {
+        dispatch.workspaces(workspaceActions.setCurrentWorkspace(ws));
+      }
+    },
+    [workspace.currentWorkspace, dispatch]
+  );
 
   const resetCurrentWorkspaceWithStorage = useCallback(() => {
-    dispatch(resetCurrentWorkspace());
-    workspaceStorage.clearCurrentWorkspace();
-  }, []);
+    dispatch.workspaces(workspaceActions.resetCurrentWorkspace());
+  }, [dispatch]);
 
   // Fetch and update workspaces (main fetch)
   const fetchWorkspaces = useCallback(async () => {
-    if (loading) return;
-    dispatch(setLoading(true));
-    dispatch(setError(''));
+    if (workspace.loading) return;
+    dispatch.workspaces(workspaceActions.setLoading(true));
+    dispatch.workspaces(workspaceActions.setError(null));
     try {
       const data = await api.getWorkspaces();
-      dispatch(setWorkspaces(data));
+      dispatch.workspaces(workspaceActions.setWorkspaces(data));
       // Apply saved workspace or default to first available
       if (data.length > 0) {
         const savedWorkspaceId = workspaceStorage.loadCurrentWorkspace();
@@ -85,51 +70,61 @@ export const useSaaSWorkspaces = () => {
           }
         } else if (data.length > 0) {
           // If no valid saved workspace, select the first available workspace
-          if (!currentWorkspace) setCurrentWorkspaceWithStorage(data[0]);
+          if (!workspace.currentWorkspace) setCurrentWorkspaceWithStorage(data[0]);
         }
       }
     } catch (err) {
-      dispatch(setError(err instanceof Error ? err.message : 'Failed to fetch workspaces'));
+      dispatch.workspaces(
+        workspaceActions.setError(err instanceof Error ? err.message : 'Failed to fetch workspaces')
+      );
     } finally {
-      dispatch(setLoading(false));
+      dispatch.workspaces(workspaceActions.setLoading(false));
     }
-  }, [api]);
+  }, [
+    api,
+    workspace.loading,
+    workspace.currentWorkspace,
+    dispatch,
+    setCurrentWorkspaceWithStorage,
+  ]);
 
   // Background refresh (does not block UI, updates memo/data)
   const refreshWorkspaces = useCallback(async () => {
-    if (refreshing) return;
-    dispatch(setRefreshing(true));
+    if (workspace.refreshing) return;
+    dispatch.workspaces(workspaceActions.setRefreshing(true));
     try {
       const data = await api.getWorkspaces();
-      dispatch(setWorkspaces(data));
+      dispatch.workspaces(workspaceActions.setWorkspaces(data));
     } catch (err) {
       // Optionally set error, but don't block UI
     } finally {
-      dispatch(setRefreshing(false));
+      dispatch.workspaces(workspaceActions.setRefreshing(false));
     }
-  }, [api]);
+  }, [api, workspace.refreshing, dispatch]);
 
   const createWorkspace = useCallback(
     async (name: string, image: string) => {
       const data = await api.createWorkspace({ name, image });
-      dispatch(setWorkspaces([...workspaces, data]));
+      dispatch.workspaces(workspaceActions.setWorkspaces([...workspace.workspaces, data]));
     },
-    [api]
+    [api, workspace.workspaces, dispatch]
   );
 
   const updateWorkspace = useCallback(
-    async (workspace: IWorkspace, _data: Partial<IWorkspace>) => {
-      const data = await api.updateWorkspace(workspace._id, _data);
-      dispatch(setWorkspaces(workspaces.map(ws => (ws._id === workspace._id ? data : ws))));
+    async (ws: IWorkspace, _data: Partial<IWorkspace>) => {
+      const data = await api.updateWorkspace(ws._id, _data);
+      dispatch.workspaces(
+        workspaceActions.setWorkspaces(workspace.workspaces.map(w => (w._id === ws._id ? data : w)))
+      );
     },
-    [api]
+    [api, workspace.workspaces, dispatch]
   );
 
   const getFeatures = useCallback(async () => {
     const data = await api.getFeatures();
-    dispatch(setAllFeatures(data));
+    dispatch.workspaces(workspaceActions.setAllFeatures(data));
     return data;
-  }, [api]);
+  }, [api, dispatch]);
 
   const updateFeature = useCallback(
     async (workspaceId: string, key: string, value: boolean) => {
@@ -140,25 +135,25 @@ export const useSaaSWorkspaces = () => {
   );
 
   useEffect(() => {
-    if (currentWorkspace?._id) {
-      const workspace = workspaces.find(ws => ws._id === currentWorkspace?._id);
-      if (workspace) {
+    if (workspace.currentWorkspace?._id) {
+      const ws = workspace.workspaces.find(w => w._id === workspace.currentWorkspace?._id);
+      if (ws) {
         // check if the workspace is the same as the current workspace
-        if (workspace._id === currentWorkspace._id) {
+        if (ws._id === workspace.currentWorkspace._id) {
           return;
         }
-        setCurrentWorkspaceWithStorage(workspace);
+        setCurrentWorkspaceWithStorage(ws);
       } else {
-        if (workspaces.length > 0) {
+        if (workspace.workspaces.length > 0) {
           // check if the workspace is the same as the current workspace
-          if (workspaces[0]._id === currentWorkspace._id) {
+          if (workspace.workspaces[0]._id === workspace.currentWorkspace._id) {
             return;
           }
-          setCurrentWorkspaceWithStorage(workspaces[0]);
+          setCurrentWorkspaceWithStorage(workspace.workspaces[0]);
         }
       }
     }
-  }, [currentWorkspace?._id, workspaces]);
+  }, [workspace.currentWorkspace?._id, workspace.workspaces, setCurrentWorkspaceWithStorage]);
 
   const getUsers = useCallback(
     async (workspaceId: string) => {
@@ -214,22 +209,22 @@ export const useSaaSWorkspaces = () => {
   );
 
   return {
-    workspaces,
-    loading,
-    error,
+    workspaces: workspace.workspaces,
+    loading: workspace.loading,
+    error: workspace.error,
     fetchWorkspaces,
     refreshWorkspaces,
-    refreshing,
+    refreshing: workspace.refreshing,
     WorkspaceSwitcher,
-    currentWorkspace,
+    currentWorkspace: workspace.currentWorkspace,
     setCurrentWorkspace: setCurrentWorkspaceWithStorage,
     resetCurrentWorkspace: resetCurrentWorkspaceWithStorage,
     createWorkspace,
-    allFeatures,
+    allFeatures: workspace.allFeatures,
     getFeatures,
     updateFeature,
     getWorkspace,
-    switching,
+    switching: workspace.switching,
     updateWorkspace,
     getUsers,
     addUser,

@@ -1,4 +1,4 @@
-# @buildbase/sdk-test
+# @buildbase/sdk
 
 A React SDK for [BuildBase](https://www.buildbase.app/) that provides essential components to build SaaS applications faster. Skip the plumbing and focus on your core product with built-in authentication, workspace management, and user management.
 
@@ -12,7 +12,7 @@ A React SDK for [BuildBase](https://www.buildbase.app/) that provides essential 
 ## 📦 Installation
 
 ```bash
-npm install @buildbase/sdk-test
+npm install @buildbase/sdk
 ```
 
 ### Peer Dependencies
@@ -30,7 +30,7 @@ npm install react@^19.0.0 react-dom@^19.0.0
 First, import the required CSS file in your app:
 
 ```tsx
-import '@buildbase/sdk-test/dist/saas-os.css';
+import '@buildbase/sdk/dist/saas-os.css';
 ```
 
 ### 2. Create Client Provider
@@ -38,10 +38,10 @@ import '@buildbase/sdk-test/dist/saas-os.css';
 Create a client-side provider component:
 
 ```tsx
-'use client'
+'use client';
 
-import { SaaSOSProvider } from '@buildbase/sdk-test'
-import React from 'react'
+import { SaaSOSProvider } from '@buildbase/sdk';
+import React from 'react';
 
 export default function SaaSProvider(props: { children: React.ReactNode }) {
   return (
@@ -50,48 +50,48 @@ export default function SaaSProvider(props: { children: React.ReactNode }) {
       version="v1"
       orgId="your-org-id"
       auth={{
-        clientId: "your-client-id",
-        redirectUrl: "http://localhost:3000",
+        clientId: 'your-client-id',
+        redirectUrl: 'http://localhost:3000',
         callbacks: {
-          verifyToken: async (token) => {
-            return new Promise((resolve) => {
+          verifyToken: async token => {
+            return new Promise(resolve => {
               fetch('/api/auth/verify', {
                 method: 'POST',
-                body: JSON.stringify({ token })
+                body: JSON.stringify({ token }),
               })
-                .then((response) => response.json())
+                .then(response => response.json())
                 .then((data: { valid: boolean }) => {
-                  resolve(data?.valid ?? false)
+                  resolve(data?.valid ?? false);
                 })
-                .catch((error) => {
-                  console.error(error)
-                  resolve(false)
-                })
-            })
+                .catch(error => {
+                  console.error(error);
+                  resolve(false);
+                });
+            });
           },
-          handleAuthentication: async (token) => {
-            return new Promise((resolve) => {
+          handleAuthentication: async token => {
+            return new Promise(resolve => {
               fetch('/api/auth/token', {
                 method: 'POST',
-                body: JSON.stringify({ token })
+                body: JSON.stringify({ token }),
               })
-                .then((response) => response.json())
+                .then(response => response.json())
                 .then((data: { token: string; decoded: { id: string } }) => {
-                  localStorage.setItem('auth_token', data?.token ?? '')
-                  resolve()
+                  localStorage.setItem('auth_token', data?.token ?? '');
+                  resolve();
                 })
-                .catch((error) => {
-                  console.error(error)
-                  resolve()
-                })
-            })
-          }
-        }
+                .catch(error => {
+                  console.error(error);
+                  resolve();
+                });
+            });
+          },
+        },
       }}
     >
       {props.children}
     </SaaSOSProvider>
-  )
+  );
 }
 ```
 
@@ -100,7 +100,7 @@ export default function SaaSProvider(props: { children: React.ReactNode }) {
 Use the provider in your app layout:
 
 ```tsx
-import SaaSProvider from './components/SaaSProvider'
+import SaaSProvider from './components/SaaSProvider';
 
 function App() {
   return (
@@ -113,49 +113,41 @@ function App() {
 export default App;
 ```
 
-
 ### 4. Workspace Management
 
 The WorkspaceSwitcher component uses a render prop pattern, giving you full control over the UI:
 
 ```tsx
 import React from 'react';
-import { WorkspaceSwitcher } from '@buildbase/sdk-test';
+import { WorkspaceSwitcher } from '@buildbase/sdk';
 
 function WorkspaceExample() {
   return (
     <WorkspaceSwitcher
-      trigger={(currentWorkspace) => {
+      trigger={currentWorkspace => {
         if (!currentWorkspace) {
           return (
             <div className="flex items-center gap-2 min-w-40 border rounded-md p-2 hover:bg-muted cursor-pointer">
               <div className="bg-gray-200 flex aspect-square size-8 items-center justify-center rounded-lg"></div>
-              <div className="grid flex-1 text-left text-sm leading-tight">
-                Choose a workspace
-              </div>
+              <div className="grid flex-1 text-left text-sm leading-tight">Choose a workspace</div>
             </div>
           );
         }
-        
+
         return (
           <div className="flex items-center gap-2 min-w-40 border rounded-md p-2 hover:bg-muted cursor-pointer">
             <div className="flex items-center justify-center h-full w-full bg-muted rounded-lg max-h-8 max-w-8">
               {currentWorkspace?.image && (
-                <img
-                  src={currentWorkspace?.image}
-                  alt={currentWorkspace?.name}
-                />
+                <img src={currentWorkspace?.image} alt={currentWorkspace?.name} />
               )}
             </div>
             <div className="grid flex-1 text-left text-sm leading-tight">
-              <span className="truncate font-medium">
-                {currentWorkspace?.name}
-              </span>
+              <span className="truncate font-medium">{currentWorkspace?.name}</span>
             </div>
           </div>
         );
       }}
-      onWorkspaceChange={async (workspace) => {
+      onWorkspaceChange={async workspace => {
         // Handle workspace change
         console.log('Workspace changed to:', workspace);
       }}
@@ -171,7 +163,7 @@ function WorkspaceExample() {
 Use the `useSaaSAuth` hook to manage authentication state and actions:
 
 ```tsx
-import { useSaaSAuth } from '@buildbase/sdk-test';
+import { useSaaSAuth } from '@buildbase/sdk';
 
 function AuthExample() {
   const { user, isAuthenticated, signIn, signOut, status } = useSaaSAuth();
@@ -190,9 +182,7 @@ function AuthExample() {
           <h1>Welcome back, {user?.name}!</h1>
           <p>Email: {user?.email}</p>
           <p>Role: {user?.role}</p>
-          <button onClick={signOut}>
-            Sign Out
-          </button>
+          <button onClick={signOut}>Sign Out</button>
         </div>
       )}
     </div>
@@ -204,11 +194,11 @@ function AuthExample() {
 
 ```tsx
 const {
-  user,           // Current user object (null if not authenticated)
+  user, // Current user object (null if not authenticated)
   isAuthenticated, // Boolean: true if user is authenticated
-  signIn,         // Function: initiates sign-in flow
-  signOut,        // Function: signs out the user
-  status          // String: 'idle' | 'loading' | 'authenticated' | 'error'
+  signIn, // Function: initiates sign-in flow
+  signOut, // Function: signs out the user
+  status, // String: 'idle' | 'loading' | 'authenticated' | 'error'
 } = useSaaSAuth();
 ```
 
@@ -217,7 +207,7 @@ const {
 For declarative rendering, use the conditional components:
 
 ```tsx
-import { WhenAuthenticated, WhenUnauthenticated } from '@buildbase/sdk-test';
+import { WhenAuthenticated, WhenUnauthenticated } from '@buildbase/sdk';
 
 function App() {
   return (
@@ -225,7 +215,7 @@ function App() {
       <WhenUnauthenticated>
         <LoginPage />
       </WhenUnauthenticated>
-      
+
       <WhenAuthenticated>
         <Dashboard />
       </WhenAuthenticated>
@@ -241,7 +231,7 @@ function App() {
 Control access based on user roles:
 
 ```tsx
-import { WhenRoles, WhenWorkspaceRoles } from '@buildbase/sdk-test';
+import { WhenRoles, WhenWorkspaceRoles } from '@buildbase/sdk';
 
 function AdminPanel() {
   return (
@@ -257,10 +247,7 @@ function AdminPanel() {
       </WhenWorkspaceRoles>
 
       {/* With fallback content */}
-      <WhenRoles 
-        roles={['admin']} 
-        fallback={<p>You need admin access to view this content</p>}
-      >
+      <WhenRoles roles={['admin']} fallback={<p>You need admin access to view this content</p>}>
         <SensitiveData />
       </WhenRoles>
     </div>
@@ -268,13 +255,12 @@ function AdminPanel() {
 }
 ```
 
-
 ## 🎛️ Feature Flags
 
 Control feature visibility based on workspace settings:
 
 ```tsx
-import { WhenWorkspaceFeatureEnabled, WhenWorkspaceFeatureDisabled } from '@buildbase/sdk-test';
+import { WhenWorkspaceFeatureEnabled, WhenWorkspaceFeatureDisabled } from '@buildbase/sdk';
 
 function FeatureExample() {
   return (
@@ -307,12 +293,11 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - 📧 Email: support@buildbase.app
 - 📖 Documentation: [BuildBase Docs](https://docs.buildbase.app/)
-- 🐛 Issues: [GitHub Issues](https://github.com/test-saas-os/react-saas-os-sdk/issues)
 
 ## 🔗 Links
 
 - **Homepage**: [BuildBase](https://www.buildbase.app/)
-- **NPM Package**: [@buildbase/sdk-test](https://www.npmjs.com/package/@buildbase/sdk-test)
+- **NPM Package**: [@buildbase/sdk](https://www.npmjs.com/package/@buildbase/sdk)
 
 ---
 

@@ -2,9 +2,9 @@
 
 import { jwtDecode } from 'jwt-decode';
 import { ReactNode, useCallback, useEffect } from 'react';
-import { useAppDispatch, useAppSelector } from '../../store/hooks';
+import { useAppDispatch, useAppSelector } from '../../contexts';
+import { authActions } from '../../contexts/actionCreators';
 import { WorkspaceProvider } from '../workspace/provider';
-import { authenticationFailed, setSession } from './reducer';
 import { AuthUser, IAuthCallbacks } from './types';
 import { createSession, getTokenFromUrl, removeTokenFromUrl } from './utils';
 
@@ -14,6 +14,7 @@ interface IProps {
 }
 
 export function AuthProvider({ children, callbacks }: IProps) {
+  console.log('AuthProvider', callbacks);
   const dispatch = useAppDispatch();
   const authState = useAppSelector(state => state.auth);
   const os = useAppSelector(state => state.os);
@@ -29,11 +30,11 @@ export function AuthProvider({ children, callbacks }: IProps) {
         // const user = response.data.user;
         const user = jwtDecode(token) as AuthUser;
         const session = createSession(user, token, 24);
-        dispatch(setSession(session));
+        dispatch.auth(authActions.setSession(session));
         if (callbacks?.verifyToken) {
           const isValid = await callbacks.verifyToken(token);
           if (!isValid) {
-            dispatch(authenticationFailed());
+            dispatch.auth(authActions.authenticationFailed());
             return;
           }
           if (callbacks?.handleAuthentication) {
@@ -43,15 +44,16 @@ export function AuthProvider({ children, callbacks }: IProps) {
         removeTokenFromUrl();
       } catch (error) {
         console.error('Auth redirect error:', error);
-        dispatch(authenticationFailed());
+        dispatch.auth(authActions.authenticationFailed());
         throw error;
       }
     },
-    [serverUrl, dispatch]
+    [serverUrl, dispatch, callbacks]
   );
 
   useEffect(() => {
     const token = getTokenFromUrl();
+    console.log('token', token);
     if (!token) {
       return;
     }
