@@ -29,6 +29,7 @@ import { ScrollArea } from '../../components/ui/scroll-area';
 import { Separator } from '../../components/ui/separator';
 import { useAppSelector } from '../../contexts';
 import { cn } from '../../lib/utils';
+import { useSaaSSettings } from '../os/hooks';
 import { useSaaSWorkspaces } from './hooks';
 import type { IWorkspace } from './types';
 import WorkspaceSettingsDialog from './ui/SettingsDialog';
@@ -49,6 +50,7 @@ export function WorkspaceSwitcher(props: {
     refreshing,
   } = useAppSelector(state => state.workspaces);
   const user = useAppSelector(state => state.auth.user);
+  const { settings } = useSaaSSettings();
   const [open, setOpen] = useState(false);
   const [reloadWorkspacesCount, setReloadWorkspacesCount] = useState<number>(0);
   const [searchQuery, setSearchQuery] = useState('');
@@ -91,6 +93,16 @@ export function WorkspaceSwitcher(props: {
   const filteredWorkspaces = workspacesToUse
     .filter(workspace => workspace._id !== currentWorkspace?._id)
     .filter(workspace => workspace.name.toLowerCase().includes(searchQuery.toLowerCase()));
+
+  const totalAllowedWorkspaces = settings?.workspace.maxWorkspaces ?? Number.MAX_VALUE;
+  const myWorkspacesCount = workspacesToUse?.filter(workspace => {
+    const createdBy =
+      typeof workspace.createdBy === 'object'
+        ? workspace.createdBy._id?.toString()
+        : workspace.createdBy?.toString();
+    return createdBy === user?.id?.toString();
+  }).length;
+  const allowedToCreateWorkspace = totalAllowedWorkspaces > (myWorkspacesCount ?? 0);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -193,13 +205,16 @@ export function WorkspaceSwitcher(props: {
               )}
             </div>
 
-            {/* Create New Workspace */}
-            <Separator />
-            <CreateWorkspaceDialog
-              onCreated={() => {
-                fetchWorkspaces();
-              }}
-            />
+            {allowedToCreateWorkspace && (
+              <>
+                <Separator />
+                <CreateWorkspaceDialog
+                  onCreated={() => {
+                    fetchWorkspaces();
+                  }}
+                />
+              </>
+            )}
           </div>
         )}
       </DialogContent>

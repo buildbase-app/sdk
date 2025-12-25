@@ -1,4 +1,5 @@
 import { IAuthConfig } from '../auth/types';
+import type { ISettings } from '../types';
 
 export interface IOsConfig {
   serverUrl: string;
@@ -8,4 +9,5 @@ export interface IOsConfig {
 
 export interface IOsState extends IOsConfig {
   auth?: IAuthConfig;
+  settings?: ISettings | null;
 }

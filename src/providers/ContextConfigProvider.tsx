@@ -1,9 +1,11 @@
 'use client';
 
 import React, { useEffect } from 'react';
-import { osActions, useAppDispatch } from '../contexts';
+import { osActions, useAppDispatch, useAppSelector } from '../contexts';
 import type { IAuthConfig } from './auth/types';
+import { getAccessToken } from './auth/utils';
 import type { IOsState } from './os/types';
+import type { ISettings } from './types';
 
 interface ContextConfigProviderProps {
   config: IOsState;
@@ -19,6 +21,7 @@ interface ContextConfigProviderProps {
 export const ContextConfigProvider: React.FC<ContextConfigProviderProps> = React.memo(
   ({ config, auth, children }) => {
     const dispatch = useAppDispatch();
+    const os = useAppSelector(state => state.os);
 
     // Memoize auth config to prevent unnecessary updates
     const authConfig = React.useMemo(
@@ -29,6 +32,7 @@ export const ContextConfigProvider: React.FC<ContextConfigProviderProps> = React
       [auth?.clientId, auth?.redirectUrl]
     );
 
+    // Set OS config
     useEffect(() => {
       dispatch.os(
         osActions.setSaaSOSConfig({
@@ -37,6 +41,37 @@ export const ContextConfigProvider: React.FC<ContextConfigProviderProps> = React
         })
       );
     }, [config, authConfig, dispatch]);
+
+    // Automatically fetch settings when OS is loaded
+    useEffect(() => {
+      const { serverUrl, version, orgId, settings } = os;
+
+      // Only fetch if OS config is ready and settings haven't been loaded yet
+      if (serverUrl && version && orgId && !settings) {
+        const fetchSettings = async () => {
+          try {
+            const token = getAccessToken();
+            const headers: Record<string, string> = {};
+            if (token) {
+              headers.Authorization = `Bearer ${token}`;
+            }
+
+            const response = await fetch(`${serverUrl}/api/${version}/public/${orgId}/settings`, {
+              headers,
+            });
+
+            if (response.ok) {
+              const data: ISettings = await response.json();
+              dispatch.os(osActions.setSettings(data));
+            }
+          } catch (err) {
+            console.error('Failed to fetch settings:', err);
+          }
+        };
+
+        fetchSettings();
+      }
+    }, [os.serverUrl, os.version, os.orgId, os.settings, dispatch]);
 
     // Memoize children to prevent unnecessary re-renders
     const memoizedChildren = React.useMemo(() => children, [children]);

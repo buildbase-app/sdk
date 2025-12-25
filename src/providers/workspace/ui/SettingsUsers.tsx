@@ -7,6 +7,7 @@ import { Input } from '../../../components/ui/input';
 import { Label } from '../../../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '../../../components/ui/select';
 import { useAppSelector } from '../../../contexts';
+import { useSaaSSettings } from '../../os/hooks';
 import { useSaaSWorkspaces } from '../hooks';
 import { IWorkspace, IWorkspaceUser } from '../types';
 import SettingSkeleton from './Skeleton';
@@ -17,6 +18,7 @@ const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace
   const [loading, setLoading] = useState(false);
   const [workspaceUsers, setWorkspaceUsers] = useState<IWorkspaceUser[]>([]);
   const { getUsers, removeUser, updateUser } = useSaaSWorkspaces();
+  const { settings } = useSaaSSettings();
 
   useEffect(() => {
     if (!workspace) return;
@@ -73,14 +75,24 @@ const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace
 
   const amIAdmin = myRole === 'admin';
 
+  const totalAllowedUsers = settings?.workspace.maxWorkspaceUsers ?? Number.MAX_VALUE;
+  const currentUsersCount = workspaceUsers.length;
+  const allowedToInviteUser = totalAllowedUsers > (currentUsersCount ?? 0);
+
   return (
     <div>
       {!amIAdmin && (
         <div className="text-red-500">Only workspace admin can manage users and roles.</div>
       )}
+
       {amIAdmin && (
         <div className="mb-4">
-          <InviteMember onInvite={refresh} workspaceId={workspace._id} />
+          {allowedToInviteUser && <InviteMember onInvite={refresh} workspaceId={workspace._id} />}
+          {!allowedToInviteUser && (
+            <div className="text-red-500">
+              You have reached the maximum number of users for this workspace.
+            </div>
+          )}
         </div>
       )}
       <div className="mb-4 flex items-center justify-between">
@@ -168,6 +180,8 @@ function InviteMember({ onInvite, workspaceId }: { onInvite: () => void; workspa
   const [success, setSuccess] = useState<string | null>(null);
   const { addUser, getWorkspace } = useSaaSWorkspaces();
   const [workspace, setWorkspace] = useState<IWorkspace | null>(null);
+  const { settings } = useSaaSSettings();
+  const roles = settings?.workspace.roles ?? workspace?.roles ?? [];
 
   useEffect(() => {
     if (!workspaceId) return;
@@ -235,7 +249,7 @@ function InviteMember({ onInvite, workspaceId }: { onInvite: () => void; workspa
             <SelectValue placeholder="Select a role" />
           </SelectTrigger>
           <SelectContent>
-            {workspace?.roles.map(role => (
+            {roles.map(role => (
               <SelectItem key={role} value={role}>
                 {role}
               </SelectItem>

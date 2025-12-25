@@ -9,6 +9,7 @@ export const getInitialOSState = (): IOsState => {
     serverUrl: '',
     version: '',
     orgId: '',
+    settings: null,
   };
 };
 
@@ -23,6 +24,9 @@ export const osReducer = (state: IOsState, action: OSAction): IOsState => {
 
     case 'REMOVE_SAAS_OS_CONFIG':
       return getInitialOSState();
+
+    case 'SET_SETTINGS':
+      return { ...state, settings: action.payload };
 
     default:
       return state;

@@ -18,6 +18,7 @@ export { WhenWorkspaceFeatureDisabled, WhenWorkspaceFeatureEnabled } from './com
 
 // Export hooks
 export { useSaaSAuth } from './providers/auth/hooks';
+export { useSaaSSettings } from './providers/os/hooks';
 
 // Export workspace provider and dialog
 export { useSaaSWorkspaces } from './providers/workspace/hooks';
