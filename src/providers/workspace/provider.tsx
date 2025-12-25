@@ -49,7 +49,7 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
 };
 
 export function WorkspaceSwitcher(props: {
-  trigger: (currentWorkspace: IWorkspace | null) => ReactNode;
+  trigger: (isLoading: boolean, currentWorkspace: IWorkspace | null) => ReactNode;
   onWorkspaceChange: (workspace: IWorkspace) => Promise<void>;
 }) {
   const { workspaces: workspacesFromState, currentWorkspace, loading, refreshing } = useAppSelector(
@@ -61,6 +61,9 @@ export function WorkspaceSwitcher(props: {
   const [searchQuery, setSearchQuery] = useState('');
   const { fetchWorkspaces, getFeatures, refreshWorkspaces, setCurrentWorkspace, workspaces } =
     useSaaSWorkspaces();
+  
+  // Combine loading and refreshing states for trigger
+  const isLoading = loading || refreshing;
 
   // Fetch workspaces and features only once on mount, and only if not already loaded
   useEffect(() => {
@@ -107,7 +110,7 @@ export function WorkspaceSwitcher(props: {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger>{props.trigger?.(currentWorkspace)}</DialogTrigger>
+      <DialogTrigger>{props.trigger?.(isLoading, currentWorkspace)}</DialogTrigger>
       {/* Dialog Content */}
       <DialogContent className="max-w-2xl min-w-full sm:min-w-[800px]">
         <DialogHeader>
