@@ -63,12 +63,16 @@ export function useAppSelector<Selected = SDKState>(
   // If no selector provided, return entire combined state
   const actualSelector = selector || ((s: SDKState) => s as unknown as Selected);
   const selectorRef = React.useRef(actualSelector);
+  const equalityFnRef = React.useRef(equalityFn);
   const prevSelectedRef = React.useRef<Selected | undefined>(undefined);
   const prevStateRef = React.useRef<SDKState>(combinedState);
 
-  // Update selector ref if it changed
+  // Update refs if they changed
   if (selector) {
     selectorRef.current = actualSelector;
+  }
+  if (equalityFn) {
+    equalityFnRef.current = equalityFn;
   }
 
   // Compute selected value with optimized memoization
@@ -77,8 +81,8 @@ export function useAppSelector<Selected = SDKState>(
     
     // Check if value changed using equality function
     if (prevSelectedRef.current !== undefined) {
-      const isEqual = equalityFn
-        ? equalityFn(prevSelectedRef.current, result)
+      const isEqual = equalityFnRef.current
+        ? equalityFnRef.current(prevSelectedRef.current, result)
         : Object.is(prevSelectedRef.current, result);
       
       if (isEqual && prevStateRef.current === combinedState) {
@@ -92,7 +96,7 @@ export function useAppSelector<Selected = SDKState>(
     prevStateRef.current = combinedState;
     
     return result;
-  }, [combinedState, equalityFn]);
+  }, [combinedState]);
 
   return selected;
 }

@@ -33,14 +33,11 @@ export function createContextProvider<State, Action>({
     // Memoize context values to prevent unnecessary re-renders
     // dispatch is already stable from useReducer, but we memoize the object
     const combinedValue = useMemo(() => ({ state, dispatch }), [state, dispatch]);
-    
-    // Memoize children to prevent unnecessary re-renders
-    const memoizedChildren = useMemo(() => children, [children]);
 
     return (
       <CombinedContext.Provider value={combinedValue}>
         <StateContext.Provider value={state}>
-          <DispatchContext.Provider value={dispatch}>{memoizedChildren}</DispatchContext.Provider>
+          <DispatchContext.Provider value={dispatch}>{children}</DispatchContext.Provider>
         </StateContext.Provider>
       </CombinedContext.Provider>
     );
@@ -112,12 +109,16 @@ export function createContextProvider<State, Action>({
     // If no selector provided, return entire state (identity selector)
     const actualSelector = selector || ((s: State) => s as unknown as Selected);
     const selectorRef = React.useRef(actualSelector);
+    const equalityFnRef = React.useRef(equalityFn);
     const prevSelectedRef = React.useRef<Selected | undefined>(undefined);
     const prevStateRef = React.useRef<State>(state);
 
-    // Update selector ref if it changed
+    // Update refs if they changed
     if (selector) {
       selectorRef.current = actualSelector;
+    }
+    if (equalityFn) {
+      equalityFnRef.current = equalityFn;
     }
 
     // Compute selected value with memoization
@@ -126,8 +127,8 @@ export function createContextProvider<State, Action>({
       
       // Check if value changed using equality function
       if (prevSelectedRef.current !== undefined) {
-        const isEqual = equalityFn
-          ? equalityFn(prevSelectedRef.current, result)
+        const isEqual = equalityFnRef.current
+          ? equalityFnRef.current(prevSelectedRef.current, result)
           : Object.is(prevSelectedRef.current, result);
         
         if (isEqual && prevStateRef.current === state) {
@@ -141,7 +142,7 @@ export function createContextProvider<State, Action>({
       prevStateRef.current = state;
       
       return result;
-    }, [state, equalityFn]);
+    }, [state]);
 
     return selected;
   };

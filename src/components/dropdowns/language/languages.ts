@@ -1,5 +1,14 @@
-import { DateTime } from 'luxon';
-// add all luxon supported locales
+// Helper function to validate locale using native Intl API
+function isValidLocale(locale: string): boolean {
+  try {
+    const formatter = new Intl.DateTimeFormat(locale);
+    return formatter.resolvedOptions().locale === locale || formatter.resolvedOptions().locale.startsWith(locale);
+  } catch {
+    return false;
+  }
+}
+
+// add all supported locales
 let locals: { code: string; label: string; flag: string }[] = [
   { code: 'en', label: 'English', flag: '🇬🇧' },
   { code: 'en-GB', label: 'English (United Kingdom)', flag: '🇬🇧' },
@@ -89,7 +98,6 @@ let locals: { code: string; label: string; flag: string }[] = [
   { code: 'vi-VN', label: 'Vietnamese (Vietnam)', flag: '🇻🇳' },
   { code: 'he', label: 'Hebrew', flag: '🇮🇱' },
   { code: 'he-IL', label: 'Hebrew (Israel)', flag: '🇮🇱' },
-  { code: 'th-TH', label: 'Thai (Thailand)', flag: '🇹🇭' },
 ];
 // remove duplicates
 locals = locals.filter(
@@ -106,12 +114,9 @@ locals.sort((a, b) => {
   }
   return 0;
 });
-// add all luxon supported locales
+// filter to only valid locales using native Intl API
 const languages: { value: string; label: string; flag: string }[] = locals
-  .filter(e => {
-    const valid = DateTime.local().setLocale(e.code).isValid;
-    return valid;
-  })
+  .filter(e => isValidLocale(e.code))
   // remove duplicates
   .filter(
     (value, index, self) =>

@@ -1,8 +1,24 @@
 'use client';
 
-import { format } from 'date-fns';
+import {
+  endOfDay,
+  endOfMonth,
+  endOfQuarter,
+  endOfWeek,
+  endOfYear,
+  format,
+  startOfDay,
+  startOfMonth,
+  startOfQuarter,
+  startOfWeek,
+  startOfYear,
+  subDays,
+  subMonths,
+  subQuarters,
+  subWeeks,
+  subYears,
+} from 'date-fns';
 import { Calendar as CalendarIcon } from 'lucide-react';
-import moment from 'moment';
 import * as React from 'react';
 import { DateRange } from 'react-day-picker';
 
@@ -46,17 +62,27 @@ export function DatePickerWithRange({ className, onChange, start, end }: IProps)
     'Year to date',
   ];
   function chooseFromOptions(option: string) {
-    const startOfDate = moment().startOf('day').toDate();
-    const endOfDate = moment().endOf('day').toDate();
-    const startOfYesterday = moment().subtract(1, 'day').startOf('day').toDate();
-    const endOfYesterday = moment().subtract(1, 'day').endOf('day').toDate();
-    const startOfWeek = moment().startOf('week').toDate();
-    const endOfWeek = moment().endOf('week').toDate();
-    const startOfMonth = moment().startOf('month').toDate();
-    const endOfMonth = moment().endOf('month').toDate();
-    const startOfYear = moment().startOf('year').toDate();
-    const startOfLastMonth = moment().subtract(1, 'month').startOf('month').toDate();
-    const endOfLastMonth = moment().subtract(1, 'month').endOf('month').toDate();
+    const now = new Date();
+    const startOfDate = startOfDay(now);
+    const endOfDate = endOfDay(now);
+    const startOfYesterday = startOfDay(subDays(now, 1));
+    const endOfYesterday = endOfDay(subDays(now, 1));
+    const startOfThisWeek = startOfWeek(now);
+    const endOfThisWeek = endOfWeek(now);
+    const startOfThisMonth = startOfMonth(now);
+    const endOfThisMonth = endOfMonth(now);
+    const startOfThisYear = startOfYear(now);
+    const startOfLastMonth = startOfMonth(subMonths(now, 1));
+    const endOfLastMonth = endOfMonth(subMonths(now, 1));
+    const lastWeekStart = startOfWeek(subWeeks(now, 1));
+    const lastWeekEnd = endOfWeek(subWeeks(now, 1));
+    const startOfThisQuarter = startOfQuarter(now);
+    const endOfThisQuarter = endOfQuarter(now);
+    const startOfLastQuarter = startOfQuarter(subQuarters(now, 1));
+    const endOfLastQuarter = endOfQuarter(subQuarters(now, 1));
+    const endOfThisYear = endOfYear(now);
+    const startOfLastYear = startOfYear(subYears(now, 1));
+    const endOfLastYear = endOfYear(subYears(now, 1));
 
     switch (option) {
       case 'Today':
@@ -70,20 +96,20 @@ export function DatePickerWithRange({ className, onChange, start, end }: IProps)
         break;
       case 'This week':
         setDate({
-          from: startOfWeek,
-          to: endOfWeek,
+          from: startOfThisWeek,
+          to: endOfThisWeek,
         });
         break;
       case 'Last week':
         setDate({
-          from: moment().subtract(1, 'week').startOf('week').toDate(),
-          to: moment().subtract(1, 'week').endOf('week').toDate(),
+          from: lastWeekStart,
+          to: lastWeekEnd,
         });
         break;
       case 'This month':
         setDate({
-          from: startOfMonth,
-          to: endOfMonth,
+          from: startOfThisMonth,
+          to: endOfThisMonth,
         });
         break;
       case 'Last month':
@@ -94,37 +120,37 @@ export function DatePickerWithRange({ className, onChange, start, end }: IProps)
         break;
       case 'Month to date':
         setDate({
-          from: startOfMonth,
+          from: startOfThisMonth,
           to: startOfDate,
         });
         break;
       case 'This Quarter':
         setDate({
-          from: moment().startOf('quarter').toDate(),
-          to: moment().endOf('quarter').toDate(),
+          from: startOfThisQuarter,
+          to: endOfThisQuarter,
         });
         break;
       case 'Last Quarter':
         setDate({
-          from: moment().subtract(1, 'quarter').startOf('quarter').toDate(),
-          to: moment().subtract(1, 'quarter').endOf('quarter').toDate(),
+          from: startOfLastQuarter,
+          to: endOfLastQuarter,
         });
         break;
       case 'This Year':
         setDate({
-          from: moment().startOf('year').toDate(),
-          to: moment().endOf('year').toDate(),
+          from: startOfThisYear,
+          to: endOfThisYear,
         });
         break;
       case 'Last Year':
         setDate({
-          from: moment().subtract(1, 'year').startOf('year').toDate(),
-          to: moment().subtract(1, 'year').endOf('year').toDate(),
+          from: startOfLastYear,
+          to: endOfLastYear,
         });
         break;
       case 'Year to date':
         setDate({
-          from: startOfYear,
+          from: startOfThisYear,
           to: startOfDate,
         });
         break;

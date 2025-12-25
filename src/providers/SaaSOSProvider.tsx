@@ -28,15 +28,12 @@ export const SaaSOSProvider: React.FC<SaaSOSProviderProps> = React.memo(({
   // Memoize callbacks to prevent unnecessary re-renders
   const memoizedCallbacks = React.useMemo(() => auth?.callbacks, [auth?.callbacks]);
   
-  // Memoize children to prevent unnecessary re-renders
-  const memoizedChildren = React.useMemo(() => children, [children]);
-  
   return (
     <SDKContextProvider>
       <AuthProviderWrapper callbacks={memoizedCallbacks}>
         <PortalProvider>
           <ContextConfigProvider config={config} auth={auth}>
-            {memoizedChildren}
+            {children}
           </ContextConfigProvider>
         </PortalProvider>
       </AuthProviderWrapper>

@@ -6,11 +6,11 @@ export interface ApiClientConfig {
   headers?: Record<string, string>;
 }
 
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   data: T;
   status: number;
   statusText: string;
-  headers: any;
+  headers: Record<string, string | string[]> | Record<string, unknown>;
 }
 
 // Helper function to check if we're in a browser environment
@@ -72,19 +72,19 @@ export class ApiClient {
     // You can emit an event or call a callback here
   }
 
-  async get<T = any>(url: string, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
+  async get<T = unknown>(url: string, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
     const response = await this.client.get<T>(url, config);
     return {
       data: response.data,
       status: response.status,
       statusText: response.statusText,
-      headers: response.headers,
+      headers: response.headers as Record<string, string | string[]>,
     };
   }
 
-  async post<T = any>(
+  async post<T = unknown>(
     url: string,
-    data?: any,
+    data?: unknown,
     config?: AxiosRequestConfig
   ): Promise<ApiResponse<T>> {
     const response = await this.client.post<T>(url, data, config);
@@ -92,13 +92,13 @@ export class ApiClient {
       data: response.data,
       status: response.status,
       statusText: response.statusText,
-      headers: response.headers,
+      headers: response.headers as Record<string, string | string[]>,
     };
   }
 
-  async put<T = any>(
+  async put<T = unknown>(
     url: string,
-    data?: any,
+    data?: unknown,
     config?: AxiosRequestConfig
   ): Promise<ApiResponse<T>> {
     const response = await this.client.put<T>(url, data, config);
@@ -106,23 +106,23 @@ export class ApiClient {
       data: response.data,
       status: response.status,
       statusText: response.statusText,
-      headers: response.headers,
+      headers: response.headers as Record<string, string | string[]>,
     };
   }
 
-  async delete<T = any>(url: string, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
+  async delete<T = unknown>(url: string, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
     const response = await this.client.delete<T>(url, config);
     return {
       data: response.data,
       status: response.status,
       statusText: response.statusText,
-      headers: response.headers,
+      headers: response.headers as Record<string, string | string[]>,
     };
   }
 
-  async patch<T = any>(
+  async patch<T = unknown>(
     url: string,
-    data?: any,
+    data?: unknown,
     config?: AxiosRequestConfig
   ): Promise<ApiResponse<T>> {
     const response = await this.client.patch<T>(url, data, config);
@@ -130,7 +130,7 @@ export class ApiClient {
       data: response.data,
       status: response.status,
       statusText: response.statusText,
-      headers: response.headers,
+      headers: response.headers as Record<string, string | string[]>,
     };
   }
 

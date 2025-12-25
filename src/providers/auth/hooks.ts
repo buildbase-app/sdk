@@ -14,7 +14,13 @@ export function useSaaSAuth() {
   const signIn = useCallback(async () => {
     dispatch.auth(authActions.authenticationStarted());
     try {
-      const response = await defaultApiClient.post(`${serverUrl}/api/v1/auth/request`, {
+      const response = await defaultApiClient.post<{
+        success: boolean;
+        data: {
+          redirectUrl: string;
+        };
+        message: string;
+      }>(`${serverUrl}/api/v1/auth/request`, {
         orgId: orgId,
         clientId: authConfig?.clientId,
         redirect: {

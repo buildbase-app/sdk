@@ -12,70 +12,117 @@ interface Props {
 
 const Sidebar: React.FC<Props> = ({ workspace, section, setSection }) => {
   return (
-    <div className="w-56 h-full flex flex-col px-2 py-2">
+    <div className="w-56 h-full flex flex-col space-y-6">
       {workspace && (
-        <div className="mb-6 pb-4 border-b">
-          <div className="flex items-center space-x-2 mb-2">
-            <div className="w-12 h-12 bg-blue-100 rounded flex items-center justify-center text-blue-600 font-medium px-0.5 py-0.5">
-              <img src={workspace.image} className="w-full h-full object-contain" />
-            </div>
-            <div>
-              <div className="font-medium text-sm">{workspace.name}</div>
+        <div className="border-b p-2 py-4">
+          <div className="flex items-center gap-x-2">
+            {workspace.image && (
+              <div
+                className="bg-blue-100 rounded flex items-center justify-center text-blue-600 font-medium px-0.5 py-0.5"
+                style={{
+                  width: '40px',
+                  height: '40px',
+                  minWidth: '40px',
+                  minHeight: '40px',
+                }}
+              >
+                <img
+                  src={workspace.image}
+                  className="w-full h-full object-contain"
+                  style={{
+                    width: '36px',
+                    height: '36px',
+                    maxWidth: '36px',
+                    maxHeight: '36px',
+                    objectFit: 'contain',
+                  }}
+                />
+              </div>
+            )}
+            <div className={cn('flex-1 min-w-0', !workspace.image ? 'pl-2' : '')}>
+              <div className="font-medium text-sm line-clamp-1 text-ellipsis overflow-hidden">
+                {workspace.name}
+              </div>
               <div className="text-xs text-gray-500">{workspace.workspaceId}</div>
             </div>
           </div>
         </div>
       )}
 
-      <div className="mb-6">
-        <div className="text-xs font-bold mb-2 text-gray-500 uppercase tracking-wide px-2">
-          Account
-        </div>
-        <button
-          className={cn(
-            'flex w-full text-left px-2 py-1 rounded text-sm items-center gap-x-2',
-            section === 'profile' ? 'bg-blue-100 text-blue-700 font-medium' : 'hover:bg-gray-100'
-          )}
+      <SidebarSection title="Account">
+        <SidebarItem
+          activeSection={section}
+          icon={<UserIcon className="h-3.5 w-3.5" />}
+          label="Profile"
+          section="profile"
           onClick={() => setSection('profile')}
-        >
-          <UserIcon className="h-4 w-4" /> Profile
-        </button>
-      </div>
-
-      <div>
-        <div className="text-xs font-bold mb-2 text-gray-500 uppercase tracking-wide px-2">
-          Workspace
-        </div>
-        <button
-          className={cn(
-            'flex w-full text-left px-2 py-1 rounded text-sm items-center gap-x-2',
-            section === 'general' ? 'bg-blue-100 text-blue-700 font-medium' : 'hover:bg-gray-100'
-          )}
+        />
+      </SidebarSection>
+      <SidebarSection title="Workspace">
+        <SidebarItem
+          activeSection={section}
+          icon={<SettingsIcon className="h-3.5 w-3.5" />}
+          label="General"
+          section="general"
           onClick={() => setSection('general')}
-        >
-          <SettingsIcon className="h-4 w-4" /> General
-        </button>
-        <button
-          className={cn(
-            'flex w-full text-left px-2 py-1 rounded text-sm items-center gap-x-2',
-            section === 'users' ? 'bg-blue-100 text-blue-700 font-medium' : 'hover:bg-gray-100'
-          )}
+        />
+        <SidebarItem
+          activeSection={section}
+          icon={<UsersIcon className="h-3.5 w-3.5" />}
+          label="Users"
+          section="users"
           onClick={() => setSection('users')}
-        >
-          <UsersIcon className="h-4 w-4" /> Users
-        </button>
-        <button
-          className={cn(
-            'flex w-full text-left px-2 py-1 rounded text-sm items-center gap-x-2',
-            section === 'features' ? 'bg-blue-100 text-blue-700 font-medium' : 'hover:bg-gray-100'
-          )}
+        />
+        <SidebarItem
+          activeSection={section}
+          icon={<ToggleRight className="h-3.5 w-3.5" />}
+          label="Features"
+          section="features"
           onClick={() => setSection('features')}
-        >
-          <ToggleRight className="h-4 w-4" /> Features
-        </button>
-      </div>
+        />
+      </SidebarSection>
     </div>
   );
 };
+
+function SidebarSection({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="px-2 flex flex-col space-y-1">
+      <div className="text-xs font-bold mb-2 text-gray-500 uppercase tracking-wide px-2">
+        {title}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function SidebarItem({
+  icon,
+  label,
+  section,
+  onClick,
+  activeSection,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  section: WorkspaceSettingsSection;
+  onClick: (section: string) => void;
+  activeSection: WorkspaceSettingsSection;
+}) {
+  return (
+    <button
+      className={cn(
+        'flex w-full text-left px-2 py-1 rounded text-sm items-center gap-x-1',
+        section === activeSection
+          ? 'bg-blue-100 text-blue-700 font-medium'
+          : 'hover:bg-gray-200 hover:text-gray-700'
+      )}
+      onClick={() => onClick(section)}
+    >
+      {icon}
+      {label}
+    </button>
+  );
+}
 
 export default Sidebar;

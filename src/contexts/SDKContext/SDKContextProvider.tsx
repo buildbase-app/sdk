@@ -1,6 +1,6 @@
 'use client';
 
-import React, { type ReactNode, useMemo } from 'react';
+import React, { type ReactNode } from 'react';
 import { AuthContextProvider } from '../AuthContext';
 import { OSContextProvider } from '../OSContext';
 import { WorkspaceContextProvider } from '../WorkspaceContext';
@@ -20,17 +20,13 @@ import { WorkspaceContextProvider } from '../WorkspaceContext';
  * This order ensures dependencies are available when needed.
  */
 export const SDKContextProvider: React.FC<{ children: ReactNode }> = React.memo(({ children }) => {
-  // Memoize children to prevent unnecessary re-renders of the provider tree
-  const memoizedChildren = useMemo(() => children, [children]);
-
   return (
     <OSContextProvider>
       <AuthContextProvider>
-        <WorkspaceContextProvider>{memoizedChildren}</WorkspaceContextProvider>
+        <WorkspaceContextProvider>{children}</WorkspaceContextProvider>
       </AuthContextProvider>
     </OSContextProvider>
   );
 });
 
 SDKContextProvider.displayName = 'SDKContextProvider';
-

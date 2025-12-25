@@ -17,7 +17,6 @@
     "jsx": "react-jsx",
     "declaration": true,
     "declarationDir": "dist/types",
-    "outDir": "dist/esm",
     "rootDir": "src"
   },
   "include": ["src"],

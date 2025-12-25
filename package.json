@@ -7,9 +7,20 @@
   "module": "dist/index.esm.js",
   "browser": "dist/index.esm.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.esm.js",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./dist/saas-os.css": "./dist/saas-os.css"
+  },
   "files": [
     "dist",
     "README.md"
+  ],
+  "sideEffects": [
+    "**/*.css"
   ],
   "scripts": {
     "build": "rollup -c",
@@ -43,8 +54,6 @@
     "javascript-time-ago": "^2.5.11",
     "jwt-decode": "^4.0.0",
     "lucide-react": "^0.544.0",
-    "luxon": "^3.7.2",
-    "moment": "^2.30.1",
     "react-day-picker": "^9.7.0",
     "react-hook-form": "^7.60.0",
     "tailwind-merge": "^3.3.1",
@@ -83,7 +92,6 @@
     "@rollup/plugin-node-resolve": "^16.0.1",
     "@rollup/plugin-terser": "^0.4.0",
     "@rollup/plugin-typescript": "^12.1.4",
-    "@types/luxon": "^3.7.1",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "autoprefixer": "^10.4.16",

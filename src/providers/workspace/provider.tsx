@@ -52,16 +52,19 @@ export function WorkspaceSwitcher(props: {
   trigger: (isLoading: boolean, currentWorkspace: IWorkspace | null) => ReactNode;
   onWorkspaceChange: (workspace: IWorkspace) => Promise<void>;
 }) {
-  const { workspaces: workspacesFromState, currentWorkspace, loading, refreshing } = useAppSelector(
-    state => state.workspaces
-  );
+  const {
+    workspaces: workspacesFromState,
+    currentWorkspace,
+    loading,
+    refreshing,
+  } = useAppSelector(state => state.workspaces);
   const user = useAppSelector(state => state.auth.user);
   const [open, setOpen] = useState(false);
   const [reloadWorkspacesCount, setReloadWorkspacesCount] = useState<number>(0);
   const [searchQuery, setSearchQuery] = useState('');
   const { fetchWorkspaces, getFeatures, refreshWorkspaces, setCurrentWorkspace, workspaces } =
     useSaaSWorkspaces();
-  
+
   // Combine loading and refreshing states for trigger
   const isLoading = loading || refreshing;
 
@@ -93,20 +96,11 @@ export function WorkspaceSwitcher(props: {
 
   // Use workspaces from hook (which comes from state)
   const workspacesToUse = workspaces.length > 0 ? workspaces : workspacesFromState;
-  
-  // Filter workspaces based on search query
-  const filteredWorkspaces = workspacesToUse.filter(workspace =>
-    workspace.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
 
-  const getWorkspaceInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(word => word[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
-  };
+  // Filter workspaces based on search query
+  const filteredWorkspaces = workspacesToUse
+    .filter(workspace => workspace._id !== currentWorkspace?._id)
+    .filter(workspace => workspace.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -118,6 +112,9 @@ export function WorkspaceSwitcher(props: {
             <Building2 className="h-5 w-5" />
             Switch Workspace
           </DialogTitle>
+          <DialogDescription>
+            Select a workspace to switch to or create a new one.
+          </DialogDescription>
         </DialogHeader>
         {!user && (
           <div className="flex flex-col items-center justify-center h-full py-4 sm:py-8">
@@ -128,38 +125,17 @@ export function WorkspaceSwitcher(props: {
         )}
         {user && (
           <div className="flex flex-col gap-4">
-            {/* Search */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-              <Input
-                placeholder="Search workspaces..."
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
-            </div>
             {/* Current Workspace */}
             {currentWorkspace && (
-              <div>
-                <div className="text-sm font-medium text-muted-foreground">Current Workspace</div>
-                <div className="flex items-center gap-3 rounded-lg border-2 p-3 border-border bg-muted text-muted-foreground">
-                  <Avatar className="h-8 w-8 flex items-center justify-center">
-                    <div>
-                      <AvatarImage src={currentWorkspace.image} />
-                    </div>
-                    <AvatarFallback>{getWorkspaceInitials(currentWorkspace.name)}</AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium truncate">{currentWorkspace.name}</span>
-                    </div>
-                    <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                      <Users className="h-3 w-3" />
-                      <span>{currentWorkspace.users?.length || 0} members</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <WorkspaceItem
+                workspace={currentWorkspace}
+                isCurrentWorkspace={true}
+                onWorkspaceChange={props.onWorkspaceChange}
+                onClose={() => setOpen(false)}
+                setCurrentWorkspace={setCurrentWorkspace}
+                setOpen={setOpen}
+                workspacesToUse={workspacesToUse}
+              />
             )}
 
             <Separator />
@@ -174,7 +150,7 @@ export function WorkspaceSwitcher(props: {
                   <Button
                     progress={refreshing}
                     disabled={refreshing}
-                    variant="outline"
+                    variant="ghost"
                     onClick={reloadWorkspaces}
                     startIcon={<RefreshCcw />}
                   >
@@ -182,7 +158,16 @@ export function WorkspaceSwitcher(props: {
                   </Button>
                 </div>
               </div>
-
+              {/* Search */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                <Input
+                  placeholder="Search workspaces..."
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
               {loading ? (
                 <div className="flex items-center justify-center py-8">
                   <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -199,60 +184,18 @@ export function WorkspaceSwitcher(props: {
                 <ScrollArea className="h-64">
                   <div className="flex flex-col gap-2 my-2.5">
                     {filteredWorkspaces.map(workspace => {
-                      const usersCount = workspace?.users?.length || 0;
-                      const isAdmin = workspace.createdBy === user?.id;
                       const isCurrentWorkspace = workspace._id === currentWorkspace?._id;
                       return (
-                        <div
+                        <WorkspaceItem
                           key={workspace._id}
-                          className={cn(
-                            'w-full justify-start h-auto p-3 rounded-none flex border border-border ',
-                            isCurrentWorkspace && 'bg-muted'
-                          )}
-                        >
-                          <Avatar className="h-8 w-8 mr-3">
-                            <AvatarImage src={workspace.image} />
-                            <AvatarFallback>{getWorkspaceInitials(workspace.name)}</AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1 min-w-0 text-left">
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium truncate">{workspace.name}</span>
-                              {isAdmin && <Crown className="h-3 w-3 text-amber-500" />}
-                            </div>
-                            <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                              <Users className="h-3 w-3" />
-                              <span>
-                                {usersCount} member{usersCount !== 1 ? 's' : ''}
-                              </span>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Button
-                              size="sm"
-                              disabled={isCurrentWorkspace}
-                              onClick={async () => {
-                                await props.onWorkspaceChange(workspace);
-                                setCurrentWorkspace(workspace);
-                                setOpen(false);
-                              }}
-                            >
-                              {isCurrentWorkspace ? 'Current' : 'Switch to'}
-                            </Button>
-                            <WorkspaceSettingsDialog
-                              workspace={workspace}
-                              onClose={() => {
-                                if (currentWorkspace) {
-                                  const index = workspacesToUse.findIndex(
-                                    w => w._id?.toString() === currentWorkspace._id?.toString()
-                                  );
-                                  if (index !== -1) {
-                                    setCurrentWorkspace(workspacesToUse[index]);
-                                  }
-                                }
-                              }}
-                            />
-                          </div>
-                        </div>
+                          workspace={workspace}
+                          isCurrentWorkspace={isCurrentWorkspace}
+                          onWorkspaceChange={props.onWorkspaceChange}
+                          onClose={() => setOpen(false)}
+                          setCurrentWorkspace={setCurrentWorkspace}
+                          setOpen={setOpen}
+                          workspacesToUse={workspacesToUse}
+                        />
                       );
                     })}
                   </div>
@@ -271,6 +214,82 @@ export function WorkspaceSwitcher(props: {
         )}
       </DialogContent>
     </Dialog>
+  );
+}
+
+interface WorkspaceItemProps {
+  workspace: IWorkspace;
+  isCurrentWorkspace?: boolean;
+  onWorkspaceChange: (workspace: IWorkspace) => Promise<void>;
+  onClose: () => void;
+  setCurrentWorkspace: (workspace: IWorkspace) => void;
+  setOpen: (open: boolean) => void;
+  workspacesToUse: IWorkspace[];
+}
+
+function WorkspaceItem(props: WorkspaceItemProps) {
+  const { workspace, setCurrentWorkspace, setOpen, workspacesToUse } = props;
+  const isCurrentWorkspace = props.isCurrentWorkspace ?? false;
+
+  const getWorkspaceInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(word => word[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+  return (
+    <div
+      className={cn('flex items-center gap-3 rounded-lg border-2 p-3 border-border', {
+        'bg-muted text-muted-foreground': isCurrentWorkspace,
+      })}
+    >
+      <Avatar className="h-8 w-8 flex items-center justify-center">
+        <div>
+          <AvatarImage src={workspace.image} />
+        </div>
+        <AvatarFallback>{getWorkspaceInitials(workspace.name)}</AvatarFallback>
+      </Avatar>
+      <div className="flex-1 min-w-0 max-w-full">
+        <div className="flex items-center gap-2">
+          <span className="font-medium line-clamp-1 text-ellipsis overflow-hidden max-w-full">
+            {workspace.name}
+          </span>
+        </div>
+        <div className="flex items-center gap-1 text-sm text-muted-foreground">
+          <Users className="h-3 w-3" />
+          <span>{workspace.users?.length || 0} members</span>
+        </div>
+      </div>
+      <div className="flex items-center gap-2">
+        {isCurrentWorkspace ? null : (
+          <Button
+            size="sm"
+            onClick={async () => {
+              await props.onWorkspaceChange(workspace);
+              setCurrentWorkspace(workspace);
+              setOpen(false);
+            }}
+          >
+            Switch to
+          </Button>
+        )}
+        <WorkspaceSettingsDialog
+          workspace={workspace}
+          onClose={() => {
+            if (isCurrentWorkspace) {
+              const index = workspacesToUse.findIndex(
+                w => w._id?.toString() === workspace._id?.toString()
+              );
+              if (index !== -1) {
+                setCurrentWorkspace(workspacesToUse[index]);
+              }
+            }
+          }}
+        />
+      </div>
+    </div>
   );
 }
 
@@ -334,7 +353,7 @@ function CreateWorkspaceDialog(props: { onCreated: () => void }) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger>
+      <DialogTrigger asChild>
         <Button className="w-full rounded-none">
           <Plus className="h-4 w-4 mr-2" />
           Create New Workspace

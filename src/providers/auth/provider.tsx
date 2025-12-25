@@ -94,9 +94,7 @@ export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) 
 
   // WorkspaceProvider is already in SDKContextProvider, so we don't need to wrap here
   // Just return children - the context providers handle the state management
-  // Memoize children to prevent unnecessary re-renders
-  const memoizedChildren = useMemo(() => children, [children]);
-  return <>{memoizedChildren}</>;
+  return <>{children}</>;
 });
 
 AuthProviderWrapper.displayName = 'AuthProviderWrapper';
