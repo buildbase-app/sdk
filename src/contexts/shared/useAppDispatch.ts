@@ -2,10 +2,10 @@
 
 import { useMemo } from 'react';
 import { useAuthDispatch } from '../AuthContext';
-import { useOSDispatch } from '../OSContext';
-import { useWorkspaceDispatch } from '../WorkspaceContext';
 import type { AuthAction } from '../AuthContext/types';
+import { useOSDispatch } from '../OSContext';
 import type { OSAction } from '../OSContext/types';
+import { useWorkspaceDispatch } from '../WorkspaceContext';
 import type { WorkspaceAction } from '../WorkspaceContext/types';
 
 /**
@@ -50,4 +50,3 @@ export function useAppDispatch(): SDKDispatch {
     [authDispatch, osDispatch, workspaceDispatch]
   );
 }
-

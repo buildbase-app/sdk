@@ -42,7 +42,7 @@ export function createContextProvider<State, Action>({
       </CombinedContext.Provider>
     );
   });
-  
+
   Provider.displayName = `${name}Provider`;
 
   const useContext = (): { state: State; dispatch: Dispatch<Action> } => {
@@ -124,23 +124,23 @@ export function createContextProvider<State, Action>({
     // Compute selected value with memoization
     const selected = useMemo(() => {
       const result = selectorRef.current(state);
-      
+
       // Check if value changed using equality function
       if (prevSelectedRef.current !== undefined) {
         const isEqual = equalityFnRef.current
           ? equalityFnRef.current(prevSelectedRef.current, result)
           : Object.is(prevSelectedRef.current, result);
-        
+
         if (isEqual && prevStateRef.current === state) {
           // Return previous value if equal and state reference unchanged
           return prevSelectedRef.current;
         }
       }
-      
+
       // Update refs
       prevSelectedRef.current = result;
       prevStateRef.current = state;
-      
+
       return result;
     }, [state]);
 
@@ -155,4 +155,3 @@ export function createContextProvider<State, Action>({
     useSelector,
   };
 }
-

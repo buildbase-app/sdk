@@ -1,3 +1,4 @@
+export { osActions } from './actions';
 export {
   OSContextProvider,
   useOSContext,
@@ -5,7 +6,5 @@ export {
   useOSSelector,
   useOSState,
 } from './OSContext';
-export { osActions } from './actions';
-export { osReducer, getInitialOSState } from './reducer';
+export { getInitialOSState, osReducer } from './reducer';
 export type { OSAction, OSContextValue } from './types';
-

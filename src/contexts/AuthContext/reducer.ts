@@ -1,7 +1,7 @@
 import type { AuthSession, IAuthState } from '../../providers/auth/types';
 import { AuthStatus } from '../../providers/auth/types';
-import type { AuthAction } from './types';
 import { getStorageJSON, removeStorageItem, setStorageJSON } from '../shared/utils/storage';
+import type { AuthAction } from './types';
 
 export const AUTH_TOKEN_KEY = 'saas_os_auth_token';
 
@@ -99,4 +99,3 @@ export const authReducer = (state: IAuthState, action: AuthAction): IAuthState =
       return state;
   }
 };
-

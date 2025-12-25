@@ -15,7 +15,7 @@ export default [
     input: 'src/index.ts',
     preserveEntrySignatures: 'exports-only',
     treeshake: {
-      moduleSideEffects: (id) => {
+      moduleSideEffects: id => {
         // CSS files have side effects
         if (id.endsWith('.css')) return true;
         // Allow tree-shaking for other modules

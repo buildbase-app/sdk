@@ -28,4 +28,3 @@ export const osReducer = (state: IOsState, action: OSAction): IOsState => {
       return state;
   }
 };
-

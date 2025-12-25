@@ -12,33 +12,29 @@ export interface SaaSOSProviderProps extends IOsState {
   children: React.ReactNode;
 }
 
-export const SaaSOSProvider: React.FC<SaaSOSProviderProps> = React.memo(({
-  serverUrl,
-  version,
-  orgId,
-  auth,
-  children,
-}) => {
-  // Memoize config to prevent unnecessary re-renders in ContextConfigProvider
-  const config = React.useMemo(
-    () => ({ serverUrl, version, orgId }),
-    [serverUrl, version, orgId]
-  );
-  
-  // Memoize callbacks to prevent unnecessary re-renders
-  const memoizedCallbacks = React.useMemo(() => auth?.callbacks, [auth?.callbacks]);
-  
-  return (
-    <SDKContextProvider>
-      <AuthProviderWrapper callbacks={memoizedCallbacks}>
-        <PortalProvider>
-          <ContextConfigProvider config={config} auth={auth}>
-            {children}
-          </ContextConfigProvider>
-        </PortalProvider>
-      </AuthProviderWrapper>
-    </SDKContextProvider>
-  );
-});
+export const SaaSOSProvider: React.FC<SaaSOSProviderProps> = React.memo(
+  ({ serverUrl, version, orgId, auth, children }) => {
+    // Memoize config to prevent unnecessary re-renders in ContextConfigProvider
+    const config = React.useMemo(
+      () => ({ serverUrl, version, orgId }),
+      [serverUrl, version, orgId]
+    );
+
+    // Memoize callbacks to prevent unnecessary re-renders
+    const memoizedCallbacks = React.useMemo(() => auth?.callbacks, [auth?.callbacks]);
+
+    return (
+      <SDKContextProvider>
+        <AuthProviderWrapper callbacks={memoizedCallbacks}>
+          <PortalProvider>
+            <ContextConfigProvider config={config} auth={auth}>
+              {children}
+            </ContextConfigProvider>
+          </PortalProvider>
+        </AuthProviderWrapper>
+      </SDKContextProvider>
+    );
+  }
+);
 
 SaaSOSProvider.displayName = 'SaaSOSProvider';

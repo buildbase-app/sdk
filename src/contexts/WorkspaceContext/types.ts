@@ -27,4 +27,3 @@ export interface WorkspaceContextValue {
   state: WorkspaceState;
   dispatch: Dispatch<WorkspaceAction>;
 }
-

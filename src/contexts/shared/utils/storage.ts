@@ -64,4 +64,3 @@ export function setStorageJSON<T>(key: string, value: T): void {
     console.warn(`Failed to save ${key} to localStorage:`, error);
   }
 }
-

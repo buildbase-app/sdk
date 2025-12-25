@@ -9,4 +9,3 @@ export interface OSContextValue {
   state: IOsState;
   dispatch: Dispatch<OSAction>;
 }
-

@@ -15,4 +15,3 @@ export const osActions = {
     type: 'REMOVE_SAAS_OS_CONFIG',
   }),
 };
-

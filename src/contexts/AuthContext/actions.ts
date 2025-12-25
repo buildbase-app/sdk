@@ -23,4 +23,3 @@ export const authActions = {
     type: 'REMOVE_SESSION',
   }),
 };
-

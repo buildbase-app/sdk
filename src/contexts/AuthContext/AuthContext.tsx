@@ -20,4 +20,3 @@ export const useAuthContext = (): AuthContextValue => useContext();
 export const useAuthState = useState;
 export const useAuthDispatch = useDispatch;
 export const useAuthSelector = useSelector;
-

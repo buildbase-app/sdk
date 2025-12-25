@@ -50,4 +50,3 @@ export const workspaceActions = {
     payload: switching,
   }),
 };
-

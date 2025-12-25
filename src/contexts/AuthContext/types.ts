@@ -11,4 +11,3 @@ export interface AuthContextValue {
   state: IAuthState;
   dispatch: Dispatch<AuthAction>;
 }
-

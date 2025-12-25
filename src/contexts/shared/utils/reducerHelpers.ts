@@ -28,4 +28,3 @@ export function updateFields<State extends Record<string, any>>(
     ...updates,
   };
 }
-

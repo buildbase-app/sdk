@@ -15,10 +15,7 @@ const PortalProvider = React.memo(({ children }: { children: React.ReactNode }) 
   const [container, setContainer] = React.useState<HTMLDivElement | null>(null);
 
   // Memoize context value to prevent unnecessary re-renders
-  const contextValue = React.useMemo(
-    () => ({ container, setContainer }),
-    [container]
-  );
+  const contextValue = React.useMemo(() => ({ container, setContainer }), [container]);
 
   // Memoize children to prevent unnecessary re-renders
   const memoizedChildren = React.useMemo(() => children, [children]);

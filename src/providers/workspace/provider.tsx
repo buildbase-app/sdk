@@ -1,15 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import {
-  Building2,
-  Crown,
-  Image,
-  Loader2,
-  Plus,
-  RefreshCcw,
-  Search,
-  Smile,
-  Users,
-} from 'lucide-react';
+import { Building2, Image, Loader2, Plus, RefreshCcw, Search, Smile, Users } from 'lucide-react';
 import { ReactNode, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';

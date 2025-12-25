@@ -2,7 +2,10 @@
 function isValidLocale(locale: string): boolean {
   try {
     const formatter = new Intl.DateTimeFormat(locale);
-    return formatter.resolvedOptions().locale === locale || formatter.resolvedOptions().locale.startsWith(locale);
+    return (
+      formatter.resolvedOptions().locale === locale ||
+      formatter.resolvedOptions().locale.startsWith(locale)
+    );
   } catch {
     return false;
   }

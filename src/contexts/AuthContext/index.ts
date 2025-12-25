@@ -1,3 +1,4 @@
+export { authActions } from './actions';
 export {
   AuthContextProvider,
   useAuthContext,
@@ -5,7 +6,5 @@ export {
   useAuthSelector,
   useAuthState,
 } from './AuthContext';
-export { authActions } from './actions';
-export { authReducer, getInitialAuthState, AUTH_TOKEN_KEY } from './reducer';
+export { AUTH_TOKEN_KEY, authReducer, getInitialAuthState } from './reducer';
 export type { AuthAction, AuthContextValue } from './types';
-

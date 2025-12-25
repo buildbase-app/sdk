@@ -2,8 +2,7 @@
 
 import { jwtDecode } from 'jwt-decode';
 import React, { ReactNode, useCallback, useEffect, useMemo } from 'react';
-import { useAppDispatch, useAppSelector } from '../../contexts';
-import { authActions, AUTH_TOKEN_KEY } from '../../contexts';
+import { AUTH_TOKEN_KEY, authActions, useAppDispatch, useAppSelector } from '../../contexts';
 import { getStorageJSON } from '../../contexts/shared/utils/storage';
 import type { AuthSession } from './types';
 import { AuthUser, IAuthCallbacks } from './types';

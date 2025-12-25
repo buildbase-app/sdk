@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo } from 'react';
 import { IUser } from '../../api/types';
-import { useAppDispatch, useAppSelector } from '../../contexts';
-import { workspaceActions } from '../../contexts';
+import { useAppDispatch, useAppSelector, workspaceActions } from '../../contexts';
 import { WorkspaceApi } from './api';
 import { WorkspaceSwitcher } from './provider';
 import { IWorkspace, IWorkspaceUser } from './types';
@@ -44,7 +43,13 @@ export const useSaaSWorkspaces = () => {
         }
       }
     }
-  }, [workspace.isInitialized, workspace.workspaces, workspace.currentWorkspace, dispatch, setCurrentWorkspaceWithStorage]);
+  }, [
+    workspace.isInitialized,
+    workspace.workspaces,
+    workspace.currentWorkspace,
+    dispatch,
+    setCurrentWorkspaceWithStorage,
+  ]);
 
   const resetCurrentWorkspaceWithStorage = useCallback(() => {
     dispatch.workspaces(workspaceActions.resetCurrentWorkspace());
@@ -58,7 +63,7 @@ export const useSaaSWorkspaces = () => {
   const fetchWorkspaces = useCallback(async () => {
     // Prevent duplicate requests
     if (workspace.loading || fetchingRef.current) return;
-    
+
     fetchingRef.current = true;
     dispatch.workspaces(workspaceActions.setLoading(true));
     dispatch.workspaces(workspaceActions.setError(null));
@@ -100,7 +105,7 @@ export const useSaaSWorkspaces = () => {
   const refreshWorkspaces = useCallback(async () => {
     // Prevent duplicate requests
     if (workspace.refreshing || fetchingRef.current) return;
-    
+
     fetchingRef.current = true;
     dispatch.workspaces(workspaceActions.setRefreshing(true));
     try {
@@ -138,12 +143,12 @@ export const useSaaSWorkspaces = () => {
       // If request is in progress, return existing features or null
       return workspace.allFeatures.length > 0 ? workspace.allFeatures : null;
     }
-    
+
     // If features already loaded, return them immediately without making a request
     if (workspace.allFeatures.length > 0) {
       return workspace.allFeatures;
     }
-    
+
     fetchingFeaturesRef.current = true;
     try {
       const data = await api.getFeatures();

@@ -5,8 +5,8 @@ import type { IAuthState } from '../../providers/auth/types';
 import type { IOsState } from '../../providers/os/types';
 import { useAuthState } from '../AuthContext';
 import { useOSState } from '../OSContext';
-import type { WorkspaceState } from '../WorkspaceContext/types';
 import { useWorkspaceState } from '../WorkspaceContext';
+import type { WorkspaceState } from '../WorkspaceContext/types';
 
 /**
  * Combined SDK State
@@ -78,26 +78,25 @@ export function useAppSelector<Selected = SDKState>(
   // Compute selected value with optimized memoization
   const selected = useMemo(() => {
     const result = selectorRef.current(combinedState);
-    
+
     // Check if value changed using equality function
     if (prevSelectedRef.current !== undefined) {
       const isEqual = equalityFnRef.current
         ? equalityFnRef.current(prevSelectedRef.current, result)
         : Object.is(prevSelectedRef.current, result);
-      
+
       if (isEqual && prevStateRef.current === combinedState) {
         // Return previous value if equal and state reference unchanged
         return prevSelectedRef.current;
       }
     }
-    
+
     // Update refs
     prevSelectedRef.current = result;
     prevStateRef.current = combinedState;
-    
+
     return result;
   }, [combinedState]);
 
   return selected;
 }
-

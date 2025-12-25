@@ -1,3 +1,6 @@
+export { workspaceActions } from './actions';
+export { getInitialWorkspaceState, workspaceReducer } from './reducer';
+export type { WorkspaceAction, WorkspaceContextValue, WorkspaceState } from './types';
 export {
   WorkspaceContextProvider,
   useWorkspaceContext,
@@ -5,7 +8,3 @@ export {
   useWorkspaceSelector,
   useWorkspaceState,
 } from './WorkspaceContext';
-export { workspaceActions } from './actions';
-export { workspaceReducer, getInitialWorkspaceState } from './reducer';
-export type { WorkspaceAction, WorkspaceContextValue, WorkspaceState } from './types';
-
