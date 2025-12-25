@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { Skeleton } from '../../../components/ui/skeleton';
 import { Switch } from '../../../components/ui/switch';
 import { useAppSelector } from '../../../contexts';
 import { useSaaSWorkspaces } from '../hooks';

@@ -20,8 +20,8 @@ import { ScrollArea } from '../../../components/ui/scroll-area';
 import { useAppSelector } from '../../../contexts';
 import { useSaaSWorkspaces } from '../hooks';
 import { IWorkspace } from '../types';
-import { getSvgImage, workspaceEmojis } from './utils';
 import SettingSkeleton from './Skeleton';
+import { getSvgImage, workspaceEmojis } from './utils';
 
 const WorkspaceSettingsGeneral: React.FC<{ workspace: IWorkspace }> = ({ workspace }) => {
   const [isUpdating, setIsUpdating] = useState(false);
