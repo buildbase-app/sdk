@@ -1,4 +1,4 @@
-import { getStorageItem, removeStorageItem, setStorageItem } from '../../contexts/utils/storage';
+import { getStorageItem, removeStorageItem, setStorageItem } from '../../contexts/shared/utils/storage';
 import { IWorkspace } from './types';
 
 const WORKSPACE_STORAGE_KEY = 'saas-workspace-current';

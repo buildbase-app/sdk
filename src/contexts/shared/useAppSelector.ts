@@ -1,12 +1,12 @@
 'use client';
 
 import React, { useMemo } from 'react';
-import type { IAuthState } from '../providers/auth/types';
-import type { IOsState } from '../providers/os/types';
-import { useAuthState } from './AuthContext';
-import { useOSState } from './OSContext';
-import type { WorkspaceState } from './types';
-import { useWorkspaceState } from './WorkspaceContext';
+import type { IAuthState } from '../../providers/auth/types';
+import type { IOsState } from '../../providers/os/types';
+import { useAuthState } from '../AuthContext';
+import { useOSState } from '../OSContext';
+import type { WorkspaceState } from '../WorkspaceContext/types';
+import { useWorkspaceState } from '../WorkspaceContext';
 
 /**
  * Combined SDK State
@@ -73,17 +73,22 @@ export function useAppSelector<Selected = SDKState>(
   // Compute selected value
   const selected = useMemo(() => selectorRef.current(combinedState), [combinedState]);
 
-  // Compare with previous value
-  const isEqual =
-    prevSelectedRef.current !== undefined
-      ? (equalityFn || Object.is)(prevSelectedRef.current, selected)
-      : false;
+  // Use useState to trigger re-renders when selected value changes
+  const [selectedValue, setSelectedValue] = React.useState<Selected>(() => selected);
 
-  // Only update ref if value changed
-  if (!isEqual) {
-    prevSelectedRef.current = selected;
-  }
+  // Update selected value only if it changed (using equality function)
+  React.useEffect(() => {
+    const isEqual =
+      prevSelectedRef.current !== undefined
+        ? (equalityFn || Object.is)(prevSelectedRef.current, selected)
+        : false;
 
-  // Return memoized value - component only re-renders if selected changes
-  return (prevSelectedRef.current !== undefined ? prevSelectedRef.current : selected) as Selected;
+    if (!isEqual) {
+      prevSelectedRef.current = selected;
+      setSelectedValue(selected);
+    }
+  }, [selected, equalityFn]);
+
+  return selectedValue;
 }
+

@@ -78,7 +78,7 @@ export function createContextProvider<State, Action>({
 
   /**
    * Selector hook - only re-renders when selected value changes
-   * Uses useMemo to memoize the selected value and only updates when it changes
+   * Uses useState and useEffect to track selected value changes
    *
    * @param selector Optional function that selects a value from state. If not provided, returns entire state.
    * @param equalityFn Optional equality function for comparison (default: Object.is)
@@ -117,19 +117,23 @@ export function createContextProvider<State, Action>({
     // Compute selected value
     const selected = useMemo(() => selectorRef.current(state), [state]);
 
-    // Compare with previous value
-    const isEqual =
-      prevSelectedRef.current !== undefined
-        ? (equalityFn || Object.is)(prevSelectedRef.current, selected)
-        : false;
+    // Use useState to trigger re-renders when selected value changes
+    const [selectedValue, setSelectedValue] = React.useState<Selected>(() => selected);
 
-    // Only update ref if value changed
-    if (!isEqual) {
-      prevSelectedRef.current = selected;
-    }
+    // Update selected value only if it changed (using equality function)
+    React.useEffect(() => {
+      const isEqual =
+        prevSelectedRef.current !== undefined
+          ? (equalityFn || Object.is)(prevSelectedRef.current, selected)
+          : false;
 
-    // Return memoized value - component only re-renders if selected changes
-    return (prevSelectedRef.current !== undefined ? prevSelectedRef.current : selected) as Selected;
+      if (!isEqual) {
+        prevSelectedRef.current = selected;
+        setSelectedValue(selected);
+      }
+    }, [selected, equalityFn]);
+
+    return selectedValue;
   };
 
   return {
@@ -140,3 +144,4 @@ export function createContextProvider<State, Action>({
     useSelector,
   };
 }
+

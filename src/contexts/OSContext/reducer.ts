@@ -1,5 +1,5 @@
 import type { IOsState } from '../../providers/os/types';
-import type { OSAction } from '../types';
+import type { OSAction } from './types';
 
 /**
  * Initial state for OS context
@@ -28,3 +28,4 @@ export const osReducer = (state: IOsState, action: OSAction): IOsState => {
       return state;
   }
 };
+

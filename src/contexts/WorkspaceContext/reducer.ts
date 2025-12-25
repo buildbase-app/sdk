@@ -1,5 +1,5 @@
-import type { WorkspaceAction, WorkspaceState } from '../types';
-import { removeStorageItem, setStorageItem } from '../utils/storage';
+import type { WorkspaceAction, WorkspaceState } from './types';
+import { removeStorageItem, setStorageItem } from '../shared/utils/storage';
 
 const WORKSPACE_STORAGE_KEY = 'saas-workspace-current';
 
@@ -74,3 +74,4 @@ export const workspaceReducer = (
       return state;
   }
 };
+

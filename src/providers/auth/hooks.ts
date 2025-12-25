@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from 'react';
 import { useAppDispatch, useAppSelector } from '../../contexts';
-import { authActions } from '../../contexts/actionCreators';
+import { authActions } from '../../contexts';
 import { defaultApiClient } from '../../lib/api-client';
 import { useSaaSWorkspaces } from '../workspace/hooks';
 

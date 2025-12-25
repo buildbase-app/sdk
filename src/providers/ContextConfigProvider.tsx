@@ -1,8 +1,7 @@
 'use client';
 
 import React, { useEffect } from 'react';
-import { useAppDispatch } from '../contexts';
-import { osActions } from '../contexts/actionCreators';
+import { useAppDispatch, osActions } from '../contexts';
 import type { IAuthConfig } from './auth/types';
 import type { IOsState } from './os/types';
 

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo } from 'react';
 import { IUser } from '../../api/types';
 import { useAppDispatch, useAppSelector } from '../../contexts';
-import { workspaceActions } from '../../contexts/actionCreators';
+import { workspaceActions } from '../../contexts';
 import { WorkspaceApi } from './api';
 import { WorkspaceSwitcher } from './provider';
 import { IWorkspace, IWorkspaceUser } from './types';
@@ -14,6 +14,19 @@ export const useSaaSWorkspaces = () => {
 
   // Select all workspace state at once - only re-renders when any selected field changes
   const workspace = useAppSelector(state => state.workspaces);
+
+  const setCurrentWorkspaceWithStorage = useCallback(
+    (ws: IWorkspace) => {
+      // check if the workspace is the same as the current workspace
+      if (ws._id === workspace.currentWorkspace?._id) {
+        return;
+      }
+      if (ws) {
+        dispatch.workspaces(workspaceActions.setCurrentWorkspace(ws));
+      }
+    },
+    [workspace.currentWorkspace, dispatch]
+  );
 
   // Load saved workspace ID on initialization
   useEffect(() => {
@@ -31,20 +44,7 @@ export const useSaaSWorkspaces = () => {
         }
       }
     }
-  }, [workspace.isInitialized, workspace.workspaces, workspace.currentWorkspace, dispatch]);
-
-  const setCurrentWorkspaceWithStorage = useCallback(
-    (ws: IWorkspace) => {
-      // check if the workspace is the same as the current workspace
-      if (ws._id === workspace.currentWorkspace?._id) {
-        return;
-      }
-      if (ws) {
-        dispatch.workspaces(workspaceActions.setCurrentWorkspace(ws));
-      }
-    },
-    [workspace.currentWorkspace, dispatch]
-  );
+  }, [workspace.isInitialized, workspace.workspaces, workspace.currentWorkspace, dispatch, setCurrentWorkspaceWithStorage]);
 
   const resetCurrentWorkspaceWithStorage = useCallback(() => {
     dispatch.workspaces(workspaceActions.resetCurrentWorkspace());

@@ -1,47 +1,47 @@
 // Context Providers
 export {
-  AuthProvider,
+  AuthContextProvider,
   useAuthContext,
   useAuthDispatch,
   useAuthSelector,
   useAuthState,
+  authActions,
+  authReducer,
+  getInitialAuthState,
+  AUTH_TOKEN_KEY,
 } from './AuthContext';
-export { OSProvider, useOSContext, useOSDispatch, useOSSelector, useOSState } from './OSContext';
-export { SDKContextProvider } from './SDKContextProvider';
+export type { AuthAction, AuthContextValue } from './AuthContext';
+
 export {
-  WorkspaceProvider,
+  OSContextProvider,
+  useOSContext,
+  useOSDispatch,
+  useOSSelector,
+  useOSState,
+  osActions,
+  osReducer,
+  getInitialOSState,
+} from './OSContext';
+export type { OSAction, OSContextValue } from './OSContext';
+
+export {
+  WorkspaceContextProvider,
   useWorkspaceContext,
   useWorkspaceDispatch,
   useWorkspaceSelector,
   useWorkspaceState,
-} from './WorkspaceContext';
-
-// Types
-export type {
-  AuthAction,
-  AuthContextValue,
-  OSAction,
-  OSContextValue,
-  SDKContextValue,
-  WorkspaceAction,
-  WorkspaceContextValue,
-  WorkspaceState,
-} from './types';
-
-// Reducers
-export {
-  authReducer,
-  getInitialAuthState,
-  getInitialOSState,
-  getInitialWorkspaceState,
-  osReducer,
+  workspaceActions,
   workspaceReducer,
-} from './reducers';
+  getInitialWorkspaceState,
+} from './WorkspaceContext';
+export type { WorkspaceAction, WorkspaceContextValue, WorkspaceState } from './WorkspaceContext';
 
-// Combined Selector
-export { useAppSelector } from './useAppSelector';
-export type { SDKState } from './useAppSelector';
+export { SDKContextProvider } from './SDKContext';
+export type { SDKContextValue } from './SDKContext';
 
-// Combined Dispatch
-export { useAppDispatch } from './useAppDispatch';
-export type { SDKDispatch } from './useAppDispatch';
+// Combined Selector and Dispatch
+export { useAppSelector } from './shared/useAppSelector';
+export type { SDKState } from './shared/useAppSelector';
+
+export { useAppDispatch } from './shared/useAppDispatch';
+export type { SDKDispatch } from './shared/useAppDispatch';

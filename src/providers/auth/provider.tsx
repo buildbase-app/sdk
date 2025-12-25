@@ -1,10 +1,11 @@
 'use client';
 
 import { jwtDecode } from 'jwt-decode';
-import { ReactNode, useCallback, useEffect } from 'react';
+import { ReactNode, useCallback, useEffect, useMemo } from 'react';
 import { useAppDispatch, useAppSelector } from '../../contexts';
-import { authActions } from '../../contexts/actionCreators';
-import { WorkspaceProvider } from '../workspace/provider';
+import { authActions, AUTH_TOKEN_KEY } from '../../contexts';
+import { getStorageJSON } from '../../contexts/shared/utils/storage';
+import type { AuthSession } from './types';
 import { AuthUser, IAuthCallbacks } from './types';
 import { createSession, getTokenFromUrl, removeTokenFromUrl } from './utils';
 
@@ -13,12 +14,18 @@ interface IProps {
   callbacks?: IAuthCallbacks;
 }
 
-export function AuthProvider({ children, callbacks }: IProps) {
-  console.log('AuthProvider', callbacks);
+/**
+ * AuthProvider wrapper that adds authentication logic
+ * This wraps the AuthContextProvider and adds token handling, callbacks, etc.
+ */
+export function AuthProviderWrapper({ children, callbacks }: IProps) {
   const dispatch = useAppDispatch();
   const authState = useAppSelector(state => state.auth);
   const os = useAppSelector(state => state.os);
   const { serverUrl } = os;
+
+  // Memoize callbacks to prevent unnecessary re-renders
+  const memoizedCallbacks = useMemo(() => callbacks, [callbacks]);
 
   const handleAuthRedirect = useCallback(
     async (token: string) => {
@@ -31,14 +38,14 @@ export function AuthProvider({ children, callbacks }: IProps) {
         const user = jwtDecode(token) as AuthUser;
         const session = createSession(user, token, 24);
         dispatch.auth(authActions.setSession(session));
-        if (callbacks?.verifyToken) {
-          const isValid = await callbacks.verifyToken(token);
+        if (memoizedCallbacks?.verifyToken) {
+          const isValid = await memoizedCallbacks.verifyToken(token);
           if (!isValid) {
             dispatch.auth(authActions.authenticationFailed());
             return;
           }
-          if (callbacks?.handleAuthentication) {
-            await callbacks.handleAuthentication(token);
+          if (memoizedCallbacks?.handleAuthentication) {
+            await memoizedCallbacks.handleAuthentication(token);
           }
         }
         removeTokenFromUrl();
@@ -48,22 +55,47 @@ export function AuthProvider({ children, callbacks }: IProps) {
         throw error;
       }
     },
-    [serverUrl, dispatch, callbacks]
+    [serverUrl, dispatch, memoizedCallbacks]
   );
 
+  // Hydrate session from localStorage on client side (prevents SSR hydration mismatch)
+  useEffect(() => {
+    // Only run on client side
+    if (typeof window === 'undefined') return;
+
+    // Check if we already have a session in state (from URL token)
+    if (authState.isAuthenticated) return;
+
+    // Try to load session from localStorage
+    try {
+      const session = getStorageJSON<AuthSession>(AUTH_TOKEN_KEY);
+      if (session) {
+        // Check if session is expired
+        if (new Date(session.expires) > new Date()) {
+          dispatch.auth(authActions.setSession(session));
+        }
+      }
+    } catch (error) {
+      console.error('Failed to hydrate session from localStorage:', error);
+    }
+  }, []); // Only run once on mount
+
+  // Handle token from URL
   useEffect(() => {
     const token = getTokenFromUrl();
-    console.log('token', token);
     if (!token) {
       return;
     }
-    handleAuthRedirect(token);
+    handleAuthRedirect(token).catch(error => {
+      // Error is already handled in handleAuthRedirect
+      console.error('Failed to handle auth redirect:', error);
+    });
   }, [handleAuthRedirect]);
 
-  return (
-    <>
-      {authState.isAuthenticated && <WorkspaceProvider>{children}</WorkspaceProvider>}
-      {!authState.isAuthenticated && children}
-    </>
-  );
+  // WorkspaceProvider is already in SDKContextProvider, so we don't need to wrap here
+  // Just return children - the context providers handle the state management
+  return <>{children}</>;
 }
+
+// Export AuthProvider for backward compatibility
+export const AuthProvider = AuthProviderWrapper;

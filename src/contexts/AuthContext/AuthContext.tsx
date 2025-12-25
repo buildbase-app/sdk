@@ -1,8 +1,8 @@
 'use client';
 
-import type { IAuthState } from '../providers/auth/types';
-import { createContextProvider } from './createContext';
-import { authReducer, getInitialAuthState } from './reducers/authReducer';
+import type { IAuthState } from '../../providers/auth/types';
+import { createContextProvider } from '../shared/createContext';
+import { authReducer, getInitialAuthState } from './reducer';
 import type { AuthAction, AuthContextValue } from './types';
 
 const { Provider, useContext, useState, useDispatch, useSelector } = createContextProvider<
@@ -15,8 +15,9 @@ const { Provider, useContext, useState, useDispatch, useSelector } = createConte
   initializer: getInitialAuthState,
 });
 
-export const AuthProvider = Provider;
+export const AuthContextProvider = Provider;
 export const useAuthContext = (): AuthContextValue => useContext();
 export const useAuthState = useState;
 export const useAuthDispatch = useDispatch;
 export const useAuthSelector = useSelector;
+

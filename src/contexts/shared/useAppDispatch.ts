@@ -1,10 +1,12 @@
 'use client';
 
 import { useMemo } from 'react';
-import { useAuthDispatch } from './AuthContext';
-import { useOSDispatch } from './OSContext';
-import { useWorkspaceDispatch } from './WorkspaceContext';
-import type { AuthAction, OSAction, WorkspaceAction } from './types';
+import { useAuthDispatch } from '../AuthContext';
+import { useOSDispatch } from '../OSContext';
+import { useWorkspaceDispatch } from '../WorkspaceContext';
+import type { AuthAction } from '../AuthContext/types';
+import type { OSAction } from '../OSContext/types';
+import type { WorkspaceAction } from '../WorkspaceContext/types';
 
 /**
  * Combined SDK Dispatch
@@ -48,3 +50,4 @@ export function useAppDispatch(): SDKDispatch {
     [authDispatch, osDispatch, workspaceDispatch]
   );
 }
+

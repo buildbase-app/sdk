@@ -1,8 +1,8 @@
 'use client';
 
-import type { IOsState } from '../providers/os/types';
-import { createContextProvider } from './createContext';
-import { getInitialOSState, osReducer } from './reducers/osReducer';
+import type { IOsState } from '../../providers/os/types';
+import { createContextProvider } from '../shared/createContext';
+import { getInitialOSState, osReducer } from './reducer';
 import type { OSAction, OSContextValue } from './types';
 
 const { Provider, useContext, useState, useDispatch, useSelector } = createContextProvider<
@@ -14,8 +14,9 @@ const { Provider, useContext, useState, useDispatch, useSelector } = createConte
   reducer: osReducer,
 });
 
-export const OSProvider = Provider;
+export const OSContextProvider = Provider;
 export const useOSContext = (): OSContextValue => useContext();
 export const useOSState = useState;
 export const useOSDispatch = useDispatch;
 export const useOSSelector = useSelector;
+

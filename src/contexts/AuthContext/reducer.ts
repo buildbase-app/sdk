@@ -1,7 +1,7 @@
 import type { AuthSession, IAuthState } from '../../providers/auth/types';
 import { AuthStatus } from '../../providers/auth/types';
-import type { AuthAction } from '../types';
-import { getStorageJSON, removeStorageItem, setStorageJSON } from '../utils/storage';
+import type { AuthAction } from './types';
+import { getStorageJSON, removeStorageItem, setStorageJSON } from '../shared/utils/storage';
 
 export const AUTH_TOKEN_KEY = 'saas_os_auth_token';
 
@@ -29,17 +29,19 @@ function removeSession() {
 
 /**
  * Initial state for auth context
- * Loads session from localStorage if available
+ * Always returns unauthenticated state to prevent SSR hydration mismatches.
+ * Session will be hydrated from localStorage on the client side via useEffect.
  */
 export const getInitialAuthState = (): IAuthState => {
-  const session = loadSession();
+  // Always return unauthenticated state for SSR safety
+  // Session will be loaded on client side in AuthProviderWrapper
   return {
-    user: session?.user || null,
-    session: session || null,
+    user: null,
+    session: null,
     isLoading: false,
-    isAuthenticated: !!session,
+    isAuthenticated: false,
     isRedirecting: false,
-    status: session ? AuthStatus.authenticated : AuthStatus.unauthenticated,
+    status: AuthStatus.unauthenticated,
   };
 };
 
@@ -97,3 +99,4 @@ export const authReducer = (state: IAuthState, action: AuthAction): IAuthState =
       return state;
   }
 };
+
