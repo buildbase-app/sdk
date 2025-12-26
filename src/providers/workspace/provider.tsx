@@ -271,10 +271,11 @@ function WorkspaceItem(props: WorkspaceItemProps) {
         {isCurrentWorkspace ? null : (
           <Button
             size="sm"
-            onClick={async () => {
-              await props.onWorkspaceChange(workspace);
-              setCurrentWorkspace(workspace);
-              setOpen(false);
+            onClick={() => {
+              props.onWorkspaceChange(workspace).then(() => {
+                setCurrentWorkspace(workspace);
+                setOpen(false);
+              });
             }}
           >
             Switch to
