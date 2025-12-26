@@ -1,10 +1,10 @@
 import { IUser } from '../../api/types';
 import { getAccessToken } from '../auth/utils';
-import { IOsConfig } from '../os/types';
+import { ApiVersion, IOsConfig } from '../os/types';
 import type { IWorkspace, IWorkspaceFeature, IWorkspaceUser } from './types';
 
 export class WorkspaceApi {
-  private version: string;
+  private version: ApiVersion;
   private orgId: string;
   private serverUrl: string;
 

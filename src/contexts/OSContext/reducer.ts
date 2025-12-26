@@ -1,4 +1,4 @@
-import type { IOsState } from '../../providers/os/types';
+import { ApiVersion, type IOsState } from '../../providers/os/types';
 import type { OSAction } from './types';
 
 /**
@@ -7,7 +7,7 @@ import type { OSAction } from './types';
 export const getInitialOSState = (): IOsState => {
   return {
     serverUrl: '',
-    version: '',
+    version: ApiVersion.V1,
     orgId: '',
     settings: null,
   };

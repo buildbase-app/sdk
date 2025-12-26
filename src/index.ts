@@ -4,6 +4,7 @@ import './styles/globals.css';
 // export
 // SaaSOSProvider
 export { SaaSOSProvider } from './providers/SaaSOSProvider';
+export { ApiVersion } from './providers/os/types';
 // Export custom components
 export { BetaForm } from './components/beta/BetaForm';
 

@@ -1,5 +1,5 @@
 import { IAsset, IDocument } from '../../api/types';
-import { IOsConfig } from '../../providers/os/types';
+import { ApiVersion, IOsConfig } from '../../providers/os/types';
 
 interface IScreenDetail {
   title: string;
@@ -34,7 +34,7 @@ interface ApiResponse {
 }
 
 export class BetaForm {
-  private version: string;
+  private version: ApiVersion;
   private orgId: string;
   private serverUrl: string;
 
