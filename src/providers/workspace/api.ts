@@ -1,5 +1,5 @@
 import { IUser } from '../../api/types';
-import { getAccessToken } from '../auth/utils';
+import { getAuthHeaders } from '../auth/utils';
 import { ApiVersion, IOsConfig } from '../os/types';
 import type { IWorkspace, IWorkspaceFeature, IWorkspaceUser } from './types';
 
@@ -15,12 +15,7 @@ export class WorkspaceApi {
   }
 
   getAuthHeader() {
-    const token = getAccessToken();
-    let headers: Record<string, string> = {};
-    if (token) {
-      headers.Authorization = `Bearer ${token}`;
-    }
-    return headers;
+    return getAuthHeaders();
   }
 
   async getWorkspaces(): Promise<IWorkspace[]> {

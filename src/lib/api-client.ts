@@ -1,4 +1,5 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
+import { getSessionId as getStoredSessionId, removeSession } from '../providers/auth/utils';
 
 export interface ApiClientConfig {
   baseURL?: string;
@@ -12,9 +13,6 @@ export interface ApiResponse<T = unknown> {
   statusText: string;
   headers: Record<string, string | string[]> | Record<string, unknown>;
 }
-
-// Helper function to check if we're in a browser environment
-const isBrowser = typeof window !== 'undefined';
 
 export class ApiClient {
   private client: AxiosInstance;
@@ -32,44 +30,15 @@ export class ApiClient {
     // Request interceptor
     this.client.interceptors.request.use(
       config => {
-        // Add auth token if available
-        const token = this.getAuthToken();
-        if (token) {
-          config.headers.Authorization = `Bearer ${token}`;
-        }
+        // Add x-session-id header if available
+        const sessionId = getStoredSessionId();
+        if (sessionId) config.headers['x-session-id'] = sessionId;
         return config;
       },
       error => {
         return Promise.reject(error);
       }
     );
-
-    // Response interceptor
-    this.client.interceptors.response.use(
-      (response: AxiosResponse) => {
-        return response;
-      },
-      error => {
-        // Handle common errors
-        if (error.response?.status === 401) {
-          this.handleUnauthorized();
-        }
-        return Promise.reject(error);
-      }
-    );
-  }
-
-  private getAuthToken(): string | null {
-    // Only access localStorage in browser environment
-    if (!isBrowser) return null;
-    return localStorage.getItem('auth_token');
-  }
-
-  private handleUnauthorized(): void {
-    // Only access localStorage in browser environment
-    if (!isBrowser) return;
-    localStorage.removeItem('auth_token');
-    // You can emit an event or call a callback here
   }
 
   async get<T = unknown>(url: string, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
@@ -132,16 +101,6 @@ export class ApiClient {
       statusText: response.statusText,
       headers: response.headers as Record<string, string | string[]>,
     };
-  }
-
-  setAuthToken(token: string): void {
-    if (!isBrowser) return;
-    localStorage.setItem('auth_token', token);
-  }
-
-  removeAuthToken(): void {
-    if (!isBrowser) return;
-    localStorage.removeItem('auth_token');
   }
 
   setBaseURL(baseURL: string): void {

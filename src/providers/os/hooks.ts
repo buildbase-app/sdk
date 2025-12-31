@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { osActions, useAppDispatch, useAppSelector } from '../../contexts';
-import { getAccessToken } from '../auth/utils';
+import { getAuthHeaders } from '../auth/utils';
 import type { ISettings } from '../types';
 
 export function useSaaSSettings() {
@@ -28,11 +28,7 @@ export function useSaaSSettings() {
 
     fetchingSettingsRef.current = true;
     try {
-      const token = getAccessToken();
-      const headers: Record<string, string> = {};
-      if (token) {
-        headers.Authorization = `Bearer ${token}`;
-      }
+      const headers = getAuthHeaders();
 
       const response = await fetch(`${serverUrl}/api/${version}/public/${orgId}/settings`, {
         headers,

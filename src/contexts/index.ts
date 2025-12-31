@@ -1,6 +1,5 @@
 // Context Providers
 export {
-  AUTH_TOKEN_KEY,
   AuthContextProvider,
   authActions,
   authReducer,

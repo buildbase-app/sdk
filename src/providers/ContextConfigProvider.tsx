@@ -3,7 +3,7 @@
 import React, { useEffect } from 'react';
 import { osActions, useAppDispatch, useAppSelector } from '../contexts';
 import type { IAuthConfig } from './auth/types';
-import { getAccessToken } from './auth/utils';
+import { getAuthHeaders } from './auth/utils';
 import type { IOsState } from './os/types';
 import type { ISettings } from './types';
 
@@ -24,12 +24,14 @@ export const ContextConfigProvider: React.FC<ContextConfigProviderProps> = React
     const os = useAppSelector(state => state.os);
 
     // Memoize auth config to prevent unnecessary updates
+    // Store full auth config including callbacks so they can be accessed in hooks
     const authConfig = React.useMemo(
       () => ({
         clientId: auth?.clientId || '',
         redirectUrl: auth?.redirectUrl || '',
+        callbacks: auth?.callbacks,
       }),
-      [auth?.clientId, auth?.redirectUrl]
+      [auth?.clientId, auth?.redirectUrl, auth?.callbacks]
     );
 
     // Set OS config
@@ -50,16 +52,10 @@ export const ContextConfigProvider: React.FC<ContextConfigProviderProps> = React
       if (serverUrl && version && orgId && !settings) {
         const fetchSettings = async () => {
           try {
-            const token = getAccessToken();
-            const headers: Record<string, string> = {};
-            if (token) {
-              headers.Authorization = `Bearer ${token}`;
-            }
-
+            const headers = getAuthHeaders();
             const response = await fetch(`${serverUrl}/api/${version}/public/${orgId}/settings`, {
               headers,
             });
-
             if (response.ok) {
               const data: ISettings = await response.json();
               dispatch.os(osActions.setSettings(data));

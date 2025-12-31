@@ -1,31 +1,10 @@
-import type { AuthSession, IAuthState } from '../../providers/auth/types';
+import type { IAuthState } from '../../providers/auth/types';
 import { AuthStatus } from '../../providers/auth/types';
-import { getStorageJSON, removeStorageItem, setStorageJSON } from '../shared/utils/storage';
+import {
+  removeSession as removeSessionStorage,
+  setSessionId as setSessionIdStorage,
+} from '../../providers/auth/utils';
 import type { AuthAction } from './types';
-
-export const AUTH_TOKEN_KEY = 'saas_os_auth_token';
-
-function loadSession(): AuthSession | null {
-  const session = getStorageJSON<AuthSession>(AUTH_TOKEN_KEY);
-  if (!session) return null;
-
-  // Check if session is expired
-  if (new Date(session.expires) > new Date()) {
-    return session;
-  }
-
-  // Session expired, clear storage
-  removeStorageItem(AUTH_TOKEN_KEY);
-  return null;
-}
-
-function saveSession(session: AuthSession) {
-  setStorageJSON(AUTH_TOKEN_KEY, session);
-}
-
-function removeSession() {
-  removeStorageItem(AUTH_TOKEN_KEY);
-}
 
 /**
  * Initial state for auth context
@@ -36,7 +15,6 @@ export const getInitialAuthState = (): IAuthState => {
   // Always return unauthenticated state for SSR safety
   // Session will be loaded on client side in AuthProviderWrapper
   return {
-    user: null,
     session: null,
     isLoading: false,
     isAuthenticated: false,
@@ -71,11 +49,11 @@ export const authReducer = (state: IAuthState, action: AuthAction): IAuthState =
 
     case 'SET_SESSION': {
       const session = action.payload;
-      saveSession(session);
+      // Only store sessionId in localStorage, keep user data in context only
+      setSessionIdStorage(session.sessionId);
       return {
         ...state,
         session,
-        user: session.user,
         isAuthenticated: true,
         isRedirecting: false,
         isLoading: false,
@@ -84,10 +62,10 @@ export const authReducer = (state: IAuthState, action: AuthAction): IAuthState =
     }
 
     case 'REMOVE_SESSION':
-      removeSession();
+      // Use centralized session removal function
+      removeSessionStorage();
       return {
         ...state,
-        user: null,
         session: null,
         isLoading: false,
         isAuthenticated: false,

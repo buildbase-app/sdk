@@ -1,6 +1,7 @@
 import { useCallback, useMemo } from 'react';
 import { authActions, useAppDispatch, useAppSelector } from '../../contexts';
 import { defaultApiClient } from '../../lib/api-client';
+import { removeSession } from './utils';
 import { useSaaSWorkspaces } from '../workspace/hooks';
 
 export function useSaaSAuth() {
@@ -43,18 +44,34 @@ export function useSaaSAuth() {
 
   const signOut = useCallback(async () => {
     try {
+      // Call onSignOut callback if provided (before removing session)
+      // This allows users to clean up their own tokens/storage
+      if (
+        authConfig?.callbacks?.onSignOut &&
+        typeof authConfig.callbacks.onSignOut === 'function'
+      ) {
+        await authConfig.callbacks.onSignOut();
+      }
+
+      // Remove session from state and localStorage using centralized functions
       dispatch.auth(authActions.removeSession());
       resetCurrentWorkspace();
+
+      // Explicit cleanup: ensure session is removed even if dispatch fails
+      // Using centralized removeSession function
+      removeSession();
     } catch (error) {
       console.error('Logout error:', error);
+      // Ensure cleanup even on error using centralized function
+      removeSession();
     }
-  }, [dispatch, resetCurrentWorkspace]);
+  }, [dispatch, resetCurrentWorkspace, authConfig?.callbacks?.onSignOut]);
 
   // Memoize return value to prevent unnecessary re-renders
   return useMemo(
     () => ({
       // State
-      user: auth.user,
+      user: auth.session?.user,
       session: auth.session,
       isLoading: auth.isLoading,
       isAuthenticated: auth.isAuthenticated,

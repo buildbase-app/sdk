@@ -9,7 +9,7 @@ const WorkspaceSettingsFeatures: React.FC<{ workspaceId: string }> = ({ workspac
   const [updatingFeatures, setUpdatingFeatures] = useState<Record<string, boolean>>({});
   const { allFeatures, updateFeature, getWorkspace } = useSaaSWorkspaces();
   const [workspace, setWorkspace] = useState<IWorkspace | null>(null);
-  const currentUser = useAppSelector(state => state.auth.user);
+  const currentUser = useAppSelector(state => state.auth.session?.user || null);
 
   useEffect(() => {
     getWorkspace(workspaceId).then(setWorkspace);

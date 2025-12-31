@@ -18,13 +18,12 @@ export interface AuthUser {
 
 export interface AuthSession {
   user: AuthUser;
-  accessToken: string;
+  sessionId: string;
   expires: string;
 }
 
 // Define a type for the slice state
 export interface IAuthState {
-  user: AuthUser | null;
   session: AuthSession | null;
   isLoading: boolean;
   isAuthenticated: boolean;
@@ -39,6 +38,8 @@ export interface IAuthConfig {
 }
 
 export interface IAuthCallbacks {
-  handleAuthentication: (token: string) => Promise<void>;
-  verifyToken: (token: string) => Promise<boolean>;
+  handleAuthentication: (code: string) => Promise<{
+    sessionId: string;
+  }>;
+  onSignOut: () => Promise<void>;
 }

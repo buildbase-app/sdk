@@ -1,24 +1,72 @@
-import { AuthSession, AuthUser } from './types';
+import { AUTH_SESSION_ID_KEY, AUTH_TOKEN_PARAM } from '../constants';
+import { getStorageItem, removeStorageItem, setStorageItem } from '../../contexts/shared/utils/storage';
+import type { AuthSession } from './types';
+import { AuthUser } from './types';
 
-const TOKEN_PARAM = 'token';
-export const AUTH_TOKEN_KEY = 'saas_os_auth_token';
+/**
+ * Centralized Session Management
+ * Only stores sessionId in localStorage - user data is kept in context only
+ * This ensures we always fetch fresh user data on page refresh
+ */
 
-export function getAccessToken() {
+/**
+ * Save sessionId to localStorage
+ * Note: Only sessionId is stored, user data is kept in context state only
+ * @param sessionId - The sessionId string to save
+ */
+export function setSessionId(sessionId: string): void {
+  setStorageItem(AUTH_SESSION_ID_KEY, sessionId);
+}
+
+/**
+ * Remove sessionId from localStorage
+ */
+export function removeSession(): void {
+  removeStorageItem(AUTH_SESSION_ID_KEY);
+}
+
+/**
+ * Get sessionId from localStorage
+ * @returns The sessionId string or null if not found
+ */
+export function getSessionId(): string | null {
   if (typeof window === 'undefined') return null;
-  const token = localStorage.getItem(AUTH_TOKEN_KEY);
   try {
-    if (!token) return null;
-    const session: AuthSession = JSON.parse(token);
-    return session.accessToken;
-  } catch (e) {
+    return getStorageItem(AUTH_SESSION_ID_KEY);
+  } catch (error) {
+    console.warn('Failed to get sessionId from localStorage:', error);
     return null;
   }
 }
+
+/**
+ * Get sessionId (alias for getSessionId for backward compatibility)
+ * @returns The sessionId string or null if not found
+ */
+export function getAccessToken(): string | null {
+  return getSessionId();
+}
+
+/**
+ * Get authentication headers with x-session-id
+ * Centralized function for all API requests
+ */
+export function getAuthHeaders(): Record<string, string> {
+  const sessionId = getAccessToken();
+  const headers: Record<string, string> = {};
+  if (sessionId) {
+    headers['x-session-id'] = sessionId;
+  }
+  return headers;
+}
+
 export function getTokenFromUrl(): string | null {
+  if (typeof window === 'undefined') return null;
   try {
-    const url = new URL(window.location.href);
-    return url.searchParams.get(TOKEN_PARAM);
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get(AUTH_TOKEN_PARAM);
   } catch (e) {
+    console.error('Error getting token from URL:', e);
     return null;
   }
 }
@@ -26,22 +74,17 @@ export function getTokenFromUrl(): string | null {
 export function removeTokenFromUrl() {
   try {
     const newUrl = new URL(window.location.href);
-    newUrl.searchParams.delete(TOKEN_PARAM);
+    newUrl.searchParams.delete(AUTH_TOKEN_PARAM);
     window.history.replaceState({}, '', newUrl.toString());
   } catch (e) {
     console.error('Error removing token from URL:', e);
   }
 }
 
-export function createSession(user: AuthUser, token: string, hours: number = 24): AuthSession {
+export function createSession(user: AuthUser, sessionId: string): AuthSession {
   return {
     user,
-    accessToken: token,
-    expires: new Date(Date.now() + hours * 60 * 60 * 1000).toISOString(),
+    sessionId,
+    expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 hours
   };
 }
-
-export const AUTH_CONSTANTS = {
-  TOKEN_PARAM,
-  AUTH_TOKEN_KEY,
-};

@@ -13,7 +13,7 @@ import { IWorkspace, IWorkspaceUser } from '../types';
 import SettingSkeleton from './Skeleton';
 
 const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace }) => {
-  const currentUser = useAppSelector(state => state.auth.user);
+  const currentUser = useAppSelector(state => state.auth.session?.user || null);
   const [refreshCounter, setRefreshCounter] = useState(0);
   const [loading, setLoading] = useState(false);
   const [workspaceUsers, setWorkspaceUsers] = useState<IWorkspaceUser[]>([]);

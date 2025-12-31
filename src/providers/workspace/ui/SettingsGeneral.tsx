@@ -28,7 +28,7 @@ const WorkspaceSettingsGeneral: React.FC<{ workspace: IWorkspace }> = ({ workspa
   const [imageType, setImageType] = useState<'emoji' | 'url'>('emoji');
   const [selectedEmoji, setSelectedEmoji] = useState<string>();
   const { updateWorkspace } = useSaaSWorkspaces();
-  const currentUser = useAppSelector(state => state.auth.user);
+  const currentUser = useAppSelector(state => state.auth.session?.user || null);
 
   const formSchema = z.object({
     name: z.string().min(2, {
