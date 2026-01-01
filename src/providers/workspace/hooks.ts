@@ -3,7 +3,6 @@ import { IUser } from '../../api/types';
 import { useAppDispatch, useAppSelector, workspaceActions } from '../../contexts';
 import { eventEmitter } from '../events';
 import { WorkspaceApi } from './api';
-import { WorkspaceSwitcher } from './provider';
 import { IWorkspace, IWorkspaceUser } from './types';
 import { workspaceStorage } from './utils';
 
@@ -389,7 +388,6 @@ export const useSaaSWorkspaces = () => {
     fetchWorkspaces,
     refreshWorkspaces,
     refreshing: workspace.refreshing,
-    WorkspaceSwitcher,
     currentWorkspace: workspace.currentWorkspace,
     setCurrentWorkspace: setCurrentWorkspaceWithStorage,
     resetCurrentWorkspace: resetCurrentWorkspaceWithStorage,
