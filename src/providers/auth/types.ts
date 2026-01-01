@@ -1,3 +1,5 @@
+import type { EventData, EventType } from '../events/types';
+
 export enum AuthStatus {
   loading = 'loading',
   authenticated = 'authenticated',
@@ -42,4 +44,10 @@ export interface IAuthCallbacks {
     sessionId: string;
   }>;
   onSignOut: () => Promise<void>;
+  /**
+   * Event handler for User and Workspace events
+   * @param eventType - The type of event that occurred
+   * @param data - The event data (type varies based on eventType)
+   */
+  handleEvent?: (eventType: EventType, data: EventData) => void | Promise<void>;
 }

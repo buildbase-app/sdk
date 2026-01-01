@@ -1,10 +1,11 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { SDKContextProvider } from '../contexts';
 import '../styles/globals.css';
 import { AuthProviderWrapper } from './auth/provider';
 import { ContextConfigProvider } from './ContextConfigProvider';
+import { eventEmitter } from './events';
 import { ApiVersion, IOsState } from './os/types';
 import PortalProvider from './PortalContainer';
 
@@ -71,6 +72,20 @@ export const SaaSOSProvider: React.FC<SaaSOSProviderProps> = React.memo(
 
     // Memoize callbacks to prevent unnecessary re-renders
     const memoizedCallbacks = React.useMemo(() => auth?.callbacks, [auth?.callbacks]);
+
+    // Memoize event handler from auth callbacks
+    const memoizedHandleEvent = React.useMemo(() => auth?.callbacks?.handleEvent, [auth?.callbacks]);
+
+    // Set event handler in the event emitter
+    useEffect(() => {
+      eventEmitter.setCallbacks(
+        memoizedHandleEvent ? { handleEvent: memoizedHandleEvent } : null
+      );
+      return () => {
+        // Cleanup: remove callbacks when component unmounts
+        eventEmitter.setCallbacks(null);
+      };
+    }, [memoizedHandleEvent]);
 
     return (
       <SDKContextProvider>

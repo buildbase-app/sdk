@@ -69,7 +69,11 @@ export class WorkspaceApi {
   async addUser(
     workspaceId: string,
     config: { email: string; role: string }
-  ): Promise<IWorkspaceUser> {
+  ): Promise<{
+    userId: string;
+    workspace: IWorkspace;
+    message: string;
+  }> {
     const response = await fetch(
       `${this.serverUrl}/api/${this.version}/public/workspaces/${workspaceId}/users/add`,
       {
@@ -85,7 +89,14 @@ export class WorkspaceApi {
     return response.json();
   }
 
-  async removeUser(workspaceId: string, userId: string): Promise<{ success: boolean }> {
+  async removeUser(
+    workspaceId: string,
+    userId: string
+  ): Promise<{
+    userId: string;
+    workspace: IWorkspace;
+    message: string;
+  }> {
     const response = await fetch(
       `${this.serverUrl}/api/${this.version}/public/workspaces/${workspaceId}/users/${userId}`,
       {
@@ -104,7 +115,11 @@ export class WorkspaceApi {
     workspaceId: string,
     userId: string,
     data: Partial<IWorkspaceUser>
-  ): Promise<IWorkspaceUser> {
+  ): Promise<{
+    userId: string;
+    workspace: IWorkspace;
+    message: string;
+  }> {
     const response = await fetch(
       `${this.serverUrl}/api/${this.version}/public/workspaces/${workspaceId}/users/${userId}`,
       {

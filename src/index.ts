@@ -24,3 +24,20 @@ export { useSaaSSettings } from './providers/os/hooks';
 // Export workspace provider and dialog
 export { useSaaSWorkspaces } from './providers/workspace/hooks';
 export { WorkspaceSwitcher } from './providers/workspace/provider';
+
+// Export event types and emitter
+export type {
+  IEventCallbacks,
+  EventType,
+  EventData,
+  UserCreatedEventData,
+  UserUpdatedEventData,
+  WorkspaceChangedEventData,
+  WorkspaceUpdatedEventData,
+  WorkspaceUserAddedEventData,
+  WorkspaceUserRemovedEventData,
+  WorkspaceUserRoleChangedEventData,
+  WorkspaceCreatedEventData,
+  WorkspaceDeletedEventData,
+} from './providers/events/types';
+export { eventEmitter } from './providers/events';

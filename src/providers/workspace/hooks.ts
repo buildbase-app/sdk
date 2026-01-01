@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo } from 'react';
 import { IUser } from '../../api/types';
 import { useAppDispatch, useAppSelector, workspaceActions } from '../../contexts';
+import { eventEmitter } from '../events';
 import { WorkspaceApi } from './api';
 import { WorkspaceSwitcher } from './provider';
 import { IWorkspace, IWorkspaceUser } from './types';
@@ -21,7 +22,12 @@ export const useSaaSWorkspaces = () => {
         return;
       }
       if (ws) {
+        const previousWorkspace = workspace.currentWorkspace;
         dispatch.workspaces(workspaceActions.setCurrentWorkspace(ws));
+        // Trigger workspace changed event
+        eventEmitter.emitWorkspaceChanged(ws, previousWorkspace).catch(error => {
+          console.error('Error emitting workspace changed event:', error);
+        });
       }
     },
     [workspace.currentWorkspace, dispatch]
@@ -123,6 +129,10 @@ export const useSaaSWorkspaces = () => {
     async (name: string, image: string) => {
       const data = await api.createWorkspace({ name, image });
       dispatch.workspaces(workspaceActions.setWorkspaces([...workspace.workspaces, data]));
+      // Trigger workspace created event
+      eventEmitter.emitWorkspaceCreated(data).catch(error => {
+        console.error('Error emitting workspace created event:', error);
+      });
     },
     [api, workspace.workspaces, dispatch]
   );
@@ -133,6 +143,10 @@ export const useSaaSWorkspaces = () => {
       dispatch.workspaces(
         workspaceActions.setWorkspaces(workspace.workspaces.map(w => (w._id === ws._id ? data : w)))
       );
+      // Trigger workspace updated event
+      eventEmitter.emitWorkspaceUpdated(data).catch(error => {
+        console.error('Error emitting workspace updated event:', error);
+      });
     },
     [api, workspace.workspaces, dispatch]
   );
@@ -202,30 +216,81 @@ export const useSaaSWorkspaces = () => {
   const addUser = useCallback(
     async (workspaceId: string, email: string, role: string) => {
       const data = await api.addUser(workspaceId, { email, role });
+      // Find the workspace to trigger events
+      const targetWorkspace = workspace.workspaces.find(w => w._id === workspaceId);
+      if (targetWorkspace) {
+        // Trigger workspace user added event
+        eventEmitter.emitWorkspaceUserAdded(data.userId, targetWorkspace, role).catch(error => {
+          console.error('Error emitting workspace user added event:', error);
+        });
+      }
       return data;
     },
-    [api]
+    [api, workspace.workspaces]
   );
 
   const removeUser = useCallback(
     async (workspaceId: string, userId: string) => {
+      // Find the workspace and user before removal to trigger events
+      const targetWorkspace = workspace.workspaces.find(w => w._id === workspaceId);
+      // Get workspace users to find the role
+      const workspaceUsers = await api.getWorkspaceUsers(workspaceId).catch(() => []);
+      const workspaceUser = workspaceUsers.find((wu: IWorkspaceUser) => {
+        const wuUserId = typeof wu.user === 'string' ? wu.user : wu.user._id;
+        return wuUserId === userId;
+      });
       const data = await api.removeUser(workspaceId, userId);
+      if (targetWorkspace && workspaceUser) {
+        // Extract role from workspace user
+        const role = workspaceUser.role;
+        // Trigger workspace user removed event
+        eventEmitter.emitWorkspaceUserRemoved(data.userId, targetWorkspace, role).catch(error => {
+          console.error('Error emitting workspace user removed event:', error);
+        });
+      }
       return data;
     },
-    [api]
+    [api, workspace.workspaces]
   );
 
   const updateUser = useCallback(
     async (workspaceId: string, userId: string, config: Partial<IWorkspaceUser>) => {
+      // Get previous role if role is being updated
+      let previousRole: string | undefined;
+      if (config.role) {
+        const workspaceUsers = await api.getWorkspaceUsers(workspaceId).catch(() => []);
+        const workspaceUser = workspaceUsers.find((wu: IWorkspaceUser) => {
+          const wuUserId = typeof wu.user === 'string' ? wu.user : wu.user._id;
+          return wuUserId === userId;
+        });
+        previousRole = workspaceUser?.role;
+      }
+
       const data = await api.updateUser(workspaceId, userId, config);
+
+      // Trigger role changed event if role was updated
+      if (config.role && previousRole && previousRole !== config.role) {
+        eventEmitter
+          .emitWorkspaceUserRoleChanged(data.userId, data.workspace, previousRole, config.role)
+          .catch(error => {
+            console.error('Error emitting workspace user role changed event:', error);
+          });
+      }
+
       return data;
     },
-    [api]
+    [api, workspace.workspaces]
   );
 
   const updateUserProfile = useCallback(
     async (config: Partial<IUser>) => {
+      // Get current user profile before update
+      const currentUser = await api.getProfile().catch(() => null);
       const data = await api.updateUserProfile(config);
+      // Trigger user updated event
+      eventEmitter.emitUserUpdated(data, currentUser || undefined).catch(error => {
+        console.error('Error emitting user updated event:', error);
+      });
       return data;
     },
     [api]
@@ -242,6 +307,30 @@ export const useSaaSWorkspaces = () => {
       return data;
     },
     [api]
+  );
+
+  const deleteWorkspace = useCallback(
+    async (workspaceId: string) => {
+      // Find the workspace before deletion to trigger event
+      const targetWorkspace = workspace.workspaces.find(w => w._id === workspaceId);
+      const data = await api.deleteWorkspace(workspaceId);
+      // Remove workspace from state
+      dispatch.workspaces(
+        workspaceActions.setWorkspaces(workspace.workspaces.filter(w => w._id !== workspaceId))
+      );
+      // If deleted workspace was current, reset current workspace
+      if (workspace.currentWorkspace?._id === workspaceId) {
+        dispatch.workspaces(workspaceActions.resetCurrentWorkspace());
+      }
+      // Trigger workspace deleted event
+      if (targetWorkspace) {
+        eventEmitter.emitWorkspaceDeleted(targetWorkspace).catch(error => {
+          console.error('Error emitting workspace deleted event:', error);
+        });
+      }
+      return data;
+    },
+    [api, workspace.workspaces, workspace.currentWorkspace, dispatch]
   );
 
   return {
@@ -268,5 +357,6 @@ export const useSaaSWorkspaces = () => {
     updateUser,
     getProfile,
     updateUserProfile,
+    deleteWorkspace,
   };
 };
