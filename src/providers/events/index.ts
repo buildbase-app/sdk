@@ -1,16 +1,15 @@
-export { eventEmitter, EventEmitter } from './EventEmitter';
+export { EventEmitter, eventEmitter } from './EventEmitter';
 export type {
-  IEventCallbacks,
-  EventType,
   EventData,
+  EventType,
+  IEventCallbacks,
   UserCreatedEventData,
   UserUpdatedEventData,
   WorkspaceChangedEventData,
+  WorkspaceCreatedEventData,
+  WorkspaceDeletedEventData,
   WorkspaceUpdatedEventData,
   WorkspaceUserAddedEventData,
   WorkspaceUserRemovedEventData,
   WorkspaceUserRoleChangedEventData,
-  WorkspaceCreatedEventData,
-  WorkspaceDeletedEventData,
 } from './types';
-

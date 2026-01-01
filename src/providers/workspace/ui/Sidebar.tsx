@@ -1,5 +1,6 @@
-import { SettingsIcon, ToggleRight, UserIcon, UsersIcon } from 'lucide-react';
+import { AlertTriangle, SettingsIcon, ToggleRight, UserIcon, UsersIcon } from 'lucide-react';
 import React from 'react';
+import { useAppSelector } from '../../../contexts';
 import { cn } from '../../../lib/utils';
 import { IWorkspace } from '../types';
 import type { WorkspaceSettingsSection } from './SettingsDialog';
@@ -11,6 +12,14 @@ interface Props {
 }
 
 const Sidebar: React.FC<Props> = ({ workspace, section, setSection }) => {
+  const currentUser = useAppSelector(state => state.auth.session?.user || null);
+
+  const createdBy =
+    typeof workspace.createdBy === 'object' && workspace.createdBy !== null
+      ? workspace.createdBy._id
+      : workspace.createdBy;
+  const isCreatedByMe = createdBy === currentUser?.id;
+
   return (
     <div className="w-56 h-full flex flex-col space-y-6">
       {workspace && (
@@ -80,6 +89,15 @@ const Sidebar: React.FC<Props> = ({ workspace, section, setSection }) => {
           section="features"
           onClick={() => setSection('features')}
         />
+        {isCreatedByMe && (
+          <SidebarItem
+            activeSection={section}
+            icon={<AlertTriangle className="h-3.5 w-3.5" />}
+            label="Danger Zone"
+            section="danger"
+            onClick={() => setSection('danger')}
+          />
+        )}
       </SidebarSection>
     </div>
   );

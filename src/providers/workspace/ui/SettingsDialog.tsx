@@ -9,13 +9,14 @@ import {
   DialogTrigger,
 } from '../../../components/ui/dialog';
 import { IWorkspace } from '../types';
+import WorkspaceSettingsDanger from './SettingsDanger';
 import WorkspaceSettingsFeatures from './SettingsFeatures';
 import WorkspaceSettingsGeneral from './SettingsGeneral';
 import WorkspaceSettingsProfile from './SettingsProfile';
 import WorkspaceSettingsUsers from './SettingsUsers';
 import WorkspaceSettingsSidebar from './Sidebar';
 
-export type WorkspaceSettingsSection = 'profile' | 'general' | 'users' | 'features';
+export type WorkspaceSettingsSection = 'profile' | 'general' | 'users' | 'features' | 'danger';
 
 const WorkspaceSettingsDialog: React.FC<{
   workspace: IWorkspace;
@@ -53,6 +54,7 @@ const WorkspaceSettingsDialog: React.FC<{
             {section === 'general' && 'Workspace Settings'}
             {section === 'users' && 'Workspace Members'}
             {section === 'features' && 'Workspace Features'}
+            {section === 'danger' && 'Danger Zone'}
           </DialogTitle>
           <div className="max-h-[500px] overflow-y-auto">
             {section === 'profile' && <WorkspaceSettingsProfile workspace={workspace} />}
@@ -61,6 +63,7 @@ const WorkspaceSettingsDialog: React.FC<{
             {section === 'features' && (
               <WorkspaceSettingsFeatures workspaceId={workspace._id?.toString()} />
             )}
+            {section === 'danger' && <WorkspaceSettingsDanger workspace={workspace} />}
           </div>
         </div>
       </DialogContent>

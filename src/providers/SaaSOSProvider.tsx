@@ -39,7 +39,9 @@ const isValidUrl = (url: string): boolean => {
 const validateProps = (serverUrl: string, version: ApiVersion, orgId: string): void => {
   // Validate version - only v1 is supported
   if (version !== ApiVersion.V1) {
-    throw new Error(`Invalid version: "${version}". Only "${ApiVersion.V1}" is currently supported.`);
+    throw new Error(
+      `Invalid version: "${version}". Only "${ApiVersion.V1}" is currently supported.`
+    );
   }
 
   // Validate serverUrl - must be a valid URL
@@ -55,7 +57,9 @@ const validateProps = (serverUrl: string, version: ApiVersion, orgId: string): v
     throw new Error('orgId is required and must be a string');
   }
   if (!isValidMongoDBId(orgId)) {
-    throw new Error(`Invalid orgId: "${orgId}". Must be a valid MongoDB ObjectId (24 hexadecimal characters).`);
+    throw new Error(
+      `Invalid orgId: "${orgId}". Must be a valid MongoDB ObjectId (24 hexadecimal characters).`
+    );
   }
 };
 
@@ -74,13 +78,14 @@ export const SaaSOSProvider: React.FC<SaaSOSProviderProps> = React.memo(
     const memoizedCallbacks = React.useMemo(() => auth?.callbacks, [auth?.callbacks]);
 
     // Memoize event handler from auth callbacks
-    const memoizedHandleEvent = React.useMemo(() => auth?.callbacks?.handleEvent, [auth?.callbacks]);
+    const memoizedHandleEvent = React.useMemo(
+      () => auth?.callbacks?.handleEvent,
+      [auth?.callbacks]
+    );
 
     // Set event handler in the event emitter
     useEffect(() => {
-      eventEmitter.setCallbacks(
-        memoizedHandleEvent ? { handleEvent: memoizedHandleEvent } : null
-      );
+      eventEmitter.setCallbacks(memoizedHandleEvent ? { handleEvent: memoizedHandleEvent } : null);
       return () => {
         // Cleanup: remove callbacks when component unmounts
         eventEmitter.setCallbacks(null);

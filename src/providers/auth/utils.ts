@@ -1,5 +1,9 @@
+import {
+  getStorageItem,
+  removeStorageItem,
+  setStorageItem,
+} from '../../contexts/shared/utils/storage';
 import { AUTH_SESSION_ID_KEY, AUTH_TOKEN_PARAM } from '../constants';
-import { getStorageItem, removeStorageItem, setStorageItem } from '../../contexts/shared/utils/storage';
 import type { AuthSession } from './types';
 import { AuthUser } from './types';
 

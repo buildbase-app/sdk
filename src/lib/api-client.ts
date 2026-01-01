@@ -1,5 +1,5 @@
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
-import { getSessionId as getStoredSessionId, removeSession } from '../providers/auth/utils';
+import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
+import { getSessionId as getStoredSessionId } from '../providers/auth/utils';
 
 export interface ApiClientConfig {
   baseURL?: string;

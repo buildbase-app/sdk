@@ -28,6 +28,10 @@ export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) 
   const authState = useAppSelector(state => state.auth);
   const osState = useAppSelector(state => state.os);
 
+  // Track if we're processing an auth redirect to prevent duplicate processing
+  const processingAuthRedirectRef = React.useRef(false);
+  const processedCodeRef = React.useRef<string | null>(null);
+
   // Memoize callbacks to prevent unnecessary re-renders
   const memoizedCallbacks = useMemo(() => callbacks, [callbacks]);
 
@@ -183,11 +187,40 @@ export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) 
     if (!code) {
       return;
     }
-    handleAuthRedirect(code).catch(error => {
-      // Error is already handled in handleAuthRedirect
-      console.error('Failed to handle auth redirect:', error);
-    });
-  }, [handleAuthRedirect]);
+
+    // Prevent duplicate processing of the same code
+    if (processingAuthRedirectRef.current || processedCodeRef.current === code) {
+      return;
+    }
+
+    // Check if OS configuration is available
+    const { serverUrl, version, orgId } = osState;
+    if (!serverUrl || !version || !orgId) {
+      // OS config not ready yet, wait for it to be available
+      // This effect will re-run when osState changes
+      return;
+    }
+
+    // Mark as processing and store the code
+    processingAuthRedirectRef.current = true;
+    processedCodeRef.current = code;
+
+    // OS config is ready, process auth redirect
+    handleAuthRedirect(code)
+      .then(() => {
+        // Success - code will be removed from URL in handleAuthRedirect
+        processedCodeRef.current = null;
+      })
+      .catch(error => {
+        // Error is already handled in handleAuthRedirect
+        console.error('Failed to handle auth redirect:', error);
+        // Reset on error so it can be retried if needed
+        processedCodeRef.current = null;
+      })
+      .finally(() => {
+        processingAuthRedirectRef.current = false;
+      });
+  }, [handleAuthRedirect, osState.serverUrl, osState.version, osState.orgId]);
 
   // WorkspaceProvider is already in SDKContextProvider, so we don't need to wrap here
   // Just return children - the context providers handle the state management

@@ -3,8 +3,8 @@ import './styles/globals.css';
 
 // export
 // SaaSOSProvider
-export { SaaSOSProvider } from './providers/SaaSOSProvider';
 export { ApiVersion } from './providers/os/types';
+export { SaaSOSProvider } from './providers/SaaSOSProvider';
 // Export custom components
 export { BetaForm } from './components/beta/BetaForm';
 
@@ -26,18 +26,18 @@ export { useSaaSWorkspaces } from './providers/workspace/hooks';
 export { WorkspaceSwitcher } from './providers/workspace/provider';
 
 // Export event types and emitter
+export { eventEmitter } from './providers/events';
 export type {
-  IEventCallbacks,
-  EventType,
   EventData,
+  EventType,
+  IEventCallbacks,
   UserCreatedEventData,
   UserUpdatedEventData,
   WorkspaceChangedEventData,
+  WorkspaceCreatedEventData,
+  WorkspaceDeletedEventData,
   WorkspaceUpdatedEventData,
   WorkspaceUserAddedEventData,
   WorkspaceUserRemovedEventData,
   WorkspaceUserRoleChangedEventData,
-  WorkspaceCreatedEventData,
-  WorkspaceDeletedEventData,
 } from './providers/events/types';
-export { eventEmitter } from './providers/events';

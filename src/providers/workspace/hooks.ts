@@ -14,6 +14,7 @@ export const useSaaSWorkspaces = () => {
 
   // Select all workspace state at once - only re-renders when any selected field changes
   const workspace = useAppSelector(state => state.workspaces);
+  const currentUser = useAppSelector(state => state.auth.session?.user);
 
   const setCurrentWorkspaceWithStorage = useCallback(
     (ws: IWorkspace) => {
@@ -311,8 +312,28 @@ export const useSaaSWorkspaces = () => {
 
   const deleteWorkspace = useCallback(
     async (workspaceId: string) => {
-      // Find the workspace before deletion to trigger event
+      // Check if user is authenticated
+      if (!currentUser) {
+        throw new Error('User must be authenticated to delete a workspace');
+      }
+
+      // Find the workspace before deletion to check permissions and trigger event
       const targetWorkspace = workspace.workspaces.find(w => w._id === workspaceId);
+      if (!targetWorkspace) {
+        throw new Error('Workspace not found');
+      }
+
+      // Check if current user is the creator of the workspace
+      const createdBy =
+        typeof targetWorkspace.createdBy === 'object' && targetWorkspace.createdBy !== null
+          ? targetWorkspace.createdBy._id
+          : targetWorkspace.createdBy;
+      const isCreatedByMe = createdBy === currentUser.id;
+
+      if (!isCreatedByMe) {
+        throw new Error('Only the workspace creator can delete the workspace');
+      }
+
       const data = await api.deleteWorkspace(workspaceId);
       // Remove workspace from state
       dispatch.workspaces(
@@ -330,7 +351,7 @@ export const useSaaSWorkspaces = () => {
       }
       return data;
     },
-    [api, workspace.workspaces, workspace.currentWorkspace, dispatch]
+    [api, workspace.workspaces, workspace.currentWorkspace, dispatch, currentUser]
   );
 
   return {

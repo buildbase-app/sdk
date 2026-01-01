@@ -1,5 +1,5 @@
 import type { IUser } from '../../api/types';
-import type { IWorkspace, IWorkspaceUser } from '../workspace/types';
+import type { IWorkspace } from '../workspace/types';
 
 /**
  * Event types for all SDK events

@@ -1,8 +1,8 @@
 import { useCallback, useMemo } from 'react';
 import { authActions, useAppDispatch, useAppSelector } from '../../contexts';
 import { defaultApiClient } from '../../lib/api-client';
-import { removeSession } from './utils';
 import { useSaaSWorkspaces } from '../workspace/hooks';
+import { removeSession } from './utils';
 
 export function useSaaSAuth() {
   const dispatch = useAppDispatch();
