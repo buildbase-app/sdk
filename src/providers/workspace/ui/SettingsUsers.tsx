@@ -57,12 +57,34 @@ const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace
   }));
 
   const handleRemoveUser = (userId: string) => {
+    // Check if user is the owner
+    const createdBy =
+      typeof workspace.createdBy === 'object' && workspace.createdBy !== null
+        ? workspace.createdBy._id
+        : workspace.createdBy;
+    
+    if (createdBy === userId) {
+      console.error('Cannot remove the workspace owner');
+      return;
+    }
+
     removeUser(workspace._id, userId).then(() => {
       refresh();
     });
   };
 
   const handleUpdateRole = (workspaceId: string, userId: string, role: string) => {
+    // Check if user is the owner
+    const createdBy =
+      typeof workspace.createdBy === 'object' && workspace.createdBy !== null
+        ? workspace.createdBy._id
+        : workspace.createdBy;
+    
+    if (createdBy === userId) {
+      console.error('Cannot change the role of the workspace owner');
+      return;
+    }
+
     updateUser(workspaceId, userId, { role }).then(() => {
       refresh();
     });
@@ -116,8 +138,13 @@ const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace
       <ul className="space-y-2">
         {finalUsers.map((member, idx) => {
           const myself = member.id === currentUser?.id;
+          const createdBy =
+            typeof workspace.createdBy === 'object' && workspace.createdBy !== null
+              ? workspace.createdBy._id
+              : workspace.createdBy;
+          const isOwner = createdBy === member.id;
           return (
-            <li key={idx} className="flex items-center justify-between border rounded-lg p-3">
+            <li key={idx} className="flex items-center justify-between border rounded p-3">
               <div className="flex items-center space-x-3">
                 <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-sm font-medium">
                   {member.name.charAt(0).toUpperCase()}
@@ -131,7 +158,7 @@ const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace
               <div className="flex items-center gap-x-1">
                 <div>
                   <Select
-                    disabled={myself || !amIAdmin}
+                    disabled={myself || !amIAdmin || isOwner}
                     value={member.role}
                     onValueChange={value => handleUpdateRole(workspace._id, member.id, value)}
                   >
@@ -150,7 +177,10 @@ const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace
                 {myself && (
                   <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">You</span>
                 )}
-                {!myself && amIAdmin && (
+                {isOwner && (
+                  <span className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded">Owner</span>
+                )}
+                {!myself && !isOwner && amIAdmin && (
                   <Button
                     variant="destructive"
                     size="sm"

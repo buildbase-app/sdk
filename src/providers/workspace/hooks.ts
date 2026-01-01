@@ -234,6 +234,19 @@ export const useSaaSWorkspaces = () => {
     async (workspaceId: string, userId: string) => {
       // Find the workspace and user before removal to trigger events
       const targetWorkspace = workspace.workspaces.find(w => w._id === workspaceId);
+      
+      // Check if user is the workspace owner - prevent removing owner
+      if (targetWorkspace) {
+        const createdBy =
+          typeof targetWorkspace.createdBy === 'object' && targetWorkspace.createdBy !== null
+            ? targetWorkspace.createdBy._id
+            : targetWorkspace.createdBy;
+        
+        if (createdBy === userId) {
+          throw new Error('Cannot remove the workspace owner');
+        }
+      }
+
       // Get workspace users to find the role
       const workspaceUsers = await api.getWorkspaceUsers(workspaceId).catch(() => []);
       const workspaceUser = workspaceUsers.find((wu: IWorkspaceUser) => {
@@ -256,6 +269,21 @@ export const useSaaSWorkspaces = () => {
 
   const updateUser = useCallback(
     async (workspaceId: string, userId: string, config: Partial<IWorkspaceUser>) => {
+      // Check if user is the workspace owner - prevent changing owner's role
+      if (config.role) {
+        const targetWorkspace = workspace.workspaces.find(w => w._id === workspaceId);
+        if (targetWorkspace) {
+          const createdBy =
+            typeof targetWorkspace.createdBy === 'object' && targetWorkspace.createdBy !== null
+              ? targetWorkspace.createdBy._id
+              : targetWorkspace.createdBy;
+          
+          if (createdBy === userId) {
+            throw new Error('Cannot change the role of the workspace owner');
+          }
+        }
+      }
+
       // Get previous role if role is being updated
       let previousRole: string | undefined;
       if (config.role) {
