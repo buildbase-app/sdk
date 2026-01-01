@@ -21,6 +21,8 @@ export default [
         // Allow tree-shaking for other modules
         return false;
       },
+      propertyReadSideEffects: false,
+      tryCatchDeoptimization: false,
     },
     output: [
       {
@@ -38,6 +40,7 @@ export default [
       resolve({
         browser: true,
         preferBuiltins: false,
+        dedupe: ['react', 'react-dom'],
       }),
       commonjs({
         transformMixedEsModules: true,
@@ -62,7 +65,26 @@ export default [
           generateScopedName: 'saas-os-[name]__[local]',
         },
       }),
-      terser(),
+      terser({
+        compress: {
+          drop_console: true,
+          drop_debugger: true,
+          pure_funcs: ['console.log', 'console.info', 'console.debug', 'console.trace'],
+          passes: 3,
+          unsafe: true,
+          unsafe_comps: true,
+          unsafe_math: true,
+          unsafe_methods: true,
+        },
+        format: {
+          comments: false,
+        },
+        mangle: {
+          properties: {
+            regex: /^_/,
+          },
+        },
+      }),
     ],
     external: [
       ...Object.keys(packageJson.peerDependencies || {}),

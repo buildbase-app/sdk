@@ -37,7 +37,8 @@
     "format": "prettier --write . --plugin=prettier-plugin-organize-imports",
     "push:sdk": "npm run build && yalc push",
     "watch:push": "nodemon",
-    "watch:push:light": "chokidar \"src/**/*\" -c \"npm run push:sdk\" --initial --ignore dist"
+    "watch:push:light": "chokidar \"src/**/*\" -c \"npm run push:sdk\" --initial --ignore dist",
+    "analyze": "npm run build && du -sh dist/* && echo '---' && find dist -type f -exec du -h {} + | sort -rh | head -10"
   },
   "peerDependencies": {
     "react": "^19.0.0",
