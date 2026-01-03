@@ -2,6 +2,7 @@
 
 import React, { useEffect } from 'react';
 import { osActions, useAppDispatch, useAppSelector } from '../contexts';
+import { handleError } from '../lib/error-handler';
 import type { IAuthConfig } from './auth/types';
 import { getAuthHeaders } from './auth/utils';
 import type { IOsState } from './os/types';
@@ -60,9 +61,13 @@ export const ContextConfigProvider: React.FC<ContextConfigProviderProps> = React
               const data: ISettings = await response.json();
               dispatch.os(osActions.setSettings(data));
             }
-          } catch (err) {
-            console.error('Failed to fetch settings:', err);
-          }
+            } catch (err) {
+              handleError(err, {
+                component: 'ContextConfigProvider',
+                action: 'fetchSettings',
+                metadata: { serverUrl, version, orgId },
+              });
+            }
         };
 
         fetchSettings();

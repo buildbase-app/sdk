@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect } from 'react';
+import { SDKErrorBoundary } from '../components/ErrorBoundary';
 import { SDKContextProvider } from '../contexts';
 import '../styles/globals.css';
 import { AuthProviderWrapper } from './auth/provider';
@@ -93,15 +94,17 @@ export const SaaSOSProvider: React.FC<SaaSOSProviderProps> = React.memo(
     }, [memoizedHandleEvent]);
 
     return (
-      <SDKContextProvider>
-        <AuthProviderWrapper callbacks={memoizedCallbacks}>
-          <PortalProvider>
-            <ContextConfigProvider config={config} auth={auth}>
-              {children}
-            </ContextConfigProvider>
-          </PortalProvider>
-        </AuthProviderWrapper>
-      </SDKContextProvider>
+      <SDKErrorBoundary>
+        <SDKContextProvider>
+          <AuthProviderWrapper callbacks={memoizedCallbacks}>
+            <PortalProvider>
+              <ContextConfigProvider config={config} auth={auth}>
+                {children}
+              </ContextConfigProvider>
+            </PortalProvider>
+          </AuthProviderWrapper>
+        </SDKContextProvider>
+      </SDKErrorBoundary>
     );
   }
 );
