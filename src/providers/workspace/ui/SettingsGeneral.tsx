@@ -20,7 +20,7 @@ import { ScrollArea } from '../../../components/ui/scroll-area';
 import { useAppSelector } from '../../../contexts';
 import { useSaaSWorkspaces } from '../hooks';
 import { IWorkspace } from '../types';
-import { getWorkspaceUserRole } from '../utils';
+import { isWorkspaceOwner } from '../utils';
 import SettingSkeleton from './Skeleton';
 import { getSvgImage, workspaceEmojis } from './utils';
 
@@ -65,13 +65,14 @@ const WorkspaceSettingsGeneral: React.FC<{ workspace: IWorkspace }> = ({ workspa
     return <SettingSkeleton />;
   }
 
-  const myRole = getWorkspaceUserRole(workspace, currentUser?.id ?? null);
-  const amIAdmin = myRole?.toLowerCase() === 'admin';
+  const amIOwner = isWorkspaceOwner(workspace, currentUser?.id ?? null);
 
   return (
     <div>
-      {!amIAdmin && (
-        <div className="text-red-500">Only workspace admin can change the workspace settings.</div>
+      {!amIOwner && (
+        <div className="text-red-500">
+          Only the workspace owner can change the workspace settings.
+        </div>
       )}
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -82,7 +83,7 @@ const WorkspaceSettingsGeneral: React.FC<{ workspace: IWorkspace }> = ({ workspa
               <FormItem>
                 <FormLabel>Name</FormLabel>
                 <FormControl>
-                  <Input placeholder="My Awesome Workspace" {...field} disabled={!amIAdmin} />
+                  <Input placeholder="My Awesome Workspace" {...field} disabled={!amIOwner} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -99,7 +100,7 @@ const WorkspaceSettingsGeneral: React.FC<{ workspace: IWorkspace }> = ({ workspa
 
             <RadioGroup
               value={imageType}
-              disabled={!amIAdmin}
+              disabled={!amIOwner}
               onValueChange={value => setImageType(value as 'emoji' | 'url')}
               className="flex flex-col space-y-3"
             >
@@ -130,23 +131,25 @@ const WorkspaceSettingsGeneral: React.FC<{ workspace: IWorkspace }> = ({ workspa
                     )}
                   </div>
                 </div>
-                <ScrollArea className="h-32 w-full rounded-md border">
-                  <div className="p-4 grid grid-cols-8 gap-2">
-                    {workspaceEmojis.map((emoji, index) => (
-                      <button
-                        key={index}
-                        type="button"
-                        onClick={() => handleEmojiSelect(emoji)}
-                        disabled={!amIAdmin}
-                        className={`w-8 h-8 rounded flex items-center justify-center text-lg hover:bg-muted transition-colors ${
-                          selectedEmoji === emoji ? 'bg-primary text-primary-foreground' : ''
-                        }`}
-                      >
-                        {emoji}
-                      </button>
-                    ))}
-                  </div>
-                </ScrollArea>
+                {amIOwner && (
+                  <ScrollArea className="h-32 w-full rounded-md border">
+                    <div className="p-4 grid grid-cols-8 gap-2">
+                      {workspaceEmojis.map((emoji, index) => (
+                        <button
+                          key={index}
+                          type="button"
+                          onClick={() => handleEmojiSelect(emoji)}
+                          disabled={!amIOwner}
+                          className={`w-8 h-8 rounded flex items-center justify-center text-lg hover:bg-muted transition-colors ${
+                            selectedEmoji === emoji ? 'bg-primary text-primary-foreground' : ''
+                          }`}
+                        >
+                          {emoji}
+                        </button>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                )}
               </div>
             )}
 
@@ -162,7 +165,7 @@ const WorkspaceSettingsGeneral: React.FC<{ workspace: IWorkspace }> = ({ workspa
                         <Input
                           placeholder="https://example.com/image.png"
                           {...field}
-                          disabled={!amIAdmin}
+                          disabled={!amIOwner}
                         />
                       </FormControl>
                       <FormDescription>
@@ -177,7 +180,11 @@ const WorkspaceSettingsGeneral: React.FC<{ workspace: IWorkspace }> = ({ workspa
                   <div className="flex items-center gap-3">
                     <span className="text-sm font-medium">Preview:</span>
                     <div className="w-12 h-12 rounded-lg border-2 border-border overflow-hidden bg-muted">
-                      <img src={form.watch('image') || undefined} className="w-full h-full object-cover" alt="Workspace preview" />
+                      <img
+                        src={form.watch('image') || undefined}
+                        className="w-full h-full object-cover"
+                        alt="Workspace preview"
+                      />
                     </div>
                   </div>
                 )}
@@ -186,7 +193,7 @@ const WorkspaceSettingsGeneral: React.FC<{ workspace: IWorkspace }> = ({ workspa
           </div>
 
           <div className="flex justify-end gap-3 pt-4">
-            {amIAdmin && (
+            {amIOwner && (
               <Button type="submit" disabled={isUpdating} progress={isUpdating}>
                 Update Workspace
               </Button>
