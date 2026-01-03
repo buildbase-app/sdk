@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar';
 import { Button } from '../../components/ui/button';
+import { handleError } from '../../lib/error-handler';
 import {
   Dialog,
   DialogContent,
@@ -235,6 +236,7 @@ interface WorkspaceItemProps {
 function WorkspaceItem(props: WorkspaceItemProps) {
   const { workspace, setCurrentWorkspace, setOpen, workspacesToUse } = props;
   const isCurrentWorkspace = props.isCurrentWorkspace ?? false;
+  const [isSwitching, setIsSwitching] = useState(false);
 
   const getWorkspaceInitials = (name: string) => {
     return name
@@ -273,11 +275,26 @@ function WorkspaceItem(props: WorkspaceItemProps) {
         {isCurrentWorkspace ? null : (
           <Button
             size="sm"
+            disabled={isSwitching}
+            progress={isSwitching}
             onClick={() => {
-              props.onWorkspaceChange(workspace).then(() => {
-                setCurrentWorkspace(workspace);
-                setOpen(false);
-              });
+              setIsSwitching(true);
+              props
+                .onWorkspaceChange(workspace)
+                .then(() => {
+                  setCurrentWorkspace(workspace);
+                  setOpen(false);
+                })
+                .catch(error => {
+                  handleError(error, {
+                    component: 'WorkspaceItem',
+                    action: 'onWorkspaceChange',
+                    metadata: { workspaceId: workspace._id },
+                  });
+                })
+                .finally(() => {
+                  setIsSwitching(false);
+                });
             }}
           >
             Switch to
