@@ -20,6 +20,7 @@ import { ScrollArea } from '../../../components/ui/scroll-area';
 import { useAppSelector } from '../../../contexts';
 import { useSaaSWorkspaces } from '../hooks';
 import { IWorkspace } from '../types';
+import { getWorkspaceUserRole } from '../utils';
 import SettingSkeleton from './Skeleton';
 import { getSvgImage, workspaceEmojis } from './utils';
 
@@ -64,11 +65,7 @@ const WorkspaceSettingsGeneral: React.FC<{ workspace: IWorkspace }> = ({ workspa
     return <SettingSkeleton />;
   }
 
-  const myRole = workspace?.users.find(user => {
-    const id = typeof user === 'object' && user !== null ? user._id : user;
-    return id === currentUser?.id;
-  })?.role as string;
-
+  const myRole = getWorkspaceUserRole(workspace, currentUser?.id ?? null);
   const amIAdmin = myRole?.toLowerCase() === 'admin';
 
   return (

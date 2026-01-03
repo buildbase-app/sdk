@@ -74,9 +74,7 @@ export const ContextConfigProvider: React.FC<ContextConfigProviderProps> = React
       }
     }, [os.serverUrl, os.version, os.orgId, os.settings, dispatch]);
 
-    // Memoize children to prevent unnecessary re-renders
-    const memoizedChildren = React.useMemo(() => children, [children]);
-    return <>{memoizedChildren}</>;
+    return <>{children}</>;
   }
 );
 

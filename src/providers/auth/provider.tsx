@@ -76,12 +76,22 @@ export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) 
             throw new Error('Failed to parse user profile response');
           }
 
-          // Map IUser to AuthUser
+          // Validate required user data fields
+          const userId = userData._id || userData.id;
+          if (!userId || typeof userId !== 'string') {
+            throw new Error('User data missing required ID field');
+          }
+
+          if (!userData.email || typeof userData.email !== 'string') {
+            throw new Error('User data missing required email field');
+          }
+
+          // Map IUser to AuthUser with validated data
           const authUser: AuthUser = {
-            id: userData._id || userData.id,
+            id: userId,
             name: userData.name || '',
             org: orgId,
-            email: userData.email || '',
+            email: userData.email,
             emailVerified: true, // Assuming verified if profile request succeeds
             clientId: currentOsState.auth?.clientId || '',
             role: userData.role || '',
@@ -176,12 +186,40 @@ export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) 
           return;
         }
 
-        // Map IUser to AuthUser
+        // Validate required user data fields
+        const userId = userData._id || userData.id;
+        if (!userId || typeof userId !== 'string') {
+          handleError(
+            new Error('User data missing required ID field'),
+            {
+              component: 'AuthProviderWrapper',
+              action: 'fetchUserProfile',
+              metadata: { step: 'validateUserData' },
+            }
+          );
+          removeSession();
+          return;
+        }
+
+        if (!userData.email || typeof userData.email !== 'string') {
+          handleError(
+            new Error('User data missing required email field'),
+            {
+              component: 'AuthProviderWrapper',
+              action: 'fetchUserProfile',
+              metadata: { step: 'validateUserData' },
+            }
+          );
+          removeSession();
+          return;
+        }
+
+        // Map IUser to AuthUser with validated data
         const authUser: AuthUser = {
-          id: userData._id || userData.id,
+          id: userId,
           name: userData.name || '',
           org: orgId,
-          email: userData.email || '',
+          email: userData.email,
           emailVerified: true,
           clientId: osState.auth?.clientId || '',
           role: userData.role || '',

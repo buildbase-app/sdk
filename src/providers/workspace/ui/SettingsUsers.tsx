@@ -7,9 +7,11 @@ import { Input } from '../../../components/ui/input';
 import { Label } from '../../../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '../../../components/ui/select';
 import { useAppSelector } from '../../../contexts';
+import { handleError } from '../../../lib/error-handler';
 import { useSaaSSettings } from '../../os/hooks';
 import { useSaaSWorkspaces } from '../hooks';
 import { IWorkspace, IWorkspaceUser } from '../types';
+import { isWorkspaceOwner } from '../utils';
 import SettingSkeleton from './Skeleton';
 
 const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace }) => {
@@ -58,36 +60,56 @@ const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace
 
   const handleRemoveUser = (userId: string) => {
     // Check if user is the owner
-    const createdBy =
-      typeof workspace.createdBy === 'object' && workspace.createdBy !== null
-        ? workspace.createdBy._id
-        : workspace.createdBy;
-    
-    if (createdBy === userId) {
-      console.error('Cannot remove the workspace owner');
+    if (isWorkspaceOwner(workspace, userId)) {
+      handleError(
+        new Error('Cannot remove the workspace owner'),
+        {
+          component: 'WorkspaceSettingsUsers',
+          action: 'handleRemoveUser',
+          metadata: { workspaceId: workspace._id, userId },
+        }
+      );
       return;
     }
 
-    removeUser(workspace._id, userId).then(() => {
-      refresh();
-    });
+    removeUser(workspace._id, userId)
+      .then(() => {
+        refresh();
+      })
+      .catch(error => {
+        handleError(error, {
+          component: 'WorkspaceSettingsUsers',
+          action: 'handleRemoveUser',
+          metadata: { workspaceId: workspace._id, userId },
+        });
+      });
   };
 
   const handleUpdateRole = (workspaceId: string, userId: string, role: string) => {
     // Check if user is the owner
-    const createdBy =
-      typeof workspace.createdBy === 'object' && workspace.createdBy !== null
-        ? workspace.createdBy._id
-        : workspace.createdBy;
-    
-    if (createdBy === userId) {
-      console.error('Cannot change the role of the workspace owner');
+    if (isWorkspaceOwner(workspace, userId)) {
+      handleError(
+        new Error('Cannot change the role of the workspace owner'),
+        {
+          component: 'WorkspaceSettingsUsers',
+          action: 'handleUpdateRole',
+          metadata: { workspaceId, userId, role },
+        }
+      );
       return;
     }
 
-    updateUser(workspaceId, userId, { role }).then(() => {
-      refresh();
-    });
+    updateUser(workspaceId, userId, { role })
+      .then(() => {
+        refresh();
+      })
+      .catch(error => {
+        handleError(error, {
+          component: 'WorkspaceSettingsUsers',
+          action: 'handleUpdateRole',
+          metadata: { workspaceId, userId, role },
+        });
+      });
   };
 
   const myRole = workspaceUsers.find(user => {
