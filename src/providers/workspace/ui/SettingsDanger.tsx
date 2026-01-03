@@ -1,4 +1,4 @@
-import { Trash2 } from 'lucide-react';
+import { Loader2, Trash2 } from 'lucide-react';
 import React, { useState } from 'react';
 import {
   AlertDialog,
@@ -68,7 +68,7 @@ const WorkspaceSettingsDanger: React.FC<{ workspace: IWorkspace }> = ({ workspac
       </div>
       <AlertDialog>
         <AlertDialogTrigger asChild>
-          <Button variant="destructive" disabled={isDeleting}>
+          <Button variant="destructive" disabled={isDeleting} progress={isDeleting}>
             <Trash2 className="h-4 w-4 mr-2" />
             Delete Workspace
           </Button>
@@ -82,13 +82,20 @@ const WorkspaceSettingsDanger: React.FC<{ workspace: IWorkspace }> = ({ workspac
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteWorkspace}
               disabled={isDeleting}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {isDeleting ? 'Deleting...' : 'Delete Workspace'}
+              {isDeleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                'Delete Workspace'
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
