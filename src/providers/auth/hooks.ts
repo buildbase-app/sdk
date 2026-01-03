@@ -1,6 +1,7 @@
 import { useCallback, useMemo } from 'react';
 import { authActions, useAppDispatch, useAppSelector } from '../../contexts';
 import { defaultApiClient } from '../../lib/api-client';
+import { handleError } from '../../lib/error-handler';
 import { useSaaSWorkspaces } from '../workspace/hooks';
 import { removeSession } from './utils';
 
@@ -37,7 +38,10 @@ export function useSaaSAuth() {
       }
     } catch (error) {
       dispatch.auth(authActions.authenticationFailed());
-      console.error('Sign in error:', error);
+      handleError(error, {
+        component: 'useSaaSAuth',
+        action: 'signIn',
+      });
       throw error;
     }
   }, [serverUrl, orgId, authConfig, dispatch]);
@@ -61,7 +65,10 @@ export function useSaaSAuth() {
       // Using centralized removeSession function
       removeSession();
     } catch (error) {
-      console.error('Logout error:', error);
+      handleError(error, {
+        component: 'useSaaSAuth',
+        action: 'signOut',
+      });
       // Ensure cleanup even on error using centralized function
       removeSession();
     }

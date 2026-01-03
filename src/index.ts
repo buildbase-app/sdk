@@ -41,3 +41,13 @@ export type {
   WorkspaceUserRemovedEventData,
   WorkspaceUserRoleChangedEventData,
 } from './providers/events/types';
+
+// Export error handling
+export { SDKErrorBoundary, default as ErrorBoundary } from './components/ErrorBoundary';
+export {
+  errorHandler,
+  handleError,
+  createSDKError,
+  SDKError,
+} from './lib/error-handler';
+export type { SDKErrorContext, ErrorHandlerConfig } from './lib/error-handler';

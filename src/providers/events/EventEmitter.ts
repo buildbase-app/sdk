@@ -1,4 +1,5 @@
 import type { IUser } from '../../api/types';
+import { handleError } from '../../lib/error-handler';
 import type { IWorkspace } from '../workspace/types';
 import type { EventData, EventType, IEventCallbacks } from './types';
 
@@ -35,7 +36,11 @@ export class EventEmitter {
       try {
         await this.callbacks.handleEvent(eventType, data);
       } catch (error) {
-        console.error(`Error in handleEvent callback for ${eventType}:`, error);
+        handleError(error, {
+          component: 'EventEmitter',
+          action: 'emit',
+          metadata: { eventType },
+        });
       }
     }
   }

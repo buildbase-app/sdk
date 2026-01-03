@@ -3,6 +3,7 @@
 import React, { ReactNode, useCallback, useEffect, useMemo } from 'react';
 import { IUser } from '../../api/types';
 import { authActions, useAppDispatch, useAppSelector } from '../../contexts';
+import { handleError } from '../../lib/error-handler';
 import type { AuthUser } from './types';
 import { IAuthCallbacks } from './types';
 import {
@@ -98,7 +99,11 @@ export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) 
           removeTokenFromUrl();
         }
       } catch (error) {
-        console.error('Auth redirect error:', error);
+        handleError(error, {
+          component: 'AuthProviderWrapper',
+          action: 'handleAuthRedirect',
+          metadata: { hasCode: !!code },
+        });
         dispatch.auth(authActions.authenticationFailed());
         throw error;
       }
@@ -126,7 +131,13 @@ export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) 
       try {
         const { serverUrl, version, orgId } = osState;
         if (!serverUrl || !version || !orgId) {
-          console.warn('OS configuration not available, cannot fetch user profile');
+          handleError(
+            new Error('OS configuration not available, cannot fetch user profile'),
+            {
+              component: 'AuthProviderWrapper',
+              action: 'fetchUserProfile',
+            }
+          );
           return;
         }
 
@@ -140,7 +151,14 @@ export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) 
 
         if (!profileResponse.ok) {
           // Session invalid, remove it
-          console.warn('Session invalid, removing from localStorage');
+          handleError(
+            new Error('Session invalid, removing from localStorage'),
+            {
+              component: 'AuthProviderWrapper',
+              action: 'fetchUserProfile',
+              metadata: { status: profileResponse.status },
+            }
+          );
           removeSession();
           return;
         }
@@ -149,7 +167,11 @@ export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) 
         try {
           userData = await profileResponse.json();
         } catch (parseError) {
-          console.error('Failed to parse user profile response:', parseError);
+          handleError(parseError, {
+            component: 'AuthProviderWrapper',
+            action: 'fetchUserProfile',
+            metadata: { step: 'parseResponse' },
+          });
           removeSession();
           return;
         }
@@ -172,7 +194,11 @@ export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) 
         // Dispatch setSession to update state (sessionId already in localStorage)
         dispatch.auth(authActions.setSession(session));
       } catch (error) {
-        console.error('Failed to fetch user profile on page load:', error);
+        handleError(error, {
+          component: 'AuthProviderWrapper',
+          action: 'fetchUserProfile',
+          metadata: { step: 'pageLoad' },
+        });
         // Remove invalid session
         removeSession();
       }
@@ -213,7 +239,11 @@ export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) 
       })
       .catch(error => {
         // Error is already handled in handleAuthRedirect
-        console.error('Failed to handle auth redirect:', error);
+        handleError(error, {
+          component: 'AuthProviderWrapper',
+          action: 'handleAuthRedirectEffect',
+          metadata: { code: code.substring(0, 10) + '...' }, // Log partial code for debugging
+        });
         // Reset on error so it can be retried if needed
         processedCodeRef.current = null;
       })

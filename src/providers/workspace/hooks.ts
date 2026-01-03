@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo } from 'react';
 import { IUser } from '../../api/types';
 import { useAppDispatch, useAppSelector, workspaceActions } from '../../contexts';
+import { handleError } from '../../lib/error-handler';
 import { eventEmitter } from '../events';
 import { WorkspaceApi } from './api';
 import { WorkspaceSwitcher } from './provider';
@@ -27,7 +28,11 @@ export const useSaaSWorkspaces = () => {
         dispatch.workspaces(workspaceActions.setCurrentWorkspace(ws));
         // Trigger workspace changed event
         eventEmitter.emitWorkspaceChanged(ws, previousWorkspace).catch(error => {
-          console.error('Error emitting workspace changed event:', error);
+          handleError(error, {
+            component: 'useSaaSWorkspaces',
+            action: 'emitWorkspaceChanged',
+            metadata: { workspaceId: ws._id },
+          });
         });
       }
     },
@@ -132,7 +137,11 @@ export const useSaaSWorkspaces = () => {
       dispatch.workspaces(workspaceActions.setWorkspaces([...workspace.workspaces, data]));
       // Trigger workspace created event
       eventEmitter.emitWorkspaceCreated(data).catch(error => {
-        console.error('Error emitting workspace created event:', error);
+        handleError(error, {
+          component: 'useSaaSWorkspaces',
+          action: 'emitWorkspaceCreated',
+          metadata: { workspaceId: data._id },
+        });
       });
     },
     [api, workspace.workspaces, dispatch]
@@ -146,7 +155,11 @@ export const useSaaSWorkspaces = () => {
       );
       // Trigger workspace updated event
       eventEmitter.emitWorkspaceUpdated(data).catch(error => {
-        console.error('Error emitting workspace updated event:', error);
+        handleError(error, {
+          component: 'useSaaSWorkspaces',
+          action: 'emitWorkspaceUpdated',
+          metadata: { workspaceId: data._id },
+        });
       });
     },
     [api, workspace.workspaces, dispatch]
@@ -170,7 +183,10 @@ export const useSaaSWorkspaces = () => {
       dispatch.workspaces(workspaceActions.setAllFeatures(data));
       return data;
     } catch (err) {
-      console.error('Failed to fetch features:', err);
+      handleError(err, {
+        component: 'useSaaSWorkspaces',
+        action: 'getFeatures',
+      });
       return null;
     } finally {
       fetchingFeaturesRef.current = false;
@@ -222,7 +238,11 @@ export const useSaaSWorkspaces = () => {
       if (targetWorkspace) {
         // Trigger workspace user added event
         eventEmitter.emitWorkspaceUserAdded(data.userId, targetWorkspace, role).catch(error => {
-          console.error('Error emitting workspace user added event:', error);
+          handleError(error, {
+            component: 'useSaaSWorkspaces',
+            action: 'emitWorkspaceUserAdded',
+            metadata: { workspaceId, userId: data.userId, role },
+          });
         });
       }
       return data;
@@ -259,7 +279,11 @@ export const useSaaSWorkspaces = () => {
         const role = workspaceUser.role;
         // Trigger workspace user removed event
         eventEmitter.emitWorkspaceUserRemoved(data.userId, targetWorkspace, role).catch(error => {
-          console.error('Error emitting workspace user removed event:', error);
+          handleError(error, {
+            component: 'useSaaSWorkspaces',
+            action: 'emitWorkspaceUserRemoved',
+            metadata: { workspaceId, userId: data.userId, role },
+          });
         });
       }
       return data;
@@ -302,7 +326,11 @@ export const useSaaSWorkspaces = () => {
         eventEmitter
           .emitWorkspaceUserRoleChanged(data.userId, data.workspace, previousRole, config.role)
           .catch(error => {
-            console.error('Error emitting workspace user role changed event:', error);
+            handleError(error, {
+              component: 'useSaaSWorkspaces',
+              action: 'emitWorkspaceUserRoleChanged',
+              metadata: { workspaceId, userId, previousRole, newRole: config.role },
+            });
           });
       }
 
@@ -318,7 +346,11 @@ export const useSaaSWorkspaces = () => {
       const data = await api.updateUserProfile(config);
       // Trigger user updated event
       eventEmitter.emitUserUpdated(data, currentUser || undefined).catch(error => {
-        console.error('Error emitting user updated event:', error);
+        handleError(error, {
+          component: 'useSaaSWorkspaces',
+          action: 'emitUserUpdated',
+          metadata: { userId: data._id },
+        });
       });
       return data;
     },
@@ -374,7 +406,11 @@ export const useSaaSWorkspaces = () => {
       // Trigger workspace deleted event
       if (targetWorkspace) {
         eventEmitter.emitWorkspaceDeleted(targetWorkspace).catch(error => {
-          console.error('Error emitting workspace deleted event:', error);
+          handleError(error, {
+            component: 'useSaaSWorkspaces',
+            action: 'emitWorkspaceDeleted',
+            metadata: { workspaceId },
+          });
         });
       }
       return data;
