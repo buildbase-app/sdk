@@ -6,7 +6,7 @@ import { eventEmitter } from '../events';
 import { WorkspaceApi } from './api';
 import { WorkspaceSwitcher } from './provider';
 import { IWorkspace, IWorkspaceUser } from './types';
-import { workspaceStorage } from './utils';
+import { isWorkspaceOwner, workspaceStorage } from './utils';
 
 export const useSaaSWorkspaces = () => {
   const dispatch = useAppDispatch();
@@ -108,7 +108,7 @@ export const useSaaSWorkspaces = () => {
   }, [
     api,
     workspace.loading,
-    workspace.currentWorkspace,
+    workspace.currentWorkspace?._id, // Use ID instead of object to prevent unnecessary re-renders
     dispatch,
     setCurrentWorkspaceWithStorage,
   ]);
@@ -266,15 +266,8 @@ export const useSaaSWorkspaces = () => {
       const targetWorkspace = workspace.workspaces.find(w => w._id === workspaceId);
       
       // Check if user is the workspace owner - prevent removing owner
-      if (targetWorkspace) {
-        const createdBy =
-          typeof targetWorkspace.createdBy === 'object' && targetWorkspace.createdBy !== null
-            ? targetWorkspace.createdBy._id
-            : targetWorkspace.createdBy;
-        
-        if (createdBy === userId) {
-          throw new Error('Cannot remove the workspace owner');
-        }
+      if (targetWorkspace && isWorkspaceOwner(targetWorkspace, userId)) {
+        throw new Error('Cannot remove the workspace owner');
       }
 
       // Get workspace users to find the role
@@ -306,15 +299,8 @@ export const useSaaSWorkspaces = () => {
       // Check if user is the workspace owner - prevent changing owner's role
       if (config.role) {
         const targetWorkspace = workspace.workspaces.find(w => w._id === workspaceId);
-        if (targetWorkspace) {
-          const createdBy =
-            typeof targetWorkspace.createdBy === 'object' && targetWorkspace.createdBy !== null
-              ? targetWorkspace.createdBy._id
-              : targetWorkspace.createdBy;
-          
-          if (createdBy === userId) {
-            throw new Error('Cannot change the role of the workspace owner');
-          }
+        if (targetWorkspace && isWorkspaceOwner(targetWorkspace, userId)) {
+          throw new Error('Cannot change the role of the workspace owner');
         }
       }
 
@@ -394,13 +380,7 @@ export const useSaaSWorkspaces = () => {
       }
 
       // Check if current user is the creator of the workspace
-      const createdBy =
-        typeof targetWorkspace.createdBy === 'object' && targetWorkspace.createdBy !== null
-          ? targetWorkspace.createdBy._id
-          : targetWorkspace.createdBy;
-      const isCreatedByMe = createdBy === currentUser.id;
-
-      if (!isCreatedByMe) {
+      if (!isWorkspaceOwner(targetWorkspace, currentUser.id)) {
         throw new Error('Only the workspace creator can delete the workspace');
       }
 

@@ -107,6 +107,8 @@ export function createContextProvider<State, Action>({
     const state = useState();
 
     // If no selector provided, return entire state (identity selector)
+    // Type assertion is safe here because Selected defaults to State when no selector is provided
+    // We use 'unknown' intermediate to satisfy TypeScript's type checking
     const actualSelector = selector || ((s: State) => s as unknown as Selected);
     const selectorRef = React.useRef(actualSelector);
     const equalityFnRef = React.useRef(equalityFn);

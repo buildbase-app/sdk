@@ -61,7 +61,8 @@ export function useAppSelector<Selected = SDKState>(
   );
 
   // If no selector provided, return entire combined state
-  const actualSelector = selector || ((s: SDKState) => s as unknown as Selected);
+  // Type assertion is safe here because Selected defaults to SDKState when no selector is provided
+  const actualSelector = selector || ((s: SDKState) => s as Selected);
   const selectorRef = React.useRef(actualSelector);
   const equalityFnRef = React.useRef(equalityFn);
   const prevSelectedRef = React.useRef<Selected | undefined>(undefined);

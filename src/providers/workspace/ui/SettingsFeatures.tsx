@@ -3,6 +3,7 @@ import { Switch } from '../../../components/ui/switch';
 import { useAppSelector } from '../../../contexts';
 import { useSaaSWorkspaces } from '../hooks';
 import { IWorkspace } from '../types';
+import { getWorkspaceUserRole } from '../utils';
 import SettingSkeleton from './Skeleton';
 
 const WorkspaceSettingsFeatures: React.FC<{ workspaceId: string }> = ({ workspaceId }) => {
@@ -27,11 +28,7 @@ const WorkspaceSettingsFeatures: React.FC<{ workspaceId: string }> = ({ workspac
     return <SettingSkeleton />;
   }
 
-  const myRole = workspace?.users.find(user => {
-    const id = typeof user === 'string' ? user : user._id;
-    return id === currentUser?.id;
-  })?.role as string;
-
+  const myRole = getWorkspaceUserRole(workspace, currentUser?.id ?? null);
   const amIAdmin = myRole?.toLowerCase() === 'admin';
 
   return (

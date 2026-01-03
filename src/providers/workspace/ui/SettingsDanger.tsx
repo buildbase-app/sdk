@@ -13,8 +13,10 @@ import {
 } from '../../../components/ui/alert-dialog';
 import { Button } from '../../../components/ui/button';
 import { useAppSelector } from '../../../contexts';
+import { handleError } from '../../../lib/error-handler';
 import { useSaaSWorkspaces } from '../hooks';
 import { IWorkspace } from '../types';
+import { getWorkspaceUserRole } from '../utils';
 import SettingSkeleton from './Skeleton';
 
 const WorkspaceSettingsDanger: React.FC<{ workspace: IWorkspace }> = ({ workspace }) => {
@@ -26,11 +28,7 @@ const WorkspaceSettingsDanger: React.FC<{ workspace: IWorkspace }> = ({ workspac
     return <SettingSkeleton />;
   }
 
-  const myRole = workspace?.users.find(user => {
-    const id = typeof user === 'object' && user !== null ? user._id : user;
-    return id === currentUser?.id;
-  })?.role as string;
-
+  const myRole = getWorkspaceUserRole(workspace, currentUser?.id ?? null);
   const amIAdmin = myRole?.toLowerCase() === 'admin';
 
   const handleDeleteWorkspace = async () => {
@@ -39,7 +37,11 @@ const WorkspaceSettingsDanger: React.FC<{ workspace: IWorkspace }> = ({ workspac
       await deleteWorkspace(workspace._id);
       // Workspace will be removed from state by the hook
     } catch (error) {
-      console.error('Failed to delete workspace:', error);
+      handleError(error, {
+        component: 'WorkspaceSettingsDanger',
+        action: 'handleDeleteWorkspace',
+        metadata: { workspaceId: workspace._id },
+      });
       alert(error instanceof Error ? error.message : 'Failed to delete workspace');
     } finally {
       setIsDeleting(false);
