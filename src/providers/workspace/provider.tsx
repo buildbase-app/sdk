@@ -252,7 +252,9 @@ function WorkspaceItem(props: WorkspaceItemProps) {
     >
       <Avatar className="h-8 w-8 flex items-center justify-center">
         <div>
-          <AvatarImage src={workspace.image} />
+          <AvatarImage
+            src={workspace.image && workspace.image.trim() ? workspace.image : undefined}
+          />
         </div>
         <AvatarFallback>{getWorkspaceInitials(workspace.name)}</AvatarFallback>
       </Avatar>
@@ -462,12 +464,12 @@ function CreateWorkspaceDialog(props: { onCreated: () => void }) {
                       </FormItem>
                     )}
                   />
-                  {form.watch('image') && (
+                  {form.watch('image') && form.watch('image')?.trim() && (
                     <div className="flex items-center gap-3">
                       <span className="text-sm font-medium">Preview:</span>
                       <div className="w-12 h-12 rounded-lg border-2 border-border overflow-hidden bg-muted">
                         <img
-                          src={form.watch('image')}
+                          src={form.watch('image') || undefined}
                           alt="Workspace preview"
                           className="w-full h-full object-cover"
                           onError={e => {
