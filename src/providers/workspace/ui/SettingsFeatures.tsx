@@ -3,7 +3,7 @@ import { Switch } from '../../../components/ui/switch';
 import { useAppSelector } from '../../../contexts';
 import { useSaaSWorkspaces } from '../hooks';
 import { IWorkspace } from '../types';
-import { getWorkspaceUserRole } from '../utils';
+import { isWorkspaceOwner } from '../utils';
 import SettingSkeleton from './Skeleton';
 
 const WorkspaceSettingsFeatures: React.FC<{ workspaceId: string }> = ({ workspaceId }) => {
@@ -28,14 +28,13 @@ const WorkspaceSettingsFeatures: React.FC<{ workspaceId: string }> = ({ workspac
     return <SettingSkeleton />;
   }
 
-  const myRole = getWorkspaceUserRole(workspace, currentUser?.id ?? null);
-  const amIAdmin = myRole?.toLowerCase() === 'admin';
+  const amIOwner = isWorkspaceOwner(workspace, currentUser?.id ?? null);
 
   return (
     <div>
       <div className="flex flex-col gap-y-3.5 pr-4">
-        {!amIAdmin && (
-          <div className="text-red-500">Only workspace admin can change the features.</div>
+        {!amIOwner && (
+          <div className="text-red-500">Only the workspace owner can change the features.</div>
         )}
         {!allFeatures.length && (
           <div className="text-muted-foreground">Workspace has no features to manage.</div>
@@ -51,7 +50,7 @@ const WorkspaceSettingsFeatures: React.FC<{ workspaceId: string }> = ({ workspac
                     <p className="text-muted-foreground">{feature.description}</p>
                   </div>
                   <Switch
-                    disabled={updatingFeatures[feature.slug] || !amIAdmin}
+                    disabled={updatingFeatures[feature.slug] || !amIOwner}
                     checked={state ?? feature.defaultValue}
                     onCheckedChange={value => _updateFeature(feature.slug, value)}
                   />
