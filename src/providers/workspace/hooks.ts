@@ -201,26 +201,36 @@ export const useSaaSWorkspaces = () => {
     [api]
   );
 
+  // Sync current workspace when workspaces array is updated
+  // This ensures the currentWorkspace reference stays in sync with the workspaces array
   useEffect(() => {
-    if (workspace.currentWorkspace?._id) {
-      const ws = workspace.workspaces.find(w => w._id === workspace.currentWorkspace?._id);
-      if (ws) {
-        // check if the workspace is the same as the current workspace
-        if (ws._id === workspace.currentWorkspace._id) {
-          return;
-        }
-        setCurrentWorkspaceWithStorage(ws);
-      } else {
-        if (workspace.workspaces.length > 0) {
-          // check if the workspace is the same as the current workspace
-          if (workspace.workspaces[0]._id === workspace.currentWorkspace._id) {
-            return;
-          }
-          setCurrentWorkspaceWithStorage(workspace.workspaces[0]);
+    // Only sync if we have a current workspace and workspaces are loaded
+    if (!workspace.currentWorkspace?._id || workspace.workspaces.length === 0) {
+      return;
+    }
+
+    const currentId = workspace.currentWorkspace._id;
+    const updatedWorkspace = workspace.workspaces.find(w => w._id === currentId);
+
+    // If current workspace is not in the list, fallback to first available
+    if (!updatedWorkspace) {
+      // Only switch if we have workspaces available
+      if (workspace.workspaces.length > 0) {
+        const firstWorkspace = workspace.workspaces[0];
+        // Only update if it's different from current
+        if (firstWorkspace._id !== currentId) {
+          setCurrentWorkspaceWithStorage(firstWorkspace);
         }
       }
+      return;
     }
-  }, [workspace.currentWorkspace?._id, workspace.workspaces, setCurrentWorkspaceWithStorage]);
+
+    // Only update if the workspace object reference changed (data was updated)
+    // Use reference equality check to avoid unnecessary updates
+    if (updatedWorkspace !== workspace.currentWorkspace) {
+      setCurrentWorkspaceWithStorage(updatedWorkspace);
+    }
+  }, [workspace.workspaces, workspace.currentWorkspace, setCurrentWorkspaceWithStorage]);
 
   const getUsers = useCallback(
     async (workspaceId: string) => {
