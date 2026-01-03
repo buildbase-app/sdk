@@ -128,7 +128,9 @@ const WorkspaceSettingsGeneral: React.FC<{ workspace: IWorkspace }> = ({ workspa
                   <span className="text-sm font-medium">Preview:</span>
                   <div className="w-12 h-12 rounded-lg border-2 border-border flex items-center justify-center text-2xl bg-muted">
                     {selectedEmoji && <span className="text-2xl">{selectedEmoji}</span>}
-                    {!selectedEmoji && <img src={form.watch('image')} />}
+                    {!selectedEmoji && form.watch('image')?.trim() && (
+                      <img src={form.watch('image') || undefined} alt="Workspace preview" />
+                    )}
                   </div>
                 </div>
                 <ScrollArea className="h-32 w-full rounded-md border">
@@ -174,11 +176,11 @@ const WorkspaceSettingsGeneral: React.FC<{ workspace: IWorkspace }> = ({ workspa
                     </FormItem>
                   )}
                 />
-                {form.watch('image') && (
+                {form.watch('image') && form.watch('image')?.trim() && (
                   <div className="flex items-center gap-3">
                     <span className="text-sm font-medium">Preview:</span>
                     <div className="w-12 h-12 rounded-lg border-2 border-border overflow-hidden bg-muted">
-                      <img src={form.watch('image')} className="w-full h-full object-cover" />
+                      <img src={form.watch('image') || undefined} className="w-full h-full object-cover" alt="Workspace preview" />
                     </div>
                   </div>
                 )}

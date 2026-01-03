@@ -25,7 +25,7 @@ const Sidebar: React.FC<Props> = ({ workspace, section, setSection }) => {
       {workspace && (
         <div className="border-b p-2 py-4">
           <div className="flex items-center gap-x-2">
-            {workspace.image && (
+            {workspace.image && workspace.image.trim() && (
               <div
                 className="bg-blue-100 rounded flex items-center justify-center text-blue-600 font-medium px-0.5 py-0.5"
                 style={{
@@ -45,6 +45,7 @@ const Sidebar: React.FC<Props> = ({ workspace, section, setSection }) => {
                     maxHeight: '36px',
                     objectFit: 'contain',
                   }}
+                  alt={workspace.name}
                 />
               </div>
             )}
