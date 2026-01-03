@@ -18,33 +18,63 @@ import WorkspaceSettingsSidebar from './Sidebar';
 
 export type WorkspaceSettingsSection = 'profile' | 'general' | 'users' | 'features' | 'danger';
 
-const WorkspaceSettingsDialog: React.FC<{
+export interface WorkspaceSettingsDialogProps {
   workspace: IWorkspace;
-  onClose: () => void;
-}> = ({ workspace, onClose }) => {
-  const [open, setOpen] = useState(false);
-  const [section, setSection] = useState<WorkspaceSettingsSection>('profile');
+  onClose?: () => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  defaultSection?: WorkspaceSettingsSection;
+  section?: WorkspaceSettingsSection;
+  onSectionChange?: (section: WorkspaceSettingsSection) => void;
+  showTrigger?: boolean;
+  trigger?: React.ReactNode;
+}
+
+const WorkspaceSettingsDialog: React.FC<WorkspaceSettingsDialogProps> = ({
+  workspace,
+  onClose,
+  open: controlledOpen,
+  onOpenChange: controlledOnOpenChange,
+  defaultSection = 'profile',
+  section: controlledSection,
+  onSectionChange,
+  showTrigger = true,
+  trigger,
+}) => {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const [internalSection, setInternalSection] = useState<WorkspaceSettingsSection>(defaultSection);
+
+  // Use controlled or uncontrolled state
+  const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
+  const setOpen = controlledOnOpenChange || setInternalOpen;
+  const section = controlledSection !== undefined ? controlledSection : internalSection;
+  const setSection = onSectionChange || setInternalSection;
 
   // Don't render if no current workspace
   if (!workspace) {
     return null;
   }
 
+  const handleOpenChange = (isOpen: boolean) => {
+    setOpen(isOpen);
+    if (!isOpen && onClose) {
+      onClose();
+    }
+  };
+
+  const defaultTrigger = (
+    <Button variant="outline" size="icon">
+      <Settings className="h-4 w-4" />
+    </Button>
+  );
+
   return (
-    <Dialog
-      open={open}
-      onOpenChange={e => {
-        setOpen(e);
-        if (!e) {
-          onClose();
-        }
-      }}
-    >
-      <DialogTrigger asChild>
-        <Button variant="outline" size="icon">
-          <Settings className="h-4 w-4" />
-        </Button>
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      {showTrigger && (
+        <DialogTrigger asChild>
+          {trigger || defaultTrigger}
+        </DialogTrigger>
+      )}
       <DialogContent className="flex max-w-2xl min-w-full sm:min-w-[800px] p-0 m-0 bg-muted sm:min-h-[600px] min-h-full gap-x-0 space-x-0">
         <DialogDescription className="sr-only">Workspace settings dialog</DialogDescription>
         <WorkspaceSettingsSidebar workspace={workspace} section={section} setSection={setSection} />
@@ -72,3 +102,4 @@ const WorkspaceSettingsDialog: React.FC<{
 };
 
 export default WorkspaceSettingsDialog;
+export { WorkspaceSettingsDialog };

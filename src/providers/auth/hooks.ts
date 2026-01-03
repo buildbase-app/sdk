@@ -3,6 +3,7 @@ import { authActions, useAppDispatch, useAppSelector } from '../../contexts';
 import { defaultApiClient } from '../../lib/api-client';
 import { handleError } from '../../lib/error-handler';
 import { useSaaSWorkspaces } from '../workspace/hooks';
+import { workspaceSettingsManager } from '../workspace/settings-manager';
 import { removeSession } from './utils';
 
 export function useSaaSAuth() {
@@ -10,7 +11,7 @@ export function useSaaSAuth() {
   const auth = useAppSelector(state => state.auth);
   const os = useAppSelector(state => state.os);
   const { serverUrl, orgId, auth: authConfig } = os;
-  const { resetCurrentWorkspace } = useSaaSWorkspaces();
+  const { resetCurrentWorkspace, currentWorkspace } = useSaaSWorkspaces();
 
   const signIn = useCallback(async () => {
     dispatch.auth(authActions.authenticationStarted());
@@ -74,6 +75,20 @@ export function useSaaSAuth() {
     }
   }, [dispatch, resetCurrentWorkspace, authConfig?.callbacks?.onSignOut]);
 
+  const openWorkspaceSettings = useCallback(
+    (section?: 'profile' | 'general' | 'users' | 'features' | 'danger') => {
+      if (!currentWorkspace) {
+        handleError(new Error('Cannot open settings: No current workspace'), {
+          component: 'useSaaSAuth',
+          action: 'openWorkspaceSettings',
+        });
+        return;
+      }
+      workspaceSettingsManager.openWorkspaceSettings(section);
+    },
+    [currentWorkspace]
+  );
+
   // Memoize return value to prevent unnecessary re-renders
   return useMemo(
     () => ({
@@ -88,7 +103,8 @@ export function useSaaSAuth() {
       // Actions
       signIn,
       signOut,
+      openWorkspaceSettings,
     }),
-    [auth, signIn, signOut]
+    [auth, signIn, signOut, openWorkspaceSettings]
   );
 }
