@@ -77,12 +77,7 @@ class ErrorHandler {
     const sdkError =
       normalizedError instanceof SDKError
         ? normalizedError
-        : new SDKError(
-            normalizedError.message,
-            normalizedError.name,
-            context,
-            normalizedError
-          );
+        : new SDKError(normalizedError.message, normalizedError.name, context, normalizedError);
 
     // Log to console in development
     // Check for development mode - works in both Node and browser environments
@@ -94,7 +89,7 @@ class ErrorHandler {
         return false;
       }
     })();
-    
+
     if (this.config.enableConsoleLogging && isDevelopment) {
       console.error(`[SDK Error] ${context.component || 'Unknown'}:`, {
         message: sdkError.message,
@@ -141,10 +136,7 @@ class ErrorHandler {
   /**
    * Create a safe error handler wrapper for async functions
    */
-  wrapAsync<T extends (...args: any[]) => Promise<any>>(
-    fn: T,
-    context: SDKErrorContext
-  ): T {
+  wrapAsync<T extends (...args: any[]) => Promise<any>>(fn: T, context: SDKErrorContext): T {
     return ((...args: Parameters<T>) => {
       return fn(...args).catch((error: unknown) => {
         this.handleError(error, context);
@@ -156,10 +148,7 @@ class ErrorHandler {
   /**
    * Create a safe error handler wrapper for sync functions
    */
-  wrapSync<T extends (...args: any[]) => any>(
-    fn: T,
-    context: SDKErrorContext
-  ): T {
+  wrapSync<T extends (...args: any[]) => any>(fn: T, context: SDKErrorContext): T {
     return ((...args: Parameters<T>) => {
       try {
         return fn(...args);
@@ -187,4 +176,3 @@ export function createSDKError(
 ): SDKError {
   return new SDKError(message, code, context, originalError);
 }
-

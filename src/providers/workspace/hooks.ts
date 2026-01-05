@@ -264,7 +264,7 @@ export const useSaaSWorkspaces = () => {
     async (workspaceId: string, userId: string) => {
       // Find the workspace and user before removal to trigger events
       const targetWorkspace = workspace.workspaces.find(w => w._id === workspaceId);
-      
+
       // Check if user is the workspace owner - prevent removing owner
       if (targetWorkspace && isWorkspaceOwner(targetWorkspace, userId)) {
         throw new Error('Cannot remove the workspace owner');

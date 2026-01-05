@@ -50,7 +50,10 @@ function isWorkspaceOwnerId(createdBy: string | { _id: string } | null | undefin
  * @param userId - The user ID to check
  * @returns true if the user is the workspace owner, false otherwise
  */
-export function isWorkspaceOwner(workspace: IWorkspace, userId: string | null | undefined): boolean {
+export function isWorkspaceOwner(
+  workspace: IWorkspace,
+  userId: string | null | undefined
+): boolean {
   if (!userId) return false;
   const ownerId = isWorkspaceOwnerId(workspace.createdBy);
   return ownerId !== null && ownerId === userId;

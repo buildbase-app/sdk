@@ -75,4 +75,3 @@ class WorkspaceSettingsManager {
 
 // Export singleton instance
 export const workspaceSettingsManager = new WorkspaceSettingsManager();
-
