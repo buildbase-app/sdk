@@ -9,6 +9,7 @@ import { ContextConfigProvider } from './ContextConfigProvider';
 import { eventEmitter } from './events';
 import { ApiVersion, IOsState } from './os/types';
 import PortalProvider from './PortalContainer';
+import { UserProvider } from './user/provider';
 import { WorkspaceSettingsProvider } from './workspace/WorkspaceSettingsProvider';
 
 export interface SaaSOSProviderProps extends IOsState {
@@ -100,7 +101,9 @@ export const SaaSOSProvider: React.FC<SaaSOSProviderProps> = React.memo(
           <AuthProviderWrapper callbacks={memoizedCallbacks}>
             <PortalProvider>
               <ContextConfigProvider config={config} auth={auth}>
-                <WorkspaceSettingsProvider>{children}</WorkspaceSettingsProvider>
+                <UserProvider>
+                  <WorkspaceSettingsProvider>{children}</WorkspaceSettingsProvider>
+                </UserProvider>
               </ContextConfigProvider>
             </PortalProvider>
           </AuthProviderWrapper>
