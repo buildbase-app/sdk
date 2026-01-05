@@ -21,6 +21,7 @@ export interface IUser extends IDocument {
   timezone: string;
   language: string;
   currency: string;
+  attributes?: Record<string, string | number | boolean>;
 }
 
 export interface IAsset extends IDocument {

@@ -20,6 +20,7 @@ export { WhenWorkspaceFeatureDisabled, WhenWorkspaceFeatureEnabled } from './com
 // Export hooks
 export { useSaaSAuth } from './providers/auth/hooks';
 export { useSaaSSettings } from './providers/os/hooks';
+export { useUserAttributes } from './providers/user/hooks';
 
 // Export workspace provider and dialog
 export { useSaaSWorkspaces } from './providers/workspace/hooks';
@@ -43,11 +44,6 @@ export type {
 } from './providers/events/types';
 
 // Export error handling
-export { SDKErrorBoundary, default as ErrorBoundary } from './components/ErrorBoundary';
-export {
-  errorHandler,
-  handleError,
-  createSDKError,
-  SDKError,
-} from './lib/error-handler';
-export type { SDKErrorContext, ErrorHandlerConfig } from './lib/error-handler';
+export { default as ErrorBoundary, SDKErrorBoundary } from './components/ErrorBoundary';
+export { SDKError, createSDKError, errorHandler, handleError } from './lib/error-handler';
+export type { ErrorHandlerConfig, SDKErrorContext } from './lib/error-handler';
