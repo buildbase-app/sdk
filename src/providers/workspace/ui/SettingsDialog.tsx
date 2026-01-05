@@ -70,11 +70,7 @@ const WorkspaceSettingsDialog: React.FC<WorkspaceSettingsDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      {showTrigger && (
-        <DialogTrigger asChild>
-          {trigger || defaultTrigger}
-        </DialogTrigger>
-      )}
+      {showTrigger && <DialogTrigger asChild>{trigger || defaultTrigger}</DialogTrigger>}
       <DialogContent className="flex max-w-2xl min-w-full sm:min-w-[800px] p-0 m-0 bg-muted sm:min-h-[600px] min-h-full gap-x-0 space-x-0">
         <DialogDescription className="sr-only">Workspace settings dialog</DialogDescription>
         <WorkspaceSettingsSidebar workspace={workspace} section={section} setSection={setSection} />

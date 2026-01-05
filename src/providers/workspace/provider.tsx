@@ -5,7 +5,6 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar';
 import { Button } from '../../components/ui/button';
-import { handleError } from '../../lib/error-handler';
 import {
   Dialog,
   DialogContent,
@@ -29,6 +28,7 @@ import { RadioGroup, RadioGroupItem } from '../../components/ui/radio-group';
 import { ScrollArea } from '../../components/ui/scroll-area';
 import { Separator } from '../../components/ui/separator';
 import { useAppSelector } from '../../contexts';
+import { handleError } from '../../lib/error-handler';
 import { cn } from '../../lib/utils';
 import { useSaaSSettings } from '../os/hooks';
 import { useSaaSWorkspaces } from './hooks';

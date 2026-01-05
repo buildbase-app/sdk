@@ -141,13 +141,10 @@ export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) 
       try {
         const { serverUrl, version, orgId } = osState;
         if (!serverUrl || !version || !orgId) {
-          handleError(
-            new Error('OS configuration not available, cannot fetch user profile'),
-            {
-              component: 'AuthProviderWrapper',
-              action: 'fetchUserProfile',
-            }
-          );
+          handleError(new Error('OS configuration not available, cannot fetch user profile'), {
+            component: 'AuthProviderWrapper',
+            action: 'fetchUserProfile',
+          });
           return;
         }
 
@@ -161,14 +158,11 @@ export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) 
 
         if (!profileResponse.ok) {
           // Session invalid, remove it
-          handleError(
-            new Error('Session invalid, removing from localStorage'),
-            {
-              component: 'AuthProviderWrapper',
-              action: 'fetchUserProfile',
-              metadata: { status: profileResponse.status },
-            }
-          );
+          handleError(new Error('Session invalid, removing from localStorage'), {
+            component: 'AuthProviderWrapper',
+            action: 'fetchUserProfile',
+            metadata: { status: profileResponse.status },
+          });
           removeSession();
           return;
         }
@@ -189,27 +183,21 @@ export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) 
         // Validate required user data fields
         const userId = userData._id || userData.id;
         if (!userId || typeof userId !== 'string') {
-          handleError(
-            new Error('User data missing required ID field'),
-            {
-              component: 'AuthProviderWrapper',
-              action: 'fetchUserProfile',
-              metadata: { step: 'validateUserData' },
-            }
-          );
+          handleError(new Error('User data missing required ID field'), {
+            component: 'AuthProviderWrapper',
+            action: 'fetchUserProfile',
+            metadata: { step: 'validateUserData' },
+          });
           removeSession();
           return;
         }
 
         if (!userData.email || typeof userData.email !== 'string') {
-          handleError(
-            new Error('User data missing required email field'),
-            {
-              component: 'AuthProviderWrapper',
-              action: 'fetchUserProfile',
-              metadata: { step: 'validateUserData' },
-            }
-          );
+          handleError(new Error('User data missing required email field'), {
+            component: 'AuthProviderWrapper',
+            action: 'fetchUserProfile',
+            metadata: { step: 'validateUserData' },
+          });
           removeSession();
           return;
         }

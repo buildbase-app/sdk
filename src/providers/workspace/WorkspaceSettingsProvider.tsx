@@ -41,13 +41,13 @@ export const WorkspaceSettingsProvider: React.FC<{ children: React.ReactNode }> 
         <WorkspaceSettingsDialog
           workspace={currentWorkspace}
           open={open}
-          onOpenChange={(isOpen) => {
+          onOpenChange={isOpen => {
             if (!isOpen) {
               workspaceSettingsManager.closeSettings();
             }
           }}
           section={section}
-          onSectionChange={(newSection) => {
+          onSectionChange={newSection => {
             workspaceSettingsManager.setSection(newSection);
           }}
           showTrigger={false}
@@ -56,4 +56,3 @@ export const WorkspaceSettingsProvider: React.FC<{ children: React.ReactNode }> 
     </>
   );
 };
-

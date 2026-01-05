@@ -61,13 +61,13 @@ export const ContextConfigProvider: React.FC<ContextConfigProviderProps> = React
               const data: ISettings = await response.json();
               dispatch.os(osActions.setSettings(data));
             }
-            } catch (err) {
-              handleError(err, {
-                component: 'ContextConfigProvider',
-                action: 'fetchSettings',
-                metadata: { serverUrl, version, orgId },
-              });
-            }
+          } catch (err) {
+            handleError(err, {
+              component: 'ContextConfigProvider',
+              action: 'fetchSettings',
+              metadata: { serverUrl, version, orgId },
+            });
+          }
         };
 
         fetchSettings();

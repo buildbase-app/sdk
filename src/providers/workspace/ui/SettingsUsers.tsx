@@ -61,14 +61,11 @@ const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace
   const handleRemoveUser = (userId: string) => {
     // Check if user is the owner
     if (isWorkspaceOwner(workspace, userId)) {
-      handleError(
-        new Error('Cannot remove the workspace owner'),
-        {
-          component: 'WorkspaceSettingsUsers',
-          action: 'handleRemoveUser',
-          metadata: { workspaceId: workspace._id, userId },
-        }
-      );
+      handleError(new Error('Cannot remove the workspace owner'), {
+        component: 'WorkspaceSettingsUsers',
+        action: 'handleRemoveUser',
+        metadata: { workspaceId: workspace._id, userId },
+      });
       return;
     }
 
@@ -88,14 +85,11 @@ const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace
   const handleUpdateRole = (workspaceId: string, userId: string, role: string) => {
     // Check if user is the owner
     if (isWorkspaceOwner(workspace, userId)) {
-      handleError(
-        new Error('Cannot change the role of the workspace owner'),
-        {
-          component: 'WorkspaceSettingsUsers',
-          action: 'handleUpdateRole',
-          metadata: { workspaceId, userId, role },
-        }
-      );
+      handleError(new Error('Cannot change the role of the workspace owner'), {
+        component: 'WorkspaceSettingsUsers',
+        action: 'handleUpdateRole',
+        metadata: { workspaceId, userId, role },
+      });
       return;
     }
 
@@ -200,7 +194,9 @@ const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace
                   <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">You</span>
                 )}
                 {isOwner && (
-                  <span className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded">Owner</span>
+                  <span className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded">
+                    Owner
+                  </span>
                 )}
                 {!myself && !isOwner && amIAdmin && (
                   <Button
