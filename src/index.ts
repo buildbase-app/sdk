@@ -15,12 +15,12 @@ export { WhenAuthenticated, WhenUnauthenticated } from './components/user/auth';
 export { WhenRoles, WhenWorkspaceRoles } from './components/user/role';
 
 // Export features components
-export { WhenWorkspaceFeatureDisabled, WhenWorkspaceFeatureEnabled } from './components/features';
+export { WhenWorkspaceFeatureDisabled, WhenWorkspaceFeatureEnabled, WhenUserFeatureEnabled, WhenUserFeatureDisabled } from './components/features';
 
 // Export hooks
 export { useSaaSAuth } from './providers/auth/hooks';
 export { useSaaSSettings } from './providers/os/hooks';
-export { useUserAttributes } from './providers/user/hooks';
+export { useUserAttributes, useUserFeatures } from './providers/user/hooks';
 
 // Export workspace provider and dialog
 export { useSaaSWorkspaces } from './providers/workspace/hooks';
