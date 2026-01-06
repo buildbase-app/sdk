@@ -2,12 +2,36 @@
 
 A React SDK for [BuildBase](https://www.buildbase.app/) that provides essential components to build SaaS applications faster. Skip the plumbing and focus on your core product with built-in authentication, workspace management, and user management.
 
+## 📑 Table of Contents
+
+- [Features](#-features)
+- [Installation](#-installation)
+- [Quick Start](#-quick-start)
+- [Authentication](#-authentication)
+- [Role-Based Access Control](#-role-based-access-control)
+- [Feature Flags](#️-feature-flags)
+- [User Management](#-user-management)
+- [Workspace Management](#-complete-workspace-management)
+- [Beta Form Component](#-beta-form-component)
+- [Event System](#-event-system)
+- [Error Handling](#️-error-handling)
+- [Settings](#️-settings)
+- [Configuration Reference](#️-configuration-reference)
+- [Common Patterns](#-common-patterns)
+- [Troubleshooting](#-troubleshooting)
+- [API Reference](#-api-reference)
+- [Best Practices](#-best-practices)
+
 ## 🚀 Features
 
 - **🔐 Authentication System** - Complete auth flow with sign-in/sign-out
 - **🏢 Workspace Management** - Multi-workspace support with switching capabilities
 - **👥 Role-Based Access Control** - User roles and workspace-specific permissions
-- **🎯 Feature Flags** - Workspace-level feature toggles
+- **🎯 Feature Flags** - Workspace-level and user-level feature toggles
+- **👤 User Management** - User attributes and feature flags management
+- **📝 Beta Form** - Pre-built signup/waitlist form component
+- **📡 Event System** - Subscribe to user and workspace events
+- **🛡️ Error Handling** - Centralized error handling with error boundaries
 
 ## 📦 Installation
 
@@ -53,38 +77,23 @@ export default function SaaSProvider(props: { children: React.ReactNode }) {
         clientId: 'your-client-id',
         redirectUrl: 'http://localhost:3000',
         callbacks: {
-          verifyToken: async token => {
-            return new Promise(resolve => {
-              fetch('/api/auth/verify', {
-                method: 'POST',
-                body: JSON.stringify({ token }),
-              })
-                .then(response => response.json())
-                .then((data: { valid: boolean }) => {
-                  resolve(data?.valid ?? false);
-                })
-                .catch(error => {
-                  console.error(error);
-                  resolve(false);
-                });
+          handleAuthentication: async (code: string) => {
+            // Exchange OAuth code for session ID
+            const response = await fetch('/api/auth/token', {
+              method: 'POST',
+              body: JSON.stringify({ code }),
             });
+            const data = await response.json();
+            // Return sessionId - SDK will use this for authenticated requests
+            return { sessionId: data.sessionId };
           },
-          handleAuthentication: async token => {
-            return new Promise(resolve => {
-              fetch('/api/auth/token', {
-                method: 'POST',
-                body: JSON.stringify({ token }),
-              })
-                .then(response => response.json())
-                .then((data: { token: string; decoded: { id: string } }) => {
-                  localStorage.setItem('auth_token', data?.token ?? '');
-                  resolve();
-                })
-                .catch(error => {
-                  console.error(error);
-                  resolve();
-                });
-            });
+          onSignOut: async () => {
+            // Clean up any custom tokens/storage on sign out
+            localStorage.removeItem('custom_token');
+          },
+          handleEvent: async (eventType, data) => {
+            // Handle SDK events (user created, workspace changed, etc.)
+            console.log('SDK Event:', eventType, data);
           },
         },
       }}
@@ -124,7 +133,11 @@ import { WorkspaceSwitcher } from '@buildbase/sdk';
 function WorkspaceExample() {
   return (
     <WorkspaceSwitcher
-      trigger={currentWorkspace => {
+      trigger={(isLoading, currentWorkspace) => {
+        if (isLoading) {
+          return <div>Loading...</div>;
+        }
+
         if (!currentWorkspace) {
           return (
             <div className="flex items-center gap-2 min-w-40 border rounded-md p-2 hover:bg-muted cursor-pointer">
@@ -195,10 +208,14 @@ function AuthExample() {
 ```tsx
 const {
   user, // Current user object (null if not authenticated)
+  session, // Full session object with user and sessionId
   isAuthenticated, // Boolean: true if user is authenticated
+  isLoading, // Boolean: true when checking authentication status
+  isRedirecting, // Boolean: true when redirecting for OAuth
+  status, // String: 'idle' | 'loading' | 'authenticated' | 'error'
   signIn, // Function: initiates sign-in flow
   signOut, // Function: signs out the user
-  status, // String: 'idle' | 'loading' | 'authenticated' | 'error'
+  openWorkspaceSettings, // Function: opens workspace settings dialog
 } = useSaaSAuth();
 ```
 
@@ -257,14 +274,20 @@ function AdminPanel() {
 
 ## 🎛️ Feature Flags
 
-Control feature visibility based on workspace settings:
+Control feature visibility based on workspace and user settings:
 
 ```tsx
-import { WhenWorkspaceFeatureEnabled, WhenWorkspaceFeatureDisabled } from '@buildbase/sdk';
+import { 
+  WhenWorkspaceFeatureEnabled, 
+  WhenWorkspaceFeatureDisabled,
+  WhenUserFeatureEnabled,
+  WhenUserFeatureDisabled 
+} from '@buildbase/sdk';
 
 function FeatureExample() {
   return (
     <div>
+      {/* Workspace-level features */}
       <WhenWorkspaceFeatureEnabled slug="advanced-analytics">
         <AdvancedAnalytics />
       </WhenWorkspaceFeatureEnabled>
@@ -272,9 +295,770 @@ function FeatureExample() {
       <WhenWorkspaceFeatureDisabled slug="beta-features">
         <p>Beta features are not enabled for this workspace</p>
       </WhenWorkspaceFeatureDisabled>
+
+      {/* User-level features */}
+      <WhenUserFeatureEnabled slug="premium-features">
+        <PremiumDashboard />
+      </WhenUserFeatureEnabled>
+
+      <WhenUserFeatureDisabled slug="trial-mode">
+        <UpgradePrompt />
+      </WhenUserFeatureDisabled>
     </div>
   );
 }
+```
+
+### Feature Flags Hook
+
+Use the `useUserFeatures` hook to check feature flags programmatically:
+
+```tsx
+import { useUserFeatures } from '@buildbase/sdk';
+
+function FeatureCheck() {
+  const { features, isFeatureEnabled, refreshFeatures } = useUserFeatures();
+
+  return (
+    <div>
+      {isFeatureEnabled('premium-features') ? (
+        <PremiumContent />
+      ) : (
+        <StandardContent />
+      )}
+    </div>
+  );
+}
+```
+
+## 👤 User Management
+
+### User Attributes
+
+Manage custom user attributes (key-value pairs):
+
+```tsx
+import { useUserAttributes } from '@buildbase/sdk';
+
+function UserProfile() {
+  const { 
+    attributes, 
+    isLoading, 
+    updateAttribute, 
+    updateAttributes, 
+    refreshAttributes 
+  } = useUserAttributes();
+
+  const handleUpdate = async () => {
+    // Update single attribute
+    await updateAttribute('theme', 'dark');
+    
+    // Or update multiple attributes
+    await updateAttributes({
+      theme: 'dark',
+      notifications: true,
+      language: 'en'
+    });
+  };
+
+  return (
+    <div>
+      <p>Theme: {attributes.theme}</p>
+      <button onClick={handleUpdate}>Update Preferences</button>
+    </div>
+  );
+}
+```
+
+## 🏢 Complete Workspace Management
+
+The `useSaaSWorkspaces` hook provides comprehensive workspace management:
+
+```tsx
+import { useSaaSWorkspaces } from '@buildbase/sdk';
+
+function WorkspaceManager() {
+  const {
+    workspaces,              // Array of all workspaces
+    currentWorkspace,        // Currently selected workspace
+    loading,                 // Loading state
+    refreshing,              // Refreshing state
+    error,                   // Error message
+    fetchWorkspaces,         // Fetch all workspaces
+    refreshWorkspaces,        // Background refresh
+    setCurrentWorkspace,      // Switch workspace
+    createWorkspace,          // Create new workspace
+    updateWorkspace,          // Update workspace
+    deleteWorkspace,          // Delete workspace
+    getUsers,                // Get workspace users
+    addUser,                 // Add user to workspace
+    removeUser,               // Remove user from workspace
+    updateUser,               // Update user role/permissions
+    getFeatures,             // Get all available features
+    updateFeature,            // Toggle workspace feature
+    getProfile,               // Get current user profile
+    updateUserProfile,         // Update user profile
+  } = useSaaSWorkspaces();
+
+  // Example: Create a workspace
+  const handleCreate = async () => {
+    await createWorkspace('My Workspace', 'https://example.com/logo.png');
+  };
+
+  // Example: Add user to workspace
+  const handleAddUser = async () => {
+    await addUser(currentWorkspace._id, 'user@example.com', 'member');
+  };
+
+  return (
+    <div>
+      {/* Your workspace UI */}
+    </div>
+  );
+}
+```
+
+## 📝 Beta Form Component
+
+Use the pre-built `BetaForm` component for signup/waitlist forms:
+
+```tsx
+import { BetaForm } from '@buildbase/sdk';
+
+function SignupPage() {
+  return (
+    <BetaForm
+      onSuccess={() => console.log('Form submitted!')}
+      onError={(error) => console.error(error)}
+      language="en" // Optional: 'en' | 'es' | 'fr' | 'de' | 'zh' | 'ja' | 'ko'
+      showSuccessMessage={true}
+      hideLogo={false}
+      hideTitles={false}
+    />
+  );
+}
+```
+
+## 📡 Event System
+
+Subscribe to SDK events for user and workspace changes:
+
+```tsx
+import { SaaSOSProvider, eventEmitter } from '@buildbase/sdk';
+
+// In your provider configuration
+<SaaSOSProvider
+  auth={{
+    callbacks: {
+      handleEvent: async (eventType, data) => {
+        switch (eventType) {
+          case 'user:created':
+            console.log('User created:', data.user);
+            break;
+          case 'workspace:changed':
+            console.log('Workspace changed:', data.workspace);
+            break;
+          case 'workspace:user-added':
+            console.log('User added to workspace:', data.userId);
+            break;
+          // ... handle other events
+        }
+      },
+    },
+  }}
+>
+  {children}
+</SaaSOSProvider>
+```
+
+### Available Events
+
+- `user:created` - User account created
+- `user:updated` - User profile updated
+- `workspace:changed` - Workspace switched
+- `workspace:created` - New workspace created
+- `workspace:updated` - Workspace updated
+- `workspace:deleted` - Workspace deleted
+- `workspace:user-added` - User added to workspace
+- `workspace:user-removed` - User removed from workspace
+- `workspace:user-role-changed` - User role changed
+
+## 🛡️ Error Handling
+
+The SDK provides comprehensive error handling:
+
+```tsx
+import { 
+  ErrorBoundary, 
+  SDKError, 
+  handleError,
+  errorHandler 
+} from '@buildbase/sdk';
+
+// Wrap your app with ErrorBoundary
+function App() {
+  return (
+    <ErrorBoundary>
+      <YourApp />
+    </ErrorBoundary>
+  );
+}
+
+// Configure error handler
+errorHandler.configure({
+  enableConsoleLogging: true,
+  showUserNotifications: false,
+  onError: (error, context) => {
+    // Custom error handling
+    console.error('SDK Error:', error, context);
+  },
+});
+
+// Use handleError in your code
+try {
+  // Some operation
+} catch (error) {
+  handleError(error, {
+    component: 'MyComponent',
+    action: 'handleSubmit',
+    metadata: { userId: '123' },
+  });
+}
+```
+
+## ⚙️ Settings
+
+Access OS-level settings:
+
+```tsx
+import { useSaaSSettings } from '@buildbase/sdk';
+
+function SettingsExample() {
+  const { settings, getSettings } = useSaaSSettings();
+
+  return (
+    <div>
+      <p>Max Workspaces: {settings?.workspace.maxWorkspaces}</p>
+    </div>
+  );
+}
+```
+
+## 📚 API Reference
+
+### Enums
+
+- `ApiVersion` - API version enum (currently only `V1`)
+
+### Types
+
+All TypeScript types are exported for type safety. See the [TypeScript definitions](./dist/index.d.ts) for complete type information.
+
+## ⚙️ Configuration Reference
+
+### SaaSOSProvider Props
+
+| Prop        | Type          | Required | Description                                                                 |
+| ---------- | ------------- | -------- | --------------------------------------------------------------------------- |
+| `serverUrl` | `string`      | ✅       | API server URL (must be valid URL)                                          |
+| `version`   | `ApiVersion`  | ✅       | API version (currently only `'v1'`)                                        |
+| `orgId`     | `string`      | ✅       | Organization ID (must be valid MongoDB ObjectId - 24 hex characters)        |
+| `auth`      | `IAuthConfig` | ❌       | Authentication configuration                                                |
+| `children`  | `ReactNode`   | ✅       | React children                                                               |
+
+### Auth Configuration
+
+```tsx
+interface IAuthConfig {
+  clientId: string;                    // OAuth client ID
+  redirectUrl: string;                  // OAuth redirect URL
+  callbacks?: {
+    handleAuthentication: (code: string) => Promise<{ sessionId: string }>;
+    onSignOut?: () => Promise<void>;
+    handleEvent?: (eventType: EventType, data: EventData) => void | Promise<void>;
+  };
+}
+```
+
+### Validation Requirements
+
+- **serverUrl**: Must be a valid URL (e.g., `https://api.example.com`)
+- **version**: Must be exactly `'v1'` (only supported version)
+- **orgId**: Must be a valid MongoDB ObjectId (24 hexadecimal characters, e.g., `507f1f77bcf86cd799439011`)
+
+### BetaForm Props
+
+| Prop                  | Type                                                          | Default              | Description                              |
+| --------------------- | ------------------------------------------------------------- | -------------------- | ---------------------------------------- |
+| `onSuccess`           | `() => void`                                                  | -                    | Callback when form submits successfully  |
+| `onError`             | `(error: string) => void`                                   | -                    | Callback when form submission fails      |
+| `className`           | `string`                                                      | `'w-full'`           | CSS class for form container             |
+| `fieldClassName`     | `string`                                                      | `'flex flex-col gap-1.5 w-full'` | CSS class for form fields |
+| `language`            | `'en' \| 'es' \| 'fr' \| 'de' \| 'zh' \| 'ja' \| 'ko'`       | Auto-detect          | Form language                            |
+| `customTexts`         | `Partial<FormText>`                                           | `{}`                 | Custom text overrides                    |
+| `autoFocus`           | `boolean`                                                     | `true`               | Auto-focus name field                    |
+| `showSuccessMessage` | `boolean`                                                     | `true`               | Show success message after submit        |
+| `successMessageDuration` | `number`                                                  | -                    | Duration to show success message (ms)    |
+| `hideLogo`            | `boolean`                                                     | `false`              | Hide logo                                |
+| `hideTitles`          | `boolean`                                                     | `false`              | Hide titles                              |
+
+## 🎯 Common Patterns
+
+### Pattern 1: Protected Routes
+
+```tsx
+import { WhenAuthenticated, WhenUnauthenticated } from '@buildbase/sdk';
+
+function App() {
+  return (
+    <WhenUnauthenticated>
+      <LoginPage />
+    </WhenUnauthenticated>
+    
+    <WhenAuthenticated>
+      <ProtectedRoutes />
+    </WhenAuthenticated>
+  );
+}
+
+function ProtectedRoutes() {
+  return (
+    <Routes>
+      <Route path="/dashboard" element={<Dashboard />} />
+      <Route path="/settings" element={<Settings />} />
+    </Routes>
+  );
+}
+```
+
+### Pattern 2: Role-Based Navigation
+
+```tsx
+import { WhenRoles } from '@buildbase/sdk';
+
+function Navigation() {
+  return (
+    <nav>
+      <Link to="/dashboard">Dashboard</Link>
+      <Link to="/projects">Projects</Link>
+      
+      <WhenRoles roles={['admin', 'owner']}>
+        <Link to="/admin">Admin Panel</Link>
+      </WhenRoles>
+      
+      <WhenRoles roles={['admin']}>
+        <Link to="/settings">Settings</Link>
+      </WhenRoles>
+    </nav>
+  );
+}
+```
+
+### Pattern 3: Workspace Context Provider
+
+```tsx
+import { useSaaSWorkspaces } from '@buildbase/sdk';
+import { createContext, useContext } from 'react';
+
+const WorkspaceContext = createContext(null);
+
+export function WorkspaceProvider({ children }) {
+  const workspaceData = useSaaSWorkspaces();
+  
+  return (
+    <WorkspaceContext.Provider value={workspaceData}>
+      {children}
+    </WorkspaceContext.Provider>
+  );
+}
+
+export function useWorkspace() {
+  return useContext(WorkspaceContext);
+}
+```
+
+### Pattern 4: Feature Gated Components
+
+```tsx
+import { WhenWorkspaceFeatureEnabled } from '@buildbase/sdk';
+
+function Dashboard() {
+  return (
+    <div>
+      <StandardFeatures />
+      
+      <WhenWorkspaceFeatureEnabled slug="advanced-analytics">
+        <AdvancedAnalytics />
+      </WhenWorkspaceFeatureEnabled>
+      
+      <WhenWorkspaceFeatureEnabled slug="ai-assistant">
+        <AIAssistant />
+      </WhenWorkspaceFeatureEnabled>
+    </div>
+  );
+}
+```
+
+### Pattern 5: Handling Workspace Changes
+
+```tsx
+import { useSaaSWorkspaces } from '@buildbase/sdk';
+import { useEffect } from 'react';
+
+function App() {
+  const { currentWorkspace, setCurrentWorkspace } = useSaaSWorkspaces();
+  
+  useEffect(() => {
+    if (currentWorkspace) {
+      // Update your app state when workspace changes
+      console.log('Workspace changed:', currentWorkspace);
+      // Reload data, update context, etc.
+    }
+  }, [currentWorkspace]);
+  
+  return <YourApp />;
+}
+```
+
+### Pattern 6: Error Boundary with Custom Fallback
+
+```tsx
+import { ErrorBoundary, SDKError } from '@buildbase/sdk';
+
+function CustomErrorFallback({ error, resetError }) {
+  if (error instanceof SDKError) {
+    return (
+      <div>
+        <h2>SDK Error: {error.message}</h2>
+        <button onClick={resetError}>Try Again</button>
+      </div>
+    );
+  }
+  
+  return (
+    <div>
+      <h2>Something went wrong</h2>
+      <button onClick={resetError}>Reload</button>
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <ErrorBoundary fallback={CustomErrorFallback}>
+      <YourApp />
+    </ErrorBoundary>
+  );
+}
+```
+
+## 🔧 Troubleshooting
+
+### Common Issues
+
+#### 1. "Invalid orgId" Error
+
+**Problem**: `orgId` must be a valid MongoDB ObjectId (24 hexadecimal characters).
+
+**Solution**:
+
+```tsx
+// ❌ Wrong
+orgId="123"
+
+// ✅ Correct
+orgId="507f1f77bcf86cd799439011" // 24 hex characters
+```
+
+#### 2. "Invalid serverUrl" Error
+
+**Problem**: `serverUrl` must be a valid URL.
+
+**Solution**:
+
+```tsx
+// ❌ Wrong
+serverUrl="api.example.com"
+serverUrl="not-a-url"
+
+// ✅ Correct
+serverUrl="https://api.example.com"
+serverUrl="http://localhost:3000"
+```
+
+#### 3. Authentication Not Working
+
+**Problem**: User can't sign in or session not persisting.
+
+**Solutions**:
+
+- Ensure `handleAuthentication` callback returns `{ sessionId: string }`
+- Check that your backend API is correctly exchanging the OAuth code
+- Verify `redirectUrl` matches your OAuth app configuration
+- Check browser console for error messages
+
+```tsx
+// ✅ Correct callback
+handleAuthentication: async (code: string) => {
+  const response = await fetch('/api/auth/token', {
+    method: 'POST',
+    body: JSON.stringify({ code }),
+  });
+  const data = await response.json();
+  return { sessionId: data.sessionId }; // Must return sessionId
+}
+```
+
+#### 4. Workspace Not Loading
+
+**Problem**: Workspaces array is empty or not updating.
+
+**Solutions**:
+
+- Ensure user is authenticated before fetching workspaces
+- Call `fetchWorkspaces()` explicitly if needed
+- Check network tab for API errors
+- Verify user has access to workspaces
+
+```tsx
+const { fetchWorkspaces, workspaces } = useSaaSWorkspaces();
+
+useEffect(() => {
+  if (isAuthenticated) {
+    fetchWorkspaces(); // Explicitly fetch if needed
+  }
+}, [isAuthenticated]);
+```
+
+#### 5. Feature Flags Not Working
+
+**Problem**: Feature flags always return false or undefined.
+
+**Solutions**:
+
+- Ensure `getFeatures()` is called (usually automatic)
+- Check that feature slugs match your backend configuration
+- Verify workspace has the feature enabled
+- Check user has the feature enabled (for user-level features)
+
+```tsx
+const { getFeatures, currentWorkspace } = useSaaSWorkspaces();
+
+useEffect(() => {
+  getFeatures(); // Ensure features are loaded
+}, []);
+```
+
+#### 6. TypeScript Errors
+
+**Problem**: Type errors when using the SDK.
+
+**Solutions**:
+
+- Ensure you're using React 19+ (check peer dependencies)
+- Import types explicitly if needed:
+
+  ```tsx
+  import type { IWorkspace, IUser } from '@buildbase/sdk';
+  ```
+
+- Check that all required props are provided
+
+#### 7. CSS Not Loading
+
+**Problem**: Components look unstyled.
+
+**Solution**: Ensure CSS is imported:
+
+```tsx
+import '@buildbase/sdk/dist/saas-os.css';
+```
+
+### FAQ
+
+**Q: Can I use this with Next.js?**  
+A: Yes! Just ensure you use `'use client'` directive in components using SDK hooks.
+
+**Q: Can I use this with other React frameworks?**  
+A: Yes, as long as you're using React 19+.
+
+**Q: How do I customize the workspace switcher UI?**  
+A: Use the `trigger` render prop to fully customize the UI.
+
+**Q: Can I use multiple workspaces simultaneously?**  
+A: No, the SDK manages one current workspace at a time. Switch between workspaces using `setCurrentWorkspace()`.
+
+**Q: How do I handle offline scenarios?**  
+A: The SDK stores session data in localStorage. Handle offline scenarios in your `handleAuthentication` callback.
+
+**Q: Can I use this without TypeScript?**  
+A: Yes, but TypeScript is recommended for better developer experience.
+
+## 💡 Best Practices
+
+### 1. Provider Setup
+
+✅ **Do**: Wrap your entire app with `SaaSOSProvider` at the root level.
+
+```tsx
+// ✅ Good
+function App() {
+  return (
+    <SaaSOSProvider {...config}>
+      <YourApp />
+    </SaaSOSProvider>
+  );
+}
+```
+
+❌ **Don't**: Nest providers or use multiple instances.
+
+```tsx
+// ❌ Bad
+<SaaSOSProvider>
+  <SaaSOSProvider> {/* Don't nest */}
+    <App />
+  </SaaSOSProvider>
+</SaaSOSProvider>
+```
+
+### 2. Error Handling
+
+✅ **Do**: Wrap your app with `ErrorBoundary` and configure error handler.
+
+```tsx
+// ✅ Good
+<ErrorBoundary>
+  <SaaSOSProvider {...config}>
+    <App />
+  </SaaSOSProvider>
+</ErrorBoundary>
+```
+
+✅ **Do**: Use `handleError` for custom error handling.
+
+```tsx
+try {
+  await someOperation();
+} catch (error) {
+  handleError(error, {
+    component: 'MyComponent',
+    action: 'operation',
+  });
+}
+```
+
+### 3. Workspace Management
+
+✅ **Do**: Use `useSaaSWorkspaces` hook for workspace operations.
+
+```tsx
+// ✅ Good
+const { currentWorkspace, setCurrentWorkspace } = useSaaSWorkspaces();
+```
+
+❌ **Don't**: Manually manage workspace state.
+
+```tsx
+// ❌ Bad
+const [workspace, setWorkspace] = useState(null); // Don't do this
+```
+
+### 4. Feature Flags
+
+✅ **Do**: Use feature flag components for conditional rendering.
+
+```tsx
+// ✅ Good
+<WhenWorkspaceFeatureEnabled slug="feature">
+  <FeatureComponent />
+</WhenWorkspaceFeatureEnabled>
+```
+
+✅ **Do**: Check features programmatically when needed.
+
+```tsx
+// ✅ Good
+const { isFeatureEnabled } = useUserFeatures();
+if (isFeatureEnabled('premium')) {
+  // Do something
+}
+```
+
+### 5. Authentication
+
+✅ **Do**: Use `WhenAuthenticated`/`WhenUnauthenticated` for route protection.
+
+```tsx
+// ✅ Good
+<WhenAuthenticated>
+  <ProtectedRoute />
+</WhenAuthenticated>
+```
+
+✅ **Do**: Handle authentication errors gracefully.
+
+```tsx
+// ✅ Good
+const { signIn, status } = useSaaSAuth();
+<button onClick={signIn} disabled={status === 'loading'}>
+  {status === 'loading' ? 'Signing in...' : 'Sign In'}
+</button>
+```
+
+### 6. Event Handling
+
+✅ **Do**: Handle events in your provider configuration.
+
+```tsx
+// ✅ Good
+<SaaSOSProvider
+  auth={{
+    callbacks: {
+      handleEvent: async (eventType, data) => {
+        // Handle events
+        if (eventType === 'workspace:changed') {
+          // Update your app state
+        }
+      },
+    },
+  }}
+>
+```
+
+### 7. TypeScript
+
+✅ **Do**: Use TypeScript for better type safety.
+
+```tsx
+// ✅ Good
+import type { IWorkspace, IUser } from '@buildbase/sdk';
+
+function MyComponent({ workspace }: { workspace: IWorkspace }) {
+  // Type-safe code
+}
+```
+
+### 8. Performance
+
+✅ **Do**: Memoize expensive computations.
+
+```tsx
+// ✅ Good
+const filteredWorkspaces = useMemo(
+  () => workspaces.filter(w => w.active),
+  [workspaces]
+);
+```
+
+✅ **Do**: Use `refreshWorkspaces()` for background updates instead of `fetchWorkspaces()`.
+
+```tsx
+// ✅ Good - doesn't block UI
+refreshWorkspaces();
+
+// Use fetchWorkspaces() only when you need to wait for the result
+await fetchWorkspaces();
 ```
 
 ## 🤝 Contributing
@@ -291,7 +1075,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🆘 Support
 
-- 📧 Email: support@buildbase.app
+- 📧 Email: [support@buildbase.app](mailto:support@buildbase.app)
 - 📖 Documentation: [BuildBase Docs](https://docs.buildbase.app/)
 
 ## 🔗 Links
