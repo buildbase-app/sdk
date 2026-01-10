@@ -277,11 +277,11 @@ function AdminPanel() {
 Control feature visibility based on workspace and user settings:
 
 ```tsx
-import { 
-  WhenWorkspaceFeatureEnabled, 
+import {
+  WhenWorkspaceFeatureEnabled,
   WhenWorkspaceFeatureDisabled,
   WhenUserFeatureEnabled,
-  WhenUserFeatureDisabled 
+  WhenUserFeatureDisabled,
 } from '@buildbase/sdk';
 
 function FeatureExample() {
@@ -320,13 +320,7 @@ function FeatureCheck() {
   const { features, isFeatureEnabled, refreshFeatures } = useUserFeatures();
 
   return (
-    <div>
-      {isFeatureEnabled('premium-features') ? (
-        <PremiumContent />
-      ) : (
-        <StandardContent />
-      )}
-    </div>
+    <div>{isFeatureEnabled('premium-features') ? <PremiumContent /> : <StandardContent />}</div>
   );
 }
 ```
@@ -341,23 +335,18 @@ Manage custom user attributes (key-value pairs):
 import { useUserAttributes } from '@buildbase/sdk';
 
 function UserProfile() {
-  const { 
-    attributes, 
-    isLoading, 
-    updateAttribute, 
-    updateAttributes, 
-    refreshAttributes 
-  } = useUserAttributes();
+  const { attributes, isLoading, updateAttribute, updateAttributes, refreshAttributes } =
+    useUserAttributes();
 
   const handleUpdate = async () => {
     // Update single attribute
     await updateAttribute('theme', 'dark');
-    
+
     // Or update multiple attributes
     await updateAttributes({
       theme: 'dark',
       notifications: true,
-      language: 'en'
+      language: 'en',
     });
   };
 
@@ -379,25 +368,25 @@ import { useSaaSWorkspaces } from '@buildbase/sdk';
 
 function WorkspaceManager() {
   const {
-    workspaces,              // Array of all workspaces
-    currentWorkspace,        // Currently selected workspace
-    loading,                 // Loading state
-    refreshing,              // Refreshing state
-    error,                   // Error message
-    fetchWorkspaces,         // Fetch all workspaces
-    refreshWorkspaces,        // Background refresh
-    setCurrentWorkspace,      // Switch workspace
-    createWorkspace,          // Create new workspace
-    updateWorkspace,          // Update workspace
-    deleteWorkspace,          // Delete workspace
-    getUsers,                // Get workspace users
-    addUser,                 // Add user to workspace
-    removeUser,               // Remove user from workspace
-    updateUser,               // Update user role/permissions
-    getFeatures,             // Get all available features
-    updateFeature,            // Toggle workspace feature
-    getProfile,               // Get current user profile
-    updateUserProfile,         // Update user profile
+    workspaces, // Array of all workspaces
+    currentWorkspace, // Currently selected workspace
+    loading, // Loading state
+    refreshing, // Refreshing state
+    error, // Error message
+    fetchWorkspaces, // Fetch all workspaces
+    refreshWorkspaces, // Background refresh
+    setCurrentWorkspace, // Switch workspace
+    createWorkspace, // Create new workspace
+    updateWorkspace, // Update workspace
+    deleteWorkspace, // Delete workspace
+    getUsers, // Get workspace users
+    addUser, // Add user to workspace
+    removeUser, // Remove user from workspace
+    updateUser, // Update user role/permissions
+    getFeatures, // Get all available features
+    updateFeature, // Toggle workspace feature
+    getProfile, // Get current user profile
+    updateUserProfile, // Update user profile
   } = useSaaSWorkspaces();
 
   // Example: Create a workspace
@@ -410,11 +399,7 @@ function WorkspaceManager() {
     await addUser(currentWorkspace._id, 'user@example.com', 'member');
   };
 
-  return (
-    <div>
-      {/* Your workspace UI */}
-    </div>
-  );
+  return <div>{/* Your workspace UI */}</div>;
 }
 ```
 
@@ -429,7 +414,7 @@ function SignupPage() {
   return (
     <BetaForm
       onSuccess={() => console.log('Form submitted!')}
-      onError={(error) => console.error(error)}
+      onError={error => console.error(error)}
       language="en" // Optional: 'en' | 'es' | 'fr' | 'de' | 'zh' | 'ja' | 'ko'
       showSuccessMessage={true}
       hideLogo={false}
@@ -468,7 +453,7 @@ import { SaaSOSProvider, eventEmitter } from '@buildbase/sdk';
   }}
 >
   {children}
-</SaaSOSProvider>
+</SaaSOSProvider>;
 ```
 
 ### Available Events
@@ -488,12 +473,7 @@ import { SaaSOSProvider, eventEmitter } from '@buildbase/sdk';
 The SDK provides comprehensive error handling:
 
 ```tsx
-import { 
-  ErrorBoundary, 
-  SDKError, 
-  handleError,
-  errorHandler 
-} from '@buildbase/sdk';
+import { ErrorBoundary, SDKError, handleError, errorHandler } from '@buildbase/sdk';
 
 // Wrap your app with ErrorBoundary
 function App() {
@@ -558,20 +538,20 @@ All TypeScript types are exported for type safety. See the [TypeScript definitio
 
 ### SaaSOSProvider Props
 
-| Prop        | Type          | Required | Description                                                                 |
-| ---------- | ------------- | -------- | --------------------------------------------------------------------------- |
-| `serverUrl` | `string`      | ✅       | API server URL (must be valid URL)                                          |
-| `version`   | `ApiVersion`  | ✅       | API version (currently only `'v1'`)                                        |
-| `orgId`     | `string`      | ✅       | Organization ID (must be valid MongoDB ObjectId - 24 hex characters)        |
-| `auth`      | `IAuthConfig` | ❌       | Authentication configuration                                                |
-| `children`  | `ReactNode`   | ✅       | React children                                                               |
+| Prop        | Type          | Required | Description                                                          |
+| ----------- | ------------- | -------- | -------------------------------------------------------------------- |
+| `serverUrl` | `string`      | ✅       | API server URL (must be valid URL)                                   |
+| `version`   | `ApiVersion`  | ✅       | API version (currently only `'v1'`)                                  |
+| `orgId`     | `string`      | ✅       | Organization ID (must be valid MongoDB ObjectId - 24 hex characters) |
+| `auth`      | `IAuthConfig` | ❌       | Authentication configuration                                         |
+| `children`  | `ReactNode`   | ✅       | React children                                                       |
 
 ### Auth Configuration
 
 ```tsx
 interface IAuthConfig {
-  clientId: string;                    // OAuth client ID
-  redirectUrl: string;                  // OAuth redirect URL
+  clientId: string; // OAuth client ID
+  redirectUrl: string; // OAuth redirect URL
   callbacks?: {
     handleAuthentication: (code: string) => Promise<{ sessionId: string }>;
     onSignOut?: () => Promise<void>;
@@ -588,19 +568,19 @@ interface IAuthConfig {
 
 ### BetaForm Props
 
-| Prop                  | Type                                                          | Default              | Description                              |
-| --------------------- | ------------------------------------------------------------- | -------------------- | ---------------------------------------- |
-| `onSuccess`           | `() => void`                                                  | -                    | Callback when form submits successfully  |
-| `onError`             | `(error: string) => void`                                   | -                    | Callback when form submission fails      |
-| `className`           | `string`                                                      | `'w-full'`           | CSS class for form container             |
-| `fieldClassName`     | `string`                                                      | `'flex flex-col gap-1.5 w-full'` | CSS class for form fields |
-| `language`            | `'en' \| 'es' \| 'fr' \| 'de' \| 'zh' \| 'ja' \| 'ko'`       | Auto-detect          | Form language                            |
-| `customTexts`         | `Partial<FormText>`                                           | `{}`                 | Custom text overrides                    |
-| `autoFocus`           | `boolean`                                                     | `true`               | Auto-focus name field                    |
-| `showSuccessMessage` | `boolean`                                                     | `true`               | Show success message after submit        |
-| `successMessageDuration` | `number`                                                  | -                    | Duration to show success message (ms)    |
-| `hideLogo`            | `boolean`                                                     | `false`              | Hide logo                                |
-| `hideTitles`          | `boolean`                                                     | `false`              | Hide titles                              |
+| Prop                     | Type                                                   | Default                          | Description                             |
+| ------------------------ | ------------------------------------------------------ | -------------------------------- | --------------------------------------- |
+| `onSuccess`              | `() => void`                                           | -                                | Callback when form submits successfully |
+| `onError`                | `(error: string) => void`                              | -                                | Callback when form submission fails     |
+| `className`              | `string`                                               | `'w-full'`                       | CSS class for form container            |
+| `fieldClassName`         | `string`                                               | `'flex flex-col gap-1.5 w-full'` | CSS class for form fields               |
+| `language`               | `'en' \| 'es' \| 'fr' \| 'de' \| 'zh' \| 'ja' \| 'ko'` | Auto-detect                      | Form language                           |
+| `customTexts`            | `Partial<FormText>`                                    | `{}`                             | Custom text overrides                   |
+| `autoFocus`              | `boolean`                                              | `true`                           | Auto-focus name field                   |
+| `showSuccessMessage`     | `boolean`                                              | `true`                           | Show success message after submit       |
+| `successMessageDuration` | `number`                                               | -                                | Duration to show success message (ms)   |
+| `hideLogo`               | `boolean`                                              | `false`                          | Hide logo                               |
+| `hideTitles`             | `boolean`                                              | `false`                          | Hide titles                             |
 
 ## 🎯 Common Patterns
 
@@ -614,7 +594,7 @@ function App() {
     <WhenUnauthenticated>
       <LoginPage />
     </WhenUnauthenticated>
-    
+
     <WhenAuthenticated>
       <ProtectedRoutes />
     </WhenAuthenticated>
@@ -641,11 +621,11 @@ function Navigation() {
     <nav>
       <Link to="/dashboard">Dashboard</Link>
       <Link to="/projects">Projects</Link>
-      
+
       <WhenRoles roles={['admin', 'owner']}>
         <Link to="/admin">Admin Panel</Link>
       </WhenRoles>
-      
+
       <WhenRoles roles={['admin']}>
         <Link to="/settings">Settings</Link>
       </WhenRoles>
@@ -664,12 +644,8 @@ const WorkspaceContext = createContext(null);
 
 export function WorkspaceProvider({ children }) {
   const workspaceData = useSaaSWorkspaces();
-  
-  return (
-    <WorkspaceContext.Provider value={workspaceData}>
-      {children}
-    </WorkspaceContext.Provider>
-  );
+
+  return <WorkspaceContext.Provider value={workspaceData}>{children}</WorkspaceContext.Provider>;
 }
 
 export function useWorkspace() {
@@ -686,11 +662,11 @@ function Dashboard() {
   return (
     <div>
       <StandardFeatures />
-      
+
       <WhenWorkspaceFeatureEnabled slug="advanced-analytics">
         <AdvancedAnalytics />
       </WhenWorkspaceFeatureEnabled>
-      
+
       <WhenWorkspaceFeatureEnabled slug="ai-assistant">
         <AIAssistant />
       </WhenWorkspaceFeatureEnabled>
@@ -707,7 +683,7 @@ import { useEffect } from 'react';
 
 function App() {
   const { currentWorkspace, setCurrentWorkspace } = useSaaSWorkspaces();
-  
+
   useEffect(() => {
     if (currentWorkspace) {
       // Update your app state when workspace changes
@@ -715,7 +691,7 @@ function App() {
       // Reload data, update context, etc.
     }
   }, [currentWorkspace]);
-  
+
   return <YourApp />;
 }
 ```
@@ -734,7 +710,7 @@ function CustomErrorFallback({ error, resetError }) {
       </div>
     );
   }
-  
+
   return (
     <div>
       <h2>Something went wrong</h2>
@@ -764,10 +740,10 @@ function App() {
 
 ```tsx
 // ❌ Wrong
-orgId="123"
+orgId = '123';
 
 // ✅ Correct
-orgId="507f1f77bcf86cd799439011" // 24 hex characters
+orgId = '507f1f77bcf86cd799439011'; // 24 hex characters
 ```
 
 #### 2. "Invalid serverUrl" Error
@@ -778,12 +754,12 @@ orgId="507f1f77bcf86cd799439011" // 24 hex characters
 
 ```tsx
 // ❌ Wrong
-serverUrl="api.example.com"
-serverUrl="not-a-url"
+serverUrl = 'api.example.com';
+serverUrl = 'not-a-url';
 
 // ✅ Correct
-serverUrl="https://api.example.com"
-serverUrl="http://localhost:3000"
+serverUrl = 'https://api.example.com';
+serverUrl = 'http://localhost:3000';
 ```
 
 #### 3. Authentication Not Working
@@ -806,7 +782,7 @@ handleAuthentication: async (code: string) => {
   });
   const data = await response.json();
   return { sessionId: data.sessionId }; // Must return sessionId
-}
+};
 ```
 
 #### 4. Workspace Not Loading
@@ -916,7 +892,9 @@ function App() {
 ```tsx
 // ❌ Bad
 <SaaSOSProvider>
-  <SaaSOSProvider> {/* Don't nest */}
+  <SaaSOSProvider>
+    {' '}
+    {/* Don't nest */}
     <App />
   </SaaSOSProvider>
 </SaaSOSProvider>
@@ -1003,7 +981,7 @@ if (isFeatureEnabled('premium')) {
 const { signIn, status } = useSaaSAuth();
 <button onClick={signIn} disabled={status === 'loading'}>
   {status === 'loading' ? 'Signing in...' : 'Sign In'}
-</button>
+</button>;
 ```
 
 ### 6. Event Handling
@@ -1045,10 +1023,7 @@ function MyComponent({ workspace }: { workspace: IWorkspace }) {
 
 ```tsx
 // ✅ Good
-const filteredWorkspaces = useMemo(
-  () => workspaces.filter(w => w.active),
-  [workspaces]
-);
+const filteredWorkspaces = useMemo(() => workspaces.filter(w => w.active), [workspaces]);
 ```
 
 ✅ **Do**: Use `refreshWorkspaces()` for background updates instead of `fetchWorkspaces()`.

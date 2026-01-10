@@ -251,7 +251,16 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = React.memo(
       refreshAttributes,
       refreshFeatures,
     }),
-    [attributes, features, isLoading, error, updateAttributes, updateAttribute, refreshAttributes, refreshFeatures]
+    [
+      attributes,
+      features,
+      isLoading,
+      error,
+      updateAttributes,
+      updateAttribute,
+      refreshAttributes,
+      refreshFeatures,
+    ]
   );
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
