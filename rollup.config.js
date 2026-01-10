@@ -44,10 +44,10 @@ export default [
       }),
       json(),
       typescript({
-        tsconfig: './tsconfig.json',
+        tsconfig: './tsconfig.build.json',
         declaration: true,
         declarationDir: 'dist/types',
-        outDir: undefined,
+        rootDir: 'src',
       }),
       postcss({
         config: {
