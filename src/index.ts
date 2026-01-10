@@ -15,7 +15,12 @@ export { WhenAuthenticated, WhenUnauthenticated } from './components/user/auth';
 export { WhenRoles, WhenWorkspaceRoles } from './components/user/role';
 
 // Export features components
-export { WhenWorkspaceFeatureDisabled, WhenWorkspaceFeatureEnabled, WhenUserFeatureEnabled, WhenUserFeatureDisabled } from './components/features';
+export {
+  WhenUserFeatureDisabled,
+  WhenUserFeatureEnabled,
+  WhenWorkspaceFeatureDisabled,
+  WhenWorkspaceFeatureEnabled,
+} from './components/features';
 
 // Export hooks
 export { useSaaSAuth } from './providers/auth/hooks';

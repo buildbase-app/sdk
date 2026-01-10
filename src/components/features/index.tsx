@@ -1,5 +1,5 @@
-import { useSaaSWorkspaces } from '../../providers/workspace/hooks';
 import { useUserFeatures } from '../../providers/user/hooks';
+import { useSaaSWorkspaces } from '../../providers/workspace/hooks';
 
 interface IProps {
   slug: string;
