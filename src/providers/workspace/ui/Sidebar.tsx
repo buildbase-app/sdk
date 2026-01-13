@@ -1,4 +1,11 @@
-import { AlertTriangle, SettingsIcon, ToggleRight, UserIcon, UsersIcon } from 'lucide-react';
+import {
+  AlertTriangle,
+  CreditCard,
+  SettingsIcon,
+  ToggleRight,
+  UserIcon,
+  UsersIcon,
+} from 'lucide-react';
 import React from 'react';
 import { useAppSelector } from '../../../contexts';
 import { cn } from '../../../lib/utils';
@@ -82,6 +89,13 @@ const Sidebar: React.FC<Props> = ({ workspace, section, setSection }) => {
           label="Users"
           section="users"
           onClick={() => setSection('users')}
+        />
+        <SidebarItem
+          activeSection={section}
+          icon={<CreditCard className="h-3.5 w-3.5" />}
+          label="Subscription"
+          section="subscription"
+          onClick={() => setSection('subscription')}
         />
         <SidebarItem
           activeSection={section}

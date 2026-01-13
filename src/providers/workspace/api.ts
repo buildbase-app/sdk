@@ -1,4 +1,11 @@
-import { IUser } from '../../api/types';
+import {
+  IPlanGroupResponse,
+  IPlanGroupVersion,
+  ISubscriptionResponse,
+  ISubscriptionUpdateRequest,
+  ISubscriptionUpdateResponse,
+  IUser,
+} from '../../api/types';
 import { getAuthHeaders } from '../auth/utils';
 import { ApiVersion, IOsConfig } from '../os/types';
 import type { IWorkspace, IWorkspaceFeature, IWorkspaceUser } from './types';
@@ -186,5 +193,169 @@ export class WorkspaceApi {
     });
     if (!response.ok) throw new Error('Failed to update user profile');
     return response.json();
+  }
+
+  // Subscription Management Methods
+
+  /**
+   * Get current subscription for a workspace
+   * Returns subscription details including plan, plan version, and group information
+   */
+  async getCurrentSubscription(workspaceId: string): Promise<ISubscriptionResponse> {
+    const response = await fetch(
+      `${this.serverUrl}/api/${this.version}/public/workspaces/${workspaceId}/subscription`,
+      {
+        headers: this.getAuthHeader(),
+      }
+    );
+    if (!response.ok) {
+      let errorMessage = 'Failed to fetch subscription';
+      try {
+        const error = await response.json();
+        errorMessage = error.message || errorMessage;
+      } catch {
+        // If response is not JSON, use status text
+        if (response.status === 404) {
+          errorMessage = 'Workspace not found or no subscription available';
+        } else if (response.status === 401) {
+          errorMessage = 'Unauthorized - Please check your session';
+        } else {
+          errorMessage = `Failed to fetch subscription (${response.status}: ${response.statusText})`;
+        }
+      }
+      throw new Error(errorMessage);
+    }
+    const result = await response.json();
+    // Handle both wrapped and direct response formats
+    if (result.success !== undefined) {
+      if (!result.success) {
+        throw new Error(result.message || 'Failed to fetch subscription');
+      }
+      return result.data;
+    }
+    // If no success field, assume the response is the data directly
+    return result;
+  }
+
+  /**
+   * Get plan group for a workspace
+   * Returns the plan group containing the current plan if subscription exists,
+   * otherwise returns the latest published group
+   */
+  async getPlanGroup(workspaceId: string): Promise<IPlanGroupResponse> {
+    const response = await fetch(
+      `${this.serverUrl}/api/${this.version}/public/workspaces/${workspaceId}/subscription/plan-group`,
+      {
+        headers: this.getAuthHeader(),
+      }
+    );
+    if (!response.ok) {
+      let errorMessage = 'Failed to fetch plan group';
+      try {
+        const error = await response.json();
+        errorMessage = error.message || errorMessage;
+      } catch {
+        // If response is not JSON, use status text
+        if (response.status === 404) {
+          errorMessage = 'No plan group found for this workspace';
+        } else if (response.status === 401) {
+          errorMessage = 'Unauthorized - Please check your session';
+        } else {
+          errorMessage = `Failed to fetch plan group (${response.status}: ${response.statusText})`;
+        }
+      }
+      throw new Error(errorMessage);
+    }
+    const result = await response.json();
+    // Handle both wrapped and direct response formats
+    if (result.success !== undefined) {
+      if (!result.success) {
+        throw new Error(result.message || 'Failed to fetch plan group');
+      }
+      return result.data;
+    }
+    // If no success field, assume the response is the data directly
+    return result;
+  }
+
+  /**
+   * Get plan group version details by ID
+   * Returns the full plan group version with populated plan versions
+   */
+  async getPlanGroupVersion(groupVersionId: string): Promise<IPlanGroupVersion> {
+    const response = await fetch(
+      `${this.serverUrl}/api/${this.version}/public/plan-group-versions/${groupVersionId}`,
+      {
+        headers: this.getAuthHeader(),
+      }
+    );
+    if (!response.ok) {
+      let errorMessage = 'Failed to fetch plan group version';
+      try {
+        const error = await response.json();
+        errorMessage = error.message || errorMessage;
+      } catch {
+        if (response.status === 404) {
+          errorMessage = 'Plan group version not found';
+        } else if (response.status === 401) {
+          errorMessage = 'Unauthorized - Please check your session';
+        } else {
+          errorMessage = `Failed to fetch plan group version (${response.status}: ${response.statusText})`;
+        }
+      }
+      throw new Error(errorMessage);
+    }
+    const result = await response.json();
+    // Handle both wrapped and direct response formats
+    if (result.success !== undefined) {
+      if (!result.success) {
+        throw new Error(result.message || 'Failed to fetch plan group version');
+      }
+      return result.data;
+    }
+    // If no success field, assume the response is the data directly
+    return result;
+  }
+
+  /**
+   * Update subscription (upgrade/downgrade)
+   * Only allows plan changes within the same plan group
+   */
+  async updateSubscription(
+    workspaceId: string,
+    planVersionId: string
+  ): Promise<ISubscriptionUpdateResponse> {
+    const requestBody: ISubscriptionUpdateRequest = { planVersionId };
+
+    const response = await fetch(
+      `${this.serverUrl}/api/${this.version}/public/workspaces/${workspaceId}/subscription`,
+      {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', ...this.getAuthHeader() },
+        body: JSON.stringify(requestBody),
+      }
+    );
+
+    if (!response.ok) {
+      let errorMessage = 'Failed to update subscription';
+      try {
+        const error = await response.json();
+        errorMessage = error.message || errorMessage;
+      } catch {
+        errorMessage = `Failed to update subscription (${response.status}: ${response.statusText})`;
+      }
+      throw new Error(errorMessage);
+    }
+
+    const result = await response.json();
+    // Handle both wrapped and direct response formats
+    if (result.success !== undefined) {
+      if (!result.success) {
+        throw new Error(result.message || 'Failed to update subscription');
+      }
+      return result.data;
+    }
+    // If no success field, assume the response is the data directly
+    return result;
   }
 }
