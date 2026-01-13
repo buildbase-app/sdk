@@ -31,6 +31,14 @@ export { useUserAttributes, useUserFeatures } from './providers/user/hooks';
 export { useSaaSWorkspaces } from './providers/workspace/hooks';
 export { WorkspaceSwitcher } from './providers/workspace/provider';
 
+// Export subscription hooks
+export {
+  usePlanGroup,
+  useSubscription,
+  useSubscriptionManagement,
+  useUpdateSubscription,
+} from './providers/workspace/subscription-hooks';
+
 // Export event types and emitter
 export { eventEmitter } from './providers/events';
 export type {
@@ -52,3 +60,20 @@ export type {
 export { default as ErrorBoundary, SDKErrorBoundary } from './components/ErrorBoundary';
 export { SDKError, createSDKError, errorHandler, handleError } from './lib/error-handler';
 export type { ErrorHandlerConfig, SDKErrorContext } from './lib/error-handler';
+
+// Export subscription types
+export type {
+  IPlan,
+  IPlanGroup,
+  IPlanGroupLatestVersion,
+  IPlanGroupResponse,
+  IPlanGroupVersion,
+  IPlanVersion,
+  IPlanVersionWithPlan,
+  IQuotaValue,
+  ISubscription,
+  ISubscriptionItem,
+  ISubscriptionResponse,
+  ISubscriptionUpdateRequest,
+  ISubscriptionUpdateResponse,
+} from './api/types';

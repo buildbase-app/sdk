@@ -51,3 +51,145 @@ export interface IAsset extends IDocument {
   public: boolean;
   creator: string | IUser;
 }
+
+// Subscription Management Types
+export interface ISubscription {
+  _id: string;
+  subscriptionStatus: 'active' | 'trialing' | 'canceled' | 'past_due';
+  cancelAtPeriodEnd: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ISubscriptionItem {
+  _id: string;
+  type: 'feature' | 'limit' | 'quota';
+  name: string;
+  slug: string;
+  description?: string;
+  category: string;
+}
+
+export interface IQuotaValue {
+  included: number;
+  overage: number;
+}
+
+export interface IPlanVersion {
+  _id: string;
+  version: number;
+  name: string;
+  status: 'draft' | 'published';
+  features?: Record<string, boolean>;
+  limits?: Record<string, number>;
+  quotas?: Record<string, number | IQuotaValue>;
+  stripePrices?: {
+    monthly?: string;
+    yearly?: string;
+  };
+  subscriptionItems?: ISubscriptionItem[];
+  isCurrent?: boolean;
+  isLegacy?: boolean;
+  archived?: boolean;
+  deleted?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+  id?: string;
+}
+
+export interface IPlan {
+  _id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  latestVersion?: IPlanVersion;
+  archived?: boolean;
+  deleted?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+  id?: string;
+}
+
+export interface IPlanGroupLatestVersion {
+  _id: string;
+  version: number;
+  planVersionIds: string[];
+  requiredItems: string[];
+  status: 'draft' | 'published';
+  isCurrent?: boolean;
+  isLegacy?: boolean;
+  archived?: boolean;
+  deleted?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+  description?: string;
+}
+
+export interface IPlanGroup {
+  _id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  latestVersion?: IPlanGroupLatestVersion;
+  archived?: boolean;
+  deleted?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+  id?: string;
+}
+
+export interface IPlanGroupVersion {
+  _id: string;
+  version: number;
+  description?: string;
+  group?: {
+    _id: string;
+    name: string;
+    description?: string;
+  };
+  planVersionIds: IPlanVersionWithPlan[] | string[];
+  requiredItems?: string[];
+  status?: 'draft' | 'published';
+  isCurrent?: boolean;
+  isLegacy?: boolean;
+  archived?: boolean;
+  deleted?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+  id?: string;
+}
+
+export interface ISubscriptionResponse {
+  subscription: ISubscription | null;
+  planVersion: IPlanVersion | null;
+  plan: IPlan | null;
+  group: IPlanGroup | null;
+  groupVersion: IPlanGroupVersion | null;
+}
+
+export interface IPlanVersionWithPlan extends IPlanVersion {
+  plan: IPlan;
+}
+
+export interface IPlanGroupResponse {
+  group: IPlanGroup;
+  groupVersion: IPlanGroupVersion;
+  plans: IPlanVersionWithPlan[];
+}
+
+export interface ISubscriptionUpdateRequest {
+  planVersionId: string;
+}
+
+export interface ISubscriptionUpdateResponse {
+  _id: string;
+  subscriptionStatus: string;
+  workspace: string;
+  planVersion: string;
+  plan: string;
+  planGroup?: string;
+  planGroupVersion?: string;
+  cancelAtPeriodEnd: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
