@@ -1,4 +1,6 @@
 import {
+  ICheckoutSessionRequest,
+  ICheckoutSessionResponse,
   IPlanGroupResponse,
   IPlanGroupVersion,
   ISubscriptionResponse,
@@ -318,21 +320,62 @@ export class WorkspaceApi {
   }
 
   /**
+   * Create checkout session for new subscription
+   * @param workspaceId - The workspace ID
+   * @param request - Checkout session request with planVersionId and optional billing interval/URLs
+   * @returns Checkout session response with checkoutUrl to redirect user
+   */
+  async createCheckoutSession(
+    workspaceId: string,
+    request: ICheckoutSessionRequest
+  ): Promise<ICheckoutSessionResponse> {
+    const response = await fetch(
+      `${this.serverUrl}/api/${this.version}/public/workspaces/${workspaceId}/subscription/checkout`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...this.getAuthHeader() },
+        body: JSON.stringify(request),
+      }
+    );
+
+    if (!response.ok) {
+      let errorMessage = 'Failed to create checkout session';
+      try {
+        const error = await response.json();
+        errorMessage = error.message || errorMessage;
+      } catch {
+        errorMessage = `Failed to create checkout session (${response.status}: ${response.statusText})`;
+      }
+      throw new Error(errorMessage);
+    }
+
+    const result = await response.json();
+    // Handle both wrapped and direct response formats
+    if (result.success !== undefined) {
+      if (!result.success) {
+        throw new Error(result.message || 'Failed to create checkout session');
+      }
+      return result.data || result;
+    }
+    // If no success field, assume the response is the data directly
+    return result;
+  }
+
+  /**
    * Update subscription (upgrade/downgrade)
    * Only allows plan changes within the same plan group
+   * Returns checkout session if payment is required, otherwise returns subscription update response
    */
   async updateSubscription(
     workspaceId: string,
-    planVersionId: string
-  ): Promise<ISubscriptionUpdateResponse> {
-    const requestBody: ISubscriptionUpdateRequest = { planVersionId };
-
+    request: ISubscriptionUpdateRequest
+  ): Promise<ISubscriptionUpdateResponse | ICheckoutSessionResponse> {
     const response = await fetch(
       `${this.serverUrl}/api/${this.version}/public/workspaces/${workspaceId}/subscription`,
       {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', ...this.getAuthHeader() },
-        body: JSON.stringify(requestBody),
+        body: JSON.stringify(request),
       }
     );
 
@@ -353,9 +396,17 @@ export class WorkspaceApi {
       if (!result.success) {
         throw new Error(result.message || 'Failed to update subscription');
       }
+      // Check if response contains checkoutUrl (checkout session) or subscription data
+      if (result.data?.checkoutUrl || result.checkoutUrl) {
+        return result.data || result;
+      }
       return result.data;
     }
-    // If no success field, assume the response is the data directly
+    // If no success field, check if it's a checkout session response
+    if (result.checkoutUrl) {
+      return result;
+    }
+    // Otherwise assume it's the subscription update response
     return result;
   }
 }

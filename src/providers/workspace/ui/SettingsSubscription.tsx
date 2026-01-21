@@ -1,8 +1,11 @@
 import { CreditCard, RefreshCcwIcon } from 'lucide-react';
 import React, { useState } from 'react';
-import { IPlanVersion, ISubscriptionItem } from '../../../api/types';
+import { ICheckoutSessionResponse, IPlanVersion, ISubscriptionItem } from '../../../api/types';
 import { Button } from '../../../components/ui/button';
-import { useSubscriptionManagement } from '../subscription-hooks';
+import {
+  useCreateCheckoutSession,
+  useSubscriptionManagement,
+} from '../subscription-hooks';
 import { IWorkspace } from '../types';
 import SettingSkeleton from './Skeleton';
 import SubscriptionDialog from './SubscriptionDialog';
@@ -42,6 +45,7 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
   const workspaceId = workspace._id?.toString();
   const { subscription, planGroup, loading, error, updateSubscription, refetch } =
     useSubscriptionManagement(workspaceId);
+  const { createCheckoutSession } = useCreateCheckoutSession(workspaceId);
   const [updating, setUpdating] = useState(false);
   const [updateError, setUpdateError] = useState<string | null>(null);
   const [updateSuccess, setUpdateSuccess] = useState<string | null>(null);
@@ -60,11 +64,56 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
     setUpdateSuccess(null);
 
     try {
-      await updateSubscription(planVersionId);
+      // Generate success and cancel URLs based on current location
+      // Ensure URLs have proper scheme (https:// or http://)
+      let successUrl: string;
+      let cancelUrl: string;
+      
+      try {
+        const currentUrl = new URL(window.location.href);
+        successUrl = currentUrl.toString();
+        cancelUrl = currentUrl.toString();
+      } catch {
+        // Fallback if URL construction fails
+        const protocol = window.location.protocol || 'https:';
+        const host = window.location.host || window.location.hostname || '';
+        const pathname = window.location.pathname || '/';
+        const baseUrl = `${protocol}//${host}${pathname}`;
+        successUrl = baseUrl;
+        cancelUrl = baseUrl;
+      }
+
+      let result: ICheckoutSessionResponse | any;
+
+      // If no active subscription, create checkout session
+      if (!subscription?.subscription) {
+        result = await createCheckoutSession({
+          planVersionId,
+          billingInterval: 'monthly', // Default to monthly, can be made configurable
+          successUrl,
+          cancelUrl,
+        });
+      } else {
+        // If subscription exists, update it (may return checkout session)
+        result = await updateSubscription(planVersionId, {
+          billingInterval: 'monthly', // Default to monthly, can be made configurable
+          successUrl,
+          cancelUrl,
+        });
+      }
+
+      // Check if result is a checkout session response
+      if (result && 'checkoutUrl' in result && result.checkoutUrl) {
+        // Redirect to checkout URL
+        window.location.href = result.checkoutUrl;
+        return;
+      }
+
+      // If no checkout URL, subscription was updated directly
       setUpdateSuccess('Subscription updated successfully!');
       await refetch();
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to update subscription';
+      const errorMessage = err instanceof Error ? err.message : 'Failed to process subscription';
       setUpdateError(errorMessage);
     } finally {
       setUpdating(false);

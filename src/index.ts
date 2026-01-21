@@ -33,6 +33,7 @@ export { WorkspaceSwitcher } from './providers/workspace/provider';
 
 // Export subscription hooks
 export {
+  useCreateCheckoutSession,
   usePlanGroup,
   useSubscription,
   useSubscriptionManagement,
@@ -63,6 +64,9 @@ export type { ErrorHandlerConfig, SDKErrorContext } from './lib/error-handler';
 
 // Export subscription types
 export type {
+  BillingInterval,
+  ICheckoutSessionRequest,
+  ICheckoutSessionResponse,
   IPlan,
   IPlanGroup,
   IPlanGroupLatestVersion,
