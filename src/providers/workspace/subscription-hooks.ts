@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+  BillingInterval,
+  ICheckoutSessionRequest,
+  ICheckoutSessionResponse,
   IPlanGroupResponse,
   ISubscriptionResponse,
   ISubscriptionUpdateResponse,
@@ -109,7 +112,56 @@ export const usePlanGroup = (workspaceId: string | null | undefined) => {
 };
 
 /**
+ * Hook to create checkout session for new subscription
+ * @param workspaceId - The workspace ID to create checkout session for
+ * @returns Create checkout function and loading/error states
+ */
+export const useCreateCheckoutSession = (workspaceId: string | null | undefined) => {
+  const os = useAppSelector(state => state.os);
+  const api = useMemo(() => new WorkspaceApi(os), [os]);
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const createCheckoutSession = useCallback(
+    async (
+      request: ICheckoutSessionRequest
+    ): Promise<ICheckoutSessionResponse> => {
+      if (!workspaceId) {
+        throw new Error('Workspace ID is required');
+      }
+
+      setLoading(true);
+      setError(null);
+      try {
+        const result = await api.createCheckoutSession(workspaceId, request);
+        return result;
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to create checkout session';
+        setError(errorMessage);
+        handleError(err, {
+          component: 'useCreateCheckoutSession',
+          action: 'createCheckoutSession',
+          metadata: { workspaceId, request },
+        });
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [api, workspaceId]
+  );
+
+  return {
+    createCheckoutSession,
+    loading,
+    error,
+  };
+};
+
+/**
  * Hook to update subscription (upgrade/downgrade)
+ * Returns checkout session if payment is required, otherwise returns subscription update response
  * @param workspaceId - The workspace ID to update subscription for
  * @returns Update function and loading/error states
  */
@@ -121,7 +173,14 @@ export const useUpdateSubscription = (workspaceId: string | null | undefined) =>
   const [error, setError] = useState<string | null>(null);
 
   const updateSubscription = useCallback(
-    async (planVersionId: string): Promise<ISubscriptionUpdateResponse> => {
+    async (
+      planVersionId: string,
+      options?: {
+        billingInterval?: BillingInterval;
+        successUrl?: string;
+        cancelUrl?: string;
+      }
+    ): Promise<ISubscriptionUpdateResponse | ICheckoutSessionResponse> => {
       if (!workspaceId) {
         throw new Error('Workspace ID is required');
       }
@@ -129,7 +188,13 @@ export const useUpdateSubscription = (workspaceId: string | null | undefined) =>
       setLoading(true);
       setError(null);
       try {
-        const result = await api.updateSubscription(workspaceId, planVersionId);
+        const request = {
+          planVersionId,
+          ...(options?.billingInterval && { billingInterval: options.billingInterval }),
+          ...(options?.successUrl && { successUrl: options.successUrl }),
+          ...(options?.cancelUrl && { cancelUrl: options.cancelUrl }),
+        };
+        const result = await api.updateSubscription(workspaceId, request);
         return result;
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Failed to update subscription';
@@ -137,7 +202,7 @@ export const useUpdateSubscription = (workspaceId: string | null | undefined) =>
         handleError(err, {
           component: 'useUpdateSubscription',
           action: 'updateSubscription',
-          metadata: { workspaceId, planVersionId },
+          metadata: { workspaceId, planVersionId, options },
         });
         throw err;
       } finally {

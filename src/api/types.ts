@@ -177,8 +177,32 @@ export interface IPlanGroupResponse {
   plans: IPlanVersionWithPlan[];
 }
 
+export type BillingInterval = 'monthly' | 'yearly' | 'quarterly';
+
+export interface ICheckoutSessionRequest {
+  planVersionId: string;
+  billingInterval?: BillingInterval;
+  successUrl?: string;
+  cancelUrl?: string;
+}
+
+export interface ICheckoutSessionResponse {
+  success: boolean;
+  checkoutUrl: string;
+  sessionId: string;
+  message: string;
+  planVersion?: {
+    _id: string;
+    version: number;
+    name: string;
+  };
+}
+
 export interface ISubscriptionUpdateRequest {
   planVersionId: string;
+  billingInterval?: BillingInterval;
+  successUrl?: string;
+  cancelUrl?: string;
 }
 
 export interface ISubscriptionUpdateResponse {
