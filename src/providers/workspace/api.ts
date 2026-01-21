@@ -3,6 +3,7 @@ import {
   ICheckoutSessionResponse,
   IPlanGroupResponse,
   IPlanGroupVersion,
+  IPlanGroupVersionsResponse,
   ISubscriptionResponse,
   ISubscriptionUpdateRequest,
   ISubscriptionUpdateResponse,
@@ -273,6 +274,94 @@ export class WorkspaceApi {
     if (result.success !== undefined) {
       if (!result.success) {
         throw new Error(result.message || 'Failed to fetch plan group');
+      }
+      return result.data;
+    }
+    // If no success field, assume the response is the data directly
+    return result;
+  }
+
+  /**
+   * Get plan group for a workspace with a specific version
+   * @param workspaceId - The workspace ID
+   * @param groupVersionId - The plan group version ID to fetch
+   * @returns Plan group response with the specified version
+   */
+  async getPlanGroupByVersion(
+    workspaceId: string,
+    groupVersionId: string
+  ): Promise<IPlanGroupResponse> {
+    const response = await fetch(
+      `${this.serverUrl}/api/${this.version}/public/workspaces/${workspaceId}/subscription/plan-group?groupVersionId=${groupVersionId}`,
+      {
+        headers: this.getAuthHeader(),
+      }
+    );
+    if (!response.ok) {
+      let errorMessage = 'Failed to fetch plan group version';
+      try {
+        const error = await response.json();
+        errorMessage = error.message || errorMessage;
+      } catch {
+        if (response.status === 404) {
+          errorMessage = 'Plan group version not found';
+        } else if (response.status === 401) {
+          errorMessage = 'Unauthorized - Please check your session';
+        } else {
+          errorMessage = `Failed to fetch plan group version (${response.status}: ${response.statusText})`;
+        }
+      }
+      throw new Error(errorMessage);
+    }
+    const result = await response.json();
+    // Handle both wrapped and direct response formats
+    if (result.success !== undefined) {
+      if (!result.success) {
+        throw new Error(result.message || 'Failed to fetch plan group version');
+      }
+      return result.data;
+    }
+    // If no success field, assume the response is the data directly
+    return result;
+  }
+
+  /**
+   * Get current group version and available newer versions of the same group
+   * - If user has active subscription: returns their current group version + newer versions
+   * - If no subscription: returns the latest published group version
+   * Shows what's new in newer versions to help users upgrade
+   * Example: User on Group v1 (Basic Plan) can see Group v2 (Basic + Pro Plan)
+   * @param workspaceId - The workspace ID
+   * @returns Plan group versions response with currentVersion and availableVersions
+   */
+  async getPlanGroupVersions(workspaceId: string): Promise<IPlanGroupVersionsResponse> {
+    const response = await fetch(
+      `${this.serverUrl}/api/${this.version}/public/workspaces/${workspaceId}/subscription/plan-group/versions`,
+      {
+        headers: this.getAuthHeader(),
+      }
+    );
+    if (!response.ok) {
+      let errorMessage = 'Failed to fetch plan group versions';
+      try {
+        const error = await response.json();
+        errorMessage = error.message || errorMessage;
+      } catch {
+        if (response.status === 404) {
+          errorMessage = 'No plan group versions found';
+        } else if (response.status === 401) {
+          errorMessage = 'Unauthorized - Please check your session';
+        } else {
+          errorMessage = `Failed to fetch plan group versions (${response.status}: ${response.statusText})`;
+        }
+      }
+      throw new Error(errorMessage);
+    }
+    const result = await response.json();
+    // Handle both wrapped and direct response formats
+    if (result.success !== undefined) {
+      if (!result.success) {
+        throw new Error(result.message || 'Failed to fetch plan group versions');
       }
       return result.data;
     }

@@ -72,7 +72,14 @@ export interface ISubscriptionItem {
 
 export interface IQuotaValue {
   included: number;
-  overage: number;
+  overage?: number;
+  stripePriceId?: string;
+}
+
+export interface IBasePricing {
+  monthly: number;
+  yearly: number;
+  quarterly: number;
 }
 
 export interface IPlanVersion {
@@ -83,7 +90,11 @@ export interface IPlanVersion {
   features?: Record<string, boolean>;
   limits?: Record<string, number>;
   quotas?: Record<string, number | IQuotaValue>;
+  basePricing?: IBasePricing;
   stripePrices?: {
+    monthlyPriceId?: string;
+    yearlyPriceId?: string;
+    quarterlyPriceId?: string;
     monthly?: string;
     yearly?: string;
   };
@@ -171,10 +182,37 @@ export interface IPlanVersionWithPlan extends IPlanVersion {
   plan: IPlan;
 }
 
-export interface IPlanGroupResponse {
-  group: IPlanGroup;
-  groupVersion: IPlanGroupVersion;
+export interface IPlanGroupVersionWithPlans {
+  _id: string;
+  version: number;
+  description?: string;
   plans: IPlanVersionWithPlan[];
+  isCurrent?: boolean;
+  whatsNew?: {
+    newPlans: IPlanVersionWithPlan[];
+    updatedPlans: IPlanVersionWithPlan[];
+    removedPlans: IPlanVersionWithPlan[];
+  };
+}
+
+export interface IPlanGroupResponse {
+  group: {
+    _id: string;
+    name: string;
+    slug: string;
+  };
+  currentVersion: IPlanGroupVersionWithPlans;
+  availableVersions: IPlanGroupVersionWithPlans[];
+}
+
+export interface IPlanGroupVersionsResponse {
+  group: {
+    _id: string;
+    name: string;
+    slug: string;
+  };
+  currentVersion: IPlanGroupVersionWithPlans;
+  availableVersions: IPlanGroupVersionWithPlans[];
 }
 
 export type BillingInterval = 'monthly' | 'yearly' | 'quarterly';
