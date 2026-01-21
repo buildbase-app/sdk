@@ -4,6 +4,7 @@ import {
   ICheckoutSessionRequest,
   ICheckoutSessionResponse,
   IPlanGroupResponse,
+  IPlanGroupVersionsResponse,
   ISubscriptionResponse,
   ISubscriptionUpdateResponse,
 } from '../../api/types';
@@ -65,9 +66,13 @@ export const useSubscription = (workspaceId: string | null | undefined) => {
  * Returns the plan group containing the current plan if subscription exists,
  * otherwise returns the latest published group
  * @param workspaceId - The workspace ID to get plan group for
+ * @param groupVersionId - Optional: specific group version ID to fetch
  * @returns Plan group data and loading/error states
  */
-export const usePlanGroup = (workspaceId: string | null | undefined) => {
+export const usePlanGroup = (
+  workspaceId: string | null | undefined,
+  groupVersionId?: string | null
+) => {
   const os = useAppSelector(state => state.os);
   const api = useMemo(() => new WorkspaceApi(os), [os]);
 
@@ -84,7 +89,9 @@ export const usePlanGroup = (workspaceId: string | null | undefined) => {
     setLoading(true);
     setError(null);
     try {
-      const data = await api.getPlanGroup(workspaceId);
+      const data = groupVersionId
+        ? await api.getPlanGroupByVersion(workspaceId, groupVersionId)
+        : await api.getPlanGroup(workspaceId);
       setPlanGroup(data);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch plan group';
@@ -92,12 +99,12 @@ export const usePlanGroup = (workspaceId: string | null | undefined) => {
       handleError(err, {
         component: 'usePlanGroup',
         action: 'fetchPlanGroup',
-        metadata: { workspaceId },
+        metadata: { workspaceId, groupVersionId },
       });
     } finally {
       setLoading(false);
     }
-  }, [api, workspaceId]);
+  }, [api, workspaceId, groupVersionId]);
 
   useEffect(() => {
     fetchPlanGroup();
@@ -108,6 +115,55 @@ export const usePlanGroup = (workspaceId: string | null | undefined) => {
     loading,
     error,
     refetch: fetchPlanGroup,
+  };
+};
+
+/**
+ * Hook to get all available versions of a plan group for a workspace
+ * @param workspaceId - The workspace ID to get plan group versions for
+ * @returns Plan group versions data and loading/error states
+ */
+export const usePlanGroupVersions = (workspaceId: string | null | undefined) => {
+  const os = useAppSelector(state => state.os);
+  const api = useMemo(() => new WorkspaceApi(os), [os]);
+
+  const [versions, setVersions] = useState<IPlanGroupVersionsResponse | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchVersions = useCallback(async () => {
+    if (!workspaceId) {
+      setVersions(null);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await api.getPlanGroupVersions(workspaceId);
+      setVersions(data);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch plan group versions';
+      setError(errorMessage);
+      handleError(err, {
+        component: 'usePlanGroupVersions',
+        action: 'fetchVersions',
+        metadata: { workspaceId },
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [api, workspaceId]);
+
+  useEffect(() => {
+    fetchVersions();
+  }, [fetchVersions]);
+
+  return {
+    versions,
+    loading,
+    error,
+    refetch: fetchVersions,
   };
 };
 
@@ -223,11 +279,15 @@ export const useUpdateSubscription = (workspaceId: string | null | undefined) =>
  * Combined hook that provides both subscription and plan group data
  * Useful for subscription management pages
  * @param workspaceId - The workspace ID
+ * @param groupVersionId - Optional: specific group version ID to fetch
  * @returns Combined subscription and plan group data with loading/error states
  */
-export const useSubscriptionManagement = (workspaceId: string | null | undefined) => {
+export const useSubscriptionManagement = (
+  workspaceId: string | null | undefined,
+  groupVersionId?: string | null
+) => {
   const subscription = useSubscription(workspaceId);
-  const planGroup = usePlanGroup(workspaceId);
+  const planGroup = usePlanGroup(workspaceId, groupVersionId);
   const updateSubscription = useUpdateSubscription(workspaceId);
 
   const refetchAll = useCallback(async () => {

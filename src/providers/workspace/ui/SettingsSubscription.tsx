@@ -1,9 +1,16 @@
-import { CreditCard, RefreshCcwIcon } from 'lucide-react';
-import React, { useState } from 'react';
-import { ICheckoutSessionResponse, IPlanVersion, ISubscriptionItem } from '../../../api/types';
+import { CreditCard, RefreshCcwIcon, AlertTriangle } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { 
+  ICheckoutSessionResponse, 
+  IPlanGroupVersionWithPlans,
+  IPlanVersion, 
+  IPlanVersionWithPlan, 
+  ISubscriptionItem 
+} from '../../../api/types';
 import { Button } from '../../../components/ui/button';
 import {
   useCreateCheckoutSession,
+  usePlanGroupVersions,
   useSubscriptionManagement,
 } from '../subscription-hooks';
 import { IWorkspace } from '../types';
@@ -20,7 +27,7 @@ const getPlanDetailsFromItems = (planVersion: IPlanVersion | null | undefined) =
   const limits: Array<{ item: ISubscriptionItem; value: number }> = [];
   const quotas: Array<{
     item: ISubscriptionItem;
-    value: number | { included: number; overage: number };
+    value: number | { included: number; overage?: number; stripePriceId?: string } | null;
   }> = [];
 
   planVersion.subscriptionItems.forEach(item => {
@@ -33,8 +40,10 @@ const getPlanDetailsFromItems = (planVersion: IPlanVersion | null | undefined) =
       const value = planVersion.limits?.[slug] ?? 0;
       limits.push({ item, value });
     } else if (item.type === 'quota') {
-      const value = planVersion.quotas?.[slug] ?? 0;
-      quotas.push({ item, value });
+      const value = planVersion.quotas?.[slug] ?? null;
+      if (value !== null && value !== undefined) {
+        quotas.push({ item, value });
+      }
     }
   });
 
@@ -43,13 +52,71 @@ const getPlanDetailsFromItems = (planVersion: IPlanVersion | null | undefined) =
 
 const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ workspace }) => {
   const workspaceId = workspace._id?.toString();
-  const { subscription, planGroup, loading, error, updateSubscription, refetch } =
+  const { subscription, loading: subscriptionLoading, error: subscriptionError, updateSubscription, refetch: refetchSubscription } =
     useSubscriptionManagement(workspaceId);
   const { createCheckoutSession } = useCreateCheckoutSession(workspaceId);
+  
+  // Fetch plan group versions (includes currentVersion and availableVersions)
+  const { versions: planGroupVersions, loading: versionsLoading, error: versionsError, refetch: refetchVersions } = 
+    usePlanGroupVersions(workspaceId);
+  
+  const loading = subscriptionLoading || versionsLoading;
+  const error = subscriptionError || versionsError;
+  
+  // Determine if there's a newer version and which version to show
+  // API behavior:
+  // - With subscription: currentVersion = user's current, availableVersions = newer versions
+  // - Without subscription: currentVersion = latest published, availableVersions = []
+  const { currentVersion, latestVersion, hasNewerVersion, isDeprecated, whatsNew, plansToShow } = useMemo(() => {
+    const userCurrentVersion = planGroupVersions?.currentVersion;
+    const availableVersions = planGroupVersions?.availableVersions || [];
+    const hasActiveSubscription = subscription?.subscription !== null;
+    
+    // Find the latest available version
+    // If user has subscription: latest is the highest in availableVersions (newer versions)
+    // If no subscription: currentVersion IS the latest (it's the latest published)
+    let latest: IPlanGroupVersionWithPlans | null = null;
+    
+    if (availableVersions.length > 0) {
+      // User has subscription - find latest from availableVersions (newer versions)
+      latest = availableVersions.reduce((latest, current) => 
+        current.version > latest.version ? current : latest
+      );
+    } else if (userCurrentVersion) {
+      // No subscription - currentVersion is the latest published version
+      latest = userCurrentVersion;
+    }
+    
+    // Check if user's current version is older than the latest
+    // Only relevant if user has an active subscription
+    const hasNewer = hasActiveSubscription && latest && userCurrentVersion
+      ? latest.version > userCurrentVersion.version
+      : false;
+    
+    // Determine which plans to show: always show latest version plans
+    const plans = latest?.plans && latest.plans.length > 0 
+      ? latest.plans 
+      : [];
+    
+    return {
+      currentVersion: userCurrentVersion,
+      latestVersion: latest,
+      hasNewerVersion: hasNewer,
+      // Only show deprecation if user has subscription AND there's a newer version
+      isDeprecated: hasNewer && hasActiveSubscription,
+      whatsNew: latest?.whatsNew,
+      plansToShow: plans,
+    };
+  }, [planGroupVersions, subscription?.subscription]);
+  
   const [updating, setUpdating] = useState(false);
   const [updateError, setUpdateError] = useState<string | null>(null);
   const [updateSuccess, setUpdateSuccess] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  
+  const refetch = async () => {
+    await Promise.all([refetchSubscription(), refetchVersions()]);
+  };
 
   const handlePlanChange = async (planVersionId: string) => {
     if (!workspaceId) return;
@@ -124,11 +191,11 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
     }
   };
 
-  if (loading && !subscription && !planGroup) {
+  if (loading && !subscription && !planGroupVersions) {
     return <SettingSkeleton />;
   }
 
-  const currentPlanVersionId = subscription?.planVersion?._id;
+  const currentPlanVersionId = subscription?.planVersion?._id || null;
 
   // Show error if workspaceId is missing
   if (!workspaceId) {
@@ -165,6 +232,51 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
         </div>
       )}
 
+      {/* Deprecation Notice - Show if user's plan is on an older version */}
+      {isDeprecated && subscription?.subscription && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+          <div className="flex items-start gap-3">
+            <div className="flex-shrink-0">
+              <AlertTriangle className="h-5 w-5 text-amber-600" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-sm font-semibold text-amber-800 mb-1">
+                Your Current Plan is Deprecated
+              </h3>
+              <p className="text-sm text-amber-700 mb-2">
+                A new version of the pricing plans is now available. Please upgrade to one of the new plans below to continue receiving updates and support.
+              </p>
+              <div className="flex items-center gap-2 text-xs text-amber-600 mb-3">
+                <span>Current: Version {currentVersion?.version || 'N/A'}</span>
+                <span>•</span>
+                <span>Latest: Version {latestVersion?.version || 'N/A'}</span>
+              </div>
+              
+              {/* Show What's New */}
+              {whatsNew && (whatsNew.newPlans.length > 0 || whatsNew.updatedPlans.length > 0) && (
+                <div className="mt-3 pt-3 border-t border-amber-200">
+                  <h4 className="text-xs font-semibold text-amber-800 mb-2">What's New in Version {latestVersion?.version}:</h4>
+                  <div className="space-y-1.5 text-xs text-amber-700">
+                    {whatsNew.newPlans.length > 0 && (
+                      <div>
+                        <span className="font-medium">New Plans: </span>
+                        <span>{whatsNew.newPlans.map((p: IPlanVersionWithPlan) => p.plan.name).join(', ')}</span>
+                      </div>
+                    )}
+                    {whatsNew.updatedPlans.length > 0 && (
+                      <div>
+                        <span className="font-medium">Updated Plans: </span>
+                        <span>{whatsNew.updatedPlans.map((p: IPlanVersionWithPlan) => p.plan.name).join(', ')}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Current Subscription Status */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
@@ -177,7 +289,7 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
               <Button variant="outline" size="sm" onClick={() => setDialogOpen(true)}>
                 Change Plan
               </Button>
-            ) : planGroup?.plans && planGroup.plans.length > 0 ? (
+            ) : plansToShow && plansToShow.length > 0 ? (
               <Button size="sm" onClick={() => setDialogOpen(true)}>
                 View Pricing Plans
               </Button>
@@ -190,10 +302,18 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
         </div>
 
         {subscription?.subscription ? (
-          <div className="border rounded-lg p-4 space-y-3">
+          <div className={`border rounded-lg p-4 space-y-3 ${isDeprecated ? 'border-amber-300 bg-amber-50/50' : ''}`}>
             <div className="flex items-center justify-between">
-              <div>
-                <div className="font-medium">{subscription.plan?.name || 'No plan assigned'}</div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="font-medium">{subscription.plan?.name || 'No plan assigned'}</div>
+                  {isDeprecated && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800 border border-amber-200">
+                      <AlertTriangle className="h-3 w-3" />
+                      Deprecated
+                    </span>
+                  )}
+                </div>
                 <div className="text-sm text-gray-600">
                   Status:{' '}
                   <span
@@ -207,6 +327,11 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                   >
                     {subscription.subscription.subscriptionStatus}
                   </span>
+                  {isDeprecated && (
+                    <span className="ml-2 text-xs text-amber-600">
+                      (Version {currentVersion?.version || 'N/A'})
+                    </span>
+                  )}
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -323,18 +448,18 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
       </div>
 
       {/* Subscription Dialog */}
-      {planGroup?.plans && planGroup.plans.length > 0 && (
+      {plansToShow && plansToShow.length > 0 && (
         <SubscriptionDialog
           open={dialogOpen}
           onOpenChange={setDialogOpen}
-          planVersions={planGroup.plans}
+          planVersions={plansToShow}
           currentPlanVersionId={currentPlanVersionId || null}
           onSelectPlan={handlePlanChange}
           loading={updating || loading}
         />
       )}
 
-      {!planGroup && !loading && (
+      {!planGroupVersions && !loading && (
         <div className="border rounded-lg p-4 text-center">
           <div className="text-gray-500 mb-2">
             <p className="font-medium">Unable to load plan information</p>

@@ -27,7 +27,7 @@ const getPlanDetailsFromItems = (planVersion: IPlanVersion | null | undefined) =
   const limits: Array<{ item: ISubscriptionItem; value: number }> = [];
   const quotas: Array<{
     item: ISubscriptionItem;
-    value: number | { included: number; overage: number };
+    value: number | { included: number; overage?: number; stripePriceId?: string } | null;
   }> = [];
 
   planVersion.subscriptionItems.forEach(item => {
@@ -40,8 +40,10 @@ const getPlanDetailsFromItems = (planVersion: IPlanVersion | null | undefined) =
       const value = planVersion.limits?.[slug] ?? 0;
       limits.push({ item, value });
     } else if (item.type === 'quota') {
-      const value = planVersion.quotas?.[slug] ?? 0;
-      quotas.push({ item, value });
+      const value = planVersion.quotas?.[slug] ?? null;
+      if (value !== null && value !== undefined) {
+        quotas.push({ item, value });
+      }
     }
   });
 
@@ -142,7 +144,7 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
   const getValueForPlan = (
     planVersion: IPlanVersionWithPlan,
     item: ISubscriptionItem
-  ): boolean | number | { included: number; overage?: number } | null => {
+  ): boolean | number | { included: number; overage?: number; stripePriceId?: string } | null => {
     if (item.type === 'feature') {
       return planVersion.features?.[item.slug] ?? false;
     } else if (item.type === 'limit') {

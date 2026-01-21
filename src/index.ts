@@ -35,6 +35,7 @@ export { WorkspaceSwitcher } from './providers/workspace/provider';
 export {
   useCreateCheckoutSession,
   usePlanGroup,
+  usePlanGroupVersions,
   useSubscription,
   useSubscriptionManagement,
   useUpdateSubscription,
@@ -65,6 +66,7 @@ export type { ErrorHandlerConfig, SDKErrorContext } from './lib/error-handler';
 // Export subscription types
 export type {
   BillingInterval,
+  IBasePricing,
   ICheckoutSessionRequest,
   ICheckoutSessionResponse,
   IPlan,
@@ -72,6 +74,8 @@ export type {
   IPlanGroupLatestVersion,
   IPlanGroupResponse,
   IPlanGroupVersion,
+  IPlanGroupVersionsResponse,
+  IPlanGroupVersionWithPlans,
   IPlanVersion,
   IPlanVersionWithPlan,
   IQuotaValue,
