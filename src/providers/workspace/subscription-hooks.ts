@@ -3,6 +3,9 @@ import {
   BillingInterval,
   ICheckoutSessionRequest,
   ICheckoutSessionResponse,
+  IInvoice,
+  IInvoiceListResponse,
+  IInvoiceResponse,
   IPlanGroupResponse,
   IPlanGroupVersionsResponse,
   ISubscriptionResponse,
@@ -301,5 +304,117 @@ export const useSubscriptionManagement = (
     error: subscription.error || planGroup.error || updateSubscription.error,
     updateSubscription: updateSubscription.updateSubscription,
     refetch: refetchAll,
+  };
+};
+
+/**
+ * Hook to list invoices for a workspace subscription
+ * @param workspaceId - The workspace ID to get invoices for
+ * @param limit - Number of invoices to return (default: 10)
+ * @param startingAfter - Invoice ID to start after (for pagination)
+ * @returns Invoice list data and loading/error states
+ */
+export const useInvoices = (
+  workspaceId: string | null | undefined,
+  limit: number = 10,
+  startingAfter?: string
+) => {
+  const os = useAppSelector(state => state.os);
+  const api = useMemo(() => new WorkspaceApi(os), [os]);
+
+  const [invoices, setInvoices] = useState<IInvoice[]>([]);
+  const [hasMore, setHasMore] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchInvoices = useCallback(async () => {
+    if (!workspaceId) {
+      setInvoices([]);
+      setHasMore(false);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await api.listInvoices(workspaceId, limit, startingAfter);
+      setInvoices(data.invoices || []);
+      setHasMore(data.has_more || false);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch invoices';
+      setError(errorMessage);
+      handleError(err, {
+        component: 'useInvoices',
+        action: 'fetchInvoices',
+        metadata: { workspaceId, limit, startingAfter },
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [api, workspaceId, limit, startingAfter]);
+
+  useEffect(() => {
+    fetchInvoices();
+  }, [fetchInvoices]);
+
+  return {
+    invoices,
+    hasMore,
+    loading,
+    error,
+    refetch: fetchInvoices,
+  };
+};
+
+/**
+ * Hook to get a single invoice by ID
+ * @param workspaceId - The workspace ID
+ * @param invoiceId - The invoice ID to fetch
+ * @returns Invoice data and loading/error states
+ */
+export const useInvoice = (
+  workspaceId: string | null | undefined,
+  invoiceId: string | null | undefined
+) => {
+  const os = useAppSelector(state => state.os);
+  const api = useMemo(() => new WorkspaceApi(os), [os]);
+
+  const [invoice, setInvoice] = useState<IInvoice | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchInvoice = useCallback(async () => {
+    if (!workspaceId || !invoiceId) {
+      setInvoice(null);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await api.getInvoice(workspaceId, invoiceId);
+      setInvoice(data.invoice);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch invoice';
+      setError(errorMessage);
+      handleError(err, {
+        component: 'useInvoice',
+        action: 'fetchInvoice',
+        metadata: { workspaceId, invoiceId },
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [api, workspaceId, invoiceId]);
+
+  useEffect(() => {
+    fetchInvoice();
+  }, [fetchInvoice]);
+
+  return {
+    invoice,
+    loading,
+    error,
+    refetch: fetchInvoice,
   };
 };

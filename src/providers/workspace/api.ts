@@ -1,6 +1,9 @@
 import {
   ICheckoutSessionRequest,
   ICheckoutSessionResponse,
+  IInvoice,
+  IInvoiceListResponse,
+  IInvoiceResponse,
   IPlanGroupResponse,
   IPlanGroupVersion,
   IPlanGroupVersionsResponse,
@@ -496,6 +499,103 @@ export class WorkspaceApi {
       return result;
     }
     // Otherwise assume it's the subscription update response
+    return result;
+  }
+
+  /**
+   * List invoices for a workspace subscription
+   * @param workspaceId - The workspace ID
+   * @param limit - Number of invoices to return (default: 10)
+   * @param startingAfter - Invoice ID to start after (for pagination)
+   * @returns List of invoices with pagination info
+   */
+  async listInvoices(
+    workspaceId: string,
+    limit: number = 10,
+    startingAfter?: string
+  ): Promise<IInvoiceListResponse> {
+    const params = new URLSearchParams();
+    params.append('limit', limit.toString());
+    if (startingAfter) {
+      params.append('starting_after', startingAfter);
+    }
+
+    const response = await fetch(
+      `${this.serverUrl}/api/${this.version}/public/workspaces/${workspaceId}/subscription/invoices?${params.toString()}`,
+      {
+        headers: this.getAuthHeader(),
+      }
+    );
+
+    if (!response.ok) {
+      let errorMessage = 'Failed to fetch invoices';
+      try {
+        const error = await response.json();
+        errorMessage = error.message || errorMessage;
+      } catch {
+        if (response.status === 404) {
+          errorMessage = 'Workspace not found or no invoices available';
+        } else if (response.status === 401) {
+          errorMessage = 'Unauthorized - Please check your session';
+        } else {
+          errorMessage = `Failed to fetch invoices (${response.status}: ${response.statusText})`;
+        }
+      }
+      throw new Error(errorMessage);
+    }
+
+    const result = await response.json();
+    // Handle both wrapped and direct response formats
+    if (result.success !== undefined) {
+      if (!result.success) {
+        throw new Error(result.message || 'Failed to fetch invoices');
+      }
+      return result;
+    }
+    // If no success field, assume the response is the data directly
+    return result;
+  }
+
+  /**
+   * Get a single invoice by ID
+   * @param workspaceId - The workspace ID
+   * @param invoiceId - The invoice ID
+   * @returns Invoice details
+   */
+  async getInvoice(workspaceId: string, invoiceId: string): Promise<IInvoiceResponse> {
+    const response = await fetch(
+      `${this.serverUrl}/api/${this.version}/public/workspaces/${workspaceId}/subscription/invoices/${invoiceId}`,
+      {
+        headers: this.getAuthHeader(),
+      }
+    );
+
+    if (!response.ok) {
+      let errorMessage = 'Failed to fetch invoice';
+      try {
+        const error = await response.json();
+        errorMessage = error.message || errorMessage;
+      } catch {
+        if (response.status === 404) {
+          errorMessage = 'Invoice not found';
+        } else if (response.status === 401) {
+          errorMessage = 'Unauthorized - Please check your session';
+        } else {
+          errorMessage = `Failed to fetch invoice (${response.status}: ${response.statusText})`;
+        }
+      }
+      throw new Error(errorMessage);
+    }
+
+    const result = await response.json();
+    // Handle both wrapped and direct response formats
+    if (result.success !== undefined) {
+      if (!result.success) {
+        throw new Error(result.message || 'Failed to fetch invoice');
+      }
+      return result;
+    }
+    // If no success field, assume the response is the data directly
     return result;
   }
 }

@@ -34,6 +34,8 @@ export { WorkspaceSwitcher } from './providers/workspace/provider';
 // Export subscription hooks
 export {
   useCreateCheckoutSession,
+  useInvoice,
+  useInvoices,
   usePlanGroup,
   usePlanGroupVersions,
   useSubscription,
@@ -69,6 +71,10 @@ export type {
   IBasePricing,
   ICheckoutSessionRequest,
   ICheckoutSessionResponse,
+  IInvoice,
+  IInvoiceListResponse,
+  IInvoiceResponse,
+  InvoiceStatus,
   IPlan,
   IPlanGroup,
   IPlanGroupLatestVersion,
