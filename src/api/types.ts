@@ -255,3 +255,31 @@ export interface ISubscriptionUpdateResponse {
   createdAt: string;
   updatedAt: string;
 }
+
+// Invoice Types
+export type InvoiceStatus = 'draft' | 'open' | 'paid' | 'uncollectible' | 'void';
+
+export interface IInvoice {
+  id: string;
+  amount_due: number; // Amount in cents
+  amount_paid: number; // Amount in cents
+  currency: string; // e.g., 'usd'
+  status: InvoiceStatus;
+  created: number; // Unix timestamp
+  due_date: number | null; // Unix timestamp or null
+  hosted_invoice_url: string; // Stripe hosted invoice URL
+  invoice_pdf: string | null; // PDF download URL or null
+  description: string | null; // Invoice description
+  subscription: string; // Subscription ID
+}
+
+export interface IInvoiceListResponse {
+  success: boolean;
+  invoices: IInvoice[];
+  has_more: boolean;
+}
+
+export interface IInvoiceResponse {
+  success: boolean;
+  invoice: IInvoice;
+}
