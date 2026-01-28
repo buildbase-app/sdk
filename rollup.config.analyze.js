@@ -6,6 +6,7 @@ import typescript from '@rollup/plugin-typescript';
 import { createRequire } from 'module';
 import dts from 'rollup-plugin-dts';
 import postcss from 'rollup-plugin-postcss';
+import { visualizer } from 'rollup-plugin-visualizer';
 
 const require = createRequire(import.meta.url);
 const packageJson = require('./package.json');
@@ -65,6 +66,13 @@ export default [
         },
       }),
       terser(),
+      visualizer({
+        filename: 'dist/stats.html',
+        open: true,
+        gzipSize: true,
+        brotliSize: true,
+        template: 'treemap', // sunburst, treemap, network
+      }),
     ],
     external: [
       ...Object.keys(packageJson.peerDependencies || {}),

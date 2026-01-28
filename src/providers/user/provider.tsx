@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { IUser } from '../../api/types';
 import { useAppSelector } from '../../contexts';
 import { handleError } from '../../lib/error-handler';
+import { safeFetch } from '../../lib/api-utils';
 import { getAuthFlags } from '../auth/types';
 import { getAuthHeaders } from '../auth/utils';
 
@@ -38,7 +39,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = React.memo(
     }
 
     try {
-      const response = await fetch(`${serverUrl}/api/${version}/public/users/attributes`, {
+      const response = await safeFetch(`${serverUrl}/api/${version}/public/users/attributes`, {
         headers: getAuthHeaders(),
       });
 
@@ -91,7 +92,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = React.memo(
       setError(null);
 
       try {
-        const response = await fetch(`${serverUrl}/api/${version}/public/users/attributes`, {
+        const response = await safeFetch(`${serverUrl}/api/${version}/public/users/attributes`, {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
@@ -137,7 +138,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = React.memo(
       setError(null);
 
       try {
-        const response = await fetch(
+        const response = await safeFetch(
           `${serverUrl}/api/${version}/public/users/attributes/${attributeKey}`,
           {
             method: 'PATCH',
@@ -183,7 +184,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = React.memo(
     }
 
     try {
-      const response = await fetch(`${serverUrl}/api/${version}/public/users/features`, {
+      const response = await safeFetch(`${serverUrl}/api/${version}/public/users/features`, {
         headers: getAuthHeaders(),
       });
 

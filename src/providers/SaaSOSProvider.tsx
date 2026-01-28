@@ -17,6 +17,92 @@ export interface SaaSOSProviderProps extends IOsState {
 }
 
 /**
+ * Main provider component for the BuildBase SDK.
+ * Must wrap your application to enable all SDK features (auth, workspaces, etc.).
+ *
+ * @param props - Provider props extending IOsState
+ * @param props.serverUrl - Base URL of the BuildBase API server (must be valid URL)
+ * @param props.version - API version (currently only 'v1' is supported)
+ * @param props.orgId - Organization ID (must be valid MongoDB ObjectId - 24 hex characters)
+ * @param props.auth - Optional authentication configuration
+ * @param props.auth.clientId - OAuth client ID for authentication
+ * @param props.auth.redirectUrl - URL to redirect to after OAuth flow
+ * @param props.auth.callbacks - Optional callbacks for auth events
+ * @param props.children - React children to render
+ *
+ * @throws {Error} If serverUrl is invalid, version is not 'v1', or orgId is not a valid MongoDB ObjectId
+ *
+ * @example
+ * ```tsx
+ * function App() {
+ *   return (
+ *     <SaaSOSProvider
+ *       serverUrl="https://api.buildbase.app"
+ *       version="v1"
+ *       orgId="507f1f77bcf86cd799439011"
+ *       auth={{
+ *         clientId: "your-client-id",
+ *         redirectUrl: window.location.origin,
+ *       }}
+ *     >
+ *       <YourApp />
+ *     </SaaSOSProvider>
+ *   );
+ * }
+ * ```
+ *
+ * @example
+ * ```tsx
+ * // With auth callbacks
+ * function App() {
+ *   return (
+ *     <SaaSOSProvider
+ *       serverUrl="https://api.buildbase.app"
+ *       version="v1"
+ *       orgId="507f1f77bcf86cd799439011"
+ *       auth={{
+ *         clientId: "your-client-id",
+ *         redirectUrl: window.location.origin,
+ *         callbacks: {
+ *           onSignOut: async () => {
+ *             // Custom cleanup
+ *             await clearLocalStorage();
+ *           },
+ *           handleEvent: (event) => {
+ *             console.log('SDK event:', event);
+ *           },
+ *         },
+ *       }}
+ *     >
+ *       <YourApp />
+ *     </SaaSOSProvider>
+ *   );
+ * }
+ * ```
+ *
+ * @example
+ * ```tsx
+ * // Edge case: Invalid configuration
+ * function App() {
+ *   try {
+ *     return (
+ *       <SaaSOSProvider
+ *         serverUrl="invalid-url"
+ *         version="v1"
+ *         orgId="invalid-id"
+ *       >
+ *         <YourApp />
+ *       </SaaSOSProvider>
+ *     );
+ *   } catch (error) {
+ *     // Error thrown during render: "Invalid serverUrl: ..."
+ *     return <ErrorPage error={error} />;
+ *   }
+ * }
+ * ```
+ */
+
+/**
  * Validates if a string is a valid MongoDB ObjectId
  * MongoDB ObjectId must be exactly 24 hexadecimal characters
  */

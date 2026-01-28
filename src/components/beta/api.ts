@@ -1,4 +1,5 @@
 import { IAsset, IDocument } from '../../api/types';
+import { safeFetch } from '../../lib/api-utils';
 import { ApiVersion, IOsConfig } from '../../providers/os/types';
 
 interface IScreenDetail {
@@ -45,7 +46,7 @@ export class BetaForm {
   }
 
   async fetchConfig(): Promise<IBetaConfig> {
-    const response = await fetch(
+    const response = await safeFetch(
       `${this.serverUrl}/api/${this.version}/beta/config?orgId=${this.orgId}`
     );
     if (!response.ok) {
@@ -89,7 +90,7 @@ export class BetaForm {
         ? Intl.NumberFormat().resolvedOptions().currency
         : undefined);
 
-    const response = await fetch(`${this.serverUrl}/api/${this.version}/beta/submit`, {
+    const response = await safeFetch(`${this.serverUrl}/api/${this.version}/beta/submit`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

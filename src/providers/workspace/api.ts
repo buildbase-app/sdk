@@ -12,6 +12,7 @@ import {
   ISubscriptionUpdateResponse,
   IUser,
 } from '../../api/types';
+import { handleApiResponse, safeFetch } from '../../lib/api-utils';
 import { getAuthHeaders } from '../auth/utils';
 import { ApiVersion, IOsConfig } from '../os/types';
 import type { IWorkspace, IWorkspaceFeature, IWorkspaceUser } from './types';
@@ -32,51 +33,52 @@ export class WorkspaceApi {
   }
 
   async getWorkspaces(): Promise<IWorkspace[]> {
-    const response = await fetch(`${this.serverUrl}/api/${this.version}/public/workspaces`, {
+    const response = await safeFetch(`${this.serverUrl}/api/${this.version}/public/workspaces`, {
       headers: this.getAuthHeader(),
     });
-    if (!response.ok) throw new Error('Failed to fetch workspaces');
-    return response.json();
+    return handleApiResponse<IWorkspace[]>(response, 'Failed to fetch workspaces');
   }
 
   async createWorkspace(data: { name: string; image?: string }): Promise<IWorkspace> {
-    const response = await fetch(`${this.serverUrl}/api/${this.version}/public/workspaces`, {
+    const response = await safeFetch(`${this.serverUrl}/api/${this.version}/public/workspaces`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...this.getAuthHeader() },
       body: JSON.stringify(data),
     });
-    if (!response.ok) throw new Error('Failed to create workspace');
-    return response.json();
+    return handleApiResponse<IWorkspace>(response, 'Failed to create workspace');
   }
 
   async updateWorkspace(id: string, data: Partial<IWorkspace>): Promise<IWorkspace> {
-    const response = await fetch(`${this.serverUrl}/api/${this.version}/public/workspaces/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', ...this.getAuthHeader() },
-      body: JSON.stringify(data),
-    });
-    if (!response.ok) throw new Error('Failed to update workspace');
-    return response.json();
+    const response = await safeFetch(
+      `${this.serverUrl}/api/${this.version}/public/workspaces/${id}`,
+      {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', ...this.getAuthHeader() },
+        body: JSON.stringify(data),
+      }
+    );
+    return handleApiResponse<IWorkspace>(response, 'Failed to update workspace');
   }
 
   async deleteWorkspace(id: string): Promise<{ success: boolean }> {
-    const response = await fetch(`${this.serverUrl}/api/${this.version}/public/workspaces/${id}`, {
-      method: 'DELETE',
-      headers: this.getAuthHeader(),
-    });
-    if (!response.ok) throw new Error('Failed to delete workspace');
-    return response.json();
+    const response = await safeFetch(
+      `${this.serverUrl}/api/${this.version}/public/workspaces/${id}`,
+      {
+        method: 'DELETE',
+        headers: this.getAuthHeader(),
+      }
+    );
+    return handleApiResponse<{ success: boolean }>(response, 'Failed to delete workspace');
   }
 
   async getWorkspaceUsers(workspaceId: string): Promise<IWorkspaceUser[]> {
-    const response = await fetch(
+    const response = await safeFetch(
       `${this.serverUrl}/api/${this.version}/public/workspaces/${workspaceId}/users`,
       {
         headers: this.getAuthHeader(),
       }
     );
-    if (!response.ok) throw new Error('Failed to fetch workspace users');
-    return response.json();
+    return handleApiResponse<IWorkspaceUser[]>(response, 'Failed to fetch workspace users');
   }
 
   async addUser(
@@ -87,7 +89,7 @@ export class WorkspaceApi {
     workspace: IWorkspace;
     message: string;
   }> {
-    const response = await fetch(
+    const response = await safeFetch(
       `${this.serverUrl}/api/${this.version}/public/workspaces/${workspaceId}/users/add`,
       {
         method: 'POST',
@@ -95,11 +97,11 @@ export class WorkspaceApi {
         body: JSON.stringify(config),
       }
     );
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Failed to invite member');
-    }
-    return response.json();
+    return handleApiResponse<{
+      userId: string;
+      workspace: IWorkspace;
+      message: string;
+    }>(response, 'Failed to invite member');
   }
 
   async removeUser(
@@ -110,18 +112,18 @@ export class WorkspaceApi {
     workspace: IWorkspace;
     message: string;
   }> {
-    const response = await fetch(
+    const response = await safeFetch(
       `${this.serverUrl}/api/${this.version}/public/workspaces/${workspaceId}/users/${userId}`,
       {
         method: 'DELETE',
         headers: this.getAuthHeader(),
       }
     );
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Failed to remove user');
-    }
-    return response.json();
+    return handleApiResponse<{
+      userId: string;
+      workspace: IWorkspace;
+      message: string;
+    }>(response, 'Failed to remove user');
   }
 
   async updateUser(
@@ -133,7 +135,7 @@ export class WorkspaceApi {
     workspace: IWorkspace;
     message: string;
   }> {
-    const response = await fetch(
+    const response = await safeFetch(
       `${this.serverUrl}/api/${this.version}/public/workspaces/${workspaceId}/users/${userId}`,
       {
         method: 'PATCH',
@@ -149,7 +151,7 @@ export class WorkspaceApi {
   }
 
   async getFeatures(): Promise<IWorkspaceFeature[]> {
-    const response = await fetch(
+    const response = await safeFetch(
       `${this.serverUrl}/api/${this.version}/public/workspaces/features`,
       {
         headers: this.getAuthHeader(),
@@ -160,7 +162,7 @@ export class WorkspaceApi {
   }
 
   async updateFeature(workspaceId: string, key: string, value: boolean): Promise<IWorkspace> {
-    const response = await fetch(
+    const response = await safeFetch(
       `${this.serverUrl}/api/${this.version}/public/workspaces/${workspaceId}/features`,
       {
         method: 'PATCH',
@@ -173,7 +175,7 @@ export class WorkspaceApi {
   }
 
   async getWorkspace(workspaceId: string): Promise<IWorkspace> {
-    const response = await fetch(
+    const response = await safeFetch(
       `${this.serverUrl}/api/${this.version}/public/workspaces/${workspaceId}`,
       {
         headers: this.getAuthHeader(),
@@ -184,7 +186,7 @@ export class WorkspaceApi {
   }
 
   async getProfile(): Promise<IUser> {
-    const response = await fetch(`${this.serverUrl}/api/${this.version}/public/profile`, {
+    const response = await safeFetch(`${this.serverUrl}/api/${this.version}/public/profile`, {
       headers: this.getAuthHeader(),
     });
     if (!response.ok) throw new Error('Failed to fetch profile');
@@ -192,7 +194,7 @@ export class WorkspaceApi {
   }
 
   async updateUserProfile(config: Partial<IUser>): Promise<IUser> {
-    const response = await fetch(`${this.serverUrl}/api/${this.version}/public/profile`, {
+    const response = await safeFetch(`${this.serverUrl}/api/${this.version}/public/profile`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json', ...this.getAuthHeader() },
       body: JSON.stringify(config),
@@ -208,7 +210,7 @@ export class WorkspaceApi {
    * Returns subscription details including plan, plan version, and group information
    */
   async getCurrentSubscription(workspaceId: string): Promise<ISubscriptionResponse> {
-    const response = await fetch(
+    const response = await safeFetch(
       `${this.serverUrl}/api/${this.version}/public/workspaces/${workspaceId}/subscription`,
       {
         headers: this.getAuthHeader(),
@@ -249,7 +251,7 @@ export class WorkspaceApi {
    * otherwise returns the latest published group
    */
   async getPlanGroup(workspaceId: string): Promise<IPlanGroupResponse> {
-    const response = await fetch(
+    const response = await safeFetch(
       `${this.serverUrl}/api/${this.version}/public/workspaces/${workspaceId}/subscription/plan-group`,
       {
         headers: this.getAuthHeader(),
@@ -294,7 +296,7 @@ export class WorkspaceApi {
     workspaceId: string,
     groupVersionId: string
   ): Promise<IPlanGroupResponse> {
-    const response = await fetch(
+    const response = await safeFetch(
       `${this.serverUrl}/api/${this.version}/public/workspaces/${workspaceId}/subscription/plan-group?groupVersionId=${groupVersionId}`,
       {
         headers: this.getAuthHeader(),
@@ -338,7 +340,7 @@ export class WorkspaceApi {
    * @returns Plan group versions response with currentVersion and availableVersions
    */
   async getPlanGroupVersions(workspaceId: string): Promise<IPlanGroupVersionsResponse> {
-    const response = await fetch(
+    const response = await safeFetch(
       `${this.serverUrl}/api/${this.version}/public/workspaces/${workspaceId}/subscription/plan-group/versions`,
       {
         headers: this.getAuthHeader(),
@@ -377,7 +379,7 @@ export class WorkspaceApi {
    * Returns the full plan group version with populated plan versions
    */
   async getPlanGroupVersion(groupVersionId: string): Promise<IPlanGroupVersion> {
-    const response = await fetch(
+    const response = await safeFetch(
       `${this.serverUrl}/api/${this.version}/public/plan-group-versions/${groupVersionId}`,
       {
         headers: this.getAuthHeader(),
@@ -421,7 +423,7 @@ export class WorkspaceApi {
     workspaceId: string,
     request: ICheckoutSessionRequest
   ): Promise<ICheckoutSessionResponse> {
-    const response = await fetch(
+    const response = await safeFetch(
       `${this.serverUrl}/api/${this.version}/public/workspaces/${workspaceId}/subscription/checkout`,
       {
         method: 'POST',
@@ -462,7 +464,7 @@ export class WorkspaceApi {
     workspaceId: string,
     request: ISubscriptionUpdateRequest
   ): Promise<ISubscriptionUpdateResponse | ICheckoutSessionResponse> {
-    const response = await fetch(
+    const response = await safeFetch(
       `${this.serverUrl}/api/${this.version}/public/workspaces/${workspaceId}/subscription`,
       {
         method: 'PATCH',
@@ -520,7 +522,7 @@ export class WorkspaceApi {
       params.append('starting_after', startingAfter);
     }
 
-    const response = await fetch(
+    const response = await safeFetch(
       `${this.serverUrl}/api/${this.version}/public/workspaces/${workspaceId}/subscription/invoices?${params.toString()}`,
       {
         headers: this.getAuthHeader(),
@@ -563,7 +565,7 @@ export class WorkspaceApi {
    * @returns Invoice details
    */
   async getInvoice(workspaceId: string, invoiceId: string): Promise<IInvoiceResponse> {
-    const response = await fetch(
+    const response = await safeFetch(
       `${this.serverUrl}/api/${this.version}/public/workspaces/${workspaceId}/subscription/invoices/${invoiceId}`,
       {
         headers: this.getAuthHeader(),

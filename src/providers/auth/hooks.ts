@@ -7,6 +7,67 @@ import { workspaceSettingsManager } from '../workspace/settings-manager';
 import { getAuthFlags } from './types';
 import { removeSession } from './utils';
 
+/**
+ * Main authentication hook for the SDK.
+ * Provides authentication state, user session, and auth actions.
+ *
+ * @returns An object containing:
+ * - `user`: Current authenticated user object (null if not authenticated)
+ * - `session`: Full session object with user and token (null if not authenticated)
+ * - `status`: Current authentication status (loading, redirecting, authenticating, authenticated, unauthenticated)
+ * - `isLoading`: Boolean indicating if auth state is being determined
+ * - `isAuthenticated`: Boolean indicating if user is authenticated
+ * - `isRedirecting`: Boolean indicating if redirecting to OAuth provider
+ * - `signIn()`: Function to initiate OAuth sign-in flow
+ * - `signOut()`: Function to sign out the current user
+ * - `openWorkspaceSettings(section?)`: Function to open workspace settings dialog
+ *
+ * @example
+ * ```tsx
+ * function MyComponent() {
+ *   const { user, isAuthenticated, signIn, signOut } = useSaaSAuth();
+ *
+ *   if (!isAuthenticated) {
+ *     return <button onClick={signIn}>Sign In</button>;
+ *   }
+ *
+ *   return (
+ *     <div>
+ *       <p>Welcome, {user?.name}</p>
+ *       <button onClick={signOut}>Sign Out</button>
+ *     </div>
+ *   );
+ * }
+ * ```
+ *
+ * @example
+ * ```tsx
+ * // Handle loading state
+ * function App() {
+ *   const { status, isLoading } = useSaaSAuth();
+ *
+ *   if (isLoading) {
+ *     return <LoadingSpinner />;
+ *   }
+ *
+ *   return <MainContent />;
+ * }
+ * ```
+ *
+ * @example
+ * ```tsx
+ * // Open workspace settings
+ * function SettingsButton() {
+ *   const { openWorkspaceSettings } = useSaaSAuth();
+ *
+ *   return (
+ *     <button onClick={() => openWorkspaceSettings('general')}>
+ *       Open Settings
+ *     </button>
+ *   );
+ * }
+ * ```
+ */
 export function useSaaSAuth() {
   const dispatch = useAppDispatch();
   const auth = useAppSelector(state => state.auth);
