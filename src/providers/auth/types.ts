@@ -2,9 +2,22 @@ import type { EventData, EventType } from '../events/types';
 
 export enum AuthStatus {
   loading = 'loading',
+  redirecting = 'redirecting',
   authenticated = 'authenticated',
   unauthenticated = 'unauthenticated',
   authenticating = 'authenticating',
+}
+
+/** Derive booleans from status (single source of truth) */
+export function getAuthFlags(status: AuthStatus) {
+  return {
+    isAuthenticated: status === AuthStatus.authenticated,
+    isLoading:
+      status === AuthStatus.loading ||
+      status === AuthStatus.redirecting ||
+      status === AuthStatus.authenticating,
+    isRedirecting: status === AuthStatus.redirecting,
+  };
 }
 
 export interface AuthUser {
@@ -24,12 +37,9 @@ export interface AuthSession {
   expires: string;
 }
 
-// Define a type for the slice state
+// Define a type for the slice state (status is the single source of truth; flags are derived)
 export interface IAuthState {
   session: AuthSession | null;
-  isLoading: boolean;
-  isAuthenticated: boolean;
-  isRedirecting: boolean;
   status: AuthStatus;
 }
 

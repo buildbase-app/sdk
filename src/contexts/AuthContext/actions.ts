@@ -10,6 +10,10 @@ export const authActions = {
     type: 'AUTHENTICATION_STARTED',
   }),
 
+  authenticationProcessing: (): AuthAction => ({
+    type: 'AUTHENTICATION_PROCESSING',
+  }),
+
   authenticationFailed: (): AuthAction => ({
     type: 'AUTHENTICATION_FAILED',
   }),

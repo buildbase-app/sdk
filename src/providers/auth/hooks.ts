@@ -4,6 +4,7 @@ import { defaultApiClient } from '../../lib/api-client';
 import { handleError } from '../../lib/error-handler';
 import { useSaaSWorkspaces } from '../workspace/hooks';
 import { workspaceSettingsManager } from '../workspace/settings-manager';
+import { getAuthFlags } from './types';
 import { removeSession } from './utils';
 
 export function useSaaSAuth() {
@@ -89,22 +90,18 @@ export function useSaaSAuth() {
     [currentWorkspace]
   );
 
-  // Memoize return value to prevent unnecessary re-renders
+  const flags = useMemo(() => getAuthFlags(auth.status), [auth.status]);
+
   return useMemo(
     () => ({
-      // State
       user: auth.session?.user,
       session: auth.session,
-      isLoading: auth.isLoading,
-      isAuthenticated: auth.isAuthenticated,
-      isRedirecting: auth.isRedirecting,
       status: auth.status,
-
-      // Actions
+      ...flags,
       signIn,
       signOut,
       openWorkspaceSettings,
     }),
-    [auth, signIn, signOut, openWorkspaceSettings]
+    [auth.session, auth.status, flags, signIn, signOut, openWorkspaceSettings]
   );
 }

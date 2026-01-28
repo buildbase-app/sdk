@@ -31,7 +31,7 @@ export interface SDKState {
  *
  * // Get specific context
  * const auth = useAppSelector(state => state.auth);
- * const user = useAppSelector(state => state.auth.user);
+ * const user = useAppSelector(state => state.auth.session?.user);
  *
  * // Get multiple fields across contexts
  * const { user, currentWorkspace, serverUrl } = useAppSelector(state => ({
