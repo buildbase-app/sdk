@@ -1,5 +1,5 @@
 import { SelectValue } from '@radix-ui/react-select';
-import { RefreshCcwIcon, TrashIcon } from 'lucide-react';
+import { Loader2, RefreshCcwIcon, TrashIcon } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { IUser } from '../../../api/types';
 import { Button } from '../../../components/ui/button';
@@ -19,6 +19,7 @@ const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace
   const [refreshCounter, setRefreshCounter] = useState(0);
   const [loading, setLoading] = useState(false);
   const [workspaceUsers, setWorkspaceUsers] = useState<IWorkspaceUser[]>([]);
+  const [updatingRoleUserId, setUpdatingRoleUserId] = useState<string | null>(null);
   const { getUsers, removeUser, updateUser } = useSaaSWorkspaces();
   const { settings } = useSaaSSettings();
 
@@ -93,6 +94,7 @@ const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace
       return;
     }
 
+    setUpdatingRoleUserId(userId);
     updateUser(workspaceId, userId, { role })
       .then(() => {
         refresh();
@@ -103,6 +105,9 @@ const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace
           action: 'handleUpdateRole',
           metadata: { workspaceId, userId, role },
         });
+      })
+      .finally(() => {
+        setUpdatingRoleUserId(null);
       });
   };
 
@@ -172,9 +177,9 @@ const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace
               </div>
 
               <div className="flex items-center gap-x-1">
-                <div>
+                <div className="relative">
                   <Select
-                    disabled={myself || !amIAdmin || isOwner}
+                    disabled={myself || !amIAdmin || isOwner || updatingRoleUserId === member.id}
                     value={member.role}
                     onValueChange={value => handleUpdateRole(workspace._id, member.id, value)}
                   >
@@ -189,6 +194,11 @@ const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace
                       ))}
                     </SelectContent>
                   </Select>
+                  {updatingRoleUserId === member.id && (
+                    <div className="absolute right-8 top-1/2 -translate-y-1/2 pointer-events-none">
+                      <Loader2 className="h-4 w-4 animate-spin text-gray-500" />
+                    </div>
+                  )}
                 </div>
                 {myself && (
                   <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">You</span>
