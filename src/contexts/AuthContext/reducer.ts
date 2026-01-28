@@ -7,19 +7,20 @@ import {
 import type { AuthAction } from './types';
 
 /**
- * Initial state for auth context
- * Always returns unauthenticated state to prevent SSR hydration mismatches.
- * Session will be hydrated from localStorage on the client side via useEffect.
+ * Initial state for auth context.
+ *
+ * UX flow:
+ * 1. App loads → status: loading (user sees loading state).
+ * 2. AuthProviderWrapper checks session in localStorage.
+ * 3. No session → status: unauthenticated (show login).
+ * 4. Has session → fetch profile; success → authenticated, failure → unauthenticated.
+ *
+ * Flags (isLoading, isAuthenticated, isRedirecting) are derived from status via getAuthFlags().
  */
 export const getInitialAuthState = (): IAuthState => {
-  // Always return unauthenticated state for SSR safety
-  // Session will be loaded on client side in AuthProviderWrapper
   return {
     session: null,
-    isLoading: false,
-    isAuthenticated: false,
-    isRedirecting: false,
-    status: AuthStatus.unauthenticated,
+    status: AuthStatus.loading,
   };
 };
 
@@ -30,48 +31,23 @@ export const getInitialAuthState = (): IAuthState => {
 export const authReducer = (state: IAuthState, action: AuthAction): IAuthState => {
   switch (action.type) {
     case 'AUTHENTICATION_STARTED':
-      return {
-        ...state,
-        isLoading: true,
-        isAuthenticated: false,
-        isRedirecting: true,
-        status: AuthStatus.authenticating,
-      };
+      return { ...state, status: AuthStatus.redirecting };
+
+    case 'AUTHENTICATION_PROCESSING':
+      return { ...state, status: AuthStatus.authenticating };
 
     case 'AUTHENTICATION_FAILED':
-      return {
-        ...state,
-        isLoading: false,
-        isAuthenticated: false,
-        isRedirecting: false,
-        status: AuthStatus.unauthenticated,
-      };
+      return { ...state, session: null, status: AuthStatus.unauthenticated };
 
     case 'SET_SESSION': {
       const session = action.payload;
-      // Only store sessionId in localStorage, keep user data in context only
       setSessionIdStorage(session.sessionId);
-      return {
-        ...state,
-        session,
-        isAuthenticated: true,
-        isRedirecting: false,
-        isLoading: false,
-        status: AuthStatus.authenticated,
-      };
+      return { ...state, session, status: AuthStatus.authenticated };
     }
 
     case 'REMOVE_SESSION':
-      // Use centralized session removal function
       removeSessionStorage();
-      return {
-        ...state,
-        session: null,
-        isLoading: false,
-        isAuthenticated: false,
-        isRedirecting: false,
-        status: AuthStatus.unauthenticated,
-      };
+      return { ...state, session: null, status: AuthStatus.unauthenticated };
 
     default:
       return state;

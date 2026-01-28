@@ -212,7 +212,7 @@ const {
   isAuthenticated, // Boolean: true if user is authenticated
   isLoading, // Boolean: true when checking authentication status
   isRedirecting, // Boolean: true when redirecting for OAuth
-  status, // String: 'idle' | 'loading' | 'authenticated' | 'error'
+  status, // AuthStatus: 'loading' | 'redirecting' | 'authenticating' | 'authenticated' | 'unauthenticated' (use AuthStatus enum for type-safe checks)
   signIn, // Function: initiates sign-in flow
   signOut, // Function: signs out the user
   openWorkspaceSettings, // Function: opens workspace settings dialog
@@ -529,6 +529,7 @@ function SettingsExample() {
 ### Enums
 
 - `ApiVersion` - API version enum (currently only `V1`)
+- `AuthStatus` - Auth status enum: `loading` \| `redirecting` \| `authenticating` \| `authenticated` \| `unauthenticated`. Use with `useSaaSAuth().status`; `isLoading`, `isAuthenticated`, and `isRedirecting` are derived from it.
 
 ### Types
 

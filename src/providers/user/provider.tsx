@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { IUser } from '../../api/types';
 import { useAppSelector } from '../../contexts';
 import { handleError } from '../../lib/error-handler';
+import { getAuthFlags } from '../auth/types';
 import { getAuthHeaders } from '../auth/utils';
 
 export interface UserContextValue {
@@ -23,7 +24,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = React.memo(
   const os = useAppSelector(state => state.os);
   const auth = useAppSelector(state => state.auth);
   const { serverUrl, version } = os;
-  const isAuthenticated = auth.isAuthenticated;
+  const isAuthenticated = getAuthFlags(auth.status).isAuthenticated;
 
   const [attributes, setAttributes] = useState<Record<string, string | number | boolean>>({});
   const [features, setFeatures] = useState<Record<string, boolean>>({});
