@@ -26,8 +26,55 @@ interface ErrorBoundaryState {
 }
 
 /**
- * Error Boundary component for catching React component errors
- * Wraps SDK components to prevent crashes from propagating
+ * Error Boundary component for catching React component errors.
+ * Wraps SDK components to prevent crashes from propagating to the entire app.
+ * Automatically logs errors using the SDK error handler.
+ *
+ * @example
+ * ```tsx
+ * function App() {
+ *   return (
+ *     <SDKErrorBoundary
+ *       fallback={(error, reset) => (
+ *         <div>
+ *           <p>Error: {error.message}</p>
+ *           <button onClick={reset}>Try Again</button>
+ *         </div>
+ *       )}
+ *       onError={(error, errorInfo) => {
+ *         // Custom error reporting
+ *         reportError(error, errorInfo);
+ *       }}
+ *     >
+ *       <YourApp />
+ *     </SDKErrorBoundary>
+ *   );
+ * }
+ * ```
+ *
+ * @example
+ * ```tsx
+ * // Simple usage with default fallback
+ * function App() {
+ *   return (
+ *     <SDKErrorBoundary>
+ *       <YourApp />
+ *     </SDKErrorBoundary>
+ *   );
+ * }
+ * ```
+ *
+ * @example
+ * ```tsx
+ * // Disable auto-reset on props change
+ * function App() {
+ *   return (
+ *     <SDKErrorBoundary resetOnPropsChange={false}>
+ *       <YourApp />
+ *     </SDKErrorBoundary>
+ *   );
+ * }
+ * ```
  */
 export class SDKErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   constructor(props: ErrorBoundaryProps) {

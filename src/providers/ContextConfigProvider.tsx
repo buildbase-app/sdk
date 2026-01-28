@@ -3,6 +3,7 @@
 import React, { useEffect } from 'react';
 import { osActions, useAppDispatch, useAppSelector } from '../contexts';
 import { handleError } from '../lib/error-handler';
+import { isAbortError, safeFetch } from '../lib/api-utils';
 import type { IAuthConfig } from './auth/types';
 import { getAuthHeaders } from './auth/utils';
 import type { IOsState } from './os/types';
@@ -50,28 +51,42 @@ export const ContextConfigProvider: React.FC<ContextConfigProviderProps> = React
       const { serverUrl, version, orgId, settings } = os;
 
       // Only fetch if OS config is ready and settings haven't been loaded yet
-      if (serverUrl && version && orgId && !settings) {
-        const fetchSettings = async () => {
-          try {
-            const headers = getAuthHeaders();
-            const response = await fetch(`${serverUrl}/api/${version}/public/${orgId}/settings`, {
-              headers,
-            });
-            if (response.ok) {
-              const data: ISettings = await response.json();
-              dispatch.os(osActions.setSettings(data));
-            }
-          } catch (err) {
-            handleError(err, {
-              component: 'ContextConfigProvider',
-              action: 'fetchSettings',
-              metadata: { serverUrl, version, orgId },
-            });
-          }
-        };
-
-        fetchSettings();
+      if (!serverUrl || !version || !orgId || settings) {
+        return;
       }
+
+      const abortController = new AbortController();
+
+      const fetchSettings = async () => {
+        try {
+          const headers = getAuthHeaders();
+          const response = await safeFetch(
+            `${serverUrl}/api/${version}/public/${orgId}/settings`,
+            {
+              headers,
+              signal: abortController.signal,
+            }
+          );
+          if (response.ok) {
+            const data: ISettings = await response.json();
+            dispatch.os(osActions.setSettings(data));
+          }
+        } catch (err) {
+          // Ignore abort - effect cleanup or deps changed
+          if (isAbortError(err)) return;
+          handleError(err, {
+            component: 'ContextConfigProvider',
+            action: 'fetchSettings',
+            metadata: { serverUrl, version, orgId },
+          });
+        }
+      };
+
+      fetchSettings();
+
+      return () => {
+        abortController.abort();
+      };
     }, [os.serverUrl, os.version, os.orgId, os.settings, dispatch]);
 
     return <>{children}</>;

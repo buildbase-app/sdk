@@ -17,7 +17,10 @@ import {
 } from '../subscription-hooks';
 import { IWorkspace } from '../types';
 import SettingSkeleton from './Skeleton';
-import SubscriptionDialog from './SubscriptionDialog';
+// Lazy load SubscriptionDialog to reduce bundle size
+// This component is only rendered when subscription dialog is opened
+import { lazy, Suspense } from 'react';
+const SubscriptionDialog = lazy(() => import('./SubscriptionDialog').then(m => ({ default: m.default })));
 
 // Helper function to get plan details from subscriptionItems
 const getPlanDetailsFromItems = (planVersion: IPlanVersion | null | undefined) => {
@@ -617,14 +620,16 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
 
       {/* Subscription Dialog */}
       {plansToShow && plansToShow.length > 0 && (
-        <SubscriptionDialog
-          open={dialogOpen}
-          onOpenChange={setDialogOpen}
-          planVersions={plansToShow}
-          currentPlanVersionId={currentPlanVersionId || null}
-          onSelectPlan={handlePlanChange}
-          loading={updating || loading}
-        />
+        <Suspense fallback={null}>
+          <SubscriptionDialog
+            open={dialogOpen}
+            onOpenChange={setDialogOpen}
+            planVersions={plansToShow}
+            currentPlanVersionId={currentPlanVersionId || null}
+            onSelectPlan={handlePlanChange}
+            loading={updating || loading}
+          />
+        </Suspense>
       )}
 
       {!planGroupVersions && !loading && (

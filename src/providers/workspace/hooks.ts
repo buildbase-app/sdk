@@ -8,10 +8,116 @@ import { WorkspaceSwitcher } from './provider';
 import { IWorkspace, IWorkspaceUser } from './types';
 import { isWorkspaceOwner, workspaceStorage } from './utils';
 
+/**
+ * Main workspace management hook for the SDK.
+ * Provides workspace state, CRUD operations, and user management.
+ *
+ * @returns An object containing:
+ * - `workspaces`: Array of all workspaces the user has access to
+ * - `currentWorkspace`: Currently selected workspace (null if none selected)
+ * - `loading`: Boolean indicating if workspaces are being fetched
+ * - `error`: Error message string (null if no error)
+ * - `refreshing`: Boolean indicating if workspaces are being refreshed in background
+ * - `switching`: Boolean indicating if workspace is being switched
+ * - `WorkspaceSwitcher`: Component for switching between workspaces
+ * - `fetchWorkspaces()`: Function to fetch all workspaces
+ * - `refreshWorkspaces()`: Function to refresh workspaces in background (non-blocking)
+ * - `setCurrentWorkspace(workspace)`: Function to set the current workspace
+ * - `resetCurrentWorkspace()`: Function to clear the current workspace
+ * - `createWorkspace(name, image?)`: Function to create a new workspace
+ * - `updateWorkspace(workspace, data)`: Function to update a workspace
+ * - `deleteWorkspace(workspaceId)`: Function to delete a workspace (owner only)
+ * - `getWorkspace(workspaceId)`: Function to fetch a specific workspace
+ * - `getUsers(workspaceId)`: Function to fetch users in a workspace
+ * - `addUser(workspaceId, email, role)`: Function to add a user to a workspace
+ * - `removeUser(workspaceId, userId)`: Function to remove a user from a workspace
+ * - `updateUser(workspaceId, userId, config)`: Function to update a user in a workspace
+ * - `getProfile()`: Function to fetch current user profile
+ * - `updateUserProfile(config)`: Function to update current user profile
+ * - `allFeatures`: Array of all available feature flags
+ * - `getFeatures()`: Function to fetch all available features
+ * - `updateFeature(workspaceId, key, value)`: Function to update a feature flag
+ *
+ * @example
+ * ```tsx
+ * function WorkspaceList() {
+ *   const { workspaces, loading, fetchWorkspaces } = useSaaSWorkspaces();
+ *
+ *   useEffect(() => {
+ *     fetchWorkspaces();
+ *   }, [fetchWorkspaces]);
+ *
+ *   if (loading) return <Loading />;
+ *
+ *   return (
+ *     <ul>
+ *       {workspaces.map(ws => (
+ *         <li key={ws._id}>{ws.name}</li>
+ *       ))}
+ *     </ul>
+ *   );
+ * }
+ * ```
+ *
+ * @example
+ * ```tsx
+ * // Create a new workspace
+ * function CreateWorkspace() {
+ *   const { createWorkspace } = useSaaSWorkspaces();
+ *
+ *   const handleCreate = async () => {
+ *     try {
+ *       await createWorkspace('My Workspace', 'https://example.com/logo.png');
+ *     } catch (error) {
+ *       console.error('Failed to create workspace:', error);
+ *     }
+ *   };
+ *
+ *   return <button onClick={handleCreate}>Create Workspace</button>;
+ * }
+ * ```
+ *
+ * @example
+ * ```tsx
+ * // Delete workspace (owner only)
+ * function DeleteWorkspaceButton({ workspaceId }) {
+ *   const { deleteWorkspace } = useSaaSWorkspaces();
+ *
+ *   const handleDelete = async () => {
+ *     if (!confirm('Are you sure?')) return;
+ *     try {
+ *       await deleteWorkspace(workspaceId);
+ *     } catch (error) {
+ *       // Error: "Only the workspace creator can delete the workspace"
+ *       alert(error.message);
+ *     }
+ *   };
+ *
+ *   return <button onClick={handleDelete}>Delete</button>;
+ * }
+ * ```
+ *
+ * @example
+ * ```tsx
+ * // Edge case: Workspace removed from user's access
+ * function WorkspaceContent() {
+ *   const { currentWorkspace, workspaces } = useSaaSWorkspaces();
+ *
+ *   // If current workspace is not in the list, it was removed
+ *   // The hook automatically switches to first available workspace
+ *   if (!currentWorkspace) {
+ *     return <p>No workspace selected</p>;
+ *   }
+ *
+ *   return <div>{currentWorkspace.name}</div>;
+ * }
+ * ```
+ */
 export const useSaaSWorkspaces = () => {
   const dispatch = useAppDispatch();
   const os = useAppSelector(state => state.os);
-  const api = useMemo(() => new WorkspaceApi(os), [os]);
+  // Only recreate API if serverUrl, version, or orgId change (not on every os object reference change)
+  const api = useMemo(() => new WorkspaceApi(os), [os.serverUrl, os.version, os.orgId]);
 
   // Select all workspace state at once - only re-renders when any selected field changes
   const workspace = useAppSelector(state => state.workspaces);

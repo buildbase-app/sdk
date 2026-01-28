@@ -1,10 +1,13 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { lazy, Suspense, useEffect, useState } from 'react';
 import { useSaaSWorkspaces } from './hooks';
 import { workspaceSettingsManager } from './settings-manager';
 import type { WorkspaceSettingsSection } from './ui/SettingsDialog';
-import WorkspaceSettingsDialog from './ui/SettingsDialog';
+
+// Lazy load SettingsDialog to reduce initial bundle size
+// This component is only rendered when settings are opened
+const WorkspaceSettingsDialog = lazy(() => import('./ui/SettingsDialog').then(m => ({ default: m.default })));
 
 /**
  * WorkspaceSettingsProvider
@@ -37,21 +40,23 @@ export const WorkspaceSettingsProvider: React.FC<{ children: React.ReactNode }> 
   return (
     <>
       {children}
-      {currentWorkspace && (
-        <WorkspaceSettingsDialog
-          workspace={currentWorkspace}
-          open={open}
-          onOpenChange={isOpen => {
-            if (!isOpen) {
-              workspaceSettingsManager.closeSettings();
-            }
-          }}
-          section={section}
-          onSectionChange={newSection => {
-            workspaceSettingsManager.setSection(newSection);
-          }}
-          showTrigger={false}
-        />
+      {currentWorkspace && open && (
+        <Suspense fallback={null}>
+          <WorkspaceSettingsDialog
+            workspace={currentWorkspace}
+            open={open}
+            onOpenChange={isOpen => {
+              if (!isOpen) {
+                workspaceSettingsManager.closeSettings();
+              }
+            }}
+            section={section}
+            onSectionChange={newSection => {
+              workspaceSettingsManager.setSection(newSection);
+            }}
+            showTrigger={false}
+          />
+        </Suspense>
       )}
     </>
   );

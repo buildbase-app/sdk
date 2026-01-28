@@ -3,6 +3,7 @@
 import React, { ReactNode, useCallback, useEffect, useMemo } from 'react';
 import { IUser } from '../../api/types';
 import { authActions, useAppDispatch, useAppSelector } from '../../contexts';
+import { handleApiResponse, isAbortError, safeFetch } from '../../lib/api-utils';
 import { handleError } from '../../lib/error-handler';
 import type { AuthUser } from './types';
 import { getAuthFlags, IAuthCallbacks } from './types';
@@ -32,6 +33,8 @@ export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) 
   // Track if we're processing an auth redirect to prevent duplicate processing
   const processingAuthRedirectRef = React.useRef(false);
   const processedCodeRef = React.useRef<string | null>(null);
+  // Track if profile fetch is in progress to prevent race conditions
+  const fetchingProfileRef = React.useRef(false);
 
   // Memoize callbacks to prevent unnecessary re-renders
   const memoizedCallbacks = useMemo(() => callbacks, [callbacks]);
@@ -58,23 +61,16 @@ export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) 
           }
 
           // Make profile request to validate token and get user data
-          const profileResponse = await fetch(`${serverUrl}/api/${version}/public/profile`, {
+          const profileResponse = await safeFetch(`${serverUrl}/api/${version}/public/profile`, {
             headers: {
               'x-session-id': sessionId,
               'Content-Type': 'application/json',
             },
           });
-
-          if (!profileResponse.ok) {
-            throw new Error('Failed to fetch user profile');
-          }
-
-          let userData: IUser;
-          try {
-            userData = await profileResponse.json();
-          } catch (parseError) {
-            throw new Error('Failed to parse user profile response');
-          }
+          const userData = await handleApiResponse<IUser>(
+            profileResponse,
+            'Failed to fetch user profile'
+          );
 
           // Validate required user data fields
           const userId = userData._id || userData.id;
@@ -133,6 +129,8 @@ export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) 
   useEffect(() => {
     if (typeof window === 'undefined') return;
     if (isAuthenticated) return;
+    // Prevent race condition: if profile fetch is already in progress, skip
+    if (fetchingProfileRef.current) return;
 
     // Skip hydration if there's a code in URL - let OAuth redirect flow handle it first
     const code = getTokenFromUrl();
@@ -146,11 +144,16 @@ export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) 
       return;
     }
 
+    const abortController = new AbortController();
+
     const fetchUserProfile = async () => {
+      // Mark as fetching to prevent concurrent calls
+      fetchingProfileRef.current = true;
       try {
         const { serverUrl, version, orgId } = osState;
         if (!serverUrl || !version || !orgId) {
           // Stay in loading until OS config is set; effect will re-run when osState updates
+          fetchingProfileRef.current = false; // Reset so effect can retry when config is ready
           handleError(new Error('OS configuration not available, cannot fetch user profile'), {
             component: 'AuthProviderWrapper',
             action: 'fetchUserProfile',
@@ -159,33 +162,24 @@ export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) 
         }
 
         // Make profile request to get latest user data
-        const profileResponse = await fetch(`${serverUrl}/api/${version}/public/profile`, {
-          headers: {
-            'x-session-id': sessionId,
-            'Content-Type': 'application/json',
-          },
-        });
-
-        if (!profileResponse.ok) {
-          // Session invalid, remove it
-          handleError(new Error('Session invalid, removing from localStorage'), {
-            component: 'AuthProviderWrapper',
-            action: 'fetchUserProfile',
-            metadata: { status: profileResponse.status },
-          });
-          removeSession();
-          dispatch.auth(authActions.authenticationFailed());
-          return;
-        }
-
         let userData: IUser;
         try {
-          userData = await profileResponse.json();
-        } catch (parseError) {
-          handleError(parseError, {
+          const profileResponse = await safeFetch(`${serverUrl}/api/${version}/public/profile`, {
+            headers: {
+              'x-session-id': sessionId,
+              'Content-Type': 'application/json',
+            },
+            signal: abortController.signal,
+          });
+          userData = await handleApiResponse<IUser>(profileResponse, 'Failed to fetch user profile');
+        } catch (error) {
+          if (isAbortError(error)) return; // Request was cancelled (unmount or deps changed)
+          // Session invalid or network error, remove it
+          fetchingProfileRef.current = false; // Reset on error
+          handleError(error, {
             component: 'AuthProviderWrapper',
             action: 'fetchUserProfile',
-            metadata: { step: 'parseResponse' },
+            metadata: { step: 'fetchProfile' },
           });
           removeSession();
           dispatch.auth(authActions.authenticationFailed());
@@ -195,6 +189,7 @@ export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) 
         // Validate required user data fields
         const userId = userData._id || userData.id;
         if (!userId || typeof userId !== 'string') {
+          fetchingProfileRef.current = false; // Reset on validation error
           handleError(new Error('User data missing required ID field'), {
             component: 'AuthProviderWrapper',
             action: 'fetchUserProfile',
@@ -206,6 +201,7 @@ export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) 
         }
 
         if (!userData.email || typeof userData.email !== 'string') {
+          fetchingProfileRef.current = false; // Reset on validation error
           handleError(new Error('User data missing required email field'), {
             component: 'AuthProviderWrapper',
             action: 'fetchUserProfile',
@@ -234,6 +230,7 @@ export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) 
         // Dispatch setSession to update state (sessionId already in localStorage)
         dispatch.auth(authActions.setSession(session));
       } catch (error) {
+        if (isAbortError(error)) return; // Request was cancelled
         handleError(error, {
           component: 'AuthProviderWrapper',
           action: 'fetchUserProfile',
@@ -242,10 +239,17 @@ export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) 
         // Remove invalid session
         removeSession();
         dispatch.auth(authActions.authenticationFailed());
+      } finally {
+        // Always reset the ref when fetch completes (success or failure)
+        fetchingProfileRef.current = false;
       }
     };
 
     fetchUserProfile();
+
+    return () => {
+      abortController.abort();
+    };
   }, [isAuthenticated, dispatch, osState]);
 
   /**

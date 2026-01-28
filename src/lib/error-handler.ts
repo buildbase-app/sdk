@@ -163,11 +163,50 @@ class ErrorHandler {
 // Export singleton instance
 export const errorHandler = new ErrorHandler();
 
-// Export convenience functions
+/**
+ * Convenience function to handle an error with context.
+ * Uses the global error handler instance.
+ *
+ * @param error - The error to handle (Error instance, string, or unknown)
+ * @param context - Optional context about where the error occurred
+ *
+ * @example
+ * ```tsx
+ * try {
+ *   await someOperation();
+ * } catch (error) {
+ *   handleError(error, {
+ *     component: 'MyComponent',
+ *     action: 'someOperation',
+ *     metadata: { userId: '123' },
+ *   });
+ * }
+ * ```
+ */
 export function handleError(error: Error | unknown, context: SDKErrorContext = {}): void {
   errorHandler.handleError(error, context);
 }
 
+/**
+ * Creates a new SDKError instance with optional code and context.
+ * Useful for creating standardized errors throughout the SDK.
+ *
+ * @param message - Error message
+ * @param code - Optional error code (e.g., 'AUTH_FAILED', 'NETWORK_ERROR')
+ * @param context - Optional context about where the error occurred
+ * @param originalError - Optional original error that caused this error
+ * @returns A new SDKError instance
+ *
+ * @example
+ * ```tsx
+ * throw createSDKError(
+ *   'Failed to authenticate user',
+ *   'AUTH_FAILED',
+ *   { component: 'AuthProvider', action: 'signIn' },
+ *   originalError
+ * );
+ * ```
+ */
 export function createSDKError(
   message: string,
   code?: string,
