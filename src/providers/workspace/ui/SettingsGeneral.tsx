@@ -28,6 +28,7 @@ const WorkspaceSettingsGeneral: React.FC<{ workspace: IWorkspace }> = ({ workspa
   const [isUpdating, setIsUpdating] = useState(false);
   const [imageType, setImageType] = useState<'emoji' | 'url'>('emoji');
   const [selectedEmoji, setSelectedEmoji] = useState<string>();
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const { updateWorkspace } = useSaaSWorkspaces();
   const currentUser = useAppSelector(state => state.auth.session?.user || null);
 
@@ -48,8 +49,13 @@ const WorkspaceSettingsGeneral: React.FC<{ workspace: IWorkspace }> = ({ workspa
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsUpdating(true);
+    setSuccessMessage(null);
     try {
       await updateWorkspace(workspace, values);
+      setSuccessMessage('Workspace settings saved successfully');
+      setTimeout(() => {
+        setSuccessMessage(null);
+      }, 5000);
     } catch (error) {
       console.error('Failed to update workspace:', error);
     } finally {
@@ -69,6 +75,12 @@ const WorkspaceSettingsGeneral: React.FC<{ workspace: IWorkspace }> = ({ workspa
 
   return (
     <div>
+      {successMessage && (
+        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded mb-4">
+          <p className="font-medium">Success!</p>
+          <p className="text-sm">{successMessage}</p>
+        </div>
+      )}
       {!amIOwner && (
         <div className="text-red-500">
           Only the workspace owner can change the workspace settings.

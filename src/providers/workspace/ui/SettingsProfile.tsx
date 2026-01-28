@@ -26,6 +26,7 @@ const WorkspaceSettingsProfile: React.FC<{ workspace: IWorkspace }> = ({ workspa
   const [isSaving, setIsSaving] = useState(false);
   const [user, setUser] = useState<IUser>();
   const [reloadCounter, setReloadCounter] = useState(0);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const formSchema = z.object({
     name: z.string().min(2, {
@@ -65,14 +66,24 @@ const WorkspaceSettingsProfile: React.FC<{ workspace: IWorkspace }> = ({ workspa
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSaving(true);
-    await updateUserProfile({
-      name: values.name,
-      country: values.country,
-      timezone: values.timezone,
-      language: values.language,
-      currency: values.currency,
-    });
-    setIsSaving(false);
+    setSuccessMessage(null);
+    try {
+      await updateUserProfile({
+        name: values.name,
+        country: values.country,
+        timezone: values.timezone,
+        language: values.language,
+        currency: values.currency,
+      });
+      setSuccessMessage('Profile saved successfully');
+      setTimeout(() => {
+        setSuccessMessage(null);
+      }, 5000);
+    } catch (error) {
+      console.error('Failed to update profile:', error);
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   if (!user) {
@@ -81,6 +92,12 @@ const WorkspaceSettingsProfile: React.FC<{ workspace: IWorkspace }> = ({ workspa
 
   return (
     <div>
+      {successMessage && (
+        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded mb-4">
+          <p className="font-medium">Success!</p>
+          <p className="text-sm">{successMessage}</p>
+        </div>
+      )}
       <div className="space-y-4">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
