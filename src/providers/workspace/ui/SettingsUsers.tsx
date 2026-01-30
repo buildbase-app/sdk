@@ -31,7 +31,11 @@ const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace
         setWorkspaceUsers(users);
       })
       .catch(error => {
-        console.error(error);
+        handleError(error, {
+          component: 'WorkspaceSettingsUsers',
+          action: 'getUsers',
+          metadata: { workspaceId: workspace._id },
+        });
       })
       .finally(() => {
         setLoading(false);
@@ -268,8 +272,12 @@ function InviteMember({ onInvite, workspaceId }: { onInvite: () => void; workspa
         onInvite?.();
       })
       .catch(error => {
-        console.error(error);
-        setError(error.message || 'Failed to invite member');
+        handleError(error, {
+          component: 'InviteMember',
+          action: 'addUser',
+          metadata: { workspaceId, email: emailValue, role },
+        });
+        setError(error instanceof Error ? error.message : 'Failed to invite member');
       })
       .finally(() => {
         setInviting(false);

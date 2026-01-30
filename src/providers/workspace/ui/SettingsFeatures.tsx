@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Switch } from '../../../components/ui/switch';
 import { useAppSelector } from '../../../contexts';
+import { handleError } from '../../../lib/error-handler';
 import { useSaaSWorkspaces } from '../hooks';
 import { IWorkspace } from '../types';
 import { isWorkspaceOwner } from '../utils';
@@ -32,7 +33,11 @@ const WorkspaceSettingsFeatures: React.FC<{ workspaceId: string }> = ({ workspac
         setSuccessMessage(null);
       }, 5000);
     } catch (error) {
-      console.error('Failed to update feature:', error);
+      handleError(error, {
+        component: 'WorkspaceSettingsFeatures',
+        action: 'updateFeature',
+        metadata: { workspaceId: workspace._id, featureKey: key },
+      });
     } finally {
       setUpdatingFeatures(prev => ({ ...prev, [key]: null }));
     }
