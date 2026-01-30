@@ -66,7 +66,13 @@ export type {
 
 // Export error handling
 export { default as ErrorBoundary, SDKErrorBoundary } from './components/ErrorBoundary';
-export { SDKError, createSDKError, errorHandler, handleError } from './lib/error-handler';
+export {
+  SDKError,
+  createSDKError,
+  errorHandler,
+  handleError,
+  handleErrorUnlessAborted,
+} from './lib/error-handler';
 export type { ErrorHandlerConfig, SDKErrorContext } from './lib/error-handler';
 
 // Export subscription types

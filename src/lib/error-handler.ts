@@ -1,3 +1,5 @@
+import { isAbortError } from './api-utils';
+
 /**
  * Centralized Error Handler for SDK
  * Provides consistent error handling, logging, and user-facing error management
@@ -63,6 +65,9 @@ class ErrorHandler {
    * Handle an error with context
    */
   handleError(error: Error | unknown, context: SDKErrorContext = {}): void {
+    // Skip abort errors - they are expected when requests are cancelled (e.g. unmount, deps change)
+    if (isAbortError(error)) return;
+
     // Normalize error to Error instance
     const normalizedError =
       error instanceof Error
@@ -185,6 +190,32 @@ export const errorHandler = new ErrorHandler();
  */
 export function handleError(error: Error | unknown, context: SDKErrorContext = {}): void {
   errorHandler.handleError(error, context);
+}
+
+/**
+ * Handle an error only if it is not an AbortError.
+ * Convenience for async code that uses AbortSignal - call this in catch and abort errors are ignored.
+ *
+ * @param error - The error that occurred
+ * @param context - Optional context about where the error occurred
+ * @returns true if error was handled, false if it was an abort error (ignored)
+ *
+ * @example
+ * ```tsx
+ * try {
+ *   await safeFetch(url, { signal });
+ * } catch (error) {
+ *   handleErrorUnlessAborted(error, { component: 'MyComponent', action: 'fetch' });
+ * }
+ * ```
+ */
+export function handleErrorUnlessAborted(
+  error: Error | unknown,
+  context: SDKErrorContext = {}
+): boolean {
+  if (isAbortError(error)) return false;
+  errorHandler.handleError(error, context);
+  return true;
 }
 
 /**

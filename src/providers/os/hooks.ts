@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import { osActions, useAppDispatch, useAppSelector } from '../../contexts';
 import { isAbortError, safeFetch } from '../../lib/api-utils';
+import { useAsyncEffect } from '../../lib/useAsyncEffect';
 import { getAuthHeaders } from '../auth/utils';
 import type { ISettings } from '../types';
 
@@ -95,18 +96,16 @@ export function useSaaSSettings() {
   );
 
   // Automatically fetch settings when OS is loaded
-  useEffect(() => {
-    if (!serverUrl || !version || !orgId || settings || fetchingSettingsRef.current) {
-      return;
+  useAsyncEffect(
+    async signal => {
+      if (!serverUrl || !version || !orgId || settings || fetchingSettingsRef.current) return;
+      await getSettings(signal);
+    },
+    [serverUrl, version, orgId, getSettings],
+    {
+      onError: err => console.error('Failed to fetch settings:', err),
     }
-
-    const abortController = new AbortController();
-    getSettings(abortController.signal);
-
-    return () => {
-      abortController.abort();
-    };
-  }, [serverUrl, version, orgId, getSettings]);
+  );
 
   // Memoize return value to prevent unnecessary re-renders
   return useMemo(
