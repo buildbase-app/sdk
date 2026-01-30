@@ -86,7 +86,7 @@ const WorkspaceSettingsDialog: React.FC<WorkspaceSettingsDialogProps> = ({
             {section === 'profile' && 'Account'}
             {section === 'general' && 'Workspace Settings'}
             {section === 'users' && 'Workspace Members'}
-            {section === 'subscription' && 'Subscription'}
+            {section === 'subscription' && 'Plan & Billing'}
             {section === 'features' && 'Workspace Features'}
             {section === 'danger' && 'Danger Zone'}
           </DialogTitle>
