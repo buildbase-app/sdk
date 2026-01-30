@@ -18,7 +18,7 @@ import { getWorkspaceUserRole, isWorkspaceOwner, workspaceStorage } from './util
  * - `loading`: Boolean indicating if workspaces are being fetched
  * - `error`: Error message string (null if no error)
  * - `refreshing`: Boolean indicating if workspaces are being refreshed in background
- * - `switching`: Boolean indicating if a workspace switch is in progress (onWorkspaceChange running)
+ * - `switching`: Boolean - true when a workspace switch is in progress
  * - `WorkspaceSwitcher`: Component for switching between workspaces
  * - `fetchWorkspaces()`: Function to fetch all workspaces
  * - `refreshWorkspaces()`: Function to refresh workspaces in background (non-blocking)
@@ -150,10 +150,12 @@ export const useSaaSWorkspaces = () => {
   /**
    * Centralized workspace switch: calls onWorkspaceChange (auth callback) first, then sets workspace.
    * Used for "Switch to" click, restore from storage, and first-load selection.
+   * Uses version ref to ignore stale completions when multiple switches are triggered concurrently.
    */
   const switchToWorkspace = useCallback(
     async (ws: IWorkspace, options?: { forceEmit?: boolean }): Promise<void> => {
-      dispatch.workspaces(workspaceActions.setSwitching(true));
+      const version = ++switchVersionRef.current;
+      dispatch.workspaces(workspaceActions.setSwitchingToId(ws._id));
       try {
         const onWorkspaceChange = os.auth?.callbacks?.onWorkspaceChange;
         if (onWorkspaceChange) {
@@ -172,10 +174,13 @@ export const useSaaSWorkspaces = () => {
             });
             throw error;
           }
+          if (version !== switchVersionRef.current) return; // Superseded by newer switch
         }
         setCurrentWorkspaceWithStorage(ws, options);
       } finally {
-        dispatch.workspaces(workspaceActions.setSwitching(false));
+        if (version === switchVersionRef.current) {
+          dispatch.workspaces(workspaceActions.setSwitchingToId(null));
+        }
       }
     },
     [
@@ -186,7 +191,7 @@ export const useSaaSWorkspaces = () => {
     ]
   );
 
-  // Load saved workspace ID on initialization
+  // Load saved workspace ID on initialization (e.g. Redux persist rehydration)
   useEffect(() => {
     if (!workspace.isInitialized) {
       const savedWorkspaceId = workspaceStorage.loadCurrentWorkspace();
@@ -194,7 +199,9 @@ export const useSaaSWorkspaces = () => {
       if (savedWorkspaceId) {
         const savedWorkspace = workspace.workspaces.find(ws => ws._id === savedWorkspaceId);
         if (savedWorkspace) {
-          switchToWorkspace(savedWorkspace, { forceEmit: true });
+          switchToWorkspace(savedWorkspace, { forceEmit: true }).catch(() => {
+            // onWorkspaceChange rejected - don't set workspace
+          });
         }
       }
     }
@@ -213,6 +220,7 @@ export const useSaaSWorkspaces = () => {
   // Request deduplication refs
   const fetchingRef = React.useRef(false);
   const fetchingFeaturesRef = React.useRef(false);
+  const switchVersionRef = React.useRef(0);
 
   // Fetch and update workspaces (main fetch)
   const fetchWorkspaces = useCallback(async () => {
@@ -583,6 +591,6 @@ export const useSaaSWorkspaces = () => {
     getProfile,
     updateUserProfile,
     deleteWorkspace,
-    switching: workspace.switching,
+    switching: workspace.switchingToId !== null,
   };
 };

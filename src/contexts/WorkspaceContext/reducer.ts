@@ -25,7 +25,7 @@ export const getInitialWorkspaceState = (): WorkspaceState => {
     error: null,
     currentWorkspace: null,
     refreshing: false,
-    switching: false,
+    switchingToId: null,
     isInitialized: false,
     allFeatures: [],
   };
@@ -67,8 +67,8 @@ export const workspaceReducer = (
     case 'SET_REFRESHING':
       return { ...state, refreshing: action.payload };
 
-    case 'SET_SWITCHING':
-      return { ...state, switching: action.payload };
+    case 'SET_SWITCHING_TO_ID':
+      return { ...state, switchingToId: action.payload };
 
     default:
       return state;

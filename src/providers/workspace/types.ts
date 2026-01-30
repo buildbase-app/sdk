@@ -33,7 +33,7 @@ export interface WorkspaceContextValue {
   workspaces: IWorkspace[];
   currentWorkspace: IWorkspace | null;
   loading: boolean;
-  switching: boolean;
+  switchingToId: string | null;
   refreshing: boolean;
   error: string | null;
   fetchWorkspaces: () => Promise<void>; // Manual trigger to fetch workspaces

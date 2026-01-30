@@ -10,7 +10,7 @@ export type WorkspaceAction =
   | { type: 'SET_LOADING'; payload: boolean }
   | { type: 'SET_ERROR'; payload: string | null }
   | { type: 'SET_REFRESHING'; payload: boolean }
-  | { type: 'SET_SWITCHING'; payload: boolean };
+  | { type: 'SET_SWITCHING_TO_ID'; payload: string | null };
 
 export interface WorkspaceState {
   workspaces: IWorkspace[];
@@ -18,7 +18,7 @@ export interface WorkspaceState {
   error: string | null;
   currentWorkspace: IWorkspace | null;
   refreshing: boolean;
-  switching: boolean;
+  switchingToId: string | null;
   isInitialized: boolean;
   allFeatures: IWorkspaceFeature[];
 }
