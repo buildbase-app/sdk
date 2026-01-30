@@ -368,7 +368,11 @@ function CreateWorkspaceDialog(props: { onCreated: () => void }) {
       setImageType('emoji');
       props?.onCreated?.();
     } catch (error) {
-      console.error('Failed to create workspace:', error);
+      handleError(error, {
+        component: 'WorkspaceProvider',
+        action: 'createWorkspace',
+        metadata: { name: values.name },
+      });
     } finally {
       setIsCreating(false);
     }

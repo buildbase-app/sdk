@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useRef } from 'react';
 import { osActions, useAppDispatch, useAppSelector } from '../../contexts';
-import { isAbortError, safeFetch } from '../../lib/api-utils';
-import { handleError } from '../../lib/error-handler';
+import { safeFetch } from '../../lib/api-utils';
+import { handleErrorUnlessAborted } from '../../lib/error-handler';
 import { useAsyncEffect } from '../../lib/useAsyncEffect';
 import { getAuthHeaders } from '../auth/utils';
 import type { ISettings } from '../types';
@@ -85,9 +85,7 @@ export function useSaaSSettings() {
         dispatch.os(osActions.setSettings(data));
         return data;
       } catch (err) {
-        // Ignore abort - request was cancelled
-        if (isAbortError(err)) return null;
-        handleError(err, {
+        handleErrorUnlessAborted(err, {
           component: 'useSaaSSettings',
           action: 'getSettings',
           metadata: { serverUrl, version, orgId },
@@ -109,7 +107,7 @@ export function useSaaSSettings() {
     [serverUrl, version, orgId, getSettings],
     {
       onError: err =>
-        handleError(err, {
+        handleErrorUnlessAborted(err, {
           component: 'useSaaSSettings',
           action: 'fetchSettings',
           metadata: { serverUrl, version, orgId },

@@ -64,17 +64,6 @@ export type {
   WorkspaceUserRoleChangedEventData,
 } from './providers/events/types';
 
-// Export error handling
-export { default as ErrorBoundary, SDKErrorBoundary } from './components/ErrorBoundary';
-export {
-  SDKError,
-  createSDKError,
-  errorHandler,
-  handleError,
-  handleErrorUnlessAborted,
-} from './lib/error-handler';
-export type { ErrorHandlerConfig, SDKErrorContext } from './lib/error-handler';
-
 // Export subscription types
 export type {
   BillingInterval,

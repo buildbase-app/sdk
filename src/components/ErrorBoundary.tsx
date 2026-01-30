@@ -2,6 +2,7 @@
 
 import React, { Component, type ReactNode } from 'react';
 import { handleError } from '../lib/error-handler';
+import { sdkError } from '../lib/logger';
 
 export interface ErrorBoundaryProps {
   children: ReactNode;
@@ -110,7 +111,7 @@ export class SDKErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundar
         this.props.onError(error, errorInfo);
       } catch (handlerError) {
         // Prevent error in error handler from causing issues
-        console.error('[SDK ErrorBoundary] Error in onError callback:', handlerError);
+        sdkError('[SDK ErrorBoundary] Error in onError callback:', handlerError);
       }
     }
   }

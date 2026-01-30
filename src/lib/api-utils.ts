@@ -2,16 +2,8 @@
  * API utility functions for consistent error handling and request management
  */
 
-function isDevelopment(): boolean {
-  try {
-    // process may not be defined in browser bundles
-    const g = typeof globalThis !== 'undefined' ? (globalThis as { process?: { env?: { NODE_ENV?: string } } }) : null;
-    const proc = g?.process;
-    return proc != null && proc.env != null && proc.env.NODE_ENV === 'development';
-  } catch {
-    return false;
-  }
-}
+import { isDevelopment } from './utils';
+import { sdkLog } from './logger';
 
 /** Redact sensitive keys in objects used for dev logging */
 function redactForLog(obj: unknown): unknown {
@@ -135,7 +127,7 @@ export async function safeFetch(
       } catch {
         responsePayload = '(read failed)';
       }
-      console.log('[SDK API]', method, url, {
+      sdkLog('[SDK API]', method, url, {
         request: redactForLog(request),
         response: redactForLog(responsePayload),
         status: response.status,

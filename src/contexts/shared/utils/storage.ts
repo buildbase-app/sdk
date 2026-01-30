@@ -2,6 +2,8 @@
  * Shared localStorage utilities
  */
 
+import { handleError } from '../../../lib/error-handler';
+
 /**
  * Safe localStorage getter
  */
@@ -10,7 +12,11 @@ export function getStorageItem(key: string): string | null {
   try {
     return localStorage.getItem(key);
   } catch (error) {
-    console.warn(`Failed to load ${key} from localStorage:`, error);
+    handleError(error, {
+      component: 'storage',
+      action: 'getStorageItem',
+      metadata: { key },
+    });
     return null;
   }
 }
@@ -23,7 +29,11 @@ export function setStorageItem(key: string, value: string): void {
   try {
     localStorage.setItem(key, value);
   } catch (error) {
-    console.warn(`Failed to save ${key} to localStorage:`, error);
+    handleError(error, {
+      component: 'storage',
+      action: 'setStorageItem',
+      metadata: { key },
+    });
   }
 }
 
@@ -35,7 +45,11 @@ export function removeStorageItem(key: string): void {
   try {
     localStorage.removeItem(key);
   } catch (error) {
-    console.warn(`Failed to remove ${key} from localStorage:`, error);
+    handleError(error, {
+      component: 'storage',
+      action: 'removeStorageItem',
+      metadata: { key },
+    });
   }
 }
 
@@ -48,7 +62,11 @@ export function getStorageJSON<T>(key: string): T | null {
   try {
     return JSON.parse(item) as T;
   } catch (error) {
-    console.warn(`Failed to parse ${key} from localStorage:`, error);
+    handleError(error, {
+      component: 'storage',
+      action: 'getStorageJSON',
+      metadata: { key },
+    });
     removeStorageItem(key); // Clear corrupted data
     return null;
   }
@@ -61,6 +79,10 @@ export function setStorageJSON<T>(key: string, value: T): void {
   try {
     setStorageItem(key, JSON.stringify(value));
   } catch (error) {
-    console.warn(`Failed to save ${key} to localStorage:`, error);
+    handleError(error, {
+      component: 'storage',
+      action: 'setStorageJSON',
+      metadata: { key },
+    });
   }
 }

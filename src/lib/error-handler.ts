@@ -1,4 +1,5 @@
 import { isAbortError } from './api-utils';
+import { configureLogger, sdkError as logInternalError, sdkLogError } from './logger';
 
 /**
  * Centralized Error Handler for SDK
@@ -59,6 +60,10 @@ class ErrorHandler {
    */
   configure(config: Partial<ErrorHandlerConfig>): void {
     this.config = { ...this.config, ...config };
+    // Sync logger with error handler config for consistent dev logging
+    if (config.enableConsoleLogging !== undefined) {
+      configureLogger({ enableLogging: config.enableConsoleLogging });
+    }
   }
 
   /**
@@ -85,18 +90,8 @@ class ErrorHandler {
         : new SDKError(normalizedError.message, normalizedError.name, context, normalizedError);
 
     // Log to console in development
-    // Check for development mode - works in both Node and browser environments
-    const isDevelopment = (() => {
-      try {
-        // @ts-ignore - process may not be defined in browser
-        return typeof process !== 'undefined' && process.env?.NODE_ENV === 'development';
-      } catch {
-        return false;
-      }
-    })();
-
-    if (this.config.enableConsoleLogging && isDevelopment) {
-      console.error(`[SDK Error] ${context.component || 'Unknown'}:`, {
+    if (this.config.enableConsoleLogging) {
+      sdkLogError(`[SDK Error] ${context.component || 'Unknown'}:`, {
         message: sdkError.message,
         code: sdkError.code,
         context: sdkError.context,
@@ -111,7 +106,7 @@ class ErrorHandler {
         this.config.onError(sdkError, context);
       } catch (callbackError) {
         // Prevent error in error handler from crashing the app
-        console.error('[SDK Error Handler] Error in custom error callback:', callbackError);
+        logInternalError('[SDK Error Handler] Error in custom error callback:', callbackError);
       }
     }
 

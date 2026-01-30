@@ -3,15 +3,7 @@
 import type { DependencyList } from 'react';
 import { useEffect } from 'react';
 import { isAbortError } from './api-utils';
-
-function isDevelopment(): boolean {
-  try {
-    const g = typeof globalThis !== 'undefined' ? (globalThis as { process?: { env?: { NODE_ENV?: string } } }) : null;
-    return g?.process?.env?.NODE_ENV === 'development';
-  } catch {
-    return false;
-  }
-}
+import { handleError } from './error-handler';
 
 export interface UseAsyncEffectOptions {
   /**
@@ -52,9 +44,12 @@ export function useAsyncEffect(
       if (isAbortError(err)) return;
       if (options?.onError) {
         options.onError(err);
-      } else if (isDevelopment()) {
-        // Log unhandled rejections in dev when onError not provided - helps catch missing error handlers
-        console.warn('[useAsyncEffect] Unhandled rejection (consider passing onError):', err);
+      } else {
+        handleError(err, {
+          component: 'useAsyncEffect',
+          action: 'effect',
+          metadata: { note: 'Unhandled rejection - consider passing onError' },
+        });
       }
     });
     return () => ac.abort();
