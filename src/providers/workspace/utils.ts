@@ -3,9 +3,8 @@ import {
   removeStorageItem,
   setStorageItem,
 } from '../../contexts/shared/utils/storage';
+import { WORKSPACE_STORAGE_KEY } from '../constants';
 import { IWorkspace } from './types';
-
-const WORKSPACE_STORAGE_KEY = 'saas-workspace-current';
 
 export const workspaceStorage = {
   saveCurrentWorkspace: (workspace: IWorkspace | null): void => {
