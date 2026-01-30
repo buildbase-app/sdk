@@ -1,18 +1,5 @@
-import { WORKSPACE_STORAGE_KEY } from '../../providers/constants';
-import { removeStorageItem, setStorageItem } from '../shared/utils/storage';
+import { workspaceStorage } from '../../providers/workspace/utils';
 import type { WorkspaceAction, WorkspaceState } from './types';
-
-function saveWorkspaceId(workspaceId: string | null): void {
-  if (workspaceId) {
-    setStorageItem(WORKSPACE_STORAGE_KEY, workspaceId);
-  } else {
-    removeStorageItem(WORKSPACE_STORAGE_KEY);
-  }
-}
-
-function clearWorkspaceId(): void {
-  removeStorageItem(WORKSPACE_STORAGE_KEY);
-}
 
 /**
  * Initial state for workspace context
@@ -46,12 +33,12 @@ export const workspaceReducer = (
       return { ...state, allFeatures: action.payload };
 
     case 'SET_CURRENT_WORKSPACE': {
-      saveWorkspaceId(action.payload._id);
+      workspaceStorage.saveCurrentWorkspace(action.payload);
       return { ...state, currentWorkspace: action.payload };
     }
 
     case 'RESET_CURRENT_WORKSPACE':
-      clearWorkspaceId();
+      workspaceStorage.clearCurrentWorkspace();
       return { ...state, currentWorkspace: null };
 
     case 'SET_IS_INITIALIZED':
