@@ -6,7 +6,7 @@ import { eventEmitter } from '../events';
 import { WorkspaceApi } from './api';
 import { WorkspaceSwitcher } from './provider';
 import { IWorkspace, IWorkspaceUser } from './types';
-import { isWorkspaceOwner, workspaceStorage } from './utils';
+import { getWorkspaceUserRole, isWorkspaceOwner, workspaceStorage } from './utils';
 
 /**
  * Main workspace management hook for the SDK.
@@ -18,11 +18,12 @@ import { isWorkspaceOwner, workspaceStorage } from './utils';
  * - `loading`: Boolean indicating if workspaces are being fetched
  * - `error`: Error message string (null if no error)
  * - `refreshing`: Boolean indicating if workspaces are being refreshed in background
- * - `switching`: Boolean indicating if workspace is being switched
+ * - `switching`: Boolean indicating if a workspace switch is in progress (onWorkspaceChange running)
  * - `WorkspaceSwitcher`: Component for switching between workspaces
  * - `fetchWorkspaces()`: Function to fetch all workspaces
  * - `refreshWorkspaces()`: Function to refresh workspaces in background (non-blocking)
- * - `setCurrentWorkspace(workspace)`: Function to set the current workspace
+ * - `setCurrentWorkspace(workspace)`: Function to set the current workspace (direct, no callback)
+ * - `switchToWorkspace(workspace)`: Centralized switch - calls onWorkspaceChange first, then sets workspace
  * - `resetCurrentWorkspace()`: Function to clear the current workspace
  * - `createWorkspace(name, image?)`: Function to create a new workspace
  * - `updateWorkspace(workspace, data)`: Function to update a workspace
@@ -124,15 +125,16 @@ export const useSaaSWorkspaces = () => {
   const currentUser = useAppSelector(state => state.auth.session?.user);
 
   const setCurrentWorkspaceWithStorage = useCallback(
-    (ws: IWorkspace) => {
-      // check if the workspace is the same as the current workspace
-      if (ws._id === workspace.currentWorkspace?._id) {
+    (ws: IWorkspace, options?: { forceEmit?: boolean }) => {
+      const isSameWorkspace = ws._id === workspace.currentWorkspace?._id;
+      // Skip if same workspace (unless forceEmit - e.g. restore from storage so app can generate token)
+      if (isSameWorkspace && !options?.forceEmit) {
         return;
       }
       if (ws) {
         const previousWorkspace = workspace.currentWorkspace;
         dispatch.workspaces(workspaceActions.setCurrentWorkspace(ws));
-        // Trigger workspace changed event
+        // Trigger workspace changed event (always when forceEmit, so app can generate token etc.)
         eventEmitter.emitWorkspaceChanged(ws, previousWorkspace).catch(error => {
           handleError(error, {
             component: 'useSaaSWorkspaces',
@@ -145,6 +147,45 @@ export const useSaaSWorkspaces = () => {
     [workspace.currentWorkspace, dispatch]
   );
 
+  /**
+   * Centralized workspace switch: calls onWorkspaceChange (auth callback) first, then sets workspace.
+   * Used for "Switch to" click, restore from storage, and first-load selection.
+   */
+  const switchToWorkspace = useCallback(
+    async (ws: IWorkspace, options?: { forceEmit?: boolean }): Promise<void> => {
+      dispatch.workspaces(workspaceActions.setSwitching(true));
+      try {
+        const onWorkspaceChange = os.auth?.callbacks?.onWorkspaceChange;
+        if (onWorkspaceChange) {
+          const role = getWorkspaceUserRole(ws, currentUser?.id);
+          try {
+            await onWorkspaceChange({
+              workspace: ws,
+              user: currentUser ?? null,
+              role,
+            });
+          } catch (error) {
+            handleError(error, {
+              component: 'useSaaSWorkspaces',
+              action: 'onWorkspaceChange',
+              metadata: { workspaceId: ws._id },
+            });
+            throw error;
+          }
+        }
+        setCurrentWorkspaceWithStorage(ws, options);
+      } finally {
+        dispatch.workspaces(workspaceActions.setSwitching(false));
+      }
+    },
+    [
+      dispatch,
+      os.auth?.callbacks?.onWorkspaceChange,
+      setCurrentWorkspaceWithStorage,
+      currentUser,
+    ]
+  );
+
   // Load saved workspace ID on initialization
   useEffect(() => {
     if (!workspace.isInitialized) {
@@ -153,11 +194,7 @@ export const useSaaSWorkspaces = () => {
       if (savedWorkspaceId) {
         const savedWorkspace = workspace.workspaces.find(ws => ws._id === savedWorkspaceId);
         if (savedWorkspace) {
-          // check if the workspace is the same as the current workspace
-          if (savedWorkspace._id === workspace.currentWorkspace?._id) {
-            return;
-          }
-          setCurrentWorkspaceWithStorage(savedWorkspace);
+          switchToWorkspace(savedWorkspace, { forceEmit: true });
         }
       }
     }
@@ -166,7 +203,7 @@ export const useSaaSWorkspaces = () => {
     workspace.workspaces,
     workspace.currentWorkspace,
     dispatch,
-    setCurrentWorkspaceWithStorage,
+    switchToWorkspace,
   ]);
 
   const resetCurrentWorkspaceWithStorage = useCallback(() => {
@@ -193,14 +230,21 @@ export const useSaaSWorkspaces = () => {
         const savedWorkspaceId = workspaceStorage.loadCurrentWorkspace();
 
         if (savedWorkspaceId && workspaceStorage.isWorkspaceValid(savedWorkspaceId, data)) {
-          // Find the full workspace object from the fetched data
           const fullWorkspace = data.find(ws => ws._id === savedWorkspaceId);
           if (fullWorkspace) {
-            setCurrentWorkspaceWithStorage(fullWorkspace);
+            try {
+              await switchToWorkspace(fullWorkspace, { forceEmit: true });
+            } catch {
+              // onWorkspaceChange rejected - don't set workspace
+            }
           }
-        } else if (data.length > 0) {
-          // If no valid saved workspace, select the first available workspace
-          if (!workspace.currentWorkspace) setCurrentWorkspaceWithStorage(data[0]);
+        } else {
+          const firstWorkspace = data[0];
+          try {
+            await switchToWorkspace(firstWorkspace, { forceEmit: true });
+          } catch {
+            // onWorkspaceChange rejected - don't set workspace
+          }
         }
       }
     } catch (err) {
@@ -214,9 +258,9 @@ export const useSaaSWorkspaces = () => {
   }, [
     api,
     workspace.loading,
-    workspace.currentWorkspace?._id, // Use ID instead of object to prevent unnecessary re-renders
+    workspace.currentWorkspace?._id,
     dispatch,
-    setCurrentWorkspaceWithStorage,
+    switchToWorkspace,
   ]);
 
   // Background refresh (does not block UI, updates memo/data)
@@ -320,12 +364,12 @@ export const useSaaSWorkspaces = () => {
 
     // If current workspace is not in the list, fallback to first available
     if (!updatedWorkspace) {
-      // Only switch if we have workspaces available
       if (workspace.workspaces.length > 0) {
         const firstWorkspace = workspace.workspaces[0];
-        // Only update if it's different from current
         if (firstWorkspace._id !== currentId) {
-          setCurrentWorkspaceWithStorage(firstWorkspace);
+          switchToWorkspace(firstWorkspace).catch(() => {
+            // onWorkspaceChange rejected - don't set workspace
+          });
         }
       }
       return;
@@ -336,7 +380,7 @@ export const useSaaSWorkspaces = () => {
     if (updatedWorkspace !== workspace.currentWorkspace) {
       setCurrentWorkspaceWithStorage(updatedWorkspace);
     }
-  }, [workspace.workspaces, workspace.currentWorkspace, setCurrentWorkspaceWithStorage]);
+  }, [workspace.workspaces, workspace.currentWorkspace, setCurrentWorkspaceWithStorage, switchToWorkspace]);
 
   const getUsers = useCallback(
     async (workspaceId: string) => {
@@ -524,13 +568,13 @@ export const useSaaSWorkspaces = () => {
     WorkspaceSwitcher,
     currentWorkspace: workspace.currentWorkspace,
     setCurrentWorkspace: setCurrentWorkspaceWithStorage,
+    switchToWorkspace,
     resetCurrentWorkspace: resetCurrentWorkspaceWithStorage,
     createWorkspace,
     allFeatures: workspace.allFeatures,
     getFeatures,
     updateFeature,
     getWorkspace,
-    switching: workspace.switching,
     updateWorkspace,
     getUsers,
     addUser,
@@ -539,5 +583,6 @@ export const useSaaSWorkspaces = () => {
     getProfile,
     updateUserProfile,
     deleteWorkspace,
+    switching: workspace.switching,
   };
 };

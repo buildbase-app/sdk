@@ -42,21 +42,27 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
 
 export function WorkspaceSwitcher(props: {
   trigger: (isLoading: boolean, currentWorkspace: IWorkspace | null) => ReactNode;
-  onWorkspaceChange: (workspace: IWorkspace) => Promise<void>;
 }) {
   const {
     workspaces: workspacesFromState,
     currentWorkspace,
     loading,
     refreshing,
+    switching,
   } = useAppSelector(state => state.workspaces);
   const user = useAppSelector(state => state.auth.session?.user);
   const { settings } = useSaaSSettings();
   const [open, setOpen] = useState(false);
   const [reloadWorkspacesCount, setReloadWorkspacesCount] = useState<number>(0);
   const [searchQuery, setSearchQuery] = useState('');
-  const { fetchWorkspaces, getFeatures, refreshWorkspaces, setCurrentWorkspace, workspaces } =
-    useSaaSWorkspaces();
+  const {
+    fetchWorkspaces,
+    getFeatures,
+    refreshWorkspaces,
+    setCurrentWorkspace,
+    switchToWorkspace,
+    workspaces,
+  } = useSaaSWorkspaces();
 
   // Combine loading and refreshing states for trigger
   const isLoading = loading || refreshing;
@@ -133,7 +139,8 @@ export function WorkspaceSwitcher(props: {
               <WorkspaceItem
                 workspace={currentWorkspace}
                 isCurrentWorkspace={true}
-                onWorkspaceChange={props.onWorkspaceChange}
+                switchToWorkspace={switchToWorkspace}
+                switching={switching}
                 onClose={() => setOpen(false)}
                 setCurrentWorkspace={setCurrentWorkspace}
                 setOpen={setOpen}
@@ -193,7 +200,8 @@ export function WorkspaceSwitcher(props: {
                           key={workspace._id}
                           workspace={workspace}
                           isCurrentWorkspace={isCurrentWorkspace}
-                          onWorkspaceChange={props.onWorkspaceChange}
+                          switchToWorkspace={switchToWorkspace}
+                          switching={switching}
                           onClose={() => setOpen(false)}
                           setCurrentWorkspace={setCurrentWorkspace}
                           setOpen={setOpen}
@@ -226,7 +234,8 @@ export function WorkspaceSwitcher(props: {
 interface WorkspaceItemProps {
   workspace: IWorkspace;
   isCurrentWorkspace?: boolean;
-  onWorkspaceChange: (workspace: IWorkspace) => Promise<void>;
+  switchToWorkspace: (workspace: IWorkspace) => Promise<void>;
+  switching: boolean;
   onClose: () => void;
   setCurrentWorkspace: (workspace: IWorkspace) => void;
   setOpen: (open: boolean) => void;
@@ -234,9 +243,8 @@ interface WorkspaceItemProps {
 }
 
 function WorkspaceItem(props: WorkspaceItemProps) {
-  const { workspace, setCurrentWorkspace, setOpen, workspacesToUse } = props;
+  const { workspace, setCurrentWorkspace, setOpen, workspacesToUse, switching } = props;
   const isCurrentWorkspace = props.isCurrentWorkspace ?? false;
-  const [isSwitching, setIsSwitching] = useState(false);
 
   const getWorkspaceInitials = (name: string) => {
     return name
@@ -275,25 +283,18 @@ function WorkspaceItem(props: WorkspaceItemProps) {
         {isCurrentWorkspace ? null : (
           <Button
             size="sm"
-            disabled={isSwitching}
-            progress={isSwitching}
+            disabled={switching}
+            progress={switching}
             onClick={() => {
-              setIsSwitching(true);
               props
-                .onWorkspaceChange(workspace)
-                .then(() => {
-                  setCurrentWorkspace(workspace);
-                  setOpen(false);
-                })
+                .switchToWorkspace(workspace)
+                .then(() => setOpen(false))
                 .catch(error => {
                   handleError(error, {
                     component: 'WorkspaceItem',
-                    action: 'onWorkspaceChange',
+                    action: 'switchToWorkspace',
                     metadata: { workspaceId: workspace._id },
                   });
-                })
-                .finally(() => {
-                  setIsSwitching(false);
                 });
             }}
           >

@@ -1,4 +1,5 @@
 import type { EventData, EventType } from '../events/types';
+import type { IWorkspace } from '../workspace/types';
 
 export enum AuthStatus {
   loading = 'loading',
@@ -60,4 +61,16 @@ export interface IAuthCallbacks {
    * @param data - The event data (type varies based on eventType)
    */
   handleEvent?: (eventType: EventType, data: EventData) => void | Promise<void>;
+  /**
+   * Called before switching workspace (e.g. generate token, save state).
+   * Used when user clicks "Switch to" and when restoring from storage on page refresh.
+   * Switch proceeds only when this resolves; reject to abort.
+   */
+  onWorkspaceChange?: (params: OnWorkspaceChangeParams) => Promise<void>;
+}
+
+export interface OnWorkspaceChangeParams {
+  workspace: IWorkspace;
+  user: AuthUser | null;
+  role: string | null;
 }
