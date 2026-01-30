@@ -5,12 +5,12 @@ import { IUser } from '../../api/types';
 import { authActions, useAppDispatch, useAppSelector } from '../../contexts';
 import { handleApiResponse, isAbortError, safeFetch } from '../../lib/api-utils';
 import { handleError } from '../../lib/error-handler';
-import type { AuthUser } from './types';
 import { getAuthFlags, IAuthCallbacks } from './types';
 import {
   createSession,
   getSessionId,
   getTokenFromUrl,
+  mapIUserToAuthUser,
   removeSession,
   removeTokenFromUrl,
 } from './utils';
@@ -72,27 +72,11 @@ export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) 
             'Failed to fetch user profile'
           );
 
-          // Validate required user data fields
-          const userId = userData._id || userData.id;
-          if (!userId || typeof userId !== 'string') {
-            throw new Error('User data missing required ID field');
-          }
-
-          if (!userData.email || typeof userData.email !== 'string') {
-            throw new Error('User data missing required email field');
-          }
-
-          // Map IUser to AuthUser with validated data
-          const authUser: AuthUser = {
-            id: userId,
-            name: userData.name || '',
-            org: orgId,
-            email: userData.email,
-            emailVerified: true, // Assuming verified if profile request succeeds
-            clientId: currentOsState.auth?.clientId || '',
-            role: userData.role || '',
-            image: userData.image,
-          };
+          const authUser = mapIUserToAuthUser(
+            userData,
+            orgId,
+            currentOsState.auth?.clientId || ''
+          );
 
           // Create session with user and sessionId
           const session = createSession(authUser, sessionId);
@@ -186,43 +170,11 @@ export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) 
           return;
         }
 
-        // Validate required user data fields
-        const userId = userData._id || userData.id;
-        if (!userId || typeof userId !== 'string') {
-          fetchingProfileRef.current = false; // Reset on validation error
-          handleError(new Error('User data missing required ID field'), {
-            component: 'AuthProviderWrapper',
-            action: 'fetchUserProfile',
-            metadata: { step: 'validateUserData' },
-          });
-          removeSession();
-          dispatch.auth(authActions.authenticationFailed());
-          return;
-        }
-
-        if (!userData.email || typeof userData.email !== 'string') {
-          fetchingProfileRef.current = false; // Reset on validation error
-          handleError(new Error('User data missing required email field'), {
-            component: 'AuthProviderWrapper',
-            action: 'fetchUserProfile',
-            metadata: { step: 'validateUserData' },
-          });
-          removeSession();
-          dispatch.auth(authActions.authenticationFailed());
-          return;
-        }
-
-        // Map IUser to AuthUser with validated data
-        const authUser: AuthUser = {
-          id: userId,
-          name: userData.name || '',
-          org: orgId,
-          email: userData.email,
-          emailVerified: true,
-          clientId: osState.auth?.clientId || '',
-          role: userData.role || '',
-          image: userData.image,
-        };
+        const authUser = mapIUserToAuthUser(
+          userData,
+          orgId,
+          osState.auth?.clientId || ''
+        );
 
         // Create session with fresh user data
         const session = createSession(authUser, sessionId);
@@ -231,10 +183,14 @@ export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) 
         dispatch.auth(authActions.setSession(session));
       } catch (error) {
         if (isAbortError(error)) return; // Request was cancelled
+        const isValidationError =
+          error instanceof Error &&
+          (error.message === 'User data missing required ID field' ||
+            error.message === 'User data missing required email field');
         handleError(error, {
           component: 'AuthProviderWrapper',
           action: 'fetchUserProfile',
-          metadata: { step: 'pageLoad' },
+          metadata: { step: isValidationError ? 'validateUserData' : 'pageLoad' },
         });
         // Remove invalid session
         removeSession();
