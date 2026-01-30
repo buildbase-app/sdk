@@ -4,7 +4,6 @@ import { useAppDispatch, useAppSelector, workspaceActions } from '../../contexts
 import { handleError } from '../../lib/error-handler';
 import { eventEmitter } from '../events';
 import { WorkspaceApi } from './api';
-import { WorkspaceSwitcher } from './provider';
 import { IWorkspace, IWorkspaceUser } from './types';
 import { getWorkspaceUserRole, isWorkspaceOwner, workspaceStorage } from './utils';
 
@@ -19,7 +18,6 @@ import { getWorkspaceUserRole, isWorkspaceOwner, workspaceStorage } from './util
  * - `error`: Error message string (null if no error)
  * - `refreshing`: Boolean indicating if workspaces are being refreshed in background
  * - `switching`: Boolean - true when a workspace switch is in progress
- * - `WorkspaceSwitcher`: Component for switching between workspaces
  * - `fetchWorkspaces()`: Function to fetch all workspaces
  * - `refreshWorkspaces()`: Function to refresh workspaces in background (non-blocking)
  * - `setCurrentWorkspace(workspace)`: Function to set the current workspace (direct, no callback)
@@ -573,7 +571,6 @@ export const useSaaSWorkspaces = () => {
     fetchWorkspaces,
     refreshWorkspaces,
     refreshing: workspace.refreshing,
-    WorkspaceSwitcher,
     currentWorkspace: workspace.currentWorkspace,
     setCurrentWorkspace: setCurrentWorkspaceWithStorage,
     switchToWorkspace,
