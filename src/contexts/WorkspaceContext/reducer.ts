@@ -1,3 +1,4 @@
+import { updateField } from '../shared/utils/reducerHelpers';
 import { workspaceStorage } from '../../providers/workspace/utils';
 import type { WorkspaceAction, WorkspaceState } from './types';
 
@@ -27,34 +28,34 @@ export const workspaceReducer = (
 ): WorkspaceState => {
   switch (action.type) {
     case 'SET_WORKSPACES':
-      return { ...state, workspaces: action.payload };
+      return updateField(state, 'workspaces', action.payload);
 
     case 'SET_ALL_FEATURES':
-      return { ...state, allFeatures: action.payload };
+      return updateField(state, 'allFeatures', action.payload);
 
     case 'SET_CURRENT_WORKSPACE': {
       workspaceStorage.saveCurrentWorkspace(action.payload);
-      return { ...state, currentWorkspace: action.payload };
+      return updateField(state, 'currentWorkspace', action.payload);
     }
 
     case 'RESET_CURRENT_WORKSPACE':
       workspaceStorage.clearCurrentWorkspace();
-      return { ...state, currentWorkspace: null };
+      return updateField(state, 'currentWorkspace', null);
 
     case 'SET_IS_INITIALIZED':
-      return { ...state, isInitialized: action.payload };
+      return updateField(state, 'isInitialized', action.payload);
 
     case 'SET_LOADING':
-      return { ...state, loading: action.payload };
+      return updateField(state, 'loading', action.payload);
 
     case 'SET_ERROR':
-      return { ...state, error: action.payload };
+      return updateField(state, 'error', action.payload);
 
     case 'SET_REFRESHING':
-      return { ...state, refreshing: action.payload };
+      return updateField(state, 'refreshing', action.payload);
 
     case 'SET_SWITCHING_TO_ID':
-      return { ...state, switchingToId: action.payload };
+      return updateField(state, 'switchingToId', action.payload);
 
     default:
       return state;
