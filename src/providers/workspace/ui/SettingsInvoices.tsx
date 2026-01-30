@@ -62,8 +62,6 @@ export interface SettingsInvoicesProps {
   workspaceId: string | null | undefined;
   /** Whether the user has an active subscription */
   hasActiveSubscription?: boolean;
-  /** Whether pricing plans are available (to show View Pricing Plans button) */
-  hasPlansToShow?: boolean;
   /** Callback when user clicks View Pricing Plans (e.g., switch to Plan tab) */
   onViewPricingPlans?: () => void;
   /** Number of invoices to fetch (default: 20) */
@@ -73,7 +71,6 @@ export interface SettingsInvoicesProps {
 const SettingsInvoices: React.FC<SettingsInvoicesProps> = ({
   workspaceId,
   hasActiveSubscription = false,
-  hasPlansToShow = false,
   onViewPricingPlans,
   limit = 20,
 }) => {
@@ -114,7 +111,7 @@ const SettingsInvoices: React.FC<SettingsInvoicesProps> = ({
               ? 'No invoices with download option found'
               : 'No invoices yet. Subscribe to a plan to receive invoices.'}
           </p>
-          {!hasActiveSubscription && hasPlansToShow && onViewPricingPlans && (
+          {!hasActiveSubscription && onViewPricingPlans && (
             <Button size="sm" className="mt-4" onClick={onViewPricingPlans}>
               View Pricing Plans
             </Button>
