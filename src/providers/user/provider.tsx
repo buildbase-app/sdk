@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { IUser } from '../../api/types';
 import { useAppSelector } from '../../contexts';
 import { handleError } from '../../lib/error-handler';
-import { safeFetch } from '../../lib/api-utils';
+import { getErrorMessage, safeFetch } from '../../lib/api-utils';
 import { getAuthFlags } from '../auth/types';
 import { getAuthHeaders } from '../auth/utils';
 
@@ -44,8 +44,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = React.memo(
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Failed to fetch user attributes');
+        throw new Error(await getErrorMessage(response, 'Failed to fetch user attributes'));
       }
 
       const data = await response.json();
@@ -102,8 +101,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = React.memo(
         });
 
         if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.message || 'Failed to update user attributes');
+          throw new Error(await getErrorMessage(response, 'Failed to update user attributes'));
         }
 
         const updatedUser: IUser = await response.json();
@@ -151,8 +149,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = React.memo(
         );
 
         if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.message || 'Failed to update user attribute');
+          throw new Error(await getErrorMessage(response, 'Failed to update user attribute'));
         }
 
         const updatedUser: IUser = await response.json();
@@ -189,8 +186,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = React.memo(
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Failed to fetch user features');
+        throw new Error(await getErrorMessage(response, 'Failed to fetch user features'));
       }
 
       const data = await response.json();

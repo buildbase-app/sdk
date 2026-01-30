@@ -157,6 +157,35 @@ export async function safeFetch(
 }
 
 /**
+ * Extract error message from a failed response.
+ * Parses JSON body and returns message/error field, or defaultMsg if not available.
+ *
+ * @param response - The Response object (typically from a failed request)
+ * @param defaultMsg - Default message if parsing fails or no message in body
+ * @returns Promise resolving to the error message string
+ *
+ * @example
+ * ```tsx
+ * const response = await safeFetch('/api/users');
+ * if (!response.ok) {
+ *   const msg = await getErrorMessage(response, 'Failed to fetch users');
+ *   throw new Error(msg);
+ * }
+ * ```
+ */
+export async function getErrorMessage(
+  response: Response,
+  defaultMsg: string
+): Promise<string> {
+  try {
+    const data = await response.json();
+    return (data?.message || data?.error || defaultMsg) as string;
+  } catch {
+    return defaultMsg;
+  }
+}
+
+/**
  * Parse JSON response with error handling.
  * Provides better error messages if response is not valid JSON.
  *

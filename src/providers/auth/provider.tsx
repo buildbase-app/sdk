@@ -3,8 +3,9 @@
 import React, { ReactNode, useCallback, useEffect, useMemo } from 'react';
 import { IUser } from '../../api/types';
 import { authActions, useAppDispatch, useAppSelector } from '../../contexts';
-import { handleApiResponse, isAbortError, safeFetch } from '../../lib/api-utils';
-import { handleError } from '../../lib/error-handler';
+import { handleApiResponse, safeFetch } from '../../lib/api-utils';
+import { handleError, handleErrorUnlessAborted } from '../../lib/error-handler';
+import { useAsyncEffect } from '../../lib/useAsyncEffect';
 import { getAuthFlags, IAuthCallbacks } from './types';
 import {
   createSession,
@@ -110,34 +111,26 @@ export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) 
    * 5. If OS config isn't ready yet, stay in loading; effect re-runs when config is set.
    * If there's a code in the URL (OAuth redirect), skip hydration and let code handling take priority.
    */
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    if (isAuthenticated) return;
-    // Prevent race condition: if profile fetch is already in progress, skip
-    if (fetchingProfileRef.current) return;
+  useAsyncEffect(
+    async signal => {
+      if (typeof window === 'undefined') return;
+      if (isAuthenticated) return;
+      if (fetchingProfileRef.current) return;
 
-    // Skip hydration if there's a code in URL - let OAuth redirect flow handle it first
-    const code = getTokenFromUrl();
-    if (code) {
-      return;
-    }
+      const code = getTokenFromUrl();
+      if (code) return;
 
-    const sessionId = getSessionId();
-    if (!sessionId) {
-      dispatch.auth(authActions.authenticationFailed());
-      return;
-    }
+      const sessionId = getSessionId();
+      if (!sessionId) {
+        dispatch.auth(authActions.authenticationFailed());
+        return;
+      }
 
-    const abortController = new AbortController();
-
-    const fetchUserProfile = async () => {
-      // Mark as fetching to prevent concurrent calls
       fetchingProfileRef.current = true;
       try {
         const { serverUrl, version, orgId } = osState;
         if (!serverUrl || !version || !orgId) {
-          // Stay in loading until OS config is set; effect will re-run when osState updates
-          fetchingProfileRef.current = false; // Reset so effect can retry when config is ready
+          fetchingProfileRef.current = false;
           handleError(new Error('OS configuration not available, cannot fetch user profile'), {
             component: 'AuthProviderWrapper',
             action: 'fetchUserProfile',
@@ -145,7 +138,6 @@ export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) 
           return;
         }
 
-        // Make profile request to get latest user data
         let userData: IUser;
         try {
           const profileResponse = await safeFetch(`${serverUrl}/api/${version}/public/profile`, {
@@ -153,18 +145,16 @@ export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) 
               'x-session-id': sessionId,
               'Content-Type': 'application/json',
             },
-            signal: abortController.signal,
+            signal,
           });
           userData = await handleApiResponse<IUser>(profileResponse, 'Failed to fetch user profile');
         } catch (error) {
-          if (isAbortError(error)) return; // Request was cancelled (unmount or deps changed)
-          // Session invalid or network error, remove it
-          fetchingProfileRef.current = false; // Reset on error
-          handleError(error, {
+          if (!handleErrorUnlessAborted(error, {
             component: 'AuthProviderWrapper',
             action: 'fetchUserProfile',
             metadata: { step: 'fetchProfile' },
-          });
+          })) return;
+          fetchingProfileRef.current = false;
           removeSession();
           dispatch.auth(authActions.authenticationFailed());
           return;
@@ -176,37 +166,26 @@ export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) 
           osState.auth?.clientId || ''
         );
 
-        // Create session with fresh user data
         const session = createSession(authUser, sessionId);
-
-        // Dispatch setSession to update state (sessionId already in localStorage)
         dispatch.auth(authActions.setSession(session));
       } catch (error) {
-        if (isAbortError(error)) return; // Request was cancelled
         const isValidationError =
           error instanceof Error &&
           (error.message === 'User data missing required ID field' ||
             error.message === 'User data missing required email field');
-        handleError(error, {
+        if (!handleErrorUnlessAborted(error, {
           component: 'AuthProviderWrapper',
           action: 'fetchUserProfile',
           metadata: { step: isValidationError ? 'validateUserData' : 'pageLoad' },
-        });
-        // Remove invalid session
+        })) return;
         removeSession();
         dispatch.auth(authActions.authenticationFailed());
       } finally {
-        // Always reset the ref when fetch completes (success or failure)
         fetchingProfileRef.current = false;
       }
-    };
-
-    fetchUserProfile();
-
-    return () => {
-      abortController.abort();
-    };
-  }, [isAuthenticated, dispatch, osState]);
+    },
+    [isAuthenticated, dispatch, osState]
+  );
 
   /**
    * Handle OAuth redirect: when user returns with ?code=... in URL.
