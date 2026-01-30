@@ -177,8 +177,8 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-7xl w-full h-[100vh] p-0 flex flex-col">
-        <div className="flex items-center justify-between p-6 border-b">
+      <DialogContent className="inset-0 w-screen h-screen max-w-none rounded-none translate-x-0 translate-y-0 p-0 flex flex-col">
+        <div className="flex-shrink-0 flex items-center justify-between p-6 border-b">
           <div>
             <DialogTitle className="text-2xl font-bold">Choose Your Plan</DialogTitle>
             <DialogDescription className="mt-1">
@@ -187,239 +187,215 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
           </div>
         </div>
 
-        <div className="flex-1 overflow-auto p-6">
+        <div className="flex-1 min-h-0 flex flex-col">
           {sortedPlans.length === 0 ? (
             <div className="text-center py-12 text-gray-500">
               <p>No plans available</p>
             </div>
           ) : (
-            <div className="space-y-6">
-              {/* Plan Cards Header */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {sortedPlans.map(planVersion => {
-                  const isCurrent = planVersion._id === currentPlanVersionId;
-                  const buttonState = getPlanButtonState(planVersion);
-                  const isPlanLoading = isLoading && planVersion._id === processingPlanId;
+            <div className="flex-1 min-h-0 overflow-hidden bg-white">
+              {/* Single scroll container - required for sticky to work */}
+              <div
+                className="overflow-auto h-full"
+                style={{ maxHeight: 'calc(100vh - 12rem)' }}
+              >
+                <table
+                  className="w-full border-separate border-spacing-0"
+                  style={{
+                    minWidth: `${280 + sortedPlans.length * 200}px`,
+                    borderCollapse: 'separate',
+                  }}
+                >
+                  <colgroup>
+                    <col style={{ width: 280, minWidth: 280 }} />
+                    {sortedPlans.map(planVersion => (
+                      <col key={planVersion._id} style={{ width: 200, minWidth: 200 }} />
+                    ))}
+                  </colgroup>
+                  <thead>
+                    {/* Sticky header row - plan cards */}
+                    <tr className="align-top">
+                      <th className="sticky top-0 left-0 z-30 p-0 bg-white   text-left">
 
-                  return (
-                    <div
-                      key={planVersion._id}
-                      className={`border rounded-lg p-4 ${
-                        isCurrent ? 'border-blue-500 bg-blue-50' : 'hover:border-gray-300'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <h3 className="text-lg font-semibold">{planVersion.plan.name}</h3>
-                        {isCurrent && (
-                          <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                            Current
-                          </span>
-                        )}
-                      </div>
-                      {planVersion.plan.description && (
-                        <p className="text-sm text-gray-600 mb-4">{planVersion.plan.description}</p>
-                      )}
-                      <Button
-                        className="w-full"
-                        variant={buttonState.variant}
-                        disabled={buttonState.disabled || isLoading}
-                        progress={isPlanLoading}
-                        onClick={() => handleSelectPlan(planVersion._id)}
-                      >
-                        {isPlanLoading ? 'Processing...' : buttonState.label}
-                      </Button>
-                    </div>
-                  );
-                })}
-              </div>
+                      </th>
+                      {sortedPlans.map(planVersion => {
+                        const isCurrent = planVersion._id === currentPlanVersionId;
+                        const buttonState = getPlanButtonState(planVersion);
+                        const isPlanLoading = isLoading && planVersion._id === processingPlanId;
 
-              {/* Comparison Table */}
-              <div className="border rounded-lg overflow-hidden bg-white">
-                <div className="bg-gray-50 p-4 border-b">
-                  <h3 className="font-semibold text-lg">Compare all features</h3>
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b bg-gray-50">
-                        <th className="text-left p-4 font-semibold text-sm sticky left-0 bg-gray-50 z-10 min-w-[250px]">
-                          Feature
-                        </th>
-                        {sortedPlans.map(planVersion => (
+                        return (
                           <th
                             key={planVersion._id}
-                            className={`text-center p-4 font-semibold text-sm min-w-[150px] ${
+                            className={`sticky top-0 z-20 border-b border-slate-200 p-3 shadow-[0_2px_4px_-2px_rgba(0,0,0,0.06)] ${
                               planVersion._id === currentPlanVersionId
-                                ? 'bg-blue-50 border-l-2 border-r-2 border-blue-500'
-                                : ''
+                                ? 'bg-blue-50/80'
+                                : 'bg-white'
                             }`}
                           >
-                            <div className="font-semibold">{planVersion.plan.name}</div>
-                            {planVersion._id === currentPlanVersionId && (
-                              <div className="text-xs text-blue-600 font-normal mt-1">
-                                Current Plan
+                            <div className="flex h-full flex-col gap-3">
+                              <div className="flex items-start justify-between gap-2">
+                                <h3 className="text-lg font-bold text-slate-900 truncate">
+                                  {planVersion.plan.name}
+                                </h3>
+                                {isCurrent && (
+                                  <span className="shrink-0 rounded-md bg-blue-600 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white">
+                                    Current
+                                  </span>
+                                )}
                               </div>
-                            )}
+                              {planVersion.plan.description && (
+                                <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">
+                                  {planVersion.plan.description}
+                                </p>
+                              )}
+                              <Button
+                                className="mt-auto w-full"
+                                variant={buttonState.variant}
+                                disabled={buttonState.disabled || isLoading}
+                                progress={isPlanLoading}
+                                onClick={() => handleSelectPlan(planVersion._id)}
+                              >
+                                {isPlanLoading ? 'Processing...' : buttonState.label}
+                              </Button>
+                            </div>
                           </th>
+                        );
+                      })}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {/* Features Section */}
+                    {features.length > 0 && (
+                      <>
+                        <tr>
+                          <td className="sticky left-0 z-10 border-t border-slate-200 bg-slate-100 px-4 py-2.5 font-semibold text-xs uppercase tracking-wider text-slate-600 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.06)]">
+                            Features
+                          </td>
+                          <td colSpan={sortedPlans.length} className="border-t border-slate-200 bg-slate-100" />
+                        </tr>
+                        {features.map(item => (
+                          <tr key={item._id} className="group hover:bg-slate-50/50">
+                            <td className="sticky left-0 z-10 border-t border-slate-100 bg-white p-4 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.06)] group-hover:bg-slate-50/80">
+                              <div className="font-medium text-sm text-slate-900">{item.name}</div>
+                              {item.description && (
+                                <div className="text-xs text-slate-500 mt-0.5">{item.description}</div>
+                              )}
+                            </td>
+                            {sortedPlans.map(planVersion => {
+                              const value = getValueForPlan(planVersion, item);
+                              const formatted = formatValue(value, item);
+                              const isEnabled = item.type === 'feature' && value === true;
+                              return (
+                                <td
+                                  key={planVersion._id}
+                                  className={`border-t border-slate-100 p-4 text-center align-middle ${planVersion._id === currentPlanVersionId
+                                      ? 'bg-blue-50/50'
+                                      : 'bg-white'
+                                    }`}
+                                >
+                                  <span
+                                    className={`text-sm font-medium ${isEnabled
+                                        ? 'text-emerald-600'
+                                        : formatted === '—'
+                                          ? 'text-slate-400'
+                                          : 'text-slate-700'
+                                      }`}
+                                  >
+                                    {formatted}
+                                  </span>
+                                </td>
+                              );
+                            })}
+                          </tr>
                         ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {/* Features Section */}
-                      {features.length > 0 && (
-                        <>
-                          <tr className="bg-gray-100 border-b-2 border-gray-300">
-                            <td
-                              colSpan={sortedPlans.length + 1}
-                              className="p-3 font-bold text-sm uppercase tracking-wide text-gray-700"
-                            >
-                              Features
-                            </td>
-                          </tr>
-                          {features.map(item => (
-                            <tr key={item._id} className="border-b hover:bg-gray-50">
-                              <td className="p-4 sticky left-0 bg-white z-10">
-                                <div className="font-medium text-sm text-gray-900">{item.name}</div>
-                                {item.description && (
-                                  <div className="text-xs text-gray-500 mt-1">
-                                    {item.description}
-                                  </div>
-                                )}
-                              </td>
-                              {sortedPlans.map(planVersion => {
-                                const value = getValueForPlan(planVersion, item);
-                                const formatted = formatValue(value, item);
-                                const isEnabled = item.type === 'feature' && value === true;
-                                return (
-                                  <td
-                                    key={planVersion._id}
-                                    className={`text-center p-4 align-middle ${
-                                      planVersion._id === currentPlanVersionId
-                                        ? 'bg-blue-50 border-l-2 border-r-2 border-blue-500'
-                                        : ''
-                                    }`}
-                                  >
-                                    <span
-                                      className={`text-sm ${
-                                        isEnabled
-                                          ? 'text-green-600 font-semibold'
-                                          : formatted === '—'
-                                            ? 'text-gray-400'
-                                            : 'text-gray-700'
-                                      }`}
-                                    >
-                                      {formatted}
-                                    </span>
-                                  </td>
-                                );
-                              })}
-                            </tr>
-                          ))}
-                        </>
-                      )}
+                      </>
+                    )}
 
-                      {/* Limits Section */}
-                      {limits.length > 0 && (
-                        <>
-                          <tr className="bg-gray-100 border-b-2 border-gray-300">
-                            <td
-                              colSpan={sortedPlans.length + 1}
-                              className="p-3 font-bold text-sm uppercase tracking-wide text-gray-700"
-                            >
-                              Limits
+                    {/* Limits Section */}
+                    {limits.length > 0 && (
+                      <>
+                        <tr>
+                          <td className="sticky left-0 z-10 border-t border-slate-200 bg-slate-100 px-4 py-2.5 font-semibold text-xs uppercase tracking-wider text-slate-600 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.06)]">
+                            Limits
+                          </td>
+                          <td colSpan={sortedPlans.length} className="border-t border-slate-200 bg-slate-100" />
+                        </tr>
+                        {limits.map(item => (
+                          <tr key={item._id} className="group hover:bg-slate-50/50">
+                            <td className="sticky left-0 z-10 border-t border-slate-100 bg-white p-4 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.06)] group-hover:bg-slate-50/80">
+                              <div className="font-medium text-sm text-slate-900">{item.name}</div>
+                              {item.description && (
+                                <div className="text-xs text-slate-500 mt-0.5">{item.description}</div>
+                              )}
                             </td>
-                          </tr>
-                          {limits.map(item => (
-                            <tr key={item._id} className="border-b hover:bg-gray-50">
-                              <td className="p-4 sticky left-0 bg-white z-10">
-                                <div className="font-medium text-sm text-gray-900">{item.name}</div>
-                                {item.description && (
-                                  <div className="text-xs text-gray-500 mt-1">
-                                    {item.description}
-                                  </div>
-                                )}
-                              </td>
-                              {sortedPlans.map(planVersion => {
-                                const value = getValueForPlan(planVersion, item);
-                                const formatted = formatValue(value, item);
-                                return (
-                                  <td
-                                    key={planVersion._id}
-                                    className={`text-center p-4 align-middle ${
-                                      planVersion._id === currentPlanVersionId
-                                        ? 'bg-blue-50 border-l-2 border-r-2 border-blue-500'
-                                        : ''
+                            {sortedPlans.map(planVersion => {
+                              const value = getValueForPlan(planVersion, item);
+                              const formatted = formatValue(value, item);
+                              return (
+                                <td
+                                  key={planVersion._id}
+                                  className={`border-t border-slate-100 p-4 text-center align-middle ${planVersion._id === currentPlanVersionId
+                                      ? 'bg-blue-50/50'
+                                      : 'bg-white'
                                     }`}
-                                  >
-                                    <span
-                                      className={`text-sm ${
-                                        formatted === '—'
-                                          ? 'text-gray-400'
-                                          : 'text-gray-700 font-medium'
+                                >
+                                  <span
+                                    className={`text-sm font-medium ${formatted === '—' ? 'text-slate-400' : 'text-slate-700'
                                       }`}
-                                    >
-                                      {formatted}
-                                    </span>
-                                  </td>
-                                );
-                              })}
-                            </tr>
-                          ))}
-                        </>
-                      )}
+                                  >
+                                    {formatted}
+                                  </span>
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        ))}
+                      </>
+                    )}
 
-                      {/* Quotas Section */}
-                      {quotas.length > 0 && (
-                        <>
-                          <tr className="bg-gray-100 border-b-2 border-gray-300">
-                            <td
-                              colSpan={sortedPlans.length + 1}
-                              className="p-3 font-bold text-sm uppercase tracking-wide text-gray-700"
-                            >
-                              Quotas
+                    {/* Quotas Section */}
+                    {quotas.length > 0 && (
+                      <>
+                        <tr>
+                          <td className="sticky left-0 z-10 border-t border-slate-200 bg-slate-100 px-4 py-2.5 font-semibold text-xs uppercase tracking-wider text-slate-600 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.06)]">
+                            Quotas
+                          </td>
+                          <td colSpan={sortedPlans.length} className="border-t border-slate-200 bg-slate-100" />
+                        </tr>
+                        {quotas.map(item => (
+                          <tr key={item._id} className="group hover:bg-slate-50/50">
+                            <td className="sticky left-0 z-10 border-t border-slate-100 bg-white p-4 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.06)] group-hover:bg-slate-50/80">
+                              <div className="font-medium text-sm text-slate-900">{item.name}</div>
+                              {item.description && (
+                                <div className="text-xs text-slate-500 mt-0.5">{item.description}</div>
+                              )}
                             </td>
-                          </tr>
-                          {quotas.map(item => (
-                            <tr key={item._id} className="border-b hover:bg-gray-50">
-                              <td className="p-4 sticky left-0 bg-white z-10">
-                                <div className="font-medium text-sm text-gray-900">{item.name}</div>
-                                {item.description && (
-                                  <div className="text-xs text-gray-500 mt-1">
-                                    {item.description}
-                                  </div>
-                                )}
-                              </td>
-                              {sortedPlans.map(planVersion => {
-                                const value = getValueForPlan(planVersion, item);
-                                const formatted = formatValue(value, item);
-                                return (
-                                  <td
-                                    key={planVersion._id}
-                                    className={`text-center p-4 align-middle ${
-                                      planVersion._id === currentPlanVersionId
-                                        ? 'bg-blue-50 border-l-2 border-r-2 border-blue-500'
-                                        : ''
+                            {sortedPlans.map(planVersion => {
+                              const value = getValueForPlan(planVersion, item);
+                              const formatted = formatValue(value, item);
+                              return (
+                                <td
+                                  key={planVersion._id}
+                                  className={`border-t border-slate-100 p-4 text-center align-middle ${planVersion._id === currentPlanVersionId
+                                      ? 'bg-blue-50/50'
+                                      : 'bg-white'
                                     }`}
-                                  >
-                                    <span
-                                      className={`text-sm ${
-                                        formatted === '—'
-                                          ? 'text-gray-400'
-                                          : 'text-gray-700 font-medium'
+                                >
+                                  <span
+                                    className={`text-sm font-medium ${formatted === '—' ? 'text-slate-400' : 'text-slate-700'
                                       }`}
-                                    >
-                                      {formatted}
-                                    </span>
-                                  </td>
-                                );
-                              })}
-                            </tr>
-                          ))}
-                        </>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
+                                  >
+                                    {formatted}
+                                  </span>
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        ))}
+                      </>
+                    )}
+                  </tbody>
+                </table>
               </div>
             </div>
           )}
