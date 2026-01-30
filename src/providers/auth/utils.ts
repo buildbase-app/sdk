@@ -4,6 +4,7 @@ import {
   removeStorageItem,
   setStorageItem,
 } from '../../contexts/shared/utils/storage';
+import { handleError } from '../../lib/error-handler';
 import { AUTH_SESSION_ID_KEY, AUTH_TOKEN_PARAM } from '../constants';
 import type { AuthSession, AuthUser } from './types';
 
@@ -66,7 +67,11 @@ export function getSessionId(): string | null {
   try {
     return getStorageItem(AUTH_SESSION_ID_KEY);
   } catch (error) {
-    console.warn('Failed to get sessionId from localStorage:', error);
+    handleError(error, {
+      component: 'auth/utils',
+      action: 'getSessionId',
+      metadata: { key: AUTH_SESSION_ID_KEY },
+    });
     return null;
   }
 }
@@ -98,7 +103,11 @@ export function getTokenFromUrl(): string | null {
     const urlParams = new URLSearchParams(window.location.search);
     return urlParams.get(AUTH_TOKEN_PARAM);
   } catch (e) {
-    console.error('Error getting token from URL:', e);
+    handleError(e, {
+      component: 'auth/utils',
+      action: 'getTokenFromUrl',
+      metadata: { param: AUTH_TOKEN_PARAM },
+    });
     return null;
   }
 }
@@ -109,7 +118,11 @@ export function removeTokenFromUrl() {
     newUrl.searchParams.delete(AUTH_TOKEN_PARAM);
     window.history.replaceState({}, '', newUrl.toString());
   } catch (e) {
-    console.error('Error removing token from URL:', e);
+    handleError(e, {
+      component: 'auth/utils',
+      action: 'removeTokenFromUrl',
+      metadata: { param: AUTH_TOKEN_PARAM },
+    });
   }
 }
 
