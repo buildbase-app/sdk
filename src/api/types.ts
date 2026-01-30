@@ -262,6 +262,7 @@ export type InvoiceStatus = 'draft' | 'open' | 'paid' | 'uncollectible' | 'void'
 export interface IInvoice {
   id: string;
   amount_due: number; // Amount in cents
+  number: string | null
   amount_paid: number; // Amount in cents
   currency: string; // e.g., 'usd'
   status: InvoiceStatus;

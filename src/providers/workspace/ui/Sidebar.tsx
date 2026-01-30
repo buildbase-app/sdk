@@ -93,7 +93,7 @@ const Sidebar: React.FC<Props> = ({ workspace, section, setSection }) => {
         <SidebarItem
           activeSection={section}
           icon={<CreditCard className="h-3.5 w-3.5" />}
-          label="Subscription"
+          label="Plan & Billing"
           section="subscription"
           onClick={() => setSection('subscription')}
         />
