@@ -1,4 +1,4 @@
-import { CreditCard, RefreshCcwIcon, AlertTriangle } from 'lucide-react';
+import { CreditCard, Loader2, RefreshCcwIcon, AlertTriangle } from 'lucide-react';
 import React, { useState, useMemo } from 'react';
 import {
   ICheckoutSessionResponse,
@@ -266,6 +266,12 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
       {/* Subscription Tab Content */}
       {activeTab === 'subscription' && (
         <>
+          {loading && (
+            <div className="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">
+              <Loader2 className="h-4 w-4 animate-spin flex-shrink-0" />
+              <span>Loading subscription and pricing plans...</span>
+            </div>
+          )}
           {/* Deprecation Notice - Show if user's plan is on an older version */}
           {isDeprecated && subscription?.subscription && (
             <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
@@ -327,9 +333,10 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                     View Pricing Plans
                   </Button>
                 ) : null}
-                <Button variant="ghost" size="sm" onClick={refetch} disabled={loading}>
-                  <RefreshCcwIcon className="h-4 w-4 mr-2" />
-                  Refresh
+                <Button variant="ghost" size="sm"
+                  progress={loading}
+                  onClick={refetch} disabled={loading}>
+                  {loading ? 'Refreshing...' : 'Refresh'}
                 </Button>
               </div>
             </div>
@@ -502,13 +509,20 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
 
       {/* Invoices Tab Content */}
       {activeTab === 'invoices' && (
-        <SettingsInvoices
-          workspaceId={workspaceId}
-          hasActiveSubscription={subscription?.subscription !== null}
-          hasPlansToShow={!!(plansToShow && plansToShow.length > 0)}
-          onViewPricingPlans={() => setActiveTab('subscription')}
-          limit={20}
-        />
+        <>
+          {loading && (
+            <div className="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">
+              <Loader2 className="h-4 w-4 animate-spin flex-shrink-0" />
+              <span>Loading subscription and pricing plans...</span>
+            </div>
+          )}
+          <SettingsInvoices
+            workspaceId={workspaceId}
+            hasActiveSubscription={subscription?.subscription !== null}
+            onViewPricingPlans={() => setActiveTab('subscription')}
+            limit={20}
+          />
+        </>
       )}
 
       {/* Subscription Dialog */}
