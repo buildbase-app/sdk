@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useMemo, useReducer, type Dispatch, type ReactNode } from 'react';
+import { useSelectWithEquality } from './useSelectWithEquality';
 
 /**
  * Generic context factory with performance optimizations
@@ -105,48 +106,8 @@ export function createContextProvider<State, Action>({
     equalityFn?: (a: Selected, b: Selected) => boolean
   ): Selected => {
     const state = useState();
-
-    // If no selector provided, return entire state (identity selector)
-    // Type assertion is safe here because Selected defaults to State when no selector is provided
-    // We use 'unknown' intermediate to satisfy TypeScript's type checking
     const actualSelector = selector || ((s: State) => s as unknown as Selected);
-    const selectorRef = React.useRef(actualSelector);
-    const equalityFnRef = React.useRef(equalityFn);
-    const prevSelectedRef = React.useRef<Selected | undefined>(undefined);
-    const prevStateRef = React.useRef<State>(state);
-
-    // Update refs if they changed
-    if (selector) {
-      selectorRef.current = actualSelector;
-    }
-    if (equalityFn) {
-      equalityFnRef.current = equalityFn;
-    }
-
-    // Compute selected value with memoization
-    const selected = useMemo(() => {
-      const result = selectorRef.current(state);
-
-      // Check if value changed using equality function
-      if (prevSelectedRef.current !== undefined) {
-        const isEqual = equalityFnRef.current
-          ? equalityFnRef.current(prevSelectedRef.current, result)
-          : Object.is(prevSelectedRef.current, result);
-
-        if (isEqual && prevStateRef.current === state) {
-          // Return previous value if equal and state reference unchanged
-          return prevSelectedRef.current;
-        }
-      }
-
-      // Update refs
-      prevSelectedRef.current = result;
-      prevStateRef.current = state;
-
-      return result;
-    }, [state]);
-
-    return selected;
+    return useSelectWithEquality(state, actualSelector, equalityFn);
   };
 
   return {
