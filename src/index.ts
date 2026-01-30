@@ -22,8 +22,9 @@ export {
   WhenWorkspaceFeatureEnabled,
 } from './components/features';
 
-// Export auth status (flags are derived in useSaaSAuth)
+// Export auth status and types (flags are derived in useSaaSAuth)
 export { AuthStatus } from './providers/auth/types';
+export type { OnWorkspaceChangeParams } from './providers/auth/types';
 
 // Export hooks
 export { useSaaSAuth } from './providers/auth/hooks';

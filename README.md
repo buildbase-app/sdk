@@ -95,6 +95,11 @@ export default function SaaSProvider(props: { children: React.ReactNode }) {
             // Handle SDK events (user created, workspace changed, etc.)
             console.log('SDK Event:', eventType, data);
           },
+          onWorkspaceChange: async ({ workspace, user, role }) => {
+            // Called before switching workspace (e.g. generate token). Used on "Switch to" and page refresh/restore.
+            // Switch proceeds only when this resolves; reject to abort.
+            console.log('Switching to workspace:', workspace.name, 'as', role);
+          },
         },
       }}
     >
@@ -124,7 +129,7 @@ export default App;
 
 ### 4. Workspace Management
 
-The WorkspaceSwitcher component uses a render prop pattern, giving you full control over the UI:
+The WorkspaceSwitcher component uses a render prop pattern, giving you full control over the UI. Configure `onWorkspaceChange` in `auth.callbacks` (SaaSOSProvider) to handle workspace switches—used when clicking "Switch to" and when restoring from storage on page refresh. The callback receives `{ workspace, user, role }` so you don't need to look up the user's role:
 
 ```tsx
 import React from 'react';
@@ -159,10 +164,6 @@ function WorkspaceExample() {
             </div>
           </div>
         );
-      }}
-      onWorkspaceChange={async workspace => {
-        // Handle workspace change
-        console.log('Workspace changed to:', workspace);
       }}
     />
   );
@@ -372,10 +373,12 @@ function WorkspaceManager() {
     currentWorkspace, // Currently selected workspace
     loading, // Loading state
     refreshing, // Refreshing state
+    switching, // True when workspace switch is in progress (onWorkspaceChange running)
     error, // Error message
     fetchWorkspaces, // Fetch all workspaces
     refreshWorkspaces, // Background refresh
-    setCurrentWorkspace, // Switch workspace
+    setCurrentWorkspace, // Direct workspace set (bypasses onWorkspaceChange)
+    switchToWorkspace, // Full switch flow: onWorkspaceChange first, then set workspace
     createWorkspace, // Create new workspace
     updateWorkspace, // Update workspace
     deleteWorkspace, // Delete workspace
@@ -460,7 +463,7 @@ import { SaaSOSProvider, eventEmitter } from '@buildbase/sdk';
 
 - `user:created` - User account created
 - `user:updated` - User profile updated
-- `workspace:changed` - Workspace switched
+- `workspace:changed` - Workspace switched (fires after switch completes; use `onWorkspaceChange` for prep before switch)
 - `workspace:created` - New workspace created
 - `workspace:updated` - Workspace updated
 - `workspace:deleted` - Workspace deleted
@@ -557,7 +560,14 @@ interface IAuthConfig {
     handleAuthentication: (code: string) => Promise<{ sessionId: string }>;
     onSignOut?: () => Promise<void>;
     handleEvent?: (eventType: EventType, data: EventData) => void | Promise<void>;
+    onWorkspaceChange?: (params: OnWorkspaceChangeParams) => Promise<void>;
   };
+}
+
+interface OnWorkspaceChangeParams {
+  workspace: IWorkspace;
+  user: AuthUser | null;
+  role: string | null; // User's role in this workspace
 }
 ```
 
@@ -683,7 +693,7 @@ import { useSaaSWorkspaces } from '@buildbase/sdk';
 import { useEffect } from 'react';
 
 function App() {
-  const { currentWorkspace, setCurrentWorkspace } = useSaaSWorkspaces();
+  const { currentWorkspace, switching } = useSaaSWorkspaces();
 
   useEffect(() => {
     if (currentWorkspace) {
@@ -693,9 +703,14 @@ function App() {
     }
   }, [currentWorkspace]);
 
+  // Show loading during switch (e.g. restore from storage, "Switch to" click)
+  if (switching) return <LoadingOverlay />;
+
   return <YourApp />;
 }
 ```
+
+For token generation or prep before switching, configure `onWorkspaceChange` in auth callbacks (see Quick Start)—it receives `{ workspace, user, role }`.
 
 ### Pattern 6: Error Boundary with Custom Fallback
 
@@ -863,7 +878,7 @@ A: Yes, as long as you're using React 19+.
 A: Use the `trigger` render prop to fully customize the UI.
 
 **Q: Can I use multiple workspaces simultaneously?**  
-A: No, the SDK manages one current workspace at a time. Switch between workspaces using `setCurrentWorkspace()`.
+A: No, the SDK manages one current workspace at a time. Use `switchToWorkspace()` (runs `onWorkspaceChange` first) or `setCurrentWorkspace()` (direct set, bypasses callback).
 
 **Q: How do I handle offline scenarios?**  
 A: The SDK stores session data in localStorage. Handle offline scenarios in your `handleAuthentication` callback.
@@ -933,8 +948,12 @@ try {
 
 ```tsx
 // ✅ Good
-const { currentWorkspace, setCurrentWorkspace } = useSaaSWorkspaces();
+const { currentWorkspace, switchToWorkspace, switching } = useSaaSWorkspaces();
+// switchToWorkspace: runs onWorkspaceChange first (token gen, etc.)
+// switching: true when switch is in progress
 ```
+
+✅ **Do**: Configure `onWorkspaceChange` in auth callbacks for token generation—receives `{ workspace, user, role }`.
 
 ❌ **Don't**: Manually manage workspace state.
 
@@ -987,17 +1006,19 @@ const { signIn, status } = useSaaSAuth();
 
 ### 6. Event Handling
 
-✅ **Do**: Handle events in your provider configuration.
+✅ **Do**: Handle events in your provider configuration. Use `onWorkspaceChange` for prep before switch (e.g. generate token), and `handleEvent` for post-switch notifications.
 
 ```tsx
 // ✅ Good
 <SaaSOSProvider
   auth={{
     callbacks: {
+      onWorkspaceChange: async ({ workspace, user, role }) => {
+        await generateTokenForWorkspace(workspace._id, user?.id, role);
+      },
       handleEvent: async (eventType, data) => {
-        // Handle events
         if (eventType === 'workspace:changed') {
-          // Update your app state
+          // Workspace already switched; update app state
         }
       },
     },
