@@ -1,3 +1,4 @@
+import { updateField, updateFields } from '../shared/utils/reducerHelpers';
 import type { IAuthState } from '../../providers/auth/types';
 import { AuthStatus } from '../../providers/auth/types';
 import {
@@ -31,23 +32,23 @@ export const getInitialAuthState = (): IAuthState => {
 export const authReducer = (state: IAuthState, action: AuthAction): IAuthState => {
   switch (action.type) {
     case 'AUTHENTICATION_STARTED':
-      return { ...state, status: AuthStatus.redirecting };
+      return updateField(state, 'status', AuthStatus.redirecting);
 
     case 'AUTHENTICATION_PROCESSING':
-      return { ...state, status: AuthStatus.authenticating };
+      return updateField(state, 'status', AuthStatus.authenticating);
 
     case 'AUTHENTICATION_FAILED':
-      return { ...state, session: null, status: AuthStatus.unauthenticated };
+      return updateFields(state, { session: null, status: AuthStatus.unauthenticated });
 
     case 'SET_SESSION': {
       const session = action.payload;
       setSessionIdStorage(session.sessionId);
-      return { ...state, session, status: AuthStatus.authenticated };
+      return updateFields(state, { session, status: AuthStatus.authenticated });
     }
 
     case 'REMOVE_SESSION':
       removeSessionStorage();
-      return { ...state, session: null, status: AuthStatus.unauthenticated };
+      return updateFields(state, { session: null, status: AuthStatus.unauthenticated });
 
     default:
       return state;
