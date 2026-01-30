@@ -1,7 +1,6 @@
+import { WORKSPACE_STORAGE_KEY } from '../../providers/constants';
 import { removeStorageItem, setStorageItem } from '../shared/utils/storage';
 import type { WorkspaceAction, WorkspaceState } from './types';
-
-const WORKSPACE_STORAGE_KEY = 'saas-workspace-current';
 
 function saveWorkspaceId(workspaceId: string | null): void {
   if (workspaceId) {
