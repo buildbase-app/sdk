@@ -1,5 +1,5 @@
 import { IAsset, IDocument } from '../../api/types';
-import { safeFetch } from '../../lib/api-utils';
+import { getErrorMessage, safeFetch } from '../../lib/api-utils';
 import { ApiVersion, IOsConfig } from '../../providers/os/types';
 
 interface IScreenDetail {
@@ -50,7 +50,7 @@ export class BetaForm {
       `${this.serverUrl}/api/${this.version}/beta/config?orgId=${this.orgId}`
     );
     if (!response.ok) {
-      throw new Error(`Failed to fetch beta form configuration: ${response.statusText}`);
+      throw new Error(await getErrorMessage(response, 'Failed to fetch beta form configuration'));
     }
     return response.json();
   }
@@ -108,7 +108,7 @@ export class BetaForm {
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to submit beta user request: ${response.statusText}`);
+      throw new Error(await getErrorMessage(response, 'Failed to submit beta user request'));
     }
     return response.json();
   }
