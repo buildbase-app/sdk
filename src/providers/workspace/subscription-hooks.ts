@@ -4,9 +4,9 @@ import {
   ICheckoutSessionRequest,
   ICheckoutSessionResponse,
   IInvoice,
-  IInvoiceListResponse,
-  IInvoiceResponse,
+  IPublicPlansResponse,
   IPlanGroupResponse,
+  IPlanGroupVersion,
   IPlanGroupVersionsResponse,
   ISubscriptionResponse,
   ISubscriptionUpdateResponse,
@@ -14,6 +14,140 @@ import {
 import { useAppSelector } from '../../contexts';
 import { handleError } from '../../lib/error-handler';
 import { WorkspaceApi } from './api';
+
+/**
+ * Hook to get public plans by slug (no auth required).
+ * Returns items (features, limits, quotas) and plans (with pricing).
+ * Uses orgId from SaaSOSProvider - must be inside provider.
+ *
+ * @param slug - Plan group slug (e.g. 'main-pricing', 'enterprise')
+ * @returns { items, plans, loading, error, refetch }
+ */
+export const usePublicPlans = (slug: string) => {
+  const os = useAppSelector(state => state.os);
+  const api = useMemo(() => new WorkspaceApi(os), [os.serverUrl, os.version, os.orgId]);
+  const isConfigReady = Boolean(os.serverUrl && os.version && os.orgId);
+
+  const [data, setData] = useState<IPublicPlansResponse | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchPlans = useCallback(async () => {
+    if (!slug || !isConfigReady) {
+      setData(null);
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await api.getPublicPlans(slug);
+      setData(result);
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : 'Failed to fetch plans';
+      setError(errorMessage);
+      handleError(err, {
+        component: 'usePublicPlans',
+        action: 'fetchPlans',
+        metadata: { slug },
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [api, slug, isConfigReady]);
+
+  useEffect(() => {
+    fetchPlans();
+  }, [fetchPlans]);
+
+  // Show loading when waiting for SDK config (SaaSOSProvider) or when fetching
+  const isLoading = (slug && !isConfigReady) || loading;
+
+  return {
+    items: data?.items ?? [],
+    plans: data?.plans ?? [],
+    loading: isLoading,
+    error,
+    refetch: fetchPlans,
+  };
+};
+
+/**
+ * Hook to get a single plan group version by ID (no auth required).
+ * Use this for public pricing pages when you have the groupVersionId (e.g. from config or URL).
+ *
+ * @param groupVersionId - The plan group version ID to fetch. Pass null/undefined to disable fetching.
+ * @returns An object containing:
+ * - `planGroupVersion`: Plan group version data (null if not loaded)
+ * - `loading`: Boolean indicating if data is being fetched
+ * - `error`: Error message string (null if no error)
+ * - `refetch()`: Function to manually refetch
+ *
+ * @example
+ * ```tsx
+ * function PublicPricingPage() {
+ *   const groupVersionId = 'your-plan-group-version-id'; // from config or URL
+ *   const { planGroupVersion, loading } = usePublicPlanGroupVersion(groupVersionId);
+ *
+ *   if (loading) return <Loading />;
+ *   if (!planGroupVersion) return null;
+ *
+ *   const plans = Array.isArray(planGroupVersion.planVersionIds)
+ *     ? planGroupVersion.planVersionIds.filter((p): p is IPlanVersionWithPlan => typeof p !== 'string')
+ *     : [];
+ *
+ *   return (
+ *     <div>
+ *       {plans.map(plan => <PlanCard key={plan._id} plan={plan} />)}
+ *     </div>
+ *   );
+ * }
+ * ```
+ */
+export const usePublicPlanGroupVersion = (groupVersionId: string | null | undefined) => {
+  const os = useAppSelector(state => state.os);
+  const api = useMemo(() => new WorkspaceApi(os), [os.serverUrl, os.version, os.orgId]);
+
+  const [planGroupVersion, setPlanGroupVersion] = useState<IPlanGroupVersion | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchVersion = useCallback(async () => {
+    if (!groupVersionId) {
+      setPlanGroupVersion(null);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await api.getPlanGroupVersion(groupVersionId);
+      setPlanGroupVersion(data);
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : 'Failed to fetch plan group version';
+      setError(errorMessage);
+      handleError(err, {
+        component: 'usePublicPlanGroupVersion',
+        action: 'fetchVersion',
+        metadata: { groupVersionId },
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [api, groupVersionId]);
+
+  useEffect(() => {
+    fetchVersion();
+  }, [fetchVersion]);
+
+  return {
+    planGroupVersion,
+    loading,
+    error,
+    refetch: fetchVersion,
+  };
+};
 
 /**
  * Hook to get and manage the current subscription for a workspace.

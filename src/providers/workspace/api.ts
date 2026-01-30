@@ -1,12 +1,12 @@
 import {
   ICheckoutSessionRequest,
   ICheckoutSessionResponse,
-  IInvoice,
   IInvoiceListResponse,
   IInvoiceResponse,
   IPlanGroupResponse,
   IPlanGroupVersion,
   IPlanGroupVersionsResponse,
+  IPublicPlansResponse,
   ISubscriptionResponse,
   ISubscriptionUpdateRequest,
   ISubscriptionUpdateResponse,
@@ -375,8 +375,48 @@ export class WorkspaceApi {
   }
 
   /**
-   * Get plan group version details by ID
-   * Returns the full plan group version with populated plan versions
+   * Get plan group versions by slug (public, no auth required).
+   * Returns the latest published plan group versions for the given plan group slug.
+   * Use this for public pricing pages when you want to show a specific plan group.
+   *
+   * @param slug - Plan group slug (e.g. 'default', 'enterprise')
+   * @returns Plan group versions response with currentVersion and availableVersions
+   */
+  async getPublicPlans(slug: string): Promise<IPublicPlansResponse> {
+    const response = await safeFetch(
+      `${this.serverUrl}/api/${this.version}/public/${this.orgId}/plans/${encodeURIComponent(slug)}`,
+      {
+        headers: this.getAuthHeader(),
+      }
+    );
+    if (!response.ok) {
+      let errorMessage = 'Failed to fetch plans';
+      try {
+        const error = await response.json();
+        errorMessage = error.message || errorMessage;
+      } catch {
+        if (response.status === 404) {
+          errorMessage = `Plans "${slug}" not found`;
+        } else {
+          errorMessage = `Failed to fetch plans (${response.status}: ${response.statusText})`;
+        }
+      }
+      throw new Error(errorMessage);
+    }
+    const result = await response.json();
+    if (result.success !== undefined && !result.success) {
+      throw new Error(result.message || 'Failed to fetch plans');
+    }
+    return result.data ?? result;
+  }
+
+  /**
+   * Get plan group version details by ID (public, no auth required).
+   * Returns the full plan group version with populated plan versions.
+   * Use this for public pricing pages when you have the groupVersionId (e.g. from config or URL).
+   *
+   * @param groupVersionId - The plan group version ID to fetch
+   * @returns Plan group version with populated plan versions
    */
   async getPlanGroupVersion(groupVersionId: string): Promise<IPlanGroupVersion> {
     const response = await safeFetch(

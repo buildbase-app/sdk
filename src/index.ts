@@ -7,6 +7,8 @@ export { ApiVersion } from './providers/os/types';
 export { SaaSOSProvider } from './providers/SaaSOSProvider';
 // Export custom components
 export { BetaForm } from './components/beta/BetaForm';
+export { PricingPage } from './components/pricing';
+export type { PricingPageDetails, PricingPageProps } from './components/pricing';
 
 // Export auth components
 export { WhenAuthenticated, WhenUnauthenticated } from './components/user/auth';
@@ -42,6 +44,8 @@ export {
   useInvoices,
   usePlanGroup,
   usePlanGroupVersions,
+  usePublicPlanGroupVersion,
+  usePublicPlans,
   useSubscription,
   useSubscriptionManagement,
   useUpdateSubscription,
@@ -83,6 +87,12 @@ export type {
   IPlanGroupVersionWithPlans,
   IPlanVersion,
   IPlanVersionWithPlan,
+  IPublicPlanItem,
+  IPublicPlanItemCategory,
+  IPublicPlanPricing,
+  IPublicPlanQuotaValue,
+  IPublicPlansResponse,
+  IPublicPlanVersion,
   IQuotaValue,
   ISubscription,
   ISubscriptionItem,
