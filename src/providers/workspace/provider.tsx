@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Building2, Image, Loader2, Plus, RefreshCcw, Search, Smile, Users } from 'lucide-react';
+import { Building2, DollarSign, Image, Loader2, Plus, RefreshCcw, Search, Smile, Users } from 'lucide-react';
 import { ReactNode, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -255,6 +255,9 @@ function WorkspaceItem(props: WorkspaceItemProps) {
       .toUpperCase()
       .slice(0, 2);
   };
+  const subscription = workspace.subscription ?? null;
+  const plan = subscription?.plan ?? null;
+  const planName = plan?.name ?? '';
   return (
     <div
       className={cn('flex items-center gap-3 rounded-lg border-2 p-3 border-border', {
@@ -274,11 +277,22 @@ function WorkspaceItem(props: WorkspaceItemProps) {
           <span className="font-medium line-clamp-1 text-ellipsis overflow-hidden max-w-full">
             {workspace.name}
           </span>
+
         </div>
         <div className="flex items-center gap-1 text-sm text-muted-foreground">
           <Users className="h-3 w-3" />
           <span>{workspace.users?.length || 0} members</span>
         </div>
+        {planName && (
+          <div className='max-w-fit'>
+            <div className="flex items-center gap-1 text-sm text-muted-foreground bg-green-500 text-white rounded-full px-2 py-0.5">
+              <DollarSign className="h-3 w-3" />
+              <span className="text-xs">
+                Subscription: {planName}
+              </span>
+            </div>
+          </div>
+        )}
       </div>
       <div className="flex items-center gap-2">
         {isCurrentWorkspace ? null : (
@@ -316,7 +330,7 @@ function WorkspaceItem(props: WorkspaceItemProps) {
           }}
         />
       </div>
-    </div>
+    </div >
   );
 }
 
