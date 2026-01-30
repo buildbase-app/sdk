@@ -1,11 +1,39 @@
+import { IUser } from '../../api/types';
 import {
   getStorageItem,
   removeStorageItem,
   setStorageItem,
 } from '../../contexts/shared/utils/storage';
 import { AUTH_SESSION_ID_KEY, AUTH_TOKEN_PARAM } from '../constants';
-import type { AuthSession } from './types';
-import { AuthUser } from './types';
+import type { AuthSession, AuthUser } from './types';
+
+/**
+ * Map IUser from API to AuthUser for session
+ * @throws Error if user data is missing required ID or email fields
+ */
+export function mapIUserToAuthUser(
+  userData: IUser,
+  orgId: string,
+  clientId: string
+): AuthUser {
+  const userId = userData._id || userData.id;
+  if (!userId || typeof userId !== 'string') {
+    throw new Error('User data missing required ID field');
+  }
+  if (!userData.email || typeof userData.email !== 'string') {
+    throw new Error('User data missing required email field');
+  }
+  return {
+    id: userId,
+    name: userData.name || '',
+    org: orgId,
+    email: userData.email,
+    emailVerified: true,
+    clientId,
+    role: userData.role || '',
+    image: userData.image,
+  };
+}
 
 /**
  * Centralized Session Management
