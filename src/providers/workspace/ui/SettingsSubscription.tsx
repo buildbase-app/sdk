@@ -385,23 +385,18 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                       <div className="mt-4 pt-4 border-t">
                         <div className="text-sm font-medium mb-3">Current Plan Details</div>
                         <div className="space-y-4 text-sm">
-                          <div>
-                            <span className="text-gray-600">Plan:</span>{' '}
-                            <span className="font-medium">{subscription.plan?.name || 'N/A'}</span>
-                          </div>
-
                           {planDetails.features.length > 0 && (
                             <div>
                               <div className="text-xs font-medium text-gray-700 mb-2">Features:</div>
                               <ul className="space-y-1.5">
-                                {planDetails.features.map(({ item, enabled }) => (
+                                {planDetails.features.sort((a, b) => a.enabled ? -1 : 1).map(({ item, enabled }) => (
                                   <li key={item._id} className="flex items-start gap-2">
                                     <span
                                       className={
-                                        enabled ? 'text-green-500 mt-0.5' : 'text-gray-300 mt-0.5'
+                                        enabled ? 'text-green-500 mt-0.5' : 'text-red-500 mt-0.5'
                                       }
                                     >
-                                      {enabled ? '✓' : '○'}
+                                      {enabled ? '✓' : '✗'}
                                     </span>
                                     <div className="flex-1">
                                       <div className="font-medium">{item.name}</div>
