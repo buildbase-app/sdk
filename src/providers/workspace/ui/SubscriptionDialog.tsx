@@ -74,6 +74,7 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
   loading: isUpdating = false,
 }) => {
   const [localLoading, setLocalLoading] = useState(false);
+  const [processingPlanId, setProcessingPlanId] = useState<string | null>(null);
 
   // Sort plans by version number
   const sortedPlans = useMemo(() => {
@@ -103,6 +104,7 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
     if (planVersionId === currentPlanVersionId || isUpdating || localLoading) return;
 
     setLocalLoading(true);
+    setProcessingPlanId(planVersionId);
     try {
       await onSelectPlan(planVersionId);
       onOpenChange(false);
@@ -110,6 +112,7 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
       // Error handling is done in parent
     } finally {
       setLocalLoading(false);
+      setProcessingPlanId(null);
     }
   };
 
@@ -174,7 +177,7 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-7xl w-full h-[90vh] p-0 flex flex-col">
+      <DialogContent className="max-w-7xl w-full h-[100vh] p-0 flex flex-col">
         <div className="flex items-center justify-between p-6 border-b">
           <div>
             <DialogTitle className="text-2xl font-bold">Choose Your Plan</DialogTitle>
@@ -196,7 +199,7 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                 {sortedPlans.map(planVersion => {
                   const isCurrent = planVersion._id === currentPlanVersionId;
                   const buttonState = getPlanButtonState(planVersion);
-                  const isPlanUpdating = isLoading && planVersion._id === currentPlanVersionId;
+                  const isPlanLoading = isLoading && planVersion._id === processingPlanId;
 
                   return (
                     <div
@@ -220,9 +223,10 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                         className="w-full"
                         variant={buttonState.variant}
                         disabled={buttonState.disabled || isLoading}
+                        progress={isPlanLoading}
                         onClick={() => handleSelectPlan(planVersion._id)}
                       >
-                        {isPlanUpdating ? 'Updating...' : buttonState.label}
+                        {isPlanLoading ? 'Processing...' : buttonState.label}
                       </Button>
                     </div>
                   );
