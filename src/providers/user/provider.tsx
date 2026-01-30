@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { IUser } from '../../api/types';
 import { useAppSelector } from '../../contexts';
 import { handleError } from '../../lib/error-handler';
-import { getErrorMessage, safeFetch } from '../../lib/api-utils';
+import { getErrorMessage, isAbortError, safeFetch } from '../../lib/api-utils';
+import { useAsyncEffect } from '../../lib/useAsyncEffect';
 import { getAuthFlags } from '../auth/types';
 import { getAuthHeaders } from '../auth/utils';
 
@@ -32,39 +33,44 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = React.memo(
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const fetchAttributes = useCallback(async () => {
-    if (!serverUrl || !version || !isAuthenticated) {
-      setAttributes({});
-      return;
-    }
-
-    try {
-      const response = await safeFetch(`${serverUrl}/api/${version}/public/users/attributes`, {
-        headers: getAuthHeaders(),
-      });
-
-      if (!response.ok) {
-        throw new Error(await getErrorMessage(response, 'Failed to fetch user attributes'));
-      }
-
-      const data = await response.json();
-
-      // API returns JSON object with key-value pairs
-      // Handle both direct object or wrapped in attributes property
-      if (data && typeof data === 'object' && !Array.isArray(data)) {
-        setAttributes(data);
-      } else {
+  const fetchAttributes = useCallback(
+    async (signal?: AbortSignal) => {
+      if (!serverUrl || !version || !isAuthenticated) {
         setAttributes({});
+        return;
       }
-    } catch (err) {
-      const error = err instanceof Error ? err : new Error('Failed to fetch user attributes');
-      setError(error);
-      handleError(err, {
-        component: 'UserProvider',
-        action: 'fetchAttributes',
-      });
-    }
-  }, [serverUrl, version, isAuthenticated]);
+
+      try {
+        const response = await safeFetch(
+          `${serverUrl}/api/${version}/public/users/attributes`,
+          { headers: getAuthHeaders(), signal }
+        );
+
+        if (!response.ok) {
+          throw new Error(await getErrorMessage(response, 'Failed to fetch user attributes'));
+        }
+
+        const data = await response.json();
+
+        // API returns JSON object with key-value pairs
+        // Handle both direct object or wrapped in attributes property
+        if (data && typeof data === 'object' && !Array.isArray(data)) {
+          setAttributes(data);
+        } else {
+          setAttributes({});
+        }
+      } catch (err) {
+        if (isAbortError(err)) return;
+        const error = err instanceof Error ? err : new Error('Failed to fetch user attributes');
+        setError(error);
+        handleError(err, {
+          component: 'UserProvider',
+          action: 'fetchAttributes',
+        });
+      }
+    },
+    [serverUrl, version, isAuthenticated]
+  );
 
   const refreshAttributes = useCallback(async () => {
     if (!serverUrl || !version || !isAuthenticated) {
@@ -174,38 +180,43 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = React.memo(
     [serverUrl, version, fetchAttributes]
   );
 
-  const fetchFeatures = useCallback(async () => {
-    if (!serverUrl || !version || !isAuthenticated) {
-      setFeatures({});
-      return;
-    }
-
-    try {
-      const response = await safeFetch(`${serverUrl}/api/${version}/public/users/features`, {
-        headers: getAuthHeaders(),
-      });
-
-      if (!response.ok) {
-        throw new Error(await getErrorMessage(response, 'Failed to fetch user features'));
-      }
-
-      const data = await response.json();
-
-      // API returns {  "feature-id": true, ... } object
-      if (typeof data === 'object') {
-        setFeatures(data);
-      } else {
+  const fetchFeatures = useCallback(
+    async (signal?: AbortSignal) => {
+      if (!serverUrl || !version || !isAuthenticated) {
         setFeatures({});
+        return;
       }
-    } catch (err) {
-      const error = err instanceof Error ? err : new Error('Failed to fetch user features');
-      setError(error);
-      handleError(err, {
-        component: 'UserProvider',
-        action: 'fetchFeatures',
-      });
-    }
-  }, [serverUrl, version, isAuthenticated]);
+
+      try {
+        const response = await safeFetch(
+          `${serverUrl}/api/${version}/public/users/features`,
+          { headers: getAuthHeaders(), signal }
+        );
+
+        if (!response.ok) {
+          throw new Error(await getErrorMessage(response, 'Failed to fetch user features'));
+        }
+
+        const data = await response.json();
+
+        // API returns {  "feature-id": true, ... } object
+        if (typeof data === 'object') {
+          setFeatures(data);
+        } else {
+          setFeatures({});
+        }
+      } catch (err) {
+        if (isAbortError(err)) return;
+        const error = err instanceof Error ? err : new Error('Failed to fetch user features');
+        setError(error);
+        handleError(err, {
+          component: 'UserProvider',
+          action: 'fetchFeatures',
+        });
+      }
+    },
+    [serverUrl, version, isAuthenticated]
+  );
 
   const refreshFeatures = useCallback(async () => {
     if (!serverUrl || !version || !isAuthenticated) {
@@ -223,20 +234,31 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = React.memo(
   }, [serverUrl, version, isAuthenticated, fetchFeatures]);
 
   // Fetch attributes and features when authenticated and OS config is ready
-  useEffect(() => {
-    if (isAuthenticated && serverUrl && version) {
+  useAsyncEffect(
+    async signal => {
+      if (!isAuthenticated || !serverUrl || !version) {
+        setAttributes({});
+        setFeatures({});
+        return;
+      }
       setIsLoading(true);
       setError(null);
-      // Fetch both in parallel
-      Promise.all([fetchAttributes(), fetchFeatures()]).finally(() => {
+      try {
+        await Promise.all([fetchAttributes(signal), fetchFeatures(signal)]);
+      } finally {
         setIsLoading(false);
-      });
-    } else {
-      // Clear attributes and features when not authenticated
-      setAttributes({});
-      setFeatures({});
+      }
+    },
+    [isAuthenticated, serverUrl, version, fetchAttributes, fetchFeatures],
+    {
+      onError: err =>
+        handleError(err, {
+          component: 'UserProvider',
+          action: 'initialFetch',
+          metadata: { step: 'fetchAttributesAndFeatures' },
+        }),
     }
-  }, [isAuthenticated, serverUrl, version, fetchAttributes, fetchFeatures]);
+  );
 
   const value: UserContextValue = React.useMemo(
     () => ({
