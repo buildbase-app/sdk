@@ -2,6 +2,7 @@
 
 import React, { useMemo } from 'react';
 import type { IAuthState } from '../../providers/auth/types';
+import { useSelectWithEquality } from './useSelectWithEquality';
 import type { IOsState } from '../../providers/os/types';
 import { useAuthState } from '../AuthContext';
 import { useOSState } from '../OSContext';
@@ -60,44 +61,6 @@ export function useAppSelector<Selected = SDKState>(
     [os, auth, workspaces]
   );
 
-  // If no selector provided, return entire combined state
-  // Type assertion is safe here because Selected defaults to SDKState when no selector is provided
   const actualSelector = selector || ((s: SDKState) => s as Selected);
-  const selectorRef = React.useRef(actualSelector);
-  const equalityFnRef = React.useRef(equalityFn);
-  const prevSelectedRef = React.useRef<Selected | undefined>(undefined);
-  const prevStateRef = React.useRef<SDKState>(combinedState);
-
-  // Update refs if they changed
-  if (selector) {
-    selectorRef.current = actualSelector;
-  }
-  if (equalityFn) {
-    equalityFnRef.current = equalityFn;
-  }
-
-  // Compute selected value with optimized memoization
-  const selected = useMemo(() => {
-    const result = selectorRef.current(combinedState);
-
-    // Check if value changed using equality function
-    if (prevSelectedRef.current !== undefined) {
-      const isEqual = equalityFnRef.current
-        ? equalityFnRef.current(prevSelectedRef.current, result)
-        : Object.is(prevSelectedRef.current, result);
-
-      if (isEqual && prevStateRef.current === combinedState) {
-        // Return previous value if equal and state reference unchanged
-        return prevSelectedRef.current;
-      }
-    }
-
-    // Update refs
-    prevSelectedRef.current = result;
-    prevStateRef.current = combinedState;
-
-    return result;
-  }, [combinedState]);
-
-  return selected;
+  return useSelectWithEquality(combinedState, actualSelector, equalityFn);
 }
