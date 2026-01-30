@@ -17,6 +17,7 @@ import {
   FormMessage,
 } from '../../../components/ui/form';
 import { Input } from '../../../components/ui/input';
+import { handleError } from '../../../lib/error-handler';
 import { useSaaSWorkspaces } from '../hooks';
 import { IWorkspace } from '../types';
 import SettingSkeleton from './Skeleton';
@@ -80,7 +81,11 @@ const WorkspaceSettingsProfile: React.FC<{ workspace: IWorkspace }> = ({ workspa
         setSuccessMessage(null);
       }, 5000);
     } catch (error) {
-      console.error('Failed to update profile:', error);
+      handleError(error, {
+        component: 'WorkspaceSettingsProfile',
+        action: 'updateUserProfile',
+        metadata: { workspaceId: workspace._id },
+      });
     } finally {
       setIsSaving(false);
     }

@@ -18,6 +18,7 @@ import { Label } from '../../../components/ui/label';
 import { RadioGroup, RadioGroupItem } from '../../../components/ui/radio-group';
 import { ScrollArea } from '../../../components/ui/scroll-area';
 import { useAppSelector } from '../../../contexts';
+import { handleError } from '../../../lib/error-handler';
 import { useSaaSWorkspaces } from '../hooks';
 import { IWorkspace } from '../types';
 import { isWorkspaceOwner } from '../utils';
@@ -57,7 +58,11 @@ const WorkspaceSettingsGeneral: React.FC<{ workspace: IWorkspace }> = ({ workspa
         setSuccessMessage(null);
       }, 5000);
     } catch (error) {
-      console.error('Failed to update workspace:', error);
+      handleError(error, {
+        component: 'WorkspaceSettingsGeneral',
+        action: 'updateWorkspace',
+        metadata: { workspaceId: workspace._id },
+      });
     } finally {
       setIsUpdating(false);
     }

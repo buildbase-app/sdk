@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useRef } from 'react';
 import { osActions, useAppDispatch, useAppSelector } from '../../contexts';
 import { isAbortError, safeFetch } from '../../lib/api-utils';
+import { handleError } from '../../lib/error-handler';
 import { useAsyncEffect } from '../../lib/useAsyncEffect';
 import { getAuthHeaders } from '../auth/utils';
 import type { ISettings } from '../types';
@@ -86,7 +87,11 @@ export function useSaaSSettings() {
       } catch (err) {
         // Ignore abort - request was cancelled
         if (isAbortError(err)) return null;
-        console.error('Failed to fetch settings:', err);
+        handleError(err, {
+          component: 'useSaaSSettings',
+          action: 'getSettings',
+          metadata: { serverUrl, version, orgId },
+        });
         return null;
       } finally {
         fetchingSettingsRef.current = false;
@@ -103,7 +108,12 @@ export function useSaaSSettings() {
     },
     [serverUrl, version, orgId, getSettings],
     {
-      onError: err => console.error('Failed to fetch settings:', err),
+      onError: err =>
+        handleError(err, {
+          component: 'useSaaSSettings',
+          action: 'fetchSettings',
+          metadata: { serverUrl, version, orgId },
+        }),
     }
   );
 
