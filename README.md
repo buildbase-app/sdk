@@ -373,7 +373,7 @@ function WorkspaceManager() {
     currentWorkspace, // Currently selected workspace
     loading, // Loading state
     refreshing, // Refreshing state
-    switching, // True when workspace switch is in progress (onWorkspaceChange running)
+    switching, // True when a workspace switch is in progress
     error, // Error message
     fetchWorkspaces, // Fetch all workspaces
     refreshWorkspaces, // Background refresh
@@ -703,7 +703,7 @@ function App() {
     }
   }, [currentWorkspace]);
 
-  // Show loading during switch (e.g. restore from storage, "Switch to" click)
+  // Show loading during switch (switchingToId !== null)
   if (switching) return <LoadingOverlay />;
 
   return <YourApp />;

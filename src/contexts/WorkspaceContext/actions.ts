@@ -45,8 +45,8 @@ export const workspaceActions = {
     payload: refreshing,
   }),
 
-  setSwitching: (switching: boolean): WorkspaceAction => ({
-    type: 'SET_SWITCHING',
-    payload: switching,
+  setSwitchingToId: (workspaceId: string | null): WorkspaceAction => ({
+    type: 'SET_SWITCHING_TO_ID',
+    payload: workspaceId,
   }),
 };

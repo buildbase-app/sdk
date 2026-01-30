@@ -48,7 +48,7 @@ export function WorkspaceSwitcher(props: {
     currentWorkspace,
     loading,
     refreshing,
-    switching,
+    switchingToId,
   } = useAppSelector(state => state.workspaces);
   const user = useAppSelector(state => state.auth.session?.user);
   const { settings } = useSaaSSettings();
@@ -140,7 +140,7 @@ export function WorkspaceSwitcher(props: {
                 workspace={currentWorkspace}
                 isCurrentWorkspace={true}
                 switchToWorkspace={switchToWorkspace}
-                switching={switching}
+                switchingToId={switchingToId}
                 onClose={() => setOpen(false)}
                 setCurrentWorkspace={setCurrentWorkspace}
                 setOpen={setOpen}
@@ -201,7 +201,7 @@ export function WorkspaceSwitcher(props: {
                           workspace={workspace}
                           isCurrentWorkspace={isCurrentWorkspace}
                           switchToWorkspace={switchToWorkspace}
-                          switching={switching}
+                          switchingToId={switchingToId}
                           onClose={() => setOpen(false)}
                           setCurrentWorkspace={setCurrentWorkspace}
                           setOpen={setOpen}
@@ -235,7 +235,7 @@ interface WorkspaceItemProps {
   workspace: IWorkspace;
   isCurrentWorkspace?: boolean;
   switchToWorkspace: (workspace: IWorkspace) => Promise<void>;
-  switching: boolean;
+  switchingToId: string | null;
   onClose: () => void;
   setCurrentWorkspace: (workspace: IWorkspace) => void;
   setOpen: (open: boolean) => void;
@@ -243,8 +243,9 @@ interface WorkspaceItemProps {
 }
 
 function WorkspaceItem(props: WorkspaceItemProps) {
-  const { workspace, setCurrentWorkspace, setOpen, workspacesToUse, switching } = props;
+  const { workspace, setCurrentWorkspace, setOpen, workspacesToUse, switchingToId } = props;
   const isCurrentWorkspace = props.isCurrentWorkspace ?? false;
+  const isSwitchingThis = switchingToId === workspace._id;
 
   const getWorkspaceInitials = (name: string) => {
     return name
@@ -283,8 +284,8 @@ function WorkspaceItem(props: WorkspaceItemProps) {
         {isCurrentWorkspace ? null : (
           <Button
             size="sm"
-            disabled={switching}
-            progress={switching}
+            disabled={switchingToId !== null || isSwitchingThis}
+            progress={isSwitchingThis}
             onClick={() => {
               props
                 .switchToWorkspace(workspace)
@@ -320,6 +321,7 @@ function WorkspaceItem(props: WorkspaceItemProps) {
 }
 
 function CreateWorkspaceDialog(props: { onCreated: () => void }) {
+  const { switching } = useSaaSWorkspaces();
   const [open, setOpen] = useState(false);
   const [imageType, setImageType] = useState<'emoji' | 'url'>('emoji');
   const [selectedEmoji, setSelectedEmoji] = useState('🏢');
@@ -380,7 +382,7 @@ function CreateWorkspaceDialog(props: { onCreated: () => void }) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="w-full rounded-none">
+        <Button className="w-full rounded-none" disabled={switching}>
           <Plus className="h-4 w-4 mr-2" />
           Create New Workspace
         </Button>
@@ -451,9 +453,8 @@ function CreateWorkspaceDialog(props: { onCreated: () => void }) {
                           key={index}
                           type="button"
                           onClick={() => handleEmojiSelect(emoji)}
-                          className={`w-8 h-8 rounded flex items-center justify-center text-lg hover:bg-muted transition-colors ${
-                            selectedEmoji === emoji ? 'bg-primary text-primary-foreground' : ''
-                          }`}
+                          className={`w-8 h-8 rounded flex items-center justify-center text-lg hover:bg-muted transition-colors ${selectedEmoji === emoji ? 'bg-primary text-primary-foreground' : ''
+                            }`}
                         >
                           {emoji}
                         </button>
