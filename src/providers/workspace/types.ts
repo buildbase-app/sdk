@@ -9,6 +9,7 @@ export interface IWorkspace {
   roles: string[];
   createdBy: string | IUser;
   features: Record<string, boolean>;
+  subscription?: ISubscription | null;
 }
 export interface IWorkspaceFeature {
   _id: string;
@@ -41,4 +42,4 @@ export interface WorkspaceContextValue {
 }
 
 // Import IUser from your main types if needed
-import type { IUser } from '../../api/types';
+import type { ISubscription, IUser } from '../../api/types';

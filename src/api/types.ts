@@ -59,6 +59,12 @@ export interface ISubscription {
   cancelAtPeriodEnd: boolean;
   createdAt: string;
   updatedAt: string;
+  plan?: {
+    _id: string;
+    name: string;
+    slug: string;
+    description?: string;
+  }
 }
 
 export interface ISubscriptionItem {
