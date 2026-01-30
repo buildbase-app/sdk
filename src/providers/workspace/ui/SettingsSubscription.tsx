@@ -1,4 +1,4 @@
-import { CreditCard, Loader2, RefreshCcwIcon, AlertTriangle } from 'lucide-react';
+import { CreditCard, Loader2, AlertTriangle } from 'lucide-react';
 import React, { useState, useMemo } from 'react';
 import {
   ICheckoutSessionResponse,
@@ -498,9 +498,10 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                   </p>
                 )}
               </div>
-              <Button variant="outline" size="sm" onClick={refetch} disabled={loading} className="mt-4">
-                <RefreshCcwIcon className="h-4 w-4 mr-2" />
-                Retry
+              <Button variant="outline" size="sm"
+                progress={loading}
+                onClick={refetch} disabled={loading} className="mt-4">
+                {loading ? 'Refreshing...' : 'Refresh'}
               </Button>
             </div>
           )}

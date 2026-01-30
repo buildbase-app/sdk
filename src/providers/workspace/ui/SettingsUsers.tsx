@@ -1,5 +1,5 @@
 import { SelectValue } from '@radix-ui/react-select';
-import { Loader2, RefreshCcwIcon, TrashIcon } from 'lucide-react';
+import { Loader2, TrashIcon } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { IUser } from '../../../api/types';
 import { Button } from '../../../components/ui/button';
@@ -154,9 +154,8 @@ const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace
             size="sm"
             onClick={refresh}
             progress={loading}
-            startIcon={<RefreshCcwIcon />}
           >
-            Refresh
+            {loading ? 'Refreshing...' : 'Refresh'}
           </Button>
         </div>
       </div>

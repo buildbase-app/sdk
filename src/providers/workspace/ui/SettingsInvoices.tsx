@@ -1,4 +1,4 @@
-import { ExternalLink, FileText, RefreshCcwIcon } from 'lucide-react';
+import { ExternalLink, FileText } from 'lucide-react';
 import React from 'react';
 import { IInvoice } from '../../../api/types';
 import { Button } from '../../../components/ui/button';
@@ -86,9 +86,10 @@ const SettingsInvoices: React.FC<SettingsInvoicesProps> = ({
           <h3 className="text-lg font-semibold">Billing History</h3>
           <p className="text-sm text-gray-600">View and download your invoices</p>
         </div>
-        <Button variant="ghost" size="sm" onClick={refetchInvoices} disabled={invoicesLoading}>
-          <RefreshCcwIcon className="h-4 w-4 mr-2" />
-          Refresh
+        <Button variant="ghost" size="sm"
+          progress={invoicesLoading}
+          onClick={refetchInvoices} disabled={invoicesLoading}>
+          {invoicesLoading ? 'Refreshing...' : 'Refresh'}
         </Button>
       </div>
 
