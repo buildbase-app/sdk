@@ -262,6 +262,49 @@ export interface ISubscriptionUpdateResponse {
   updatedAt: string;
 }
 
+// Public Plans Response (for pricing page - no auth required)
+export interface IPublicPlanItemCategory {
+  name: string;
+  slug: string;
+}
+
+export interface IPublicPlanItem {
+  _id: string;
+  name: string;
+  slug: string;
+  description: string;
+  type: 'feature' | 'limit' | 'quota';
+  category: IPublicPlanItemCategory;
+}
+
+export interface IPublicPlanPricing {
+  monthly: number;
+  yearly: number;
+  quarterly: number;
+}
+
+export interface IPublicPlanQuotaValue {
+  included: number;
+  overage: number;
+  stripePriceId?: string;
+}
+
+export interface IPublicPlanVersion {
+  _id: string;
+  name: string;
+  version: number;
+  status: 'draft' | 'published';
+  pricing: IPublicPlanPricing;
+  quotas: Record<string, IPublicPlanQuotaValue>;
+  features: Record<string, boolean>;
+  limits: Record<string, number>;
+}
+
+export interface IPublicPlansResponse {
+  items: IPublicPlanItem[];
+  plans: IPublicPlanVersion[];
+}
+
 // Invoice Types
 export type InvoiceStatus = 'draft' | 'open' | 'paid' | 'uncollectible' | 'void';
 

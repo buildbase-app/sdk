@@ -12,6 +12,7 @@ A React SDK for [BuildBase](https://www.buildbase.app/) that provides essential 
 - [Feature Flags](#️-feature-flags)
 - [User Management](#-user-management)
 - [Workspace Management](#-complete-workspace-management)
+- [Public Pricing (No Login)](#-public-pricing-no-login)
 - [Beta Form Component](#-beta-form-component)
 - [Event System](#-event-system)
 - [Error Handling](#️-error-handling)
@@ -405,6 +406,71 @@ function WorkspaceManager() {
   return <div>{/* Your workspace UI */}</div>;
 }
 ```
+
+## 💰 Public Pricing (No Login)
+
+Display subscription plans and pricing on public pages (e.g. marketing site, pricing page) without requiring users to log in.
+
+### usePublicPlans
+
+Fetches public plans by slug. Returns `items` (features, limits, quotas) and `plans` (with pricing). You construct the layout from this data:
+
+```tsx
+import { usePublicPlans } from '@buildbase/sdk';
+
+function PublicPricingPage() {
+  const { items, plans, loading, error } = usePublicPlans('main-pricing');
+
+  if (loading) return <Loading />;
+  if (error) return <Error message={error} />;
+
+  return (
+    <div>
+      {plans.map(plan => (
+        <PlanCard key={plan._id} plan={plan} items={items} />
+      ))}
+    </div>
+  );
+}
+```
+
+### PricingPage Component
+
+Use the `PricingPage` component with a render-prop pattern:
+
+```tsx
+import { PricingPage } from '@buildbase/sdk';
+
+function PublicPricingPage() {
+  return (
+    <PricingPage slug="main-pricing">
+      {({ loading, error, items, plans, refetch }) => {
+        if (loading) return <Loading />;
+        if (error) return <Error message={error} />;
+
+        return (
+          <div>
+            {plans.map(plan => (
+              <PlanCard key={plan._id} plan={plan} items={items} />
+            ))}
+          </div>
+        );
+      }}
+    </PricingPage>
+  );
+}
+```
+
+| Prop | Type | Description |
+|------|------|-------------|
+| `slug` | `string` | Plan group slug (e.g. 'main-pricing', 'enterprise') |
+| `children` | `(details) => ReactNode` | Render prop receiving `{ loading, error, items, plans, refetch }` |
+| `loadingFallback` | `ReactNode` | Custom loading UI (defaults to skeleton) |
+| `errorFallback` | `(error: string) => ReactNode` | Custom error UI |
+
+**Response shape**: `items` = subscription item definitions (features, limits, quotas with category); `plans` = plan versions with `pricing`, `quotas`, `features`, `limits`.
+
+**Backend requirement**: `GET /api/v1/public/{orgId}/plans/{groupSlug}` must be implemented and allow unauthenticated access.
 
 ## 📝 Beta Form Component
 
