@@ -277,4 +277,137 @@ This would reduce boilerplate in multiple providers. Use with care to preserve e
 
 ---
 
+## Long-Term Improvements (Post-Review)
+
+After completing the state management review, the following improvements would strengthen the SDK for long-term maintainability:
+
+### 11. Standardize Error Handling in UI Components ✅ Done
+
+**Issue:** Several workspace settings UI components use `console.error` directly instead of the centralized `handleError`.
+
+**Status:** ✅ **Implemented** – Replaced all `console.error` calls with `handleError(error, { component, action, metadata })` in:
+- `SettingsUsers.tsx` – getUsers, InviteMember addUser
+- `SettingsGeneral.tsx` – updateWorkspace
+- `SettingsFeatures.tsx` – updateFeature
+- `SettingsProfile.tsx` – updateUserProfile
+- `os/hooks.ts` – getSettings, useAsyncEffect onError
+
+---
+
+### 12. Use `handleErrorUnlessAborted` in OS Settings Hook ✅ Done
+
+**Issue:** `useSaaSSettings` in `os/hooks.ts` used `if (isAbortError(err)) return null; handleError(...)` instead of the shared pattern.
+
+**Status:** ✅ **Implemented** – Replaced with `handleErrorUnlessAborted` in both `getSettings` catch and `useAsyncEffect` onError. Removed `isAbortError` import.
+
+---
+
+### 13. Use `getErrorMessage` in Beta API ✅ Done
+
+**Issue:** `components/beta/api.ts` used `response.statusText` for error messages.
+
+**Status:** ✅ **Implemented** – Replaced with `getErrorMessage(response, defaultMsg)` in both `fetchConfig` and `submitBetaUser` for consistent API error extraction.
+
+---
+
+### 14. UserProvider Initial Fetch – Add AbortController ✅ Done
+
+**Issue:** `UserProvider` used raw `useEffect` + `Promise.all([fetchAttributes(), fetchFeatures()])` for initial load. No AbortController—if user logs out or component unmounts during fetch, state updates may still occur.
+
+**Status:** ✅ **Implemented** – Migrated to `useAsyncEffect` with signal passed to fetch calls:
+- Added optional `signal?: AbortSignal` to `fetchAttributes` and `fetchFeatures`
+- Pass signal to `safeFetch` for initial load; ignore `AbortError` in catch
+- Replaced `useEffect` with `useAsyncEffect`; cleanup aborts in-flight requests on unmount
+
+---
+
+### 15. Address Circular Dependencies ✅ Done
+
+**Issue:** Build warned about circular dependencies:
+- `workspace/hooks.ts` ↔ `workspace/provider.tsx` ↔ `SettingsDialog.tsx` ↔ `SettingsDanger.tsx` ↔ `workspace/hooks.ts`
+
+**Status:** ✅ **Implemented** – Broke the cycle by removing `WorkspaceSwitcher` from the `useSaaSWorkspaces` return value. The hook no longer imports from provider. Consumers should import `WorkspaceSwitcher` directly: `import { useSaaSWorkspaces, WorkspaceSwitcher } from '@buildbase/sdk'`.
+
+**Note:** The `zod` internal circular ref remains (external library); cannot be fixed in this codebase.
+
+---
+
+### 16. Add Unit Tests
+
+**Issue:** No test files in the project.
+
+**Recommendation:** Prioritize tests for:
+1. **API utilities** (`api-utils.ts`) – `safeFetch`, `handleApiResponse`, `getErrorMessage`, `isAbortError`
+2. **Error handler** – `handleError`, `handleErrorUnlessAborted`
+3. **Auth utils** – `mapIUserToAuthUser`, session helpers
+4. **Reducer helpers** – `updateField`, `updateFields`
+5. **useAsyncEffect** – cancellation, onError behavior
+
+---
+
+### 17. Request Retry & Timeout (Optional)
+
+**Issue:** No retry for transient failures; no timeout for hanging requests.
+
+**Recommendation:** Add optional utilities (low priority):
+- `fetchWithRetry` – exponential backoff for 5xx/network errors
+- `fetchWithTimeout` – already exists in api-utils; ensure it’s used where appropriate
+
+---
+
+### 18. Type Safety Improvements
+
+**Issue:** Some `any` types remain (e.g. `error-handler.ts` `wrapAsync`/`wrapSync`).
+
+**Recommendation:** Replace with proper generics:
+```typescript
+wrapAsync<TArgs extends unknown[], TReturn>(
+  fn: (...args: TArgs) => Promise<TReturn>,
+  context: SDKErrorContext
+): (...args: TArgs) => Promise<TReturn>
+```
+
+---
+
+### Long-Term Priority Matrix
+
+| # | Improvement | Effort | Impact | Priority |
+|---|-------------|--------|--------|----------|
+| 11 | Standardize error handling in UI components | Low | Medium | ✅ Done |
+| 12 | handleErrorUnlessAborted in os/hooks | Low | Low | ✅ Done |
+| 13 | getErrorMessage in Beta API | Low | Low | ✅ Done |
+| 14 | UserProvider AbortController | Medium | Medium | ✅ Done |
+| 15 | Address circular dependencies | Medium | Medium | ✅ Done |
+| 16 | Add unit tests | High | High | High |
+| 17 | Request retry/timeout | Low | Low | Optional |
+| 18 | Type safety improvements | Low | Low | Low |
+
+---
+
+## Post-Review Updates (Validated 2026-01-30)
+
+Additional centralization completed after the main review:
+
+### Centralized Logging
+- **Logger** (`lib/logger.ts`): All `console.log`/`warn`/`error` routed through `sdkLog`, `sdkWarn`, `sdkLogError`, `sdkError`. Internal only (not exported).
+- **Error handling in UI**: Replaced direct `console.error` with `handleError` in SettingsUsers, SettingsGeneral, SettingsFeatures, SettingsProfile, os/hooks.
+
+### Centralized `isDevelopment`
+- **`lib/utils.ts`**: Single `isDevelopment()` used by `api-utils.ts` and `logger.ts`.
+
+### Public API Simplification
+- **Error handling exports removed**: ErrorBoundary, errorHandler, handleError, handleErrorUnlessAborted, SDKError, createSDKError, ErrorHandlerConfig, SDKErrorContext no longer exported. SDK uses them internally; consumers use SaaSOSProvider which wraps with ErrorBoundary.
+
+### Validation Summary
+| # | Item | Status |
+|---|------|--------|
+| 1–10 | Main review items | ✅ All validated in codebase |
+| 11 | Standardize error handling in UI | ✅ Done |
+| 12 | handleErrorUnlessAborted in os/hooks | ✅ Done |
+| 13 | getErrorMessage in Beta API | ✅ Done |
+| 14 | UserProvider AbortController | ✅ Done |
+| 15 | Address circular dependencies | ✅ Done |
+
+---
+
 *Last updated: 2026-01-30*
