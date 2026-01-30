@@ -6,6 +6,7 @@ import { useSaaSWorkspaces } from '../workspace/hooks';
 import { workspaceSettingsManager } from '../workspace/settings-manager';
 import { getAuthFlags } from './types';
 import { removeSession } from './utils';
+import { WorkspaceSettingsSection } from '../workspace/ui/SettingsDialog';
 
 /**
  * Main authentication hook for the SDK.
@@ -138,7 +139,7 @@ export function useSaaSAuth() {
   }, [dispatch, resetCurrentWorkspace, authConfig?.callbacks?.onSignOut]);
 
   const openWorkspaceSettings = useCallback(
-    (section?: 'profile' | 'general' | 'users' | 'features' | 'danger') => {
+    (section?: WorkspaceSettingsSection) => {
       if (!currentWorkspace) {
         handleError(new Error('Cannot open settings: No current workspace'), {
           component: 'useSaaSAuth',
