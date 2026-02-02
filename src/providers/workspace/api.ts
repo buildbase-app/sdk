@@ -640,4 +640,90 @@ export class WorkspaceApi {
     // If no success field, assume the response is the data directly
     return result;
   }
+
+  /**
+   * Cancel subscription at the end of the current billing period
+   * Sets cancelAtPeriodEnd: true - subscription remains active until period ends
+   * @param workspaceId - The workspace ID
+   * @returns Updated subscription with cancelAtPeriodEnd and stripeCurrentPeriodEnd
+   */
+  async cancelSubscriptionAtPeriodEnd(workspaceId: string): Promise<ISubscriptionResponse> {
+    const response = await safeFetch(
+      `${this.serverUrl}/api/${this.version}/public/workspaces/${workspaceId}/subscription/cancel-at-period-end`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...this.getAuthHeader() },
+      }
+    );
+
+    if (!response.ok) {
+      let errorMessage = 'Failed to cancel subscription';
+      try {
+        const error = await response.json();
+        errorMessage = error.message || errorMessage;
+      } catch {
+        if (response.status === 404) {
+          errorMessage = 'Subscription not found';
+        } else if (response.status === 401) {
+          errorMessage = 'Unauthorized - Please check your session';
+        } else {
+          errorMessage = `Failed to cancel subscription (${response.status}: ${response.statusText})`;
+        }
+      }
+      throw new Error(errorMessage);
+    }
+
+    const result = await response.json();
+    // Handle both wrapped and direct response formats
+    if (result.success !== undefined) {
+      if (!result.success) {
+        throw new Error(result.message || 'Failed to cancel subscription');
+      }
+      return result.data || result;
+    }
+    return result;
+  }
+
+  /**
+   * Resume a subscription that was scheduled for cancellation
+   * Sets cancelAtPeriodEnd: false - subscription will continue after period ends
+   * @param workspaceId - The workspace ID
+   * @returns Updated subscription with cancelAtPeriodEnd set to false
+   */
+  async resumeSubscription(workspaceId: string): Promise<ISubscriptionResponse> {
+    const response = await safeFetch(
+      `${this.serverUrl}/api/${this.version}/public/workspaces/${workspaceId}/subscription/resume`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...this.getAuthHeader() },
+      }
+    );
+
+    if (!response.ok) {
+      let errorMessage = 'Failed to resume subscription';
+      try {
+        const error = await response.json();
+        errorMessage = error.message || errorMessage;
+      } catch {
+        if (response.status === 404) {
+          errorMessage = 'Subscription not found';
+        } else if (response.status === 401) {
+          errorMessage = 'Unauthorized - Please check your session';
+        } else {
+          errorMessage = `Failed to resume subscription (${response.status}: ${response.statusText})`;
+        }
+      }
+      throw new Error(errorMessage);
+    }
+
+    const result = await response.json();
+    // Handle both wrapped and direct response formats
+    if (result.success !== undefined) {
+      if (!result.success) {
+        throw new Error(result.message || 'Failed to resume subscription');
+      }
+      return result.data || result;
+    }
+    return result;
+  }
 }

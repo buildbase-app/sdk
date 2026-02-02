@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from 'react';
-import { IPlanVersion, IPlanVersionWithPlan, ISubscriptionItem } from '../../../api/types';
+import React, { useEffect, useMemo, useState } from 'react';
+import { BillingInterval, IPlanVersionWithPlan, ISubscriptionItem } from '../../../api/types';
 import { Button } from '../../../components/ui/button';
 import {
   Dialog,
@@ -13,41 +13,34 @@ interface SubscriptionDialogProps {
   onOpenChange: (open: boolean) => void;
   planVersions: IPlanVersionWithPlan[];
   currentPlanVersionId?: string | null;
-  onSelectPlan: (planVersionId: string) => Promise<void>;
+  currentStripePriceId?: string | null;
+  onSelectPlan: (planVersionId: string, billingInterval: BillingInterval) => Promise<void>;
   loading?: boolean;
 }
 
-// Helper function to get plan details from subscriptionItems
-const getPlanDetailsFromItems = (planVersion: IPlanVersion | null | undefined) => {
-  if (!planVersion?.subscriptionItems) {
-    return { features: [], limits: [], quotas: [] };
+// Helper to determine billing interval from price ID by comparing with plan's stripe prices
+const getBillingIntervalFromPriceId = (
+  priceId: string | null | undefined,
+  planVersions: IPlanVersionWithPlan[]
+): BillingInterval | null => {
+  if (!priceId) return null;
+
+  for (const plan of planVersions) {
+    const stripePrices = plan.stripePrices;
+    if (!stripePrices) continue;
+
+    if (stripePrices.monthlyPriceId === priceId || stripePrices.monthly === priceId) {
+      return 'monthly';
+    }
+    if (stripePrices.yearlyPriceId === priceId || stripePrices.yearly === priceId) {
+      return 'yearly';
+    }
+    if (stripePrices.quarterlyPriceId === priceId) {
+      return 'quarterly';
+    }
   }
 
-  const features: Array<{ item: ISubscriptionItem; enabled: boolean }> = [];
-  const limits: Array<{ item: ISubscriptionItem; value: number }> = [];
-  const quotas: Array<{
-    item: ISubscriptionItem;
-    value: number | { included: number; overage?: number; stripePriceId?: string } | null;
-  }> = [];
-
-  planVersion.subscriptionItems.forEach(item => {
-    const slug = item.slug;
-
-    if (item.type === 'feature') {
-      const enabled = planVersion.features?.[slug] ?? false;
-      features.push({ item, enabled });
-    } else if (item.type === 'limit') {
-      const value = planVersion.limits?.[slug] ?? 0;
-      limits.push({ item, value });
-    } else if (item.type === 'quota') {
-      const value = planVersion.quotas?.[slug] ?? null;
-      if (value !== null && value !== undefined) {
-        quotas.push({ item, value });
-      }
-    }
-  });
-
-  return { features, limits, quotas };
+  return null;
 };
 
 // Get all unique subscription items across all plans
@@ -65,16 +58,69 @@ const getAllSubscriptionItems = (planVersions: IPlanVersionWithPlan[]) => {
   return Array.from(allItems.values());
 };
 
+// Format price for display (converts cents to dollars)
+const formatPrice = (priceInCents: number | undefined | null): string => {
+  if (priceInCents === undefined || priceInCents === null) return 'Free';
+  if (priceInCents === 0) return 'Free';
+  const priceInDollars = priceInCents / 100;
+  return `$${priceInDollars.toFixed(2)}`;
+};
+
+// Get interval label
+const getIntervalLabel = (interval: BillingInterval): string => {
+  switch (interval) {
+    case 'monthly': return '/mo';
+    case 'quarterly': return '/qtr';
+    case 'yearly': return '/yr';
+    default: return '/mo';
+  }
+};
+
+// Calculate savings percentage for yearly/quarterly vs monthly
+const calculateSavings = (monthlyPrice: number, intervalPrice: number, interval: BillingInterval): number | null => {
+  if (!monthlyPrice || monthlyPrice === 0) return null;
+
+  let monthlyEquivalent: number;
+  switch (interval) {
+    case 'yearly':
+      monthlyEquivalent = intervalPrice / 12;
+      break;
+    case 'quarterly':
+      monthlyEquivalent = intervalPrice / 3;
+      break;
+    default:
+      return null;
+  }
+
+  const savings = ((monthlyPrice - monthlyEquivalent) / monthlyPrice) * 100;
+  return savings > 0 ? Math.round(savings) : null;
+};
+
 const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
   open,
   onOpenChange,
   planVersions: propPlanVersions,
   currentPlanVersionId,
+  currentStripePriceId,
   onSelectPlan,
   loading: isUpdating = false,
 }) => {
   const [localLoading, setLocalLoading] = useState(false);
   const [processingPlanId, setProcessingPlanId] = useState<string | null>(null);
+
+  // Derive current billing interval from price ID comparison
+  const currentBillingInterval = useMemo(() => {
+    return getBillingIntervalFromPriceId(currentStripePriceId, propPlanVersions);
+  }, [currentStripePriceId, propPlanVersions]);
+
+  const [selectedInterval, setSelectedInterval] = useState<BillingInterval>(currentBillingInterval || 'monthly');
+
+  // Sync selected interval when dialog opens or current billing changes
+  useEffect(() => {
+    if (open) {
+      setSelectedInterval(currentBillingInterval || 'monthly');
+    }
+  }, [open, currentBillingInterval]);
 
   // Sort plans by version number
   const sortedPlans = useMemo(() => {
@@ -83,30 +129,19 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
 
   const allItems = getAllSubscriptionItems(sortedPlans);
 
-  // Group items by category
-  const itemsByCategory = useMemo(() => {
-    const categories = new Map<string, ISubscriptionItem[]>();
-    allItems.forEach(item => {
-      const categoryId = item.category || 'other';
-      if (!categories.has(categoryId)) {
-        categories.set(categoryId, []);
-      }
-      categories.get(categoryId)!.push(item);
-    });
-    return categories;
-  }, [allItems]);
-
   const features = allItems.filter(item => item.type === 'feature');
   const limits = allItems.filter(item => item.type === 'limit');
   const quotas = allItems.filter(item => item.type === 'quota');
 
   const handleSelectPlan = async (planVersionId: string) => {
-    if (planVersionId === currentPlanVersionId || isUpdating || localLoading) return;
+    // Block if same plan AND same interval, or if already loading
+    const isSamePlanAndInterval = planVersionId === currentPlanVersionId && currentBillingInterval === selectedInterval;
+    if (isSamePlanAndInterval || isUpdating || localLoading) return;
 
     setLocalLoading(true);
     setProcessingPlanId(planVersionId);
     try {
-      await onSelectPlan(planVersionId);
+      await onSelectPlan(planVersionId, selectedInterval);
       onOpenChange(false);
     } catch (error) {
       // Error handling is done in parent
@@ -116,13 +151,44 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
     }
   };
 
+  // Get price for a plan based on selected interval
+  const getPriceForInterval = (planVersion: IPlanVersionWithPlan): number | null => {
+    const pricing = planVersion.basePricing;
+    if (!pricing) return null;
+    return pricing[selectedInterval] ?? null;
+  };
+
   const isLoading = isUpdating || localLoading;
 
+  // Get interval display name
+  const getIntervalDisplayName = (interval: BillingInterval): string => {
+    switch (interval) {
+      case 'monthly': return 'Monthly';
+      case 'quarterly': return 'Quarterly';
+      case 'yearly': return 'Yearly';
+      default: return 'Monthly';
+    }
+  };
+
   const getPlanButtonState = (planVersion: IPlanVersionWithPlan) => {
-    if (planVersion._id === currentPlanVersionId) {
+    const isSamePlan = planVersion._id === currentPlanVersionId;
+    const isSameInterval = currentBillingInterval === selectedInterval;
+
+    // Same plan + same interval = Current Plan (disabled)
+    if (isSamePlan && isSameInterval) {
       return { label: 'Current Plan', variant: 'outline' as const, disabled: true };
     }
 
+    // Same plan + different interval = Allow switching interval
+    if (isSamePlan && !isSameInterval) {
+      return {
+        label: `Switch to ${getIntervalDisplayName(selectedInterval)}`,
+        variant: 'default' as const,
+        disabled: false
+      };
+    }
+
+    // No current subscription
     if (!currentPlanVersionId) {
       return { label: 'Subscribe', variant: 'default' as const, disabled: false };
     }
@@ -185,6 +251,39 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
               Compare plans and select the one that fits your needs
             </DialogDescription>
           </div>
+          {/* Billing Interval Selector */}
+          <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-lg">
+            {(['monthly', 'quarterly', 'yearly'] as BillingInterval[]).map((interval) => {
+              const isCurrentInterval = currentBillingInterval === interval;
+              return (
+                <button
+                  key={interval}
+                  onClick={() => setSelectedInterval(interval)}
+                  className={`px-4 py-2 text-sm font-medium rounded-md transition-all relative ${
+                    selectedInterval === interval
+                      ? 'bg-white text-slate-900 shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <span className="flex items-center gap-1.5">
+                    {interval === 'monthly' && 'Monthly'}
+                    {interval === 'quarterly' && 'Quarterly'}
+                    {interval === 'yearly' && 'Yearly'}
+                    {interval === 'yearly' && (
+                      <span className="text-xs px-1.5 py-0.5 bg-emerald-100 text-emerald-700 rounded-full font-semibold">
+                        Save
+                      </span>
+                    )}
+                    {isCurrentInterval && currentPlanVersionId && (
+                      <span className="text-xs px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded-full font-semibold">
+                        Current
+                      </span>
+                    )}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         <div className="flex-1 min-h-0 flex flex-col">
@@ -222,6 +321,11 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                         const isCurrent = planVersion._id === currentPlanVersionId;
                         const buttonState = getPlanButtonState(planVersion);
                         const isPlanLoading = isLoading && planVersion._id === processingPlanId;
+                        const price = getPriceForInterval(planVersion);
+                        const monthlyPrice = planVersion.basePricing?.monthly ?? 0;
+                        const savings = selectedInterval !== 'monthly' && price !== null
+                          ? calculateSavings(monthlyPrice, price, selectedInterval)
+                          : null;
 
                         return (
                           <th
@@ -243,8 +347,28 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                                   </span>
                                 )}
                               </div>
+
+                              {/* Pricing Display */}
+                              <div className="flex flex-col items-start">
+                                <div className="flex items-baseline gap-1">
+                                  <span className="text-2xl font-bold text-slate-900">
+                                    {formatPrice(price)}
+                                  </span>
+                                  {price !== null && price > 0 && (
+                                    <span className="text-sm text-slate-500">
+                                      {getIntervalLabel(selectedInterval)}
+                                    </span>
+                                  )}
+                                </div>
+                                {savings !== null && savings > 0 && (
+                                  <span className="text-xs text-emerald-600 font-medium mt-0.5">
+                                    Save {savings}% vs monthly
+                                  </span>
+                                )}
+                              </div>
+
                               {planVersion.plan.description && (
-                                <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">
+                                <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed text-left">
                                   {planVersion.plan.description}
                                 </p>
                               )}

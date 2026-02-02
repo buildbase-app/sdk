@@ -1,16 +1,29 @@
-import { CreditCard, Loader2, AlertTriangle } from 'lucide-react';
+import { CreditCard, Loader2, AlertTriangle, Calendar } from 'lucide-react';
 import React, { useState, useMemo } from 'react';
 import {
+  BillingInterval,
   ICheckoutSessionResponse,
   IPlanGroupVersionWithPlans,
   IPlanVersion,
   IPlanVersionWithPlan,
   ISubscriptionItem
 } from '../../../api/types';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '../../../components/ui/alert-dialog';
 import { Button } from '../../../components/ui/button';
 import {
+  useCancelSubscription,
   useCreateCheckoutSession,
   usePlanGroupVersions,
+  useResumeSubscription,
   useSubscriptionManagement,
 } from '../subscription-hooks';
 import { IWorkspace } from '../types';
@@ -20,6 +33,55 @@ import SettingsInvoices from './SettingsInvoices';
 // This component is only rendered when subscription dialog is opened
 import { lazy, Suspense } from 'react';
 const SubscriptionDialog = lazy(() => import('./SubscriptionDialog').then(m => ({ default: m.default })));
+
+// Helper to derive billing interval from price ID by comparing with plan's stripe prices
+const getBillingIntervalFromPriceId = (
+  priceId: string | null | undefined,
+  planVersion: IPlanVersion | null | undefined
+): BillingInterval | null => {
+  if (!priceId || !planVersion?.stripePrices) return null;
+
+  const stripePrices = planVersion.stripePrices;
+
+  if (stripePrices.monthlyPriceId === priceId || stripePrices.monthly === priceId) {
+    return 'monthly';
+  }
+  if (stripePrices.yearlyPriceId === priceId || stripePrices.yearly === priceId) {
+    return 'yearly';
+  }
+  if (stripePrices.quarterlyPriceId === priceId) {
+    return 'quarterly';
+  }
+
+  return null;
+};
+
+// Get display label for billing interval
+const getBillingIntervalLabel = (interval: BillingInterval | null): string => {
+  switch (interval) {
+    case 'monthly': return 'Monthly';
+    case 'quarterly': return 'Quarterly';
+    case 'yearly': return 'Yearly';
+    default: return 'Unknown';
+  }
+};
+
+// Format ISO date string to readable date
+const formatPeriodEndDate = (isoDate: string | undefined | null): string => {
+  if (!isoDate) return '';
+  try {
+    const date = new Date(isoDate);
+    // Check if the date is valid
+    if (isNaN(date.getTime())) return '';
+    return new Intl.DateTimeFormat('en-US', {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
+    }).format(date);
+  } catch {
+    return '';
+  }
+};
 
 // Helper function to get plan details from subscriptionItems
 const getPlanDetailsFromItems = (planVersion: IPlanVersion | null | undefined) => {
@@ -59,6 +121,8 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
   const { subscription, loading: subscriptionLoading, error: subscriptionError, updateSubscription, refetch: refetchSubscription } =
     useSubscriptionManagement(workspaceId);
   const { createCheckoutSession } = useCreateCheckoutSession(workspaceId);
+  const { cancelSubscription, loading: cancelLoading } = useCancelSubscription(workspaceId);
+  const { resumeSubscription, loading: resumeLoading } = useResumeSubscription(workspaceId);
 
   // Fetch plan group versions (includes currentVersion and availableVersions)
   const { versions: planGroupVersions, loading: versionsLoading, error: versionsError, refetch: refetchVersions } =
@@ -71,7 +135,7 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
   // API behavior:
   // - With subscription: currentVersion = user's current, availableVersions = newer versions
   // - Without subscription: currentVersion = latest published, availableVersions = []
-  const { currentVersion, latestVersion, hasNewerVersion, isDeprecated, whatsNew, plansToShow } = useMemo(() => {
+  const { currentVersion, latestVersion, isDeprecated, whatsNew, plansToShow } = useMemo(() => {
     const userCurrentVersion = planGroupVersions?.currentVersion;
     const availableVersions = planGroupVersions?.availableVersions || [];
     const hasActiveSubscription = subscription?.subscription !== null;
@@ -117,17 +181,28 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
   const [updateError, setUpdateError] = useState<string | null>(null);
   const [updateSuccess, setUpdateSuccess] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [resumeDialogOpen, setResumeDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'subscription' | 'invoices'>('subscription');
 
   const refetch = async () => {
     await Promise.all([refetchSubscription(), refetchVersions()]);
   };
 
-  const handlePlanChange = async (planVersionId: string) => {
+  const handlePlanChange = async (planVersionId: string, billingInterval: BillingInterval = 'monthly') => {
     if (!workspaceId) return;
 
-    // Don't update if it's the same plan
-    if (subscription?.planVersion?._id === planVersionId) {
+    // Find the target plan to get its price ID for the selected interval
+    const targetPlan = plansToShow?.find(p => p._id === planVersionId);
+    const targetPriceId = targetPlan?.stripePrices?.[
+      billingInterval === 'monthly' ? 'monthlyPriceId' :
+      billingInterval === 'yearly' ? 'yearlyPriceId' :
+      'quarterlyPriceId'
+    ] || targetPlan?.stripePrices?.[billingInterval === 'monthly' ? 'monthly' : 'yearly'];
+
+    // Don't update if the target price ID matches the current subscription's price ID
+    const currentPriceId = subscription?.subscription?.stripePriceId;
+    if (targetPriceId && currentPriceId && targetPriceId === currentPriceId) {
       return;
     }
 
@@ -161,14 +236,14 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
       if (!subscription?.subscription) {
         result = await createCheckoutSession({
           planVersionId,
-          billingInterval: 'monthly', // Default to monthly, can be made configurable
+          billingInterval,
           successUrl,
           cancelUrl,
         });
       } else {
         // If subscription exists, update it (may return checkout session)
         result = await updateSubscription(planVersionId, {
-          billingInterval: 'monthly', // Default to monthly, can be made configurable
+          billingInterval,
           successUrl,
           cancelUrl,
         });
@@ -186,6 +261,55 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
       await refetch();
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to process subscription';
+      setUpdateError(errorMessage);
+    } finally {
+      setUpdating(false);
+      setTimeout(() => {
+        setUpdateError(null);
+        setUpdateSuccess(null);
+      }, 5000);
+    }
+  };
+
+  const handleCancelSubscription = async () => {
+    if (!workspaceId) return;
+
+    // Close dialog first and show loading state
+    setCancelDialogOpen(false);
+    setUpdating(true);
+    setUpdateError(null);
+    setUpdateSuccess(null);
+
+    try {
+      await cancelSubscription();
+      setUpdateSuccess('Subscription will be canceled at the end of the billing period.');
+      await refetch();
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to cancel subscription';
+      setUpdateError(errorMessage);
+    } finally {
+      setUpdating(false);
+      setTimeout(() => {
+        setUpdateError(null);
+        setUpdateSuccess(null);
+      }, 5000);
+    }
+  };
+
+  const handleResumeSubscription = async () => {
+    if (!workspaceId) return;
+
+    setResumeDialogOpen(false);
+    setUpdating(true);
+    setUpdateError(null);
+    setUpdateSuccess(null);
+
+    try {
+      await resumeSubscription();
+      setUpdateSuccess('Subscription has been resumed.');
+      await refetch();
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to resume subscription';
       setUpdateError(errorMessage);
     } finally {
       setUpdating(false);
@@ -214,26 +338,51 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
   return (
     <div className="space-y-6">
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-          <p className="font-medium">Error loading subscription data</p>
-          <p className="text-sm">{error}</p>
-          <p className="text-xs mt-2 text-red-600">
-            Please check your connection and try refreshing the page.
-          </p>
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-start justify-between gap-4">
+          <div>
+            <p className="font-medium">Error loading subscription data</p>
+            <p className="text-sm mt-1">{error}</p>
+            <p className="text-xs mt-2 text-red-600">
+              Please check your connection and try again.
+            </p>
+          </div>
+          <Button variant="outline" size="sm" onClick={refetch} disabled={loading} className="flex-shrink-0 border-red-200 text-red-700 hover:bg-red-100">
+            {loading ? 'Retrying...' : 'Retry'}
+          </Button>
         </div>
       )}
 
       {updateError && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-          <p className="font-medium">Update failed</p>
-          <p className="text-sm">{updateError}</p>
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-start justify-between gap-4">
+          <div>
+            <p className="font-medium">Update failed</p>
+            <p className="text-sm mt-1">{updateError}</p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setUpdateError(null)}
+            className="flex-shrink-0 border-red-200 text-red-700 hover:bg-red-100"
+          >
+            Dismiss
+          </Button>
         </div>
       )}
 
       {updateSuccess && (
-        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded">
-          <p className="font-medium">Success!</p>
-          <p className="text-sm">{updateSuccess}</p>
+        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg flex items-start justify-between gap-4">
+          <div>
+            <p className="font-medium">Success!</p>
+            <p className="text-sm mt-1">{updateSuccess}</p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setUpdateSuccess(null)}
+            className="flex-shrink-0 border-green-200 text-green-700 hover:bg-green-100"
+          >
+            Dismiss
+          </Button>
         </div>
       )}
 
@@ -324,148 +473,285 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                 <p className="text-sm text-gray-600">Manage your plan and billing</p>
               </div>
               <div className="flex items-center gap-2">
-                {subscription?.subscription ? (
+                {/* Hide Change Plan when canceling to prevent multiple overlapping subscriptions */}
+                {subscription?.subscription?.cancelAtPeriodEnd || cancelLoading ? null : subscription?.subscription ? (
                   <Button variant="outline" size="sm" onClick={() => setDialogOpen(true)}>
                     Change Plan
                   </Button>
-                ) : plansToShow && plansToShow.length > 0 ? (
+                ) : !subscription?.subscription && plansToShow && plansToShow.length > 0 ? (
                   <Button size="sm" onClick={() => setDialogOpen(true)}>
                     View Pricing Plans
                   </Button>
                 ) : null}
                 <Button variant="ghost" size="sm"
                   progress={loading}
-                  onClick={refetch} disabled={loading}>
+                  onClick={refetch} disabled={loading || updating}>
                   {loading ? 'Refreshing...' : 'Refresh'}
                 </Button>
               </div>
             </div>
 
             {subscription?.subscription ? (
-              <div className={`border rounded-lg p-4 space-y-3 ${isDeprecated ? 'border-amber-300 bg-amber-50/50' : ''}`}>
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <div className="font-medium">{subscription.plan?.name || 'No plan assigned'}</div>
-                      {isDeprecated && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800 border border-amber-200">
-                          <AlertTriangle className="h-3 w-3" />
-                          Deprecated
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-sm text-gray-600">
-                      Status:{' '}
-                      <span
-                        className={`font-medium ${subscription.subscription.subscriptionStatus === 'active'
-                          ? 'text-green-600'
-                          : subscription.subscription.subscriptionStatus === 'trialing'
-                            ? 'text-blue-600'
-                            : 'text-red-600'
-                          }`}
-                      >
-                        {subscription.subscription.subscriptionStatus}
-                      </span>
-                      {isDeprecated && (
-                        <span className="ml-2 text-xs text-amber-600">
-                          (Version {currentVersion?.version || 'N/A'})
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <CreditCard className="h-5 w-5 text-gray-400" />
-                  </div>
-                </div>
+              (() => {
+                const billingInterval = getBillingIntervalFromPriceId(
+                  subscription.subscription.stripePriceId,
+                  subscription.planVersion
+                );
+                const currentPrice = billingInterval && subscription.planVersion?.basePricing
+                  ? subscription.planVersion.basePricing[billingInterval]
+                  : null;
+                const formattedPrice = currentPrice !== null && currentPrice !== undefined
+                  ? currentPrice === 0 ? 'Free' : `$${(currentPrice / 100).toFixed(2)}`
+                  : null;
+                const intervalLabel = billingInterval === 'monthly' ? '/month'
+                  : billingInterval === 'quarterly' ? '/quarter'
+                  : billingInterval === 'yearly' ? '/year' : '';
 
-                {subscription.planVersion &&
-                  (() => {
-                    const planDetails = getPlanDetailsFromItems(subscription.planVersion);
-                    return (
-                      <div className="mt-4 pt-4 border-t">
-                        <div className="text-sm font-medium mb-3">Current Plan Details</div>
-                        <div className="space-y-4 text-sm">
-                          {planDetails.features.length > 0 && (
-                            <div>
-                              <div className="text-xs font-medium text-gray-700 mb-2">Features:</div>
-                              <ul className="space-y-1.5">
-                                {planDetails.features.sort((a, b) => a.enabled ? -1 : 1).map(({ item, enabled }) => (
-                                  <li key={item._id} className="flex items-start gap-2">
-                                    <span
-                                      className={
-                                        enabled ? 'text-green-500 mt-0.5' : 'text-red-500 mt-0.5'
-                                      }
-                                    >
-                                      {enabled ? '✓' : '✗'}
-                                    </span>
-                                    <div className="flex-1">
-                                      <div className="font-medium">{item.name}</div>
-                                      {item.description && (
-                                        <div className="text-xs text-gray-500">{item.description}</div>
-                                      )}
-                                    </div>
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
+                return (
+                  <div className={`border rounded-lg overflow-hidden ${isDeprecated ? 'border-amber-300' : 'border-gray-200'}`}>
+                    {/* Plan Header */}
+                    <div className={`p-5 ${isDeprecated ? 'bg-amber-50/50' : 'bg-gray-50/50'}`}>
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <h3 className="text-lg font-semibold text-gray-900">
+                              {subscription.plan?.name || 'No plan assigned'}
+                            </h3>
+                            {/* Status Badge */}
+                            <span
+                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                subscription.subscription.subscriptionStatus === 'active'
+                                  ? 'bg-green-100 text-green-800'
+                                  : subscription.subscription.subscriptionStatus === 'trialing'
+                                    ? 'bg-blue-100 text-blue-800'
+                                    : subscription.subscription.subscriptionStatus === 'canceled'
+                                      ? 'bg-gray-100 text-gray-800'
+                                      : 'bg-red-100 text-red-800'
+                              }`}
+                            >
+                              {subscription.subscription.subscriptionStatus === 'active' && 'Active'}
+                              {subscription.subscription.subscriptionStatus === 'trialing' && 'Trial'}
+                              {subscription.subscription.subscriptionStatus === 'canceled' && 'Canceled'}
+                              {subscription.subscription.subscriptionStatus === 'past_due' && 'Past Due'}
+                            </span>
+                            {subscription.subscription.subscriptionStatus === 'trialing' &&
+                              formatPeriodEndDate(subscription.subscription.stripeCurrentPeriodEnd) && (
+                              <span className="text-xs text-gray-500">
+                                (ends {formatPeriodEndDate(subscription.subscription.stripeCurrentPeriodEnd)})
+                              </span>
+                            )}
+                            {isDeprecated && (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                                <AlertTriangle className="h-3 w-3" />
+                                Deprecated
+                              </span>
+                            )}
+                          </div>
+                          {subscription.plan?.description && (
+                            <p className="text-sm text-gray-600">{subscription.plan.description}</p>
                           )}
+                        </div>
 
-                          {planDetails.limits.length > 0 && (
-                            <div>
-                              <div className="text-xs font-medium text-gray-700 mb-2">Limits:</div>
-                              <ul className="space-y-1.5">
-                                {planDetails.limits.map(({ item, value }) => (
-                                  <li key={item._id} className="flex items-start gap-2">
-                                    <span className="text-gray-400 mt-0.5">•</span>
-                                    <div className="flex-1">
-                                      <div>
-                                        <span className="font-medium">{item.name}:</span>{' '}
-                                        <span className="text-gray-700">{value}</span>
-                                      </div>
-                                      {item.description && (
-                                        <div className="text-xs text-gray-500">{item.description}</div>
-                                      )}
-                                    </div>
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
+                        {/* Price Display */}
+                        <div className="text-right ml-4">
+                          <div className="flex items-baseline justify-end gap-1">
+                            <span className="text-2xl font-bold text-gray-900">
+                              {formattedPrice || 'N/A'}
+                            </span>
+                            {formattedPrice && formattedPrice !== 'Free' && intervalLabel && (
+                              <span className="text-sm text-gray-500">{intervalLabel}</span>
+                            )}
+                          </div>
+                          {billingInterval && (
+                            <span className="text-xs text-gray-500 mt-1 inline-block">
+                              Billed {getBillingIntervalLabel(billingInterval).toLowerCase()}
+                            </span>
                           )}
-
-                          {planDetails.quotas.length > 0 && (
-                            <div>
-                              <div className="text-xs font-medium text-gray-700 mb-2">Quotas:</div>
-                              <ul className="space-y-1.5">
-                                {planDetails.quotas.map(({ item, value }) => {
-                                  const quotaDisplay =
-                                    typeof value === 'object' && value !== null && 'included' in value
-                                      ? `${value.included} included${value.overage ? `, ${value.overage} overage` : ''}`
-                                      : String(value);
-                                  return (
-                                    <li key={item._id} className="flex items-start gap-2">
-                                      <span className="text-gray-400 mt-0.5">•</span>
-                                      <div className="flex-1">
-                                        <div>
-                                          <span className="font-medium">{item.name}:</span>{' '}
-                                          <span className="text-gray-700">{quotaDisplay}</span>
-                                        </div>
-                                        {item.description && (
-                                          <div className="text-xs text-gray-500">
-                                            {item.description}
-                                          </div>
-                                        )}
-                                      </div>
-                                    </li>
-                                  );
-                                })}
-                              </ul>
+                          {(subscription.subscription.subscriptionStatus === 'active' ||
+                            subscription.subscription.subscriptionStatus === 'trialing') &&
+                            !subscription.subscription.cancelAtPeriodEnd &&
+                            formatPeriodEndDate(subscription.subscription.stripeCurrentPeriodEnd) && (
+                            <div className="flex items-center gap-1.5 mt-2 text-xs text-gray-500">
+                              <Calendar className="h-3.5 w-3.5 flex-shrink-0" />
+                              <span>
+                                Next billing:{' '}
+                                <span className="font-medium text-gray-700">
+                                  {formatPeriodEndDate(subscription.subscription.stripeCurrentPeriodEnd)}
+                                </span>
+                              </span>
                             </div>
                           )}
                         </div>
                       </div>
+
+                      {isDeprecated && (
+                        <p className="text-xs text-amber-600 mt-2">
+                          Version {currentVersion?.version || 'N/A'} - A newer version is available
+                        </p>
+                      )}
+
+                      {/* Cancel/Resume Actions */}
+                      {subscription.subscription.subscriptionStatus === 'active' && (
+                        <div className="flex items-center gap-3 mt-4 pt-4 border-t border-gray-200">
+                          {subscription.subscription.cancelAtPeriodEnd ? (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setResumeDialogOpen(true)}
+                              disabled={updating || cancelLoading || resumeLoading}
+                              progress={resumeLoading}
+                            >
+                              Resume Subscription
+                            </Button>
+                          ) : (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                              onClick={() => setCancelDialogOpen(true)}
+                              disabled={updating || cancelLoading || resumeLoading}
+                              progress={cancelLoading || updating}
+                            >
+                              {cancelLoading || updating ? 'Canceling...' : 'Cancel Subscription'}
+                            </Button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Past Due Warning Banner */}
+                    {subscription.subscription.subscriptionStatus === 'past_due' && (
+                      <div className="px-5 py-3 bg-red-50 border-t border-red-200">
+                        <div className="flex items-start gap-3">
+                          <AlertTriangle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+                          <div>
+                            <p className="text-sm font-medium text-red-800">
+                              Payment past due
+                            </p>
+                            <p className="text-sm text-red-700 mt-0.5">
+                              Please update your payment method to avoid service interruption. Check your invoices for details.
+                            </p>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="mt-2 border-red-200 text-red-700 hover:bg-red-100"
+                              onClick={() => setActiveTab('invoices')}
+                            >
+                              View Invoices
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Cancellation Warning Banner */}
+                    {subscription.subscription.cancelAtPeriodEnd && (
+                      <div className="px-5 py-3 bg-amber-50 border-t border-amber-200">
+                        <div className="flex items-start gap-3">
+                          <Calendar className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                          <div>
+                            <p className="text-sm font-medium text-amber-800">
+                              Subscription scheduled for cancellation
+                            </p>
+                            <p className="text-sm text-amber-700 mt-0.5">
+                              {formatPeriodEndDate(subscription.subscription.stripeCurrentPeriodEnd) ? (
+                                <>
+                                  Your subscription will end on{' '}
+                                  <span className="font-medium">
+                                    {formatPeriodEndDate(subscription.subscription.stripeCurrentPeriodEnd)}
+                                  </span>
+                                  . You'll retain access until then and won't be charged again.
+                                </>
+                              ) : (
+                                'Your subscription will be canceled at the end of the current billing period. You won\'t be charged again.'
+                              )}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Plan Details */}
+                    {subscription.planVersion && (() => {
+                      const planDetails = getPlanDetailsFromItems(subscription.planVersion);
+                      const hasDetails = planDetails.features.length > 0 || planDetails.limits.length > 0 || planDetails.quotas.length > 0;
+
+                      if (!hasDetails) return null;
+
+                      return (
+                        <div className="p-5 border-t border-gray-100">
+                          <div className="space-y-6">
+                            {/* Features */}
+                            {planDetails.features.length > 0 && (
+                              <div>
+                                <h4 className="text-xs font-semibold text-gray-900 uppercase tracking-wider mb-3">
+                                  Features
+                                </h4>
+                                <ul className="space-y-2">
+                                  {planDetails.features.sort((a) => a.enabled ? -1 : 1).map(({ item, enabled }) => (
+                                    <li key={item._id} className="flex items-start gap-2 text-sm">
+                                      <span className={`mt-0.5 flex-shrink-0 ${enabled ? 'text-green-500' : 'text-gray-300'}`}>
+                                        {enabled ? '✓' : '—'}
+                                      </span>
+                                      <span className={enabled ? 'text-gray-700' : 'text-gray-400'}>
+                                        {item.name}
+                                      </span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+
+                            {/* Limits */}
+                            {planDetails.limits.length > 0 && (
+                              <div>
+                                <h4 className="text-xs font-semibold text-gray-900 uppercase tracking-wider mb-3">
+                                  Limits
+                                </h4>
+                                <ul className="space-y-2">
+                                  {planDetails.limits.map(({ item, value }) => (
+                                    <li key={item._id} className="text-sm">
+                                      <div className="flex items-center justify-between">
+                                        <span className="text-gray-600">{item.name}</span>
+                                        <span className="font-medium text-gray-900">{value}</span>
+                                      </div>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+
+                            {/* Quotas */}
+                            {planDetails.quotas.length > 0 && (
+                              <div>
+                                <h4 className="text-xs font-semibold text-gray-900 uppercase tracking-wider mb-3">
+                                  Usage Quotas
+                                </h4>
+                                <ul className="space-y-2">
+                                  {planDetails.quotas.map(({ item, value }) => {
+                                    const quotaDisplay =
+                                      typeof value === 'object' && value !== null && 'included' in value
+                                        ? `${value.included}${value.overage ? ` (+${value.overage})` : ''}`
+                                        : String(value);
+                                    return (
+                                      <li key={item._id} className="text-sm">
+                                        <div className="flex items-center justify-between">
+                                          <span className="text-gray-600">{item.name}</span>
+                                          <span className="font-medium text-gray-900">{quotaDisplay}</span>
+                                        </div>
+                                      </li>
+                                    );
+                                  })}
+                                </ul>
+                              </div>
+                            )}
+                        </div>
+                      </div>
                     );
                   })()}
-              </div>
+                  </div>
+                );
+              })()
             ) : (
               <div className="border rounded-lg p-6 text-center">
                 <div className="mb-4">
@@ -477,6 +763,11 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                     Choose a plan to get started with your workspace
                   </p>
                 </div>
+                {plansToShow && plansToShow.length > 0 && (
+                  <Button size="sm" onClick={() => setDialogOpen(true)}>
+                    View Pricing Plans
+                  </Button>
+                )}
               </div>
             )}
           </div>
@@ -509,7 +800,7 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
           {loading && (
             <div className="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">
               <Loader2 className="h-4 w-4 animate-spin flex-shrink-0" />
-              <span>Loading subscription and pricing plans...</span>
+              <span>Loading invoices...</span>
             </div>
           )}
           <SettingsInvoices
@@ -523,17 +814,122 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
 
       {/* Subscription Dialog */}
       {plansToShow && plansToShow.length > 0 && (
-        <Suspense fallback={null}>
+        <Suspense fallback={
+          dialogOpen ? (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="h-5 w-5 animate-spin" />
+                <span>Loading plans...</span>
+              </div>
+            </div>
+          ) : null
+        }>
           <SubscriptionDialog
             open={dialogOpen}
             onOpenChange={setDialogOpen}
             planVersions={plansToShow}
             currentPlanVersionId={currentPlanVersionId || null}
+            currentStripePriceId={subscription?.subscription?.stripePriceId}
             onSelectPlan={handlePlanChange}
             loading={updating || loading}
           />
         </Suspense>
       )}
+
+      {/* Resume Subscription Confirmation Dialog */}
+      <AlertDialog open={resumeDialogOpen} onOpenChange={setResumeDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Resume Subscription</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3">
+                <p>Are you sure you want to resume your subscription?</p>
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 space-y-2 text-sm">
+                  <div className="flex items-start gap-2">
+                    <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                    <span>
+                      You will be charged again on{' '}
+                      {subscription?.subscription?.stripeCurrentPeriodEnd &&
+                      formatPeriodEndDate(subscription.subscription.stripeCurrentPeriodEnd) ? (
+                        <span className="font-medium">
+                          {formatPeriodEndDate(subscription.subscription.stripeCurrentPeriodEnd)}
+                        </span>
+                      ) : (
+                        'the next billing date'
+                      )}
+                    </span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="text-amber-600 mt-0.5">•</span>
+                    <span>Your subscription will continue automatically and you'll be billed according to your plan</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="text-blue-600 mt-0.5">ℹ</span>
+                    <span>You can cancel anytime before the next billing date if you change your mind</span>
+                  </div>
+                </div>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={resumeLoading}>Keep Canceled</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleResumeSubscription}
+              disabled={resumeLoading}
+            >
+              {resumeLoading ? 'Resuming...' : 'Yes, Resume Subscription'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Cancel Subscription Confirmation Dialog */}
+      <AlertDialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancel Subscription</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3">
+                <p>Are you sure you want to cancel your subscription?</p>
+                <div className="bg-gray-50 rounded-lg p-4 space-y-2 text-sm">
+                  <div className="flex items-start gap-2">
+                    <span className="text-green-600 mt-0.5">✓</span>
+                    <span>
+                      You'll retain full access to this plan until{' '}
+                      {subscription?.subscription?.stripeCurrentPeriodEnd &&
+                      formatPeriodEndDate(subscription.subscription.stripeCurrentPeriodEnd) ? (
+                        <span className="font-medium">
+                          {formatPeriodEndDate(subscription.subscription.stripeCurrentPeriodEnd)}
+                        </span>
+                      ) : (
+                        'the end of your current billing period'
+                      )}
+                    </span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="text-green-600 mt-0.5">✓</span>
+                    <span>You won't be charged again after cancellation</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="text-blue-600 mt-0.5">ℹ</span>
+                    <span>You can resume your subscription anytime before it ends</span>
+                  </div>
+                </div>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={cancelLoading}>Keep Subscription</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleCancelSubscription}
+              disabled={cancelLoading}
+              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+            >
+              {cancelLoading ? 'Canceling...' : 'Yes, Cancel Subscription'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

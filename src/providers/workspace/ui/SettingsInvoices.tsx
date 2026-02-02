@@ -1,4 +1,4 @@
-import { ExternalLink, FileText } from 'lucide-react';
+import { Download, ExternalLink, FileText } from 'lucide-react';
 import React from 'react';
 import { IInvoice } from '../../../api/types';
 import { Button } from '../../../components/ui/button';
@@ -77,7 +77,7 @@ const SettingsInvoices: React.FC<SettingsInvoicesProps> = ({
   const { invoices, loading: invoicesLoading, error: invoicesError, refetch: refetchInvoices } =
     useInvoices(workspaceId, limit);
 
-  const invoicesWithDownload = invoices.filter(invoice => invoice.invoice_pdf);
+  const hasInvoices = invoices.length > 0;
 
   return (
     <div className="space-y-4">
@@ -94,17 +94,22 @@ const SettingsInvoices: React.FC<SettingsInvoicesProps> = ({
       </div>
 
       {invoicesError && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-          <p className="font-medium">Error loading invoices</p>
-          <p className="text-sm">{invoicesError}</p>
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-start justify-between gap-4">
+          <div>
+            <p className="font-medium">Error loading invoices</p>
+            <p className="text-sm mt-1">{invoicesError}</p>
+          </div>
+          <Button variant="outline" size="sm" onClick={refetchInvoices} disabled={invoicesLoading} className="flex-shrink-0 border-red-200 text-red-700 hover:bg-red-100">
+            {invoicesLoading ? 'Retrying...' : 'Retry'}
+          </Button>
         </div>
       )}
 
-      {invoicesLoading && invoicesWithDownload.length === 0 ? (
+      {invoicesLoading && !hasInvoices ? (
         <div className="border rounded-lg p-6">
           <SettingSkeleton />
         </div>
-      ) : invoicesWithDownload.length === 0 ? (
+      ) : !hasInvoices ? (
         <div className="border rounded-lg p-6 text-center">
           <FileText className="h-12 w-12 mx-auto text-gray-400 mb-3" />
           <p className="text-sm text-gray-500">
@@ -120,7 +125,7 @@ const SettingsInvoices: React.FC<SettingsInvoicesProps> = ({
         </div>
       ) : (
         <div className="space-y-2">
-          {invoicesWithDownload.map(invoice => {
+          {invoices.map(invoice => {
             const action = getInvoiceAction(invoice);
             return (
               <div
@@ -170,12 +175,22 @@ const SettingsInvoices: React.FC<SettingsInvoicesProps> = ({
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <Button
                       size="sm"
-                      onClick={() => window.open(invoice.hosted_invoice_url, '_blank')}
+                      onClick={() => window.open(invoice.hosted_invoice_url, '_blank', 'noopener,noreferrer')}
                       className={action.color}
                     >
                       {action.text}
                       <ExternalLink className="h-3 w-3 ml-1.5" />
                     </Button>
+                    {invoice.invoice_pdf && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => window.open(invoice.invoice_pdf!, '_blank', 'noopener,noreferrer')}
+                      >
+                        <Download className="h-3 w-3 mr-1.5" />
+                        PDF
+                      </Button>
+                    )}
                   </div>
                 </div>
               </div>
