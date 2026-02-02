@@ -874,3 +874,149 @@ export const useInvoice = (
     refetch: fetchInvoice,
   };
 };
+
+/**
+ * Hook to cancel a subscription at the end of the current billing period.
+ * Sets cancelAtPeriodEnd: true - subscription remains active until period ends.
+ *
+ * @param workspaceId - The workspace ID. Can be null/undefined.
+ * @returns An object containing:
+ * - `cancelSubscription()`: Function to cancel subscription at period end
+ * - `loading`: Boolean indicating if cancellation is in progress
+ * - `error`: Error message string (null if no error)
+ *
+ * @example
+ * ```tsx
+ * function CancelSubscriptionButton() {
+ *   const { currentWorkspace } = useSaaSWorkspaces();
+ *   const { cancelSubscription, loading } = useCancelSubscription(currentWorkspace?._id);
+ *   const { refetch } = useSubscription(currentWorkspace?._id);
+ *
+ *   const handleCancel = async () => {
+ *     try {
+ *       await cancelSubscription();
+ *       await refetch(); // Refresh subscription data
+ *       alert('Subscription will be canceled at the end of the billing period');
+ *     } catch (error) {
+ *       console.error('Failed to cancel:', error);
+ *     }
+ *   };
+ *
+ *   return (
+ *     <button onClick={handleCancel} disabled={loading}>
+ *       {loading ? 'Canceling...' : 'Cancel Subscription'}
+ *     </button>
+ *   );
+ * }
+ * ```
+ */
+export const useCancelSubscription = (workspaceId: string | null | undefined) => {
+  const os = useAppSelector(state => state.os);
+  const api = useMemo(() => new WorkspaceApi(os), [os.serverUrl, os.version, os.orgId]);
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const cancelSubscription = useCallback(async (): Promise<ISubscriptionResponse> => {
+    if (!workspaceId) {
+      throw new Error('Workspace ID is required');
+    }
+
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await api.cancelSubscriptionAtPeriodEnd(workspaceId);
+      return result;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to cancel subscription';
+      setError(errorMessage);
+      handleError(err, {
+        component: 'useCancelSubscription',
+        action: 'cancelSubscription',
+        metadata: { workspaceId },
+      });
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, [api, workspaceId]);
+
+  return {
+    cancelSubscription,
+    loading,
+    error,
+  };
+};
+
+/**
+ * Hook to resume a subscription that was scheduled for cancellation.
+ * Sets cancelAtPeriodEnd: false - subscription will continue after period ends.
+ *
+ * @param workspaceId - The workspace ID. Can be null/undefined.
+ * @returns An object containing:
+ * - `resumeSubscription()`: Function to resume subscription
+ * - `loading`: Boolean indicating if resume is in progress
+ * - `error`: Error message string (null if no error)
+ *
+ * @example
+ * ```tsx
+ * function ResumeSubscriptionButton() {
+ *   const { currentWorkspace } = useSaaSWorkspaces();
+ *   const { resumeSubscription, loading } = useResumeSubscription(currentWorkspace?._id);
+ *   const { refetch } = useSubscription(currentWorkspace?._id);
+ *
+ *   const handleResume = async () => {
+ *     try {
+ *       await resumeSubscription();
+ *       await refetch(); // Refresh subscription data
+ *       alert('Subscription has been resumed');
+ *     } catch (error) {
+ *       console.error('Failed to resume:', error);
+ *     }
+ *   };
+ *
+ *   return (
+ *     <button onClick={handleResume} disabled={loading}>
+ *       {loading ? 'Resuming...' : 'Resume Subscription'}
+ *     </button>
+ *   );
+ * }
+ * ```
+ */
+export const useResumeSubscription = (workspaceId: string | null | undefined) => {
+  const os = useAppSelector(state => state.os);
+  const api = useMemo(() => new WorkspaceApi(os), [os.serverUrl, os.version, os.orgId]);
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const resumeSubscription = useCallback(async (): Promise<ISubscriptionResponse> => {
+    if (!workspaceId) {
+      throw new Error('Workspace ID is required');
+    }
+
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await api.resumeSubscription(workspaceId);
+      return result;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to resume subscription';
+      setError(errorMessage);
+      handleError(err, {
+        component: 'useResumeSubscription',
+        action: 'resumeSubscription',
+        metadata: { workspaceId },
+      });
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, [api, workspaceId]);
+
+  return {
+    resumeSubscription,
+    loading,
+    error,
+  };
+};

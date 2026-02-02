@@ -53,9 +53,13 @@ export interface IAsset extends IDocument {
 }
 
 // Subscription Management Types
+export type BillingInterval = 'monthly' | 'yearly' | 'quarterly';
+
 export interface ISubscription {
   _id: string;
   subscriptionStatus: 'active' | 'trialing' | 'canceled' | 'past_due';
+  stripePriceId?: string;
+  stripeCurrentPeriodEnd?: string; // ISO date string for when current billing period ends
   cancelAtPeriodEnd: boolean;
   createdAt: string;
   updatedAt: string;
@@ -220,8 +224,6 @@ export interface IPlanGroupVersionsResponse {
   currentVersion: IPlanGroupVersionWithPlans;
   availableVersions: IPlanGroupVersionWithPlans[];
 }
-
-export type BillingInterval = 'monthly' | 'yearly' | 'quarterly';
 
 export interface ICheckoutSessionRequest {
   planVersionId: string;
