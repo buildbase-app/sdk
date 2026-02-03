@@ -5,7 +5,7 @@ import { handleErrorUnlessAborted } from '../../lib/error-handler';
 import { useAsyncEffect } from '../../lib/useAsyncEffect';
 import { getAuthHeaders } from '../auth/utils';
 import type { ISettings } from '../types';
-import type { IOsState } from './types';
+import { isOsConfigReady, type IOsState } from './types';
 
 /**
  * Hook to access OS (organization) state (serverUrl, version, orgId, auth, settings).
@@ -73,7 +73,7 @@ export function useSaaSSettings() {
       }
 
       // Don't fetch if OS config is not ready
-      if (!serverUrl || !version || !orgId) {
+      if (!isOsConfigReady(os)) {
         return null;
       }
 
@@ -110,7 +110,7 @@ export function useSaaSSettings() {
   // Automatically fetch settings when OS is loaded
   useAsyncEffect(
     async signal => {
-      if (!serverUrl || !version || !orgId || settings || fetchingSettingsRef.current) return;
+      if (!isOsConfigReady(os) || settings || fetchingSettingsRef.current) return;
       await getSettings(signal);
     },
     [serverUrl, version, orgId, getSettings],

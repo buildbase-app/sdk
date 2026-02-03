@@ -120,10 +120,16 @@ export function useWorkspaceApi(os: IOsConfig) {
   return useMemo(() => new WorkspaceApi(os), [os.serverUrl, os.version, os.orgId]);
 }
 
-export const useSaaSWorkspaces = () => {
-  const dispatch = useAppDispatch();
+/** OS state + memoized WorkspaceApi. Use when a hook needs both (e.g. subscription hooks, useSaaSWorkspaces). */
+export function useWorkspaceApiWithOs() {
   const os = useSaaSOs();
   const api = useWorkspaceApi(os);
+  return useMemo(() => ({ os, api }), [os, api]);
+}
+
+export const useSaaSWorkspaces = () => {
+  const dispatch = useAppDispatch();
+  const { os, api } = useWorkspaceApiWithOs();
 
   // Select all workspace state at once - only re-renders when any selected field changes
   const workspace = useAppSelector(state => state.workspaces);

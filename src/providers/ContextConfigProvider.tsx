@@ -8,7 +8,7 @@ import { useAsyncEffect } from '../lib/useAsyncEffect';
 import type { IAuthConfig } from './auth/types';
 import { getAuthHeaders } from './auth/utils';
 import { useSaaSOs } from './os/hooks';
-import type { IOsState } from './os/types';
+import { isOsConfigReady, type IOsState } from './os/types';
 import type { ISettings } from './types';
 
 interface ContextConfigProviderProps {
@@ -52,7 +52,7 @@ export const ContextConfigProvider: React.FC<ContextConfigProviderProps> = React
     useAsyncEffect(
       async signal => {
         const { serverUrl, version, orgId, settings } = os;
-        if (!serverUrl || !version || !orgId || settings) return;
+        if (!isOsConfigReady(os) || settings) return;
 
         const headers = getAuthHeaders();
         const response = await safeFetch(`${serverUrl}/api/${version}/public/${orgId}/settings`, {
