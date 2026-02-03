@@ -61,8 +61,8 @@ export class UserApi extends BaseApi {
   }
 }
 
-/** Memoized UserApi instance. Recreates only when serverUrl or version change. */
-export function useUserApi() {
+/** Memoized UserApi instance. Recreates only when serverUrl or version change. BaseApi.ensureReady() throws if config is not set. */
+export function useUserApi(): UserApi {
   const os = useSaaSOs();
   return useMemo(() => new UserApi(os), [os.serverUrl, os.version]);
 }

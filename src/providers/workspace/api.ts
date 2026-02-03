@@ -18,7 +18,7 @@ import type { IWorkspace, IWorkspaceFeature, IWorkspaceUser } from './types';
 
 export class WorkspaceApi extends BaseApi {
   constructor(config: IOsConfig) {
-    super(config);
+    super({ ...config, requireOrgId: true });
   }
 
   async getWorkspaces(): Promise<IWorkspace[]> {

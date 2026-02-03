@@ -462,9 +462,7 @@ export const useCreateCheckoutSession = (workspaceId: string | null | undefined)
 
   const createCheckoutSession = useCallback(
     async (request: ICheckoutSessionRequest): Promise<ICheckoutSessionResponse> => {
-      if (!workspaceId) {
-        throw new Error('Workspace ID is required');
-      }
+      if (!workspaceId) throw new Error('Workspace ID is required');
 
       setLoading(true);
       setError(null);
@@ -577,9 +575,7 @@ export const useUpdateSubscription = (workspaceId: string | null | undefined) =>
         cancelUrl?: string;
       }
     ): Promise<ISubscriptionUpdateResponse | ICheckoutSessionResponse> => {
-      if (!workspaceId) {
-        throw new Error('Workspace ID is required');
-      }
+      if (!workspaceId) throw new Error('Workspace ID is required');
 
       setLoading(true);
       setError(null);
@@ -907,9 +903,7 @@ export const useCancelSubscription = (workspaceId: string | null | undefined) =>
   const [error, setError] = useState<string | null>(null);
 
   const cancelSubscription = useCallback(async (): Promise<ISubscriptionResponse> => {
-    if (!workspaceId) {
-      throw new Error('Workspace ID is required');
-    }
+    if (!workspaceId) throw new Error('Workspace ID is required');
 
     setLoading(true);
     setError(null);
@@ -979,9 +973,7 @@ export const useResumeSubscription = (workspaceId: string | null | undefined) =>
   const [error, setError] = useState<string | null>(null);
 
   const resumeSubscription = useCallback(async (): Promise<ISubscriptionResponse> => {
-    if (!workspaceId) {
-      throw new Error('Workspace ID is required');
-    }
+    if (!workspaceId) throw new Error('Workspace ID is required');
 
     setLoading(true);
     setError(null);

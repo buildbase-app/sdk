@@ -40,7 +40,8 @@ import { Separator } from '../../components/ui/separator';
 import { handleError } from '../../lib/error-handler';
 import { cn } from '../../lib/utils';
 import { useSaaSAuth } from '../auth/hooks';
-import { useSaaSSettings } from '../os/hooks';
+import { useSaaSOs, useSaaSSettings } from '../os/hooks';
+import { isOsConfigReady } from '../os/types';
 import { useSaaSWorkspaces } from './hooks';
 import type { IWorkspace } from './types';
 import WorkspaceSettingsDialog from './ui/SettingsDialog';
@@ -54,6 +55,8 @@ export function WorkspaceSwitcher(props: {
   trigger: (isLoading: boolean, currentWorkspace: IWorkspace | null) => ReactNode;
 }) {
   const { isAuthenticated, user } = useSaaSAuth();
+  const os = useSaaSOs();
+  const isConfigReady = isOsConfigReady(os);
   const {
     workspaces,
     currentWorkspace,
@@ -74,9 +77,9 @@ export function WorkspaceSwitcher(props: {
   // Combine loading and refreshing states for trigger
   const isLoading = loading || refreshing;
 
-  // Fetch workspaces and features only once on mount, and only if not already loaded
+  // Fetch workspaces and features only after SDK (OS config) is loaded and user is authenticated
   useEffect(() => {
-    if (!isAuthenticated) return;
+    if (!isAuthenticated || !isConfigReady) return;
     // Only fetch if workspaces are empty (not already loaded)
     if (workspaces.length === 0) {
       fetchWorkspaces();
@@ -86,20 +89,20 @@ export function WorkspaceSwitcher(props: {
       getFeatures();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated]); // Intentionally empty - only run on mount
+  }, [isAuthenticated, isConfigReady]); // Run when auth or config becomes ready
 
   // Refresh workspaces when reloadWorkspacesCount changes (but don't fetch features again)
   useEffect(() => {
-    if (!isAuthenticated) return;
+    if (!isAuthenticated || !isConfigReady) return;
     if (reloadWorkspacesCount > 0) {
       refreshWorkspaces();
       // Don't call getFeatures here - features don't need to be refreshed
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [reloadWorkspacesCount, isAuthenticated]); // Only refresh workspaces, not features
+  }, [reloadWorkspacesCount, isAuthenticated, isConfigReady]); // Only refresh workspaces, not features
 
   function reloadWorkspaces() {
-    if (!isAuthenticated) return;
+    if (!isAuthenticated || !isConfigReady) return;
     setReloadWorkspacesCount(prev => prev + 1);
   }
 
