@@ -3,11 +3,11 @@
 import React, { ReactNode, useCallback, useEffect, useMemo } from 'react';
 import { IUser } from '../../api/types';
 import { authActions, useAppDispatch } from '../../contexts';
-import { handleApiResponse, safeFetch } from '../../lib/api-utils';
 import { handleError, handleErrorUnlessAborted } from '../../lib/error-handler';
 import { useAsyncEffect } from '../../lib/useAsyncEffect';
 import { useSaaSOs } from '../os/hooks';
 import { isOsConfigReady } from '../os/types';
+import { AuthApi } from './api';
 import { useAuthState } from './hooks';
 import { getAuthFlags, IAuthCallbacks } from './types';
 import {
@@ -64,17 +64,9 @@ export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) 
           }
           const { serverUrl, version, orgId } = currentOsState;
 
-          // Make profile request to validate token and get user data
-          const profileResponse = await safeFetch(`${serverUrl}/api/${version}/public/profile`, {
-            headers: {
-              'x-session-id': sessionId,
-              'Content-Type': 'application/json',
-            },
-          });
-          const userData = await handleApiResponse<IUser>(
-            profileResponse,
-            'Failed to fetch user profile'
-          );
+          // Make profile request to validate token and get user data (via centralized AuthApi)
+          const authApi = new AuthApi({ serverUrl, version });
+          const userData = await authApi.getProfile(sessionId);
 
           const authUser = mapIUserToAuthUser(userData, orgId, currentOsState.auth?.clientId || '');
 
@@ -135,21 +127,12 @@ export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) 
           });
           return;
         }
-        const { serverUrl, version, orgId } = osState;
+        const { orgId } = osState;
 
         let userData: IUser;
         try {
-          const profileResponse = await safeFetch(`${serverUrl}/api/${version}/public/profile`, {
-            headers: {
-              'x-session-id': sessionId,
-              'Content-Type': 'application/json',
-            },
-            signal,
-          });
-          userData = await handleApiResponse<IUser>(
-            profileResponse,
-            'Failed to fetch user profile'
-          );
+          const authApi = new AuthApi({ serverUrl: osState.serverUrl, version: osState.version });
+          userData = await authApi.getProfile(sessionId, signal);
         } catch (error) {
           if (
             !handleErrorUnlessAborted(error, {

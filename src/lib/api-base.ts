@@ -12,7 +12,13 @@ export interface IBaseApiConfig {
   serverUrl: string;
   version: ApiVersion;
   orgId?: string;
+  /** When true, ensureReady() also requires orgId. Used by WorkspaceApi and SettingsApi. */
+  requireOrgId?: boolean;
+  /** API path segment after version (default 'public'). e.g. 'public' => .../v1/public, 'beta' => .../v1/beta */
+  basePath?: string;
 }
+
+const NOT_READY_MESSAGE = 'SDK is not ready (missing serverUrl, version, or orgId)';
 
 /**
  * Base class for SDK API clients.
@@ -26,16 +32,31 @@ export abstract class BaseApi {
   protected readonly serverUrl: string;
   protected readonly version: ApiVersion;
   protected readonly orgId: string | undefined;
+  private readonly requireOrgId: boolean;
+  private readonly basePath: string;
 
   constructor(config: IBaseApiConfig) {
     this.serverUrl = config.serverUrl;
     this.version = config.version;
     this.orgId = config.orgId;
+    this.requireOrgId = config.requireOrgId ?? false;
+    this.basePath = config.basePath ?? 'public';
   }
 
-  /** Base URL for public API: ${serverUrl}/api/${version}/public */
+  /** Throws if config is not ready for API calls. Called automatically by fetchJson/fetchResponse. */
+  protected ensureReady(): void {
+    if (!this.serverUrl?.trim() || !this.version) {
+      throw new Error(NOT_READY_MESSAGE);
+    }
+    if (this.requireOrgId && !this.orgId?.trim()) {
+      throw new Error(NOT_READY_MESSAGE);
+    }
+  }
+
+  /** Base URL: ${serverUrl}/api/${version}/${basePath} */
   protected get baseUrl(): string {
-    return `${this.serverUrl}/api/${this.version}/public`;
+    this.ensureReady();
+    return `${this.serverUrl}/api/${this.version}/${this.basePath}`;
   }
 
   /** Auth headers (x-session-id). Subclasses can override to add more. */
@@ -59,6 +80,7 @@ export abstract class BaseApi {
     init: RequestInit = {},
     errorMessage: string = 'Request failed'
   ): Promise<T> {
+    this.ensureReady();
     const headers: Record<string, string> = { ...this.getAuthHeaders() };
     if (init.headers) {
       Object.assign(headers, init.headers as Record<string, string>);
@@ -75,6 +97,7 @@ export abstract class BaseApi {
    * Caller is responsible for checking response.ok and parsing body.
    */
   protected async fetchResponse(path: string, init: RequestInit = {}): Promise<Response> {
+    this.ensureReady();
     const headers: Record<string, string> = { ...this.getAuthHeaders() };
     if (init.headers) {
       Object.assign(headers, init.headers as Record<string, string>);

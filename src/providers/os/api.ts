@@ -9,13 +9,10 @@ import type { IOsConfig } from './types';
 
 export class SettingsApi extends BaseApi {
   constructor(config: IOsConfig) {
-    super(config);
+    super({ ...config, requireOrgId: true });
   }
 
   async getSettings(signal?: AbortSignal): Promise<ISettings> {
-    if (!this.orgId) {
-      throw new Error('orgId is required for getSettings');
-    }
     return this.fetchJson<ISettings>(
       `${this.orgId}/settings`,
       { signal },

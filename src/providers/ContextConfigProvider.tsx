@@ -1,15 +1,13 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { osActions, useAppDispatch } from '../contexts';
-import { safeFetch } from '../lib/api-utils';
 import { handleError } from '../lib/error-handler';
 import { useAsyncEffect } from '../lib/useAsyncEffect';
 import type { IAuthConfig } from './auth/types';
-import { getAuthHeaders } from './auth/utils';
 import { useSaaSOs } from './os/hooks';
+import { SettingsApi } from './os/api';
 import { isOsConfigReady, type IOsState } from './os/types';
-import type { ISettings } from './types';
 
 interface ContextConfigProviderProps {
   config: IOsState;
@@ -48,23 +46,19 @@ export const ContextConfigProvider: React.FC<ContextConfigProviderProps> = React
       );
     }, [config, authConfig, dispatch]);
 
-    // Automatically fetch settings when OS is loaded
+    // Automatically fetch settings when OS is loaded (via centralized SettingsApi)
+    const settingsApi = useMemo(
+      () => (isOsConfigReady(os) ? new SettingsApi(os) : null),
+      [os.serverUrl, os.version, os.orgId]
+    );
+
     useAsyncEffect(
       async signal => {
-        const { serverUrl, version, orgId, settings } = os;
-        if (!isOsConfigReady(os) || settings) return;
-
-        const headers = getAuthHeaders();
-        const response = await safeFetch(`${serverUrl}/api/${version}/public/${orgId}/settings`, {
-          headers,
-          signal,
-        });
-        if (response.ok) {
-          const data: ISettings = await response.json();
-          dispatch.os(osActions.setSettings(data));
-        }
+        if (!settingsApi || os.settings) return;
+        const data = await settingsApi.getSettings(signal);
+        dispatch.os(osActions.setSettings(data));
       },
-      [os.serverUrl, os.version, os.orgId, os.settings, dispatch],
+      [settingsApi, os.settings, dispatch],
       {
         onError: err =>
           handleError(err, {

@@ -72,9 +72,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = React.memo(
 
   const updateAttributes = useCallback(
     async (updates: Record<string, string | number | boolean>) => {
-      if (!serverUrl || !version) {
-        throw new Error('Server URL or version is missing');
-      }
       setIsLoading(true);
       setError(null);
       try {
@@ -94,14 +91,11 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = React.memo(
         setIsLoading(false);
       }
     },
-    [api, serverUrl, version, fetchAttributes]
+    [api, fetchAttributes]
   );
 
   const updateAttribute = useCallback(
     async (attributeKey: string, value: string | number | boolean) => {
-      if (!serverUrl || !version) {
-        throw new Error('Server URL or version is missing');
-      }
       setIsLoading(true);
       setError(null);
       try {
@@ -121,7 +115,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = React.memo(
         setIsLoading(false);
       }
     },
-    [api, serverUrl, version, fetchAttributes]
+    [api, fetchAttributes]
   );
 
   const fetchFeatures = useCallback(

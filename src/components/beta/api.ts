@@ -1,6 +1,6 @@
 import { IAsset, IDocument } from '../../api/types';
-import { getErrorMessage, safeFetch } from '../../lib/api-utils';
-import { ApiVersion, IOsConfig } from '../../providers/os/types';
+import { BaseApi } from '../../lib/api-base';
+import { IOsConfig } from '../../providers/os/types';
 
 interface IScreenDetail {
   title: string;
@@ -34,25 +34,58 @@ interface ApiResponse {
   submissionId?: string;
 }
 
-export class BetaForm {
-  private version: ApiVersion;
-  private orgId: string;
-  private serverUrl: string;
-
+/** Beta API client (extends BaseApi with basePath 'beta', no auth headers). */
+class BetaApi extends BaseApi {
   constructor(config: IOsConfig) {
-    this.version = config.version;
-    this.orgId = config.orgId;
-    this.serverUrl = config.serverUrl;
+    super({ ...config, basePath: 'beta', requireOrgId: true });
+  }
+
+  protected override getAuthHeaders(): Record<string, string> {
+    return {}; // Beta endpoints are unauthenticated
   }
 
   async fetchConfig(): Promise<IBetaConfig> {
-    const response = await safeFetch(
-      `${this.serverUrl}/api/${this.version}/beta/config?orgId=${this.orgId}`
+    return this.fetchJson<IBetaConfig>(
+      `config?orgId=${encodeURIComponent(this.orgId!)}`,
+      {},
+      'Failed to fetch beta form configuration'
     );
-    if (!response.ok) {
-      throw new Error(await getErrorMessage(response, 'Failed to fetch beta form configuration'));
-    }
-    return response.json();
+  }
+
+  async submitBetaUser(payload: {
+    orgId: string;
+    formData: {
+      name: string;
+      email: string;
+      country?: string;
+      language?: string;
+      timezone?: string;
+      currency?: string;
+      context?: Record<string, string | undefined>;
+    };
+  }): Promise<ApiResponse> {
+    return this.fetchJson<ApiResponse>(
+      'submit',
+      {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      },
+      'Failed to submit beta user request'
+    );
+  }
+}
+
+export class BetaForm {
+  private api: BetaApi;
+  private orgId: string;
+
+  constructor(config: IOsConfig) {
+    this.api = new BetaApi(config);
+    this.orgId = config.orgId;
+  }
+
+  async fetchConfig(): Promise<IBetaConfig> {
+    return this.api.fetchConfig();
   }
 
   async submitBetaUser(formData: {
@@ -66,7 +99,6 @@ export class BetaForm {
     };
   }): Promise<ApiResponse> {
     const context = formData?.context ?? {};
-    // get the data from browser and intl
     const country =
       context?.country ??
       (typeof navigator !== 'undefined' && navigator.language
@@ -90,27 +122,16 @@ export class BetaForm {
         ? Intl.NumberFormat().resolvedOptions().currency
         : undefined);
 
-    const response = await safeFetch(`${this.serverUrl}/api/${this.version}/beta/submit`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
+    return this.api.submitBetaUser({
+      orgId: this.orgId,
+      formData: {
+        ...formData,
+        country,
+        language,
+        timezone,
+        currency,
       },
-      body: JSON.stringify({
-        orgId: this.orgId,
-        formData: {
-          ...formData,
-          country,
-          language,
-          timezone,
-          currency,
-        },
-      }),
     });
-
-    if (!response.ok) {
-      throw new Error(await getErrorMessage(response, 'Failed to submit beta user request'));
-    }
-    return response.json();
   }
 }
 
