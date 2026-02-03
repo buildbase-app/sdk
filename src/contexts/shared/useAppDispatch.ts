@@ -2,21 +2,11 @@
 
 import { useMemo } from 'react';
 import { useAuthDispatch } from '../AuthContext';
-import type { AuthAction } from '../AuthContext/types';
 import { useOSDispatch } from '../OSContext';
-import type { OSAction } from '../OSContext/types';
 import { useWorkspaceDispatch } from '../WorkspaceContext';
-import type { WorkspaceAction } from '../WorkspaceContext/types';
+import type { SDKDispatch } from './types';
 
-/**
- * Combined SDK Dispatch
- * Provides dispatch functions for all contexts
- */
-export interface SDKDispatch {
-  auth: (action: AuthAction) => void;
-  os: (action: OSAction) => void;
-  workspaces: (action: WorkspaceAction) => void;
-}
+export type { SDKDispatch } from './types';
 
 /**
  * Combined dispatch hook - dispatch actions to all contexts

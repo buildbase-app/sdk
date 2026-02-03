@@ -3,6 +3,9 @@
 import React, { createContext, useMemo, useReducer, type Dispatch, type ReactNode } from 'react';
 import { useSelectWithEquality } from './useSelectWithEquality';
 
+/** Shared suffix for all context-outside-provider errors. */
+const CONTEXT_ERROR_SUFFIX = 'Make sure SaaSOSProvider is wrapping your application.';
+
 /**
  * Generic context factory with performance optimizations
  * Creates a context, provider, and hooks with minimal boilerplate
@@ -46,36 +49,24 @@ export function createContextProvider<State, Action>({
 
   Provider.displayName = `${name}Provider`;
 
+  const contextError = (hook: string) =>
+    new Error(`use${name}${hook} must be used within a ${name}Provider. ${CONTEXT_ERROR_SUFFIX}`);
+
   const useContext = (): { state: State; dispatch: Dispatch<Action> } => {
     const context = React.useContext(CombinedContext);
-    if (!context) {
-      throw new Error(
-        `use${name}Context must be used within a ${name}Provider. ` +
-          'Make sure SaaSOSProvider is wrapping your application.'
-      );
-    }
+    if (!context) throw contextError('Context');
     return context;
   };
 
   const useState = (): State => {
     const state = React.useContext(StateContext);
-    if (state === null) {
-      throw new Error(
-        `use${name}State must be used within a ${name}Provider. ` +
-          'Make sure SaaSOSProvider is wrapping your application.'
-      );
-    }
+    if (state === null) throw contextError('State');
     return state;
   };
 
   const useDispatch = () => {
     const dispatch = React.useContext(DispatchContext);
-    if (dispatch === null) {
-      throw new Error(
-        `use${name}Dispatch must be used within a ${name}Provider. ` +
-          'Make sure SaaSOSProvider is wrapping your application.'
-      );
-    }
+    if (dispatch === null) throw contextError('Dispatch');
     return dispatch;
   };
 

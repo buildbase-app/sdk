@@ -1,23 +1,13 @@
 'use client';
 
 import { useMemo } from 'react';
-import type { IAuthState } from '../../providers/auth/types';
-import type { IOsState } from '../../providers/os/types';
 import { useAuthState } from '../AuthContext';
 import { useOSState } from '../OSContext';
 import { useWorkspaceState } from '../WorkspaceContext';
-import type { WorkspaceState } from '../WorkspaceContext/types';
+import type { SDKState } from './types';
 import { useSelectWithEquality } from './useSelectWithEquality';
 
-/**
- * Combined SDK State
- * Represents the complete state structure across all contexts
- */
-export interface SDKState {
-  os: IOsState;
-  auth: IAuthState;
-  workspaces: WorkspaceState;
-}
+export type { SDKState } from './types';
 
 /**
  * Combined selector hook - select from all contexts at once
