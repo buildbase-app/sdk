@@ -9,6 +9,7 @@ import { useAsyncEffect } from '../../lib/useAsyncEffect';
 import { useSaaSOs } from '../os/hooks';
 import { useAuthState } from './hooks';
 import { getAuthFlags, IAuthCallbacks } from './types';
+import { isOsConfigReady } from '../os/types';
 import {
   createSession,
   getSessionId,
@@ -58,10 +59,10 @@ export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) 
 
           // Get OS config for API request (destructure inside to avoid stale values)
           const currentOsState = osState;
-          const { serverUrl, version, orgId } = currentOsState;
-          if (!serverUrl || !version || !orgId) {
+          if (!isOsConfigReady(currentOsState)) {
             throw new Error('OS configuration is not available');
           }
+          const { serverUrl, version, orgId } = currentOsState;
 
           // Make profile request to validate token and get user data
           const profileResponse = await safeFetch(`${serverUrl}/api/${version}/public/profile`, {
@@ -126,8 +127,7 @@ export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) 
 
       fetchingProfileRef.current = true;
       try {
-        const { serverUrl, version, orgId } = osState;
-        if (!serverUrl || !version || !orgId) {
+        if (!isOsConfigReady(osState)) {
           fetchingProfileRef.current = false;
           handleError(new Error('OS configuration not available, cannot fetch user profile'), {
             component: 'AuthProviderWrapper',
@@ -135,6 +135,7 @@ export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) 
           });
           return;
         }
+        const { serverUrl, version, orgId } = osState;
 
         let userData: IUser;
         try {
@@ -216,8 +217,7 @@ export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) 
     }
 
     // Check if OS configuration is available
-    const { serverUrl, version, orgId } = osState;
-    if (!serverUrl || !version || !orgId) {
+    if (!isOsConfigReady(osState)) {
       // OS config not ready yet, wait for it to be available
       // This effect will re-run when osState changes
       return;

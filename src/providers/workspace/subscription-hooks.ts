@@ -12,8 +12,8 @@ import {
   ISubscriptionUpdateResponse,
 } from '../../api/types';
 import { handleError } from '../../lib/error-handler';
-import { useSaaSOs } from '../os/hooks';
-import { useWorkspaceApi } from './hooks';
+import { isOsConfigReady } from '../os/types';
+import { useWorkspaceApiWithOs } from './hooks';
 
 /**
  * Hook to get public plans by slug (no auth required).
@@ -24,9 +24,8 @@ import { useWorkspaceApi } from './hooks';
  * @returns { items, plans, loading, error, refetch }
  */
 export const usePublicPlans = (slug: string) => {
-  const os = useSaaSOs();
-  const api = useWorkspaceApi(os);
-  const isConfigReady = Boolean(os.serverUrl && os.version && os.orgId);
+  const { os, api } = useWorkspaceApiWithOs();
+  const isConfigReady = isOsConfigReady(os);
 
   const [data, setData] = useState<IPublicPlansResponse | null>(null);
   const [loading, setLoading] = useState(false);
@@ -104,8 +103,7 @@ export const usePublicPlans = (slug: string) => {
  * ```
  */
 export const usePublicPlanGroupVersion = (groupVersionId: string | null | undefined) => {
-  const os = useSaaSOs();
-  const api = useWorkspaceApi(os);
+  const { api } = useWorkspaceApiWithOs();
 
   const [planGroupVersion, setPlanGroupVersion] = useState<IPlanGroupVersion | null>(null);
   const [loading, setLoading] = useState(false);
@@ -186,8 +184,7 @@ export const usePublicPlanGroupVersion = (groupVersionId: string | null | undefi
  * ```
  */
 export const useSubscription = (workspaceId: string | null | undefined) => {
-  const os = useSaaSOs();
-  const api = useWorkspaceApi(os);
+  const { api } = useWorkspaceApiWithOs();
 
   const [subscription, setSubscription] = useState<ISubscriptionResponse | null>(null);
   const [loading, setLoading] = useState(false);
@@ -279,8 +276,7 @@ export const usePlanGroup = (
   workspaceId: string | null | undefined,
   groupVersionId?: string | null
 ) => {
-  const os = useSaaSOs();
-  const api = useWorkspaceApi(os);
+  const { api } = useWorkspaceApiWithOs();
 
   const [planGroup, setPlanGroup] = useState<IPlanGroupResponse | null>(null);
   const [loading, setLoading] = useState(false);
@@ -357,8 +353,7 @@ export const usePlanGroup = (
  * ```
  */
 export const usePlanGroupVersions = (workspaceId: string | null | undefined) => {
-  const os = useSaaSOs();
-  const api = useWorkspaceApi(os);
+  const { api } = useWorkspaceApiWithOs();
 
   const [versions, setVersions] = useState<IPlanGroupVersionsResponse | null>(null);
   const [loading, setLoading] = useState(false);
@@ -460,8 +455,7 @@ export const usePlanGroupVersions = (workspaceId: string | null | undefined) => 
  * ```
  */
 export const useCreateCheckoutSession = (workspaceId: string | null | undefined) => {
-  const os = useSaaSOs();
-  const api = useWorkspaceApi(os);
+  const { api } = useWorkspaceApiWithOs();
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -569,8 +563,7 @@ export const useCreateCheckoutSession = (workspaceId: string | null | undefined)
  * ```
  */
 export const useUpdateSubscription = (workspaceId: string | null | undefined) => {
-  const os = useSaaSOs();
-  const api = useWorkspaceApi(os);
+  const { api } = useWorkspaceApiWithOs();
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -748,8 +741,7 @@ export const useInvoices = (
   limit: number = 10,
   startingAfter?: string
 ) => {
-  const os = useSaaSOs();
-  const api = useWorkspaceApi(os);
+  const { api } = useWorkspaceApiWithOs();
 
   const [invoices, setInvoices] = useState<IInvoice[]>([]);
   const [hasMore, setHasMore] = useState(false);
@@ -831,8 +823,7 @@ export const useInvoice = (
   workspaceId: string | null | undefined,
   invoiceId: string | null | undefined
 ) => {
-  const os = useSaaSOs();
-  const api = useWorkspaceApi(os);
+  const { api } = useWorkspaceApiWithOs();
 
   const [invoice, setInvoice] = useState<IInvoice | null>(null);
   const [loading, setLoading] = useState(false);
@@ -910,8 +901,7 @@ export const useInvoice = (
  * ```
  */
 export const useCancelSubscription = (workspaceId: string | null | undefined) => {
-  const os = useSaaSOs();
-  const api = useWorkspaceApi(os);
+  const { api } = useWorkspaceApiWithOs();
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -983,8 +973,7 @@ export const useCancelSubscription = (workspaceId: string | null | undefined) =>
  * ```
  */
 export const useResumeSubscription = (workspaceId: string | null | undefined) => {
-  const os = useSaaSOs();
-  const api = useWorkspaceApi(os);
+  const { api } = useWorkspaceApiWithOs();
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
