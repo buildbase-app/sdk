@@ -1,5 +1,15 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Building2, DollarSign, Image, Loader2, Plus, RefreshCcw, Search, Smile, Users } from 'lucide-react';
+import {
+  Building2,
+  DollarSign,
+  Image,
+  Loader2,
+  Plus,
+  RefreshCcw,
+  Search,
+  Smile,
+  Users,
+} from 'lucide-react';
 import { ReactNode, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -27,9 +37,9 @@ import { Label } from '../../components/ui/label';
 import { RadioGroup, RadioGroupItem } from '../../components/ui/radio-group';
 import { ScrollArea } from '../../components/ui/scroll-area';
 import { Separator } from '../../components/ui/separator';
-import { useAppSelector } from '../../contexts';
 import { handleError } from '../../lib/error-handler';
 import { cn } from '../../lib/utils';
+import { useSaaSAuth } from '../auth/hooks';
 import { useSaaSSettings } from '../os/hooks';
 import { useSaaSWorkspaces } from './hooks';
 import type { IWorkspace } from './types';
@@ -43,32 +53,30 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
 export function WorkspaceSwitcher(props: {
   trigger: (isLoading: boolean, currentWorkspace: IWorkspace | null) => ReactNode;
 }) {
+  const { isAuthenticated, user } = useSaaSAuth();
   const {
-    workspaces: workspacesFromState,
+    workspaces,
     currentWorkspace,
     loading,
     refreshing,
     switchingToId,
-  } = useAppSelector(state => state.workspaces);
-  const user = useAppSelector(state => state.auth.session?.user);
-  const { settings } = useSaaSSettings();
-  const [open, setOpen] = useState(false);
-  const [reloadWorkspacesCount, setReloadWorkspacesCount] = useState<number>(0);
-  const [searchQuery, setSearchQuery] = useState('');
-  const {
     fetchWorkspaces,
     getFeatures,
     refreshWorkspaces,
     setCurrentWorkspace,
     switchToWorkspace,
-    workspaces,
   } = useSaaSWorkspaces();
+  const { settings } = useSaaSSettings();
+  const [open, setOpen] = useState(false);
+  const [reloadWorkspacesCount, setReloadWorkspacesCount] = useState<number>(0);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Combine loading and refreshing states for trigger
   const isLoading = loading || refreshing;
 
   // Fetch workspaces and features only once on mount, and only if not already loaded
   useEffect(() => {
+    if (!isAuthenticated) return;
     // Only fetch if workspaces are empty (not already loaded)
     if (workspaces.length === 0) {
       fetchWorkspaces();
@@ -78,23 +86,24 @@ export function WorkspaceSwitcher(props: {
       getFeatures();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Intentionally empty - only run on mount
+  }, [isAuthenticated]); // Intentionally empty - only run on mount
 
   // Refresh workspaces when reloadWorkspacesCount changes (but don't fetch features again)
   useEffect(() => {
+    if (!isAuthenticated) return;
     if (reloadWorkspacesCount > 0) {
       refreshWorkspaces();
       // Don't call getFeatures here - features don't need to be refreshed
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [reloadWorkspacesCount]); // Only refresh workspaces, not features
+  }, [reloadWorkspacesCount, isAuthenticated]); // Only refresh workspaces, not features
 
   function reloadWorkspaces() {
+    if (!isAuthenticated) return;
     setReloadWorkspacesCount(prev => prev + 1);
   }
 
-  // Use workspaces from hook (which comes from state)
-  const workspacesToUse = workspaces.length > 0 ? workspaces : workspacesFromState;
+  const workspacesToUse = workspaces;
 
   // Filter workspaces based on search query
   const filteredWorkspaces = workspacesToUse
@@ -277,19 +286,16 @@ function WorkspaceItem(props: WorkspaceItemProps) {
           <span className="font-medium line-clamp-1 text-ellipsis overflow-hidden max-w-full">
             {workspace.name}
           </span>
-
         </div>
         <div className="flex items-center gap-1 text-sm text-muted-foreground">
           <Users className="h-3 w-3" />
           <span>{workspace.users?.length || 0} members</span>
         </div>
         {planName && (
-          <div className='max-w-fit'>
+          <div className="max-w-fit">
             <div className="flex items-center gap-1 text-sm text-muted-foreground bg-green-500 text-white rounded-full px-2 py-0.5">
               <DollarSign className="h-3 w-3" />
-              <span className="text-xs">
-                Subscription: {planName}
-              </span>
+              <span className="text-xs">Subscription: {planName}</span>
             </div>
           </div>
         )}
@@ -330,7 +336,7 @@ function WorkspaceItem(props: WorkspaceItemProps) {
           }}
         />
       </div>
-    </div >
+    </div>
   );
 }
 
@@ -471,8 +477,9 @@ function CreateWorkspaceDialog(props: { onCreated: () => void }) {
                           key={index}
                           type="button"
                           onClick={() => handleEmojiSelect(emoji)}
-                          className={`w-8 h-8 rounded flex items-center justify-center text-lg hover:bg-muted transition-colors ${selectedEmoji === emoji ? 'bg-primary text-primary-foreground' : ''
-                            }`}
+                          className={`w-8 h-8 rounded flex items-center justify-center text-lg hover:bg-muted transition-colors ${
+                            selectedEmoji === emoji ? 'bg-primary text-primary-foreground' : ''
+                          }`}
                         >
                           {emoji}
                         </button>

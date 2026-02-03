@@ -1,5 +1,5 @@
-import { updateField } from '../shared/utils/reducerHelpers';
 import { workspaceStorage } from '../../providers/workspace/utils';
+import { updateField } from '../shared/utils/reducerHelpers';
 import type { WorkspaceAction, WorkspaceState } from './types';
 
 /**

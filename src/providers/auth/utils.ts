@@ -12,11 +12,7 @@ import type { AuthSession, AuthUser } from './types';
  * Map IUser from API to AuthUser for session
  * @throws Error if user data is missing required ID or email fields
  */
-export function mapIUserToAuthUser(
-  userData: IUser,
-  orgId: string,
-  clientId: string
-): AuthUser {
+export function mapIUserToAuthUser(userData: IUser, orgId: string, clientId: string): AuthUser {
   const userId = userData._id || userData.id;
   if (!userId || typeof userId !== 'string') {
     throw new Error('User data missing required ID field');

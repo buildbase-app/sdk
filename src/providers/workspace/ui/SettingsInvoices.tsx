@@ -74,8 +74,12 @@ const SettingsInvoices: React.FC<SettingsInvoicesProps> = ({
   onViewPricingPlans,
   limit = 20,
 }) => {
-  const { invoices, loading: invoicesLoading, error: invoicesError, refetch: refetchInvoices } =
-    useInvoices(workspaceId, limit);
+  const {
+    invoices,
+    loading: invoicesLoading,
+    error: invoicesError,
+    refetch: refetchInvoices,
+  } = useInvoices(workspaceId, limit);
 
   const hasInvoices = invoices.length > 0;
 
@@ -86,9 +90,13 @@ const SettingsInvoices: React.FC<SettingsInvoicesProps> = ({
           <h3 className="text-lg font-semibold">Billing History</h3>
           <p className="text-sm text-gray-600">View and download your invoices</p>
         </div>
-        <Button variant="ghost" size="sm"
+        <Button
+          variant="ghost"
+          size="sm"
           progress={invoicesLoading}
-          onClick={refetchInvoices} disabled={invoicesLoading}>
+          onClick={refetchInvoices}
+          disabled={invoicesLoading}
+        >
           {invoicesLoading ? 'Refreshing...' : 'Refresh'}
         </Button>
       </div>
@@ -99,7 +107,13 @@ const SettingsInvoices: React.FC<SettingsInvoicesProps> = ({
             <p className="font-medium">Error loading invoices</p>
             <p className="text-sm mt-1">{invoicesError}</p>
           </div>
-          <Button variant="outline" size="sm" onClick={refetchInvoices} disabled={invoicesLoading} className="flex-shrink-0 border-red-200 text-red-700 hover:bg-red-100">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={refetchInvoices}
+            disabled={invoicesLoading}
+            className="flex-shrink-0 border-red-200 text-red-700 hover:bg-red-100"
+          >
             {invoicesLoading ? 'Retrying...' : 'Retry'}
           </Button>
         </div>
@@ -175,7 +189,9 @@ const SettingsInvoices: React.FC<SettingsInvoicesProps> = ({
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <Button
                       size="sm"
-                      onClick={() => window.open(invoice.hosted_invoice_url, '_blank', 'noopener,noreferrer')}
+                      onClick={() =>
+                        window.open(invoice.hosted_invoice_url, '_blank', 'noopener,noreferrer')
+                      }
                       className={action.color}
                     >
                       {action.text}
@@ -185,7 +201,9 @@ const SettingsInvoices: React.FC<SettingsInvoicesProps> = ({
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => window.open(invoice.invoice_pdf!, '_blank', 'noopener,noreferrer')}
+                        onClick={() =>
+                          window.open(invoice.invoice_pdf!, '_blank', 'noopener,noreferrer')
+                        }
                       >
                         <Download className="h-3 w-3 mr-1.5" />
                         PDF

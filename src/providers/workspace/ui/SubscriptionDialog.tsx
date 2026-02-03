@@ -69,15 +69,23 @@ const formatPrice = (priceInCents: number | undefined | null): string => {
 // Get interval label
 const getIntervalLabel = (interval: BillingInterval): string => {
   switch (interval) {
-    case 'monthly': return '/mo';
-    case 'quarterly': return '/qtr';
-    case 'yearly': return '/yr';
-    default: return '/mo';
+    case 'monthly':
+      return '/mo';
+    case 'quarterly':
+      return '/qtr';
+    case 'yearly':
+      return '/yr';
+    default:
+      return '/mo';
   }
 };
 
 // Calculate savings percentage for yearly/quarterly vs monthly
-const calculateSavings = (monthlyPrice: number, intervalPrice: number, interval: BillingInterval): number | null => {
+const calculateSavings = (
+  monthlyPrice: number,
+  intervalPrice: number,
+  interval: BillingInterval
+): number | null => {
   if (!monthlyPrice || monthlyPrice === 0) return null;
 
   let monthlyEquivalent: number;
@@ -113,7 +121,9 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
     return getBillingIntervalFromPriceId(currentStripePriceId, propPlanVersions);
   }, [currentStripePriceId, propPlanVersions]);
 
-  const [selectedInterval, setSelectedInterval] = useState<BillingInterval>(currentBillingInterval || 'monthly');
+  const [selectedInterval, setSelectedInterval] = useState<BillingInterval>(
+    currentBillingInterval || 'monthly'
+  );
 
   // Sync selected interval when dialog opens or current billing changes
   useEffect(() => {
@@ -135,7 +145,8 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
 
   const handleSelectPlan = async (planVersionId: string) => {
     // Block if same plan AND same interval, or if already loading
-    const isSamePlanAndInterval = planVersionId === currentPlanVersionId && currentBillingInterval === selectedInterval;
+    const isSamePlanAndInterval =
+      planVersionId === currentPlanVersionId && currentBillingInterval === selectedInterval;
     if (isSamePlanAndInterval || isUpdating || localLoading) return;
 
     setLocalLoading(true);
@@ -163,10 +174,14 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
   // Get interval display name
   const getIntervalDisplayName = (interval: BillingInterval): string => {
     switch (interval) {
-      case 'monthly': return 'Monthly';
-      case 'quarterly': return 'Quarterly';
-      case 'yearly': return 'Yearly';
-      default: return 'Monthly';
+      case 'monthly':
+        return 'Monthly';
+      case 'quarterly':
+        return 'Quarterly';
+      case 'yearly':
+        return 'Yearly';
+      default:
+        return 'Monthly';
     }
   };
 
@@ -184,7 +199,7 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
       return {
         label: `Switch to ${getIntervalDisplayName(selectedInterval)}`,
         variant: 'default' as const,
-        disabled: false
+        disabled: false,
       };
     }
 
@@ -253,7 +268,7 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
           </div>
           {/* Billing Interval Selector */}
           <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-lg">
-            {(['monthly', 'quarterly', 'yearly'] as BillingInterval[]).map((interval) => {
+            {(['monthly', 'quarterly', 'yearly'] as BillingInterval[]).map(interval => {
               const isCurrentInterval = currentBillingInterval === interval;
               return (
                 <button
@@ -294,10 +309,7 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
           ) : (
             <div className="flex-1 min-h-0 overflow-hidden bg-white">
               {/* Single scroll container - required for sticky to work */}
-              <div
-                className="overflow-auto h-full"
-                style={{ maxHeight: 'calc(100vh - 12rem)' }}
-              >
+              <div className="overflow-auto h-full" style={{ maxHeight: 'calc(100vh - 12rem)' }}>
                 <table
                   className="w-full border-separate border-spacing-0"
                   style={{
@@ -314,18 +326,17 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                   <thead>
                     {/* Sticky header row - plan cards */}
                     <tr className="align-top">
-                      <th className="sticky top-0 left-0 z-30 p-0 bg-white   text-left">
-
-                      </th>
+                      <th className="sticky top-0 left-0 z-30 p-0 bg-white   text-left"></th>
                       {sortedPlans.map(planVersion => {
                         const isCurrent = planVersion._id === currentPlanVersionId;
                         const buttonState = getPlanButtonState(planVersion);
                         const isPlanLoading = isLoading && planVersion._id === processingPlanId;
                         const price = getPriceForInterval(planVersion);
                         const monthlyPrice = planVersion.basePricing?.monthly ?? 0;
-                        const savings = selectedInterval !== 'monthly' && price !== null
-                          ? calculateSavings(monthlyPrice, price, selectedInterval)
-                          : null;
+                        const savings =
+                          selectedInterval !== 'monthly' && price !== null
+                            ? calculateSavings(monthlyPrice, price, selectedInterval)
+                            : null;
 
                         return (
                           <th
@@ -395,14 +406,19 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                           <td className="sticky left-0 z-10 border-t border-slate-200 bg-slate-100 px-4 py-2.5 font-semibold text-xs uppercase tracking-wider text-slate-600 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.06)]">
                             Features
                           </td>
-                          <td colSpan={sortedPlans.length} className="border-t border-slate-200 bg-slate-100" />
+                          <td
+                            colSpan={sortedPlans.length}
+                            className="border-t border-slate-200 bg-slate-100"
+                          />
                         </tr>
                         {features.map(item => (
                           <tr key={item._id} className="group hover:bg-slate-50/50">
                             <td className="sticky left-0 z-10 border-t border-slate-100 bg-white p-4 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.06)] group-hover:bg-slate-50/80">
                               <div className="font-medium text-sm text-slate-900">{item.name}</div>
                               {item.description && (
-                                <div className="text-xs text-slate-500 mt-0.5">{item.description}</div>
+                                <div className="text-xs text-slate-500 mt-0.5">
+                                  {item.description}
+                                </div>
                               )}
                             </td>
                             {sortedPlans.map(planVersion => {
@@ -412,18 +428,20 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                               return (
                                 <td
                                   key={planVersion._id}
-                                  className={`border-t border-slate-100 p-4 text-center align-middle ${planVersion._id === currentPlanVersionId
+                                  className={`border-t border-slate-100 p-4 text-center align-middle ${
+                                    planVersion._id === currentPlanVersionId
                                       ? 'bg-blue-50/50'
                                       : 'bg-white'
-                                    }`}
+                                  }`}
                                 >
                                   <span
-                                    className={`text-sm font-medium ${isEnabled
+                                    className={`text-sm font-medium ${
+                                      isEnabled
                                         ? 'text-emerald-600'
                                         : formatted === '—'
                                           ? 'text-slate-400'
                                           : 'text-slate-700'
-                                      }`}
+                                    }`}
                                   >
                                     {formatted}
                                   </span>
@@ -442,14 +460,19 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                           <td className="sticky left-0 z-10 border-t border-slate-200 bg-slate-100 px-4 py-2.5 font-semibold text-xs uppercase tracking-wider text-slate-600 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.06)]">
                             Limits
                           </td>
-                          <td colSpan={sortedPlans.length} className="border-t border-slate-200 bg-slate-100" />
+                          <td
+                            colSpan={sortedPlans.length}
+                            className="border-t border-slate-200 bg-slate-100"
+                          />
                         </tr>
                         {limits.map(item => (
                           <tr key={item._id} className="group hover:bg-slate-50/50">
                             <td className="sticky left-0 z-10 border-t border-slate-100 bg-white p-4 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.06)] group-hover:bg-slate-50/80">
                               <div className="font-medium text-sm text-slate-900">{item.name}</div>
                               {item.description && (
-                                <div className="text-xs text-slate-500 mt-0.5">{item.description}</div>
+                                <div className="text-xs text-slate-500 mt-0.5">
+                                  {item.description}
+                                </div>
                               )}
                             </td>
                             {sortedPlans.map(planVersion => {
@@ -458,14 +481,16 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                               return (
                                 <td
                                   key={planVersion._id}
-                                  className={`border-t border-slate-100 p-4 text-center align-middle ${planVersion._id === currentPlanVersionId
+                                  className={`border-t border-slate-100 p-4 text-center align-middle ${
+                                    planVersion._id === currentPlanVersionId
                                       ? 'bg-blue-50/50'
                                       : 'bg-white'
-                                    }`}
+                                  }`}
                                 >
                                   <span
-                                    className={`text-sm font-medium ${formatted === '—' ? 'text-slate-400' : 'text-slate-700'
-                                      }`}
+                                    className={`text-sm font-medium ${
+                                      formatted === '—' ? 'text-slate-400' : 'text-slate-700'
+                                    }`}
                                   >
                                     {formatted}
                                   </span>
@@ -484,14 +509,19 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                           <td className="sticky left-0 z-10 border-t border-slate-200 bg-slate-100 px-4 py-2.5 font-semibold text-xs uppercase tracking-wider text-slate-600 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.06)]">
                             Quotas
                           </td>
-                          <td colSpan={sortedPlans.length} className="border-t border-slate-200 bg-slate-100" />
+                          <td
+                            colSpan={sortedPlans.length}
+                            className="border-t border-slate-200 bg-slate-100"
+                          />
                         </tr>
                         {quotas.map(item => (
                           <tr key={item._id} className="group hover:bg-slate-50/50">
                             <td className="sticky left-0 z-10 border-t border-slate-100 bg-white p-4 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.06)] group-hover:bg-slate-50/80">
                               <div className="font-medium text-sm text-slate-900">{item.name}</div>
                               {item.description && (
-                                <div className="text-xs text-slate-500 mt-0.5">{item.description}</div>
+                                <div className="text-xs text-slate-500 mt-0.5">
+                                  {item.description}
+                                </div>
                               )}
                             </td>
                             {sortedPlans.map(planVersion => {
@@ -500,14 +530,16 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                               return (
                                 <td
                                   key={planVersion._id}
-                                  className={`border-t border-slate-100 p-4 text-center align-middle ${planVersion._id === currentPlanVersionId
+                                  className={`border-t border-slate-100 p-4 text-center align-middle ${
+                                    planVersion._id === currentPlanVersionId
                                       ? 'bg-blue-50/50'
                                       : 'bg-white'
-                                    }`}
+                                  }`}
                                 >
                                   <span
-                                    className={`text-sm font-medium ${formatted === '—' ? 'text-slate-400' : 'text-slate-700'
-                                      }`}
+                                    className={`text-sm font-medium ${
+                                      formatted === '—' ? 'text-slate-400' : 'text-slate-700'
+                                    }`}
                                   >
                                     {formatted}
                                   </span>

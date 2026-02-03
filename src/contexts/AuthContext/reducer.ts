@@ -1,10 +1,10 @@
-import { updateField, updateFields } from '../shared/utils/reducerHelpers';
 import type { IAuthState } from '../../providers/auth/types';
 import { AuthStatus } from '../../providers/auth/types';
 import {
   removeSession as removeSessionStorage,
   setSessionId as setSessionIdStorage,
 } from '../../providers/auth/utils';
+import { updateField, updateFields } from '../shared/utils/reducerHelpers';
 import type { AuthAction } from './types';
 
 /**

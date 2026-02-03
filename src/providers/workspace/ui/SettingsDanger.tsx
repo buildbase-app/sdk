@@ -12,8 +12,8 @@ import {
   AlertDialogTrigger,
 } from '../../../components/ui/alert-dialog';
 import { Button } from '../../../components/ui/button';
-import { useAppSelector } from '../../../contexts';
 import { handleError } from '../../../lib/error-handler';
+import { useSaaSAuth } from '../../auth/hooks';
 import { useSaaSWorkspaces } from '../hooks';
 import { IWorkspace } from '../types';
 import { getWorkspaceUserRole } from '../utils';
@@ -22,7 +22,7 @@ import SettingSkeleton from './Skeleton';
 const WorkspaceSettingsDanger: React.FC<{ workspace: IWorkspace }> = ({ workspace }) => {
   const [isDeleting, setIsDeleting] = useState(false);
   const { deleteWorkspace } = useSaaSWorkspaces();
-  const currentUser = useAppSelector(state => state.auth.session?.user || null);
+  const { user: currentUser } = useSaaSAuth();
 
   if (!workspace) {
     return <SettingSkeleton />;

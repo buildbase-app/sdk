@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import { IBetaConfig } from '../../api';
-import { useAppSelector } from '../../contexts';
+import { useSaaSOs } from '../../providers/os/hooks';
 import { BetaForm } from './api';
 import { BetaFormData, BetaFormResponse } from './types';
 
 export const useBetaForm = () => {
-  const osState = useAppSelector(state => state.os);
+  const osState = useSaaSOs();
 
   const [config, setConfig] = useState<IBetaConfig | null>(null);
   const [isLoading, setIsLoading] = useState(true);

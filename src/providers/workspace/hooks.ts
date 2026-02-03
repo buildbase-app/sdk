@@ -3,6 +3,7 @@ import { IUser } from '../../api/types';
 import { useAppDispatch, useAppSelector, workspaceActions } from '../../contexts';
 import { handleError } from '../../lib/error-handler';
 import { eventEmitter } from '../events';
+import { useSaaSOs } from '../os/hooks';
 import { WorkspaceApi } from './api';
 import { IWorkspace, IWorkspaceUser } from './types';
 import { getWorkspaceUserRole, isWorkspaceOwner, workspaceStorage } from './utils';
@@ -114,7 +115,7 @@ import { getWorkspaceUserRole, isWorkspaceOwner, workspaceStorage } from './util
  */
 export const useSaaSWorkspaces = () => {
   const dispatch = useAppDispatch();
-  const os = useAppSelector(state => state.os);
+  const os = useSaaSOs();
   // Only recreate API if serverUrl, version, or orgId change (not on every os object reference change)
   const api = useMemo(() => new WorkspaceApi(os), [os.serverUrl, os.version, os.orgId]);
 
@@ -181,12 +182,7 @@ export const useSaaSWorkspaces = () => {
         }
       }
     },
-    [
-      dispatch,
-      os.auth?.callbacks?.onWorkspaceChange,
-      setCurrentWorkspaceWithStorage,
-      currentUser,
-    ]
+    [dispatch, os.auth?.callbacks?.onWorkspaceChange, setCurrentWorkspaceWithStorage, currentUser]
   );
 
   // Load saved workspace ID on initialization (e.g. Redux persist rehydration)
@@ -261,13 +257,7 @@ export const useSaaSWorkspaces = () => {
       dispatch.workspaces(workspaceActions.setLoading(false));
       fetchingRef.current = false;
     }
-  }, [
-    api,
-    workspace.loading,
-    workspace.currentWorkspace?._id,
-    dispatch,
-    switchToWorkspace,
-  ]);
+  }, [api, workspace.loading, workspace.currentWorkspace?._id, dispatch, switchToWorkspace]);
 
   // Background refresh (does not block UI, updates memo/data)
   const refreshWorkspaces = useCallback(async () => {
@@ -386,7 +376,12 @@ export const useSaaSWorkspaces = () => {
     if (updatedWorkspace !== workspace.currentWorkspace) {
       setCurrentWorkspaceWithStorage(updatedWorkspace);
     }
-  }, [workspace.workspaces, workspace.currentWorkspace, setCurrentWorkspaceWithStorage, switchToWorkspace]);
+  }, [
+    workspace.workspaces,
+    workspace.currentWorkspace,
+    setCurrentWorkspaceWithStorage,
+    switchToWorkspace,
+  ]);
 
   const getUsers = useCallback(
     async (workspaceId: string) => {
@@ -589,5 +584,6 @@ export const useSaaSWorkspaces = () => {
     updateUserProfile,
     deleteWorkspace,
     switching: workspace.switchingToId !== null,
+    switchingToId: workspace.switchingToId,
   };
 };

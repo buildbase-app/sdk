@@ -7,7 +7,9 @@ import type { WorkspaceSettingsSection } from './ui/SettingsDialog';
 
 // Lazy load SettingsDialog to reduce initial bundle size
 // This component is only rendered when settings are opened
-const WorkspaceSettingsDialog = lazy(() => import('./ui/SettingsDialog').then(m => ({ default: m.default })));
+const WorkspaceSettingsDialog = lazy(() =>
+  import('./ui/SettingsDialog').then(m => ({ default: m.default }))
+);
 
 /**
  * WorkspaceSettingsProvider

@@ -4,15 +4,15 @@ import {
   ICheckoutSessionRequest,
   ICheckoutSessionResponse,
   IInvoice,
-  IPublicPlansResponse,
   IPlanGroupResponse,
   IPlanGroupVersion,
   IPlanGroupVersionsResponse,
+  IPublicPlansResponse,
   ISubscriptionResponse,
   ISubscriptionUpdateResponse,
 } from '../../api/types';
-import { useAppSelector } from '../../contexts';
 import { handleError } from '../../lib/error-handler';
+import { useSaaSOs } from '../os/hooks';
 import { WorkspaceApi } from './api';
 
 /**
@@ -24,7 +24,7 @@ import { WorkspaceApi } from './api';
  * @returns { items, plans, loading, error, refetch }
  */
 export const usePublicPlans = (slug: string) => {
-  const os = useAppSelector(state => state.os);
+  const os = useSaaSOs();
   const api = useMemo(() => new WorkspaceApi(os), [os.serverUrl, os.version, os.orgId]);
   const isConfigReady = Boolean(os.serverUrl && os.version && os.orgId);
 
@@ -43,8 +43,7 @@ export const usePublicPlans = (slug: string) => {
       const result = await api.getPublicPlans(slug);
       setData(result);
     } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : 'Failed to fetch plans';
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch plans';
       setError(errorMessage);
       handleError(err, {
         component: 'usePublicPlans',
@@ -105,7 +104,7 @@ export const usePublicPlans = (slug: string) => {
  * ```
  */
 export const usePublicPlanGroupVersion = (groupVersionId: string | null | undefined) => {
-  const os = useAppSelector(state => state.os);
+  const os = useSaaSOs();
   const api = useMemo(() => new WorkspaceApi(os), [os.serverUrl, os.version, os.orgId]);
 
   const [planGroupVersion, setPlanGroupVersion] = useState<IPlanGroupVersion | null>(null);
@@ -187,7 +186,7 @@ export const usePublicPlanGroupVersion = (groupVersionId: string | null | undefi
  * ```
  */
 export const useSubscription = (workspaceId: string | null | undefined) => {
-  const os = useAppSelector(state => state.os);
+  const os = useSaaSOs();
   const api = useMemo(() => new WorkspaceApi(os), [os.serverUrl, os.version, os.orgId]);
 
   const [subscription, setSubscription] = useState<ISubscriptionResponse | null>(null);
@@ -280,7 +279,7 @@ export const usePlanGroup = (
   workspaceId: string | null | undefined,
   groupVersionId?: string | null
 ) => {
-  const os = useAppSelector(state => state.os);
+  const os = useSaaSOs();
   const api = useMemo(() => new WorkspaceApi(os), [os.serverUrl, os.version, os.orgId]);
 
   const [planGroup, setPlanGroup] = useState<IPlanGroupResponse | null>(null);
@@ -358,7 +357,7 @@ export const usePlanGroup = (
  * ```
  */
 export const usePlanGroupVersions = (workspaceId: string | null | undefined) => {
-  const os = useAppSelector(state => state.os);
+  const os = useSaaSOs();
   const api = useMemo(() => new WorkspaceApi(os), [os.serverUrl, os.version, os.orgId]);
 
   const [versions, setVersions] = useState<IPlanGroupVersionsResponse | null>(null);
@@ -377,7 +376,8 @@ export const usePlanGroupVersions = (workspaceId: string | null | undefined) => 
       const data = await api.getPlanGroupVersions(workspaceId);
       setVersions(data);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch plan group versions';
+      const errorMessage =
+        err instanceof Error ? err.message : 'Failed to fetch plan group versions';
       setError(errorMessage);
       handleError(err, {
         component: 'usePlanGroupVersions',
@@ -460,16 +460,14 @@ export const usePlanGroupVersions = (workspaceId: string | null | undefined) => 
  * ```
  */
 export const useCreateCheckoutSession = (workspaceId: string | null | undefined) => {
-  const os = useAppSelector(state => state.os);
+  const os = useSaaSOs();
   const api = useMemo(() => new WorkspaceApi(os), [os.serverUrl, os.version, os.orgId]);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const createCheckoutSession = useCallback(
-    async (
-      request: ICheckoutSessionRequest
-    ): Promise<ICheckoutSessionResponse> => {
+    async (request: ICheckoutSessionRequest): Promise<ICheckoutSessionResponse> => {
       if (!workspaceId) {
         throw new Error('Workspace ID is required');
       }
@@ -480,7 +478,8 @@ export const useCreateCheckoutSession = (workspaceId: string | null | undefined)
         const result = await api.createCheckoutSession(workspaceId, request);
         return result;
       } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Failed to create checkout session';
+        const errorMessage =
+          err instanceof Error ? err.message : 'Failed to create checkout session';
         setError(errorMessage);
         handleError(err, {
           component: 'useCreateCheckoutSession',
@@ -570,7 +569,7 @@ export const useCreateCheckoutSession = (workspaceId: string | null | undefined)
  * ```
  */
 export const useUpdateSubscription = (workspaceId: string | null | undefined) => {
-  const os = useAppSelector(state => state.os);
+  const os = useSaaSOs();
   const api = useMemo(() => new WorkspaceApi(os), [os.serverUrl, os.version, os.orgId]);
 
   const [loading, setLoading] = useState(false);
@@ -749,7 +748,7 @@ export const useInvoices = (
   limit: number = 10,
   startingAfter?: string
 ) => {
-  const os = useAppSelector(state => state.os);
+  const os = useSaaSOs();
   const api = useMemo(() => new WorkspaceApi(os), [os.serverUrl, os.version, os.orgId]);
 
   const [invoices, setInvoices] = useState<IInvoice[]>([]);
@@ -832,7 +831,7 @@ export const useInvoice = (
   workspaceId: string | null | undefined,
   invoiceId: string | null | undefined
 ) => {
-  const os = useAppSelector(state => state.os);
+  const os = useSaaSOs();
   const api = useMemo(() => new WorkspaceApi(os), [os.serverUrl, os.version, os.orgId]);
 
   const [invoice, setInvoice] = useState<IInvoice | null>(null);
@@ -911,7 +910,7 @@ export const useInvoice = (
  * ```
  */
 export const useCancelSubscription = (workspaceId: string | null | undefined) => {
-  const os = useAppSelector(state => state.os);
+  const os = useSaaSOs();
   const api = useMemo(() => new WorkspaceApi(os), [os.serverUrl, os.version, os.orgId]);
 
   const [loading, setLoading] = useState(false);
@@ -984,7 +983,7 @@ export const useCancelSubscription = (workspaceId: string | null | undefined) =>
  * ```
  */
 export const useResumeSubscription = (workspaceId: string | null | undefined) => {
-  const os = useAppSelector(state => state.os);
+  const os = useSaaSOs();
   const api = useMemo(() => new WorkspaceApi(os), [os.serverUrl, os.version, os.orgId]);
 
   const [loading, setLoading] = useState(false);

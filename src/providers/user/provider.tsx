@@ -2,12 +2,12 @@
 
 import React, { useCallback, useState } from 'react';
 import { IUser } from '../../api/types';
-import { useAppSelector } from '../../contexts';
-import { handleError } from '../../lib/error-handler';
 import { getErrorMessage, isAbortError, safeFetch } from '../../lib/api-utils';
+import { handleError } from '../../lib/error-handler';
 import { useAsyncEffect } from '../../lib/useAsyncEffect';
-import { getAuthFlags } from '../auth/types';
+import { useSaaSAuth } from '../auth/hooks';
 import { getAuthHeaders } from '../auth/utils';
+import { useSaaSOs } from '../os/hooks';
 
 export interface UserContextValue {
   attributes: Record<string, string | number | boolean>;
@@ -23,10 +23,9 @@ export interface UserContextValue {
 const UserContext = React.createContext<UserContextValue | undefined>(undefined);
 
 export const UserProvider: React.FC<{ children: React.ReactNode }> = React.memo(({ children }) => {
-  const os = useAppSelector(state => state.os);
-  const auth = useAppSelector(state => state.auth);
+  const os = useSaaSOs();
+  const { isAuthenticated } = useSaaSAuth();
   const { serverUrl, version } = os;
-  const isAuthenticated = getAuthFlags(auth.status).isAuthenticated;
 
   const [attributes, setAttributes] = useState<Record<string, string | number | boolean>>({});
   const [features, setFeatures] = useState<Record<string, boolean>>({});
@@ -41,10 +40,10 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = React.memo(
       }
 
       try {
-        const response = await safeFetch(
-          `${serverUrl}/api/${version}/public/users/attributes`,
-          { headers: getAuthHeaders(), signal }
-        );
+        const response = await safeFetch(`${serverUrl}/api/${version}/public/users/attributes`, {
+          headers: getAuthHeaders(),
+          signal,
+        });
 
         if (!response.ok) {
           throw new Error(await getErrorMessage(response, 'Failed to fetch user attributes'));
@@ -188,10 +187,10 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = React.memo(
       }
 
       try {
-        const response = await safeFetch(
-          `${serverUrl}/api/${version}/public/users/features`,
-          { headers: getAuthHeaders(), signal }
-        );
+        const response = await safeFetch(`${serverUrl}/api/${version}/public/users/features`, {
+          headers: getAuthHeaders(),
+          signal,
+        });
 
         if (!response.ok) {
           throw new Error(await getErrorMessage(response, 'Failed to fetch user features'));
