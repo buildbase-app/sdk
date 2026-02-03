@@ -2,12 +2,12 @@
 
 import React, { useCallback, useState } from 'react';
 import { IUser } from '../../api/types';
-import { getErrorMessage, isAbortError, safeFetch } from '../../lib/api-utils';
+import { isAbortError } from '../../lib/api-utils';
 import { handleError } from '../../lib/error-handler';
 import { useAsyncEffect } from '../../lib/useAsyncEffect';
 import { useSaaSAuth } from '../auth/hooks';
-import { getAuthHeaders } from '../auth/utils';
 import { useSaaSOs } from '../os/hooks';
+import { useUserApi } from './api';
 
 export interface UserContextValue {
   attributes: Record<string, string | number | boolean>;
@@ -24,6 +24,7 @@ const UserContext = React.createContext<UserContextValue | undefined>(undefined)
 
 export const UserProvider: React.FC<{ children: React.ReactNode }> = React.memo(({ children }) => {
   const os = useSaaSOs();
+  const api = useUserApi();
   const { isAuthenticated } = useSaaSAuth();
   const { serverUrl, version } = os;
 
@@ -38,37 +39,20 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = React.memo(
         setAttributes({});
         return;
       }
-
       try {
-        const response = await safeFetch(`${serverUrl}/api/${version}/public/users/attributes`, {
-          headers: getAuthHeaders(),
-          signal,
-        });
-
-        if (!response.ok) {
-          throw new Error(await getErrorMessage(response, 'Failed to fetch user attributes'));
-        }
-
-        const data = await response.json();
-
-        // API returns JSON object with key-value pairs
-        // Handle both direct object or wrapped in attributes property
-        if (data && typeof data === 'object' && !Array.isArray(data)) {
-          setAttributes(data);
-        } else {
-          setAttributes({});
-        }
+        const data = await api.getAttributes(signal);
+        setAttributes(data);
       } catch (err) {
         if (isAbortError(err)) return;
-        const error = err instanceof Error ? err : new Error('Failed to fetch user attributes');
-        setError(error);
+        const errObj = err instanceof Error ? err : new Error('Failed to fetch user attributes');
+        setError(errObj);
         handleError(err, {
           component: 'UserProvider',
           action: 'fetchAttributes',
         });
       }
     },
-    [serverUrl, version, isAuthenticated]
+    [api, serverUrl, version, isAuthenticated]
   );
 
   const refreshAttributes = useCallback(async () => {
@@ -91,44 +75,26 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = React.memo(
       if (!serverUrl || !version) {
         throw new Error('Server URL or version is missing');
       }
-
       setIsLoading(true);
       setError(null);
-
       try {
-        const response = await safeFetch(`${serverUrl}/api/${version}/public/users/attributes`, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            ...getAuthHeaders(),
-          },
-          body: JSON.stringify({ attributes: updates }),
-        });
-
-        if (!response.ok) {
-          throw new Error(await getErrorMessage(response, 'Failed to update user attributes'));
-        }
-
-        const updatedUser: IUser = await response.json();
-
-        // Refetch attributes after successful update to get latest values
+        const updatedUser = await api.updateAttributes(updates);
         await fetchAttributes();
-
         return updatedUser;
       } catch (err) {
-        const error = err instanceof Error ? err : new Error('Failed to update user attributes');
-        setError(error);
+        const errObj = err instanceof Error ? err : new Error('Failed to update user attributes');
+        setError(errObj);
         handleError(err, {
           component: 'UserProvider',
           action: 'updateAttributes',
           metadata: { updates },
         });
-        throw error;
+        throw err;
       } finally {
         setIsLoading(false);
       }
     },
-    [serverUrl, version, fetchAttributes]
+    [api, serverUrl, version, fetchAttributes]
   );
 
   const updateAttribute = useCallback(
@@ -136,47 +102,26 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = React.memo(
       if (!serverUrl || !version) {
         throw new Error('Server URL or version is missing');
       }
-
       setIsLoading(true);
       setError(null);
-
       try {
-        const response = await safeFetch(
-          `${serverUrl}/api/${version}/public/users/attributes/${attributeKey}`,
-          {
-            method: 'PATCH',
-            headers: {
-              'Content-Type': 'application/json',
-              ...getAuthHeaders(),
-            },
-            body: JSON.stringify({ value }),
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error(await getErrorMessage(response, 'Failed to update user attribute'));
-        }
-
-        const updatedUser: IUser = await response.json();
-
-        // Refetch attributes after successful update to get latest values
+        const updatedUser = await api.updateAttribute(attributeKey, value);
         await fetchAttributes();
-
         return updatedUser;
       } catch (err) {
-        const error = err instanceof Error ? err : new Error('Failed to update user attribute');
-        setError(error);
+        const errObj = err instanceof Error ? err : new Error('Failed to update user attribute');
+        setError(errObj);
         handleError(err, {
           component: 'UserProvider',
           action: 'updateAttribute',
           metadata: { attributeKey, value },
         });
-        throw error;
+        throw err;
       } finally {
         setIsLoading(false);
       }
     },
-    [serverUrl, version, fetchAttributes]
+    [api, serverUrl, version, fetchAttributes]
   );
 
   const fetchFeatures = useCallback(
@@ -185,36 +130,20 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = React.memo(
         setFeatures({});
         return;
       }
-
       try {
-        const response = await safeFetch(`${serverUrl}/api/${version}/public/users/features`, {
-          headers: getAuthHeaders(),
-          signal,
-        });
-
-        if (!response.ok) {
-          throw new Error(await getErrorMessage(response, 'Failed to fetch user features'));
-        }
-
-        const data = await response.json();
-
-        // API returns {  "feature-id": true, ... } object
-        if (typeof data === 'object') {
-          setFeatures(data);
-        } else {
-          setFeatures({});
-        }
+        const data = await api.getFeatures(signal);
+        setFeatures(data);
       } catch (err) {
         if (isAbortError(err)) return;
-        const error = err instanceof Error ? err : new Error('Failed to fetch user features');
-        setError(error);
+        const errObj = err instanceof Error ? err : new Error('Failed to fetch user features');
+        setError(errObj);
         handleError(err, {
           component: 'UserProvider',
           action: 'fetchFeatures',
         });
       }
     },
-    [serverUrl, version, isAuthenticated]
+    [api, serverUrl, version, isAuthenticated]
   );
 
   const refreshFeatures = useCallback(async () => {

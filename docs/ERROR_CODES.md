@@ -89,76 +89,8 @@ The SDK automatically maps HTTP status codes to error messages:
 | 502         | Bad Gateway                              |
 | 503         | Service unavailable                      |
 
-## Error Handling Examples
+## Error Handling
 
-### Catching Specific Error Codes
-
-```tsx
-import { SDKError, handleError } from '@buildbase/sdk';
-
-try {
-  await deleteWorkspace(workspaceId);
-} catch (error) {
-  if (error instanceof SDKError && error.code === 'WORKSPACE_OWNER_REQUIRED') {
-    alert('Only the workspace owner can delete this workspace');
-  } else {
-    handleError(error, { component: 'WorkspaceSettings', action: 'deleteWorkspace' });
-  }
-}
-```
-
-### Handling Network Errors
-
-```tsx
-import { isAbortError } from '@buildbase/sdk';
-
-try {
-  const response = await safeFetch('/api/users', { signal });
-} catch (error) {
-  if (isAbortError(error)) {
-    // Request was cancelled, ignore
-    return;
-  }
-  if (error.message.includes('Network error')) {
-    // Show offline message
-    showOfflineBanner();
-  }
-}
-```
-
-### Custom Error Handling
-
-```tsx
-import { errorHandler, createSDKError } from '@buildbase/sdk';
-
-// Configure error handler
-errorHandler.configure({
-  onError: (error, context) => {
-    // Send to error tracking service
-    errorTrackingService.captureException(error, {
-      tags: { component: context.component },
-      extra: context.metadata,
-    });
-  },
-});
-
-// Create custom error
-throw createSDKError('Custom error message', 'CUSTOM_ERROR_CODE', {
-  component: 'MyComponent',
-  action: 'myAction',
-});
-```
-
-## Error Context
-
-All SDK errors include context information:
-
-```typescript
-interface SDKErrorContext {
-  component?: string; // Component where error occurred
-  action?: string; // Action that triggered error
-  metadata?: Record<string, unknown>; // Additional metadata
-}
-```
-
-This context is automatically included in error logs and can be used for debugging and error tracking.
+- **Hook errors**: Use the `error` property from hooks (e.g. `useSaaSWorkspaces()`, `useUserAttributes()`) and show user feedback (toast, inline message).
+- **Async operations**: In `catch` blocks, check `error.message`; for aborted requests, ignore or treat as cancelled.
+- **React errors**: Wrap your app with an error boundary to catch render-time errors.

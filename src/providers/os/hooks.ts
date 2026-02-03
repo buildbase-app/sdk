@@ -1,10 +1,9 @@
 import { useCallback, useMemo, useRef } from 'react';
 import { osActions, useAppDispatch, useAppSelector } from '../../contexts';
-import { safeFetch } from '../../lib/api-utils';
 import { handleErrorUnlessAborted } from '../../lib/error-handler';
 import { useAsyncEffect } from '../../lib/useAsyncEffect';
-import { getAuthHeaders } from '../auth/utils';
 import type { ISettings } from '../types';
+import { SettingsApi } from './api';
 import { isOsConfigReady, type IOsState } from './types';
 
 /**
@@ -60,37 +59,26 @@ export function useSaaSSettings() {
   const { serverUrl, version, orgId, settings } = os;
   const fetchingSettingsRef = useRef(false);
 
+  const settingsApi = useMemo(
+    () => (isOsConfigReady(os) ? new SettingsApi({ serverUrl, version, orgId }) : null),
+    [serverUrl, version, orgId, os]
+  );
+
   const getSettings = useCallback(
-    async (signal?: AbortSignal) => {
-      // Prevent duplicate requests - check if settings already exist or request in progress
+    async (signal?: AbortSignal): Promise<ISettings | null> => {
       if (fetchingSettingsRef.current) {
         return settings || null;
       }
-
-      // If settings already loaded, return them immediately without making a request
       if (settings) {
         return settings;
       }
-
-      // Don't fetch if OS config is not ready
-      if (!isOsConfigReady(os)) {
+      if (!settingsApi) {
         return null;
       }
 
       fetchingSettingsRef.current = true;
       try {
-        const headers = getAuthHeaders();
-
-        const response = await safeFetch(`${serverUrl}/api/${version}/public/${orgId}/settings`, {
-          headers,
-          signal,
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch settings');
-        }
-
-        const data: ISettings = await response.json();
+        const data = await settingsApi.getSettings(signal);
         dispatch.os(osActions.setSettings(data));
         return data;
       } catch (err) {
@@ -104,7 +92,7 @@ export function useSaaSSettings() {
         fetchingSettingsRef.current = false;
       }
     },
-    [serverUrl, version, orgId, settings, dispatch]
+    [settingsApi, settings, dispatch]
   );
 
   // Automatically fetch settings when OS is loaded
