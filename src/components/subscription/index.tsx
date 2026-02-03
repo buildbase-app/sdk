@@ -1,6 +1,7 @@
 import { useSubscriptionContext } from '../../contexts/SubscriptionContext';
 
 interface IWhenSubscriptionProps {
+  /** Content to render when the condition is met (workspace has an active subscription). */
   children: React.ReactNode;
   /** Optional component/element to show while subscription is loading (e.g. <Skeleton />). */
   loadingComponent?: React.ReactNode;
@@ -17,6 +18,7 @@ interface IWhenSubscriptionProps {
  * @param props.children - Content to render when subscribed
  * @param props.loadingComponent - Optional component/element to show while loading
  * @param props.fallbackComponent - Optional component/element to show when not subscribed
+ * @returns ReactNode - children when subscribed, loadingComponent when loading, fallbackComponent when not subscribed, or null
  *
  * @example
  * ```tsx
@@ -53,6 +55,7 @@ export const WhenSubscription = (props: IWhenSubscriptionProps) => {
  * @param props.children - Content to render when not subscribed
  * @param props.loadingComponent - Optional component/element to show while loading
  * @param props.fallbackComponent - Optional component/element to show when already subscribed
+ * @returns ReactNode - children when not subscribed, loadingComponent when loading, fallbackComponent when subscribed, or null
  *
  * @example
  * ```tsx
@@ -83,6 +86,7 @@ export const WhenNoSubscription = (props: IWhenSubscriptionProps) => {
 interface IWhenSubscriptionToPlansProps {
   /** Plan slugs to match (e.g. ['pro', 'enterprise']). Matching is case-insensitive. */
   plans: string[];
+  /** Content to render when the workspace is on one of the given plans. */
   children: React.ReactNode;
   /** Optional component/element to show while subscription is loading (e.g. <Skeleton />). */
   loadingComponent?: React.ReactNode;
@@ -100,6 +104,7 @@ interface IWhenSubscriptionToPlansProps {
  * @param props.children - Content to render when on a matching plan
  * @param props.loadingComponent - Optional component/element to show while loading
  * @param props.fallbackComponent - Optional component/element to show when not on a matching plan
+ * @returns ReactNode - children when on a matching plan, loadingComponent when loading, fallbackComponent when not matching, or null
  *
  * @example
  * ```tsx

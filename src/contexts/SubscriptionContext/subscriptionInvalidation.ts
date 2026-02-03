@@ -8,7 +8,9 @@ let listeners: Listener[] = [];
 
 /**
  * Subscribe a refetch callback to be called when subscription is invalidated.
- * @returns Unsubscribe function.
+ *
+ * @param fn - Callback (e.g. refetch) to run when invalidateSubscription() is called
+ * @returns Unsubscribe function to remove the callback
  */
 export function subscribeSubscriptionInvalidate(fn: Listener): () => void {
   listeners.push(fn);
@@ -19,6 +21,7 @@ export function subscribeSubscriptionInvalidate(fn: Listener): () => void {
 
 /**
  * Notify all subscribers to refetch subscription (e.g. after update/cancel/resume).
+ * Called internally by useUpdateSubscription, useCancelSubscription, useResumeSubscription on success.
  */
 export function invalidateSubscription(): void {
   listeners.forEach(fn => fn());
