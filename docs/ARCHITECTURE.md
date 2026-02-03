@@ -19,7 +19,8 @@ SaaSOSProvider (root)
   ├── PortalProvider (portal rendering)
   ├── ContextConfigProvider (OS configuration)
   ├── UserProvider (user attributes/features)
-  └── WorkspaceSettingsProvider (workspace settings UI)
+  ├── WorkspaceSettingsProvider (workspace settings UI)
+  └── SubscriptionContextProvider (subscription for current workspace; powers subscription gates)
 ```
 
 **Design Decision**: Nested providers allow for:
@@ -55,6 +56,12 @@ The SDK uses multiple React contexts for state management:
 - **Purpose**: Combines all contexts into a single provider
 - **Design**: Reduces provider nesting and provides unified state access.
 
+#### SubscriptionContext
+
+- **Purpose**: Provides subscription data for the current workspace to subscription gate components
+- **State**: `{ response: ISubscriptionResponse | null, loading: boolean, refetch: () => Promise<void> }`
+- **Design**: Read-only; data comes from `useSubscription(currentWorkspace?._id)`. Refetches when workspace changes or when subscription is invalidated (e.g. after plan update, cancel, resume). Internal invalidation notifier allows mutation hooks to trigger a refetch so gates stay in sync.
+
 **Design Decision**: Multiple contexts instead of single context:
 
 - Better performance (components only re-render when their context changes)
@@ -73,11 +80,11 @@ The SDK uses a **central base class + domain APIs** pattern. All domain API clas
 
 #### Domain APIs (extend BaseApi)
 
-| Class          | Location                              | Purpose                                      |
-|----------------|----------------------------------------|----------------------------------------------|
-| **UserApi**    | `src/providers/user/api.ts`           | User attributes, user features               |
-| **WorkspaceApi** | `src/providers/workspace/api.ts`    | Workspaces, subscription, invoices, users    |
-| **SettingsApi**  | `src/providers/os/api.ts`            | Organization settings                        |
+| Class            | Location                         | Purpose                                   |
+| ---------------- | -------------------------------- | ----------------------------------------- |
+| **UserApi**      | `src/providers/user/api.ts`      | User attributes, user features            |
+| **WorkspaceApi** | `src/providers/workspace/api.ts` | Workspaces, subscription, invoices, users |
+| **SettingsApi**  | `src/providers/os/api.ts`        | Organization settings                     |
 
 All are exported from the package; consumers can use hooks (e.g. `useUserApi`, `useWorkspaceApi`) or instantiate classes with OS config.
 
@@ -110,6 +117,10 @@ The SDK exposes hooks for consuming context and performing operations. **Prefer 
 - `useSaaSWorkspaces()`: Main workspace management hook (workspaces, currentWorkspace, loading, switching, switchingToId, CRUD and switch actions)
 - Subscription hooks: `useSubscription`, `usePlanGroup`, etc.
 
+#### Subscription Context Hook
+
+- `useSubscriptionContext()`: Returns subscription for current workspace (response, loading, refetch). Used by subscription gate components; available to app code when subscription data or manual refetch is needed. Must be used within SubscriptionContextProvider.
+
 #### User Hooks
 
 - `useUserAttributes()`: User attributes access
@@ -141,6 +152,14 @@ The SDK provides conditional rendering components:
 
 - `WhenUserFeatureEnabled/Disabled`: Renders based on user feature flags
 - `WhenWorkspaceFeatureEnabled/Disabled`: Renders based on workspace feature flags
+
+#### Subscription Gate Components
+
+- `WhenSubscription`: Renders when current workspace has an active subscription (any plan)
+- `WhenNoSubscription`: Renders when current workspace has no subscription
+- `WhenSubscriptionToPlans`: Renders when current workspace is subscribed to one of the given plan slugs
+
+All subscription gates consume `useSubscriptionContext()` and must be used within `SubscriptionContextProvider` (included in SaaSOSProvider by default).
 
 **Design Decision**: Conditional components:
 

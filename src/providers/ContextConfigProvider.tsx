@@ -5,8 +5,8 @@ import { osActions, useAppDispatch } from '../contexts';
 import { handleError } from '../lib/error-handler';
 import { useAsyncEffect } from '../lib/useAsyncEffect';
 import type { IAuthConfig } from './auth/types';
-import { useSaaSOs } from './os/hooks';
 import { SettingsApi } from './os/api';
+import { useSaaSOs } from './os/hooks';
 import { isOsConfigReady, type IOsState } from './os/types';
 
 interface ContextConfigProviderProps {

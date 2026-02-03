@@ -10,6 +10,7 @@ A React SDK for [BuildBase](https://www.buildbase.app/) that provides essential 
 - [Authentication](#-authentication)
 - [Role-Based Access Control](#-role-based-access-control)
 - [Feature Flags](#️-feature-flags)
+- [Subscription Gates](#-subscription-gates)
 - [User Management](#-user-management)
 - [Workspace Management](#-complete-workspace-management)
 - [Public Pricing (No Login)](#-public-pricing-no-login)
@@ -30,6 +31,7 @@ A React SDK for [BuildBase](https://www.buildbase.app/) that provides essential 
 - **🏢 Workspace Management** - Multi-workspace support with switching capabilities
 - **👥 Role-Based Access Control** - User roles and workspace-specific permissions
 - **🎯 Feature Flags** - Workspace-level and user-level feature toggles
+- **📋 Subscription Gates** - Show or hide UI based on current workspace subscription (plan)
 - **👤 User Management** - User attributes and feature flags management
 - **📝 Beta Form** - Pre-built signup/waitlist form component
 - **📡 Event System** - Subscribe to user and workspace events
@@ -316,6 +318,103 @@ function FeatureExample() {
 
 Use the `useUserFeatures` hook to check feature flags programmatically:
 
+## 📋 Subscription Gates
+
+Control UI visibility based on the current workspace’s subscription. Subscription data is loaded once per workspace and refetched when the workspace changes or when the subscription is updated (e.g. upgrade, cancel, resume).
+
+**SubscriptionContextProvider** is included in **SaaSOSProvider** by default, so subscription gates work without extra setup.
+
+### Subscription Gate Components
+
+```tsx
+import { WhenSubscription, WhenNoSubscription, WhenSubscriptionToPlans } from '@buildbase/sdk';
+
+function BillingExample() {
+  return (
+    <div>
+      {/* Show when workspace has any active subscription */}
+      <WhenSubscription>
+        <BillingSettings />
+      </WhenSubscription>
+
+      {/* Show when workspace has no subscription */}
+      <WhenNoSubscription>
+        <UpgradePrompt />
+      </WhenNoSubscription>
+
+      {/* Show only when subscribed to specific plans (by slug, case-insensitive) */}
+      <WhenSubscriptionToPlans plans={['pro', 'enterprise']}>
+        <AdvancedAnalytics />
+      </WhenSubscriptionToPlans>
+    </div>
+  );
+}
+```
+
+| Component                 | Renders when                                                         |
+| ------------------------- | -------------------------------------------------------------------- |
+| `WhenSubscription`        | Current workspace has an active subscription (any plan); not loading |
+| `WhenNoSubscription`      | Current workspace has no subscription (or no workspace); not loading |
+| `WhenSubscriptionToPlans` | Current workspace is subscribed to one of the given plan slugs       |
+
+All gates must be used inside **SubscriptionContextProvider** (included in SaaSOSProvider). By default they return `null` while loading or when the condition is not met. You can pass optional **loadingComponent** (component/element to show while loading) and **fallbackComponent** (component/element to show when condition is not met):
+
+```tsx
+<WhenSubscription
+  loadingComponent={<Skeleton className="h-20" />}
+  fallbackComponent={<UpgradePrompt />}
+>
+  <BillingSettings />
+</WhenSubscription>
+
+<WhenSubscriptionToPlans
+  plans={['pro', 'enterprise']}
+  loadingComponent={<Spinner />}
+  fallbackComponent={<p>Upgrade to Pro or Enterprise to access this feature.</p>}
+>
+  <AdvancedAnalytics />
+</WhenSubscriptionToPlans>
+```
+
+### useSubscriptionContext
+
+Use the hook when you need subscription data or a manual refetch (e.g. after returning from Stripe checkout):
+
+```tsx
+import { useSubscriptionContext } from '@buildbase/sdk';
+
+function SubscriptionStatus() {
+  const { response, loading, refetch } = useSubscriptionContext();
+
+  if (loading) return <Spinner />;
+  if (!response?.subscription) return <p>No active subscription</p>;
+
+  const plan = response.plan ?? response.subscription?.plan;
+  return (
+    <div>
+      <p>Plan: {plan?.name ?? plan?.slug}</p>
+      <button onClick={() => refetch()}>Refresh</button>
+    </div>
+  );
+}
+```
+
+| Property   | Type                            | Description                                            |
+| ---------- | ------------------------------- | ------------------------------------------------------ |
+| `response` | `ISubscriptionResponse \| null` | Current subscription data for the current workspace    |
+| `loading`  | `boolean`                       | True while subscription is being fetched               |
+| `refetch`  | `() => Promise<void>`           | Manually refetch subscription (e.g. after plan change) |
+
+**When subscription refetches**
+
+- When the current workspace changes (automatic).
+- When subscription is updated via SDK (e.g. `useUpdateSubscription`, cancel, resume) — refetch is triggered automatically.
+- When you call `refetch()` (e.g. after redirect from checkout).
+
+### Feature Flags Hook
+
+Use the `useUserFeatures` hook to check feature flags programmatically:
+
 ```tsx
 import { useUserFeatures } from '@buildbase/sdk';
 
@@ -567,13 +666,13 @@ function SettingsExample() {
 
 All SDK API clients extend a shared base class and are exported from the package:
 
-| Export        | Purpose                                      |
-|---------------|----------------------------------------------|
-| `BaseApi`     | Abstract base (URL, auth, `fetchJson`/`fetchResponse`) – extend for custom APIs |
-| `IBaseApiConfig` | Config type: `serverUrl`, `version`, optional `orgId` |
-| `UserApi`     | User attributes and features                 |
-| `WorkspaceApi`| Workspaces, subscription, invoices, users   |
-| `SettingsApi` | Organization settings                        |
+| Export           | Purpose                                                                         |
+| ---------------- | ------------------------------------------------------------------------------- |
+| `BaseApi`        | Abstract base (URL, auth, `fetchJson`/`fetchResponse`) – extend for custom APIs |
+| `IBaseApiConfig` | Config type: `serverUrl`, `version`, optional `orgId`                           |
+| `UserApi`        | User attributes and features                                                    |
+| `WorkspaceApi`   | Workspaces, subscription, invoices, users                                       |
+| `SettingsApi`    | Organization settings                                                           |
 
 Use the hooks (`useUserApi`, `useWorkspaceApi`, etc.) for a ready-made instance with OS config, or instantiate with your own config:
 
@@ -585,22 +684,27 @@ const api = useWorkspaceApi(); // or useUserApi(), etc.
 
 // Or instantiate with config
 const os = useSaaSOs();
-const workspaceApi = new WorkspaceApi({ serverUrl: os.serverUrl, version: os.version, orgId: os.orgId });
+const workspaceApi = new WorkspaceApi({
+  serverUrl: os.serverUrl,
+  version: os.version,
+  orgId: os.orgId,
+});
 ```
 
 ### Hooks
 
 Prefer these SDK hooks for state and operations instead of `useAppSelector`:
 
-| Hook                  | Purpose                                                                                    |
-| --------------------- | ------------------------------------------------------------------------------------------ |
-| `useSaaSAuth()`       | Auth state (user, session, status), signIn, signOut, openWorkspaceSettings                 |
-| `useSaaSWorkspaces()` | Workspaces, currentWorkspace, loading, switching/switchingToId, CRUD and switch actions    |
-| `useSaaSOs()`         | OS config (serverUrl, version, orgId, auth, settings) when you need the full config object |
-| `useSaaSSettings()`   | Organization settings and getSettings (prefer this when you only need settings)            |
-| `useUserAttributes()` | User attributes and update/refresh                                                         |
-| `useUserFeatures()`   | User feature flags                                                                         |
-| Subscription hooks    | `usePublicPlans`, `useSubscription`, `usePlanGroup`, etc.                                  |
+| Hook                       | Purpose                                                                                                 |
+| -------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `useSaaSAuth()`            | Auth state (user, session, status), signIn, signOut, openWorkspaceSettings                              |
+| `useSaaSWorkspaces()`      | Workspaces, currentWorkspace, loading, switching/switchingToId, CRUD and switch actions                 |
+| `useSaaSOs()`              | OS config (serverUrl, version, orgId, auth, settings) when you need the full config object              |
+| `useSaaSSettings()`        | Organization settings and getSettings (prefer this when you only need settings)                         |
+| `useUserAttributes()`      | User attributes and update/refresh                                                                      |
+| `useUserFeatures()`        | User feature flags                                                                                      |
+| `useSubscriptionContext()` | Subscription for current workspace (response, loading, refetch); use inside SubscriptionContextProvider |
+| Subscription hooks         | `usePublicPlans`, `useSubscription`, `usePlanGroup`, etc.                                               |
 
 Using hooks keeps your code stable if internal state shape changes and avoids direct Redux/context coupling.
 
@@ -765,6 +869,32 @@ function Dashboard() {
   );
 }
 ```
+
+### Pattern 4b: Subscription-Gated UI
+
+```tsx
+import { WhenSubscription, WhenNoSubscription, WhenSubscriptionToPlans } from '@buildbase/sdk';
+
+function BillingPage() {
+  return (
+    <div>
+      <WhenNoSubscription>
+        <UpgradePrompt />
+      </WhenNoSubscription>
+
+      <WhenSubscription>
+        <BillingSettings />
+      </WhenSubscription>
+
+      <WhenSubscriptionToPlans plans={['pro', 'enterprise']}>
+        <AdvancedBillingFeatures />
+      </WhenSubscriptionToPlans>
+    </div>
+  );
+}
+```
+
+SubscriptionContextProvider is included in SaaSOSProvider by default, so no extra wrapper is needed.
 
 ### Pattern 5: Handling Workspace Changes
 
