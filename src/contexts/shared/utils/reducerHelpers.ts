@@ -5,10 +5,10 @@
 /**
  * Creates a simple reducer case that updates a single field
  */
-export function updateField<State extends Record<string, any>>(
+export function updateField<State, K extends keyof State>(
   state: State,
-  field: keyof State,
-  value: any
+  field: K,
+  value: State[K]
 ): State {
   return {
     ...state,
@@ -19,10 +19,7 @@ export function updateField<State extends Record<string, any>>(
 /**
  * Creates a reducer case that updates multiple fields
  */
-export function updateFields<State extends Record<string, any>>(
-  state: State,
-  updates: Partial<State>
-): State {
+export function updateFields<State extends object>(state: State, updates: Partial<State>): State {
   return {
     ...state,
     ...updates,

@@ -22,6 +22,7 @@ A React SDK for [BuildBase](https://www.buildbase.app/) that provides essential 
 - [Troubleshooting](#-troubleshooting)
 - [API Reference](#-api-reference)
 - [Best Practices](#-best-practices)
+- [Documentation](#further-documentation)
 
 ## 🚀 Features
 
@@ -540,41 +541,7 @@ import { SaaSOSProvider, eventEmitter } from '@buildbase/sdk';
 
 ## 🛡️ Error Handling
 
-The SDK provides comprehensive error handling:
-
-```tsx
-import { ErrorBoundary, SDKError, handleError, errorHandler } from '@buildbase/sdk';
-
-// Wrap your app with ErrorBoundary
-function App() {
-  return (
-    <ErrorBoundary>
-      <YourApp />
-    </ErrorBoundary>
-  );
-}
-
-// Configure error handler
-errorHandler.configure({
-  enableConsoleLogging: true,
-  showUserNotifications: false,
-  onError: (error, context) => {
-    // Custom error handling
-    console.error('SDK Error:', error, context);
-  },
-});
-
-// Use handleError in your code
-try {
-  // Some operation
-} catch (error) {
-  handleError(error, {
-    component: 'MyComponent',
-    action: 'handleSubmit',
-    metadata: { userId: '123' },
-  });
-}
-```
+The SDK handles errors internally: API failures, auth errors, and component errors are logged and surfaced through hook states (e.g. `error` from `useSaaSWorkspaces`) and callbacks. Wrap your app in an error boundary of your choice to catch React errors. For failed operations, check the `error` property on hooks and handle it in your UI (e.g. toast or inline message).
 
 ## ⚙️ Settings
 
@@ -595,6 +562,31 @@ function SettingsExample() {
 ```
 
 ## 📚 API Reference
+
+### Central APIs
+
+All SDK API clients extend a shared base class and are exported from the package:
+
+| Export        | Purpose                                      |
+|---------------|----------------------------------------------|
+| `BaseApi`     | Abstract base (URL, auth, `fetchJson`/`fetchResponse`) – extend for custom APIs |
+| `IBaseApiConfig` | Config type: `serverUrl`, `version`, optional `orgId` |
+| `UserApi`     | User attributes and features                 |
+| `WorkspaceApi`| Workspaces, subscription, invoices, users   |
+| `SettingsApi` | Organization settings                        |
+
+Use the hooks (`useUserApi`, `useWorkspaceApi`, etc.) for a ready-made instance with OS config, or instantiate with your own config:
+
+```tsx
+import { UserApi, WorkspaceApi, SettingsApi, useSaaSOs } from '@buildbase/sdk';
+
+// Via hook (uses OS config from context)
+const api = useWorkspaceApi(); // or useUserApi(), etc.
+
+// Or instantiate with config
+const os = useSaaSOs();
+const workspaceApi = new WorkspaceApi({ serverUrl: os.serverUrl, version: os.version, orgId: os.orgId });
+```
 
 ### Hooks
 
@@ -620,6 +612,11 @@ Using hooks keeps your code stable if internal state shape changes and avoids di
 ### Types
 
 All TypeScript types are exported for type safety. See the [TypeScript definitions](./dist/index.d.ts) for complete type information.
+
+### Further documentation
+
+- [Architecture](docs/ARCHITECTURE.md) – Layers, APIs (BaseApi, UserApi, WorkspaceApi, SettingsApi), state, auth flow
+- [Error codes](docs/ERROR_CODES.md) – SDK error codes and HTTP status mappings
 
 ## ⚙️ Configuration Reference
 
@@ -795,37 +792,9 @@ function App() {
 
 For token generation or prep before switching, configure `onWorkspaceChange` in auth callbacks (see Quick Start)—it receives `{ workspace, user, role }`.
 
-### Pattern 6: Error Boundary with Custom Fallback
+### Pattern 6: Error Boundary
 
-```tsx
-import { ErrorBoundary, SDKError } from '@buildbase/sdk';
-
-function CustomErrorFallback({ error, resetError }) {
-  if (error instanceof SDKError) {
-    return (
-      <div>
-        <h2>SDK Error: {error.message}</h2>
-        <button onClick={resetError}>Try Again</button>
-      </div>
-    );
-  }
-
-  return (
-    <div>
-      <h2>Something went wrong</h2>
-      <button onClick={resetError}>Reload</button>
-    </div>
-  );
-}
-
-function App() {
-  return (
-    <ErrorBoundary fallback={CustomErrorFallback}>
-      <YourApp />
-    </ErrorBoundary>
-  );
-}
-```
+Wrap your app (or a subtree) with an error boundary to catch React errors and show a fallback. Use your framework’s boundary (e.g. React’s `ErrorBoundary` or Next.js error UI). In catch blocks for async operations, show user feedback (e.g. toast or inline message) using the `error` state from hooks.
 
 ## 🔧 Troubleshooting
 
@@ -1001,29 +970,9 @@ function App() {
 
 ### 2. Error Handling
 
-✅ **Do**: Wrap your app with `ErrorBoundary` and configure error handler.
+✅ **Do**: Wrap your app with an error boundary (your framework’s or React’s) to catch render errors.
 
-```tsx
-// ✅ Good
-<ErrorBoundary>
-  <SaaSOSProvider {...config}>
-    <App />
-  </SaaSOSProvider>
-</ErrorBoundary>
-```
-
-✅ **Do**: Use `handleError` for custom error handling.
-
-```tsx
-try {
-  await someOperation();
-} catch (error) {
-  handleError(error, {
-    component: 'MyComponent',
-    action: 'operation',
-  });
-}
-```
+✅ **Do**: Handle async failures using the `error` from hooks and show user feedback (e.g. toast or inline message).
 
 ### 3. State Access: Prefer SDK Hooks Over useAppSelector
 

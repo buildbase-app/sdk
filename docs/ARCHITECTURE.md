@@ -63,30 +63,34 @@ The SDK uses multiple React contexts for state management:
 
 ### 3. API Layer
 
-The SDK uses a centralized API client pattern:
+The SDK uses a **central base class + domain APIs** pattern. All domain API classes extend `BaseApi` for shared URL building, auth headers, and request/response handling.
 
-#### WorkspaceApi
+#### BaseApi (`src/lib/api-base.ts`)
 
-- **Purpose**: Handles all workspace-related API calls
-- **Location**: `src/providers/workspace/api.ts`
-- **Design**: Class-based API client that encapsulates API logic.
+- **Purpose**: Abstract base for all SDK API clients
+- **Provides**: `baseUrl`, `getAuthHeaders()`, `url(path)`, `fetchJson<T>()`, `fetchResponse()`
+- **Config**: `IBaseApiConfig` (serverUrl, version, optional orgId)
+
+#### Domain APIs (extend BaseApi)
+
+| Class          | Location                              | Purpose                                      |
+|----------------|----------------------------------------|----------------------------------------------|
+| **UserApi**    | `src/providers/user/api.ts`           | User attributes, user features               |
+| **WorkspaceApi** | `src/providers/workspace/api.ts`    | Workspaces, subscription, invoices, users    |
+| **SettingsApi**  | `src/providers/os/api.ts`            | Organization settings                        |
+
+All are exported from the package; consumers can use hooks (e.g. `useUserApi`, `useWorkspaceApi`) or instantiate classes with OS config.
 
 #### API Utilities
 
-- **Purpose**: Shared utilities for API calls
 - **Location**: `src/lib/api-utils.ts`
-- **Functions**:
-  - `safeFetch`: Network error handling
-  - `handleApiResponse`: Response parsing and error handling
-  - `parseJsonResponse`: JSON parsing with error handling
-  - `fetchWithTimeout`: Timeout support
+- **Functions**: `safeFetch`, `handleApiResponse`, `getErrorMessage`, `isAbortError`, `fetchWithTimeout`
 
-**Design Decision**: Centralized API utilities:
+**Design Decision**: Central base class + domain APIs:
 
-- Consistent error handling across all API calls
-- Automatic request/response logging in dev mode
-- AbortController support for request cancellation
-- Sensitive data redaction in logs
+- Single place for URL building, auth, and fetch behavior
+- Easy to add new domains (extend BaseApi)
+- Consistent error handling and logging
 
 ### 4. Hook Layer
 
@@ -218,6 +222,12 @@ const flags = getAuthFlags(auth.status);
 - Accessible to SDK on mount
 - Simple implementation
 
+### Workspace Switching
+
+- **Entry point**: `switchToWorkspace(id)` calls auth callback `onWorkspaceChange({ workspace, user, role })`, then updates current workspace and storage.
+- **State**: `switchingToId` (ID being switched to) and derived `switching`; used for loaders and to avoid overwriting with stale results.
+- **Concurrency**: A version ref ensures only the latest switch completes; rejections from `onWorkspaceChange` are caught so they do not surface as unhandled.
+
 ## Error Handling
 
 ### Error Handler
@@ -344,19 +354,10 @@ The SDK includes an event emitter for workspace/user events:
 
 ## Future Considerations
 
-### Potential Improvements
-
-1. **Request Caching**: Cache GET requests for short duration
-2. **Request Interceptors**: Allow consumers to intercept/modify requests
-3. **Offline Support**: Cache responses for offline access
-4. **Optimistic Updates**: Update UI before API confirms
-5. **Batch Requests**: Combine multiple API calls
-
-### Migration Path
-
-- Backward compatible API
-- Deprecation warnings before breaking changes
-- Semantic versioning
+- **Request Caching**: Optional cache for GET requests
+- **Request Interceptors**: Optional request/response interceptors
+- **Offline Support**: Optional response caching
+- **Migration**: Backward compatible API; deprecation warnings before breaking changes; semantic versioning
 
 ## Summary
 

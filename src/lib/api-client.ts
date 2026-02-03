@@ -32,7 +32,10 @@ export class ApiClient {
       config => {
         // Add x-session-id header if available
         const sessionId = getStoredSessionId();
-        if (sessionId) config.headers['x-session-id'] = sessionId;
+        if (sessionId) {
+          config.headers = config.headers ?? {};
+          config.headers['x-session-id'] = sessionId;
+        }
         return config;
       },
       error => {

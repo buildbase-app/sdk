@@ -1,6 +1,8 @@
 import { useContext } from 'react';
 import { UserContext } from './provider';
 
+export { useUserApi } from './api';
+
 /**
  * Hook to access user attributes from the UserProvider.
  * Must be used within a UserProvider component.

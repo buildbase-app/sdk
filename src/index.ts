@@ -68,6 +68,10 @@ export type {
   WorkspaceUserRoleChangedEventData,
 } from './providers/events/types';
 
+// Central SDK APIs (all extend BaseApi)
+export { BaseApi, SettingsApi, UserApi, WorkspaceApi } from './api';
+export type { IBaseApiConfig } from './api';
+
 // Export subscription types
 export type {
   BillingInterval,

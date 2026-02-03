@@ -7,9 +7,9 @@ import { handleApiResponse, safeFetch } from '../../lib/api-utils';
 import { handleError, handleErrorUnlessAborted } from '../../lib/error-handler';
 import { useAsyncEffect } from '../../lib/useAsyncEffect';
 import { useSaaSOs } from '../os/hooks';
+import { isOsConfigReady } from '../os/types';
 import { useAuthState } from './hooks';
 import { getAuthFlags, IAuthCallbacks } from './types';
-import { isOsConfigReady } from '../os/types';
 import {
   createSession,
   getSessionId,
