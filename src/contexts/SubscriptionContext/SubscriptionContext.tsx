@@ -15,6 +15,12 @@ const CONTEXT_ERROR =
 /**
  * Provides subscription data for the current workspace to subscription gate components.
  * Fetches when workspace changes; refetches when subscription is invalidated (e.g. after plan change).
+ * Must wrap (or be ancestor of) any component that uses WhenSubscription, WhenNoSubscription,
+ * WhenSubscriptionToPlans, or useSubscriptionContext. Included in SaaSOSProvider by default.
+ *
+ * @param props - Component props
+ * @param props.children - React tree that may use subscription gates or useSubscriptionContext
+ * @returns Provider element that supplies subscription context to descendants
  */
 export const SubscriptionContextProvider: React.FC<{ children: ReactNode }> = React.memo(
   function SubscriptionContextProvider({ children }) {
@@ -36,6 +42,12 @@ export const SubscriptionContextProvider: React.FC<{ children: ReactNode }> = Re
 
 SubscriptionContextProvider.displayName = 'SubscriptionContextProvider';
 
+/**
+ * Returns subscription data for the current workspace. Must be used within SubscriptionContextProvider.
+ *
+ * @returns SubscriptionContextValue - { response, loading, refetch }
+ * @throws Error if used outside SubscriptionContextProvider
+ */
 export function useSubscriptionContext(): SubscriptionContextValue {
   const value = useContext(SubscriptionContext);
   if (value === null) throw new Error(CONTEXT_ERROR);
