@@ -1,19 +1,19 @@
+import { Loader2 } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { Switch } from '../../../components/ui/switch';
-import { useAppSelector } from '../../../contexts';
 import { handleError } from '../../../lib/error-handler';
+import { useSaaSAuth } from '../../auth/hooks';
 import { useSaaSWorkspaces } from '../hooks';
 import { IWorkspace } from '../types';
 import { isWorkspaceOwner } from '../utils';
 import SettingSkeleton from './Skeleton';
-import { Loader2 } from 'lucide-react';
 
 const WorkspaceSettingsFeatures: React.FC<{ workspaceId: string }> = ({ workspaceId }) => {
   const [updatingFeatures, setUpdatingFeatures] = useState<Record<string, boolean | null>>({});
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const { allFeatures, updateFeature, getWorkspace } = useSaaSWorkspaces();
   const [workspace, setWorkspace] = useState<IWorkspace | null>(null);
-  const currentUser = useAppSelector(state => state.auth.session?.user || null);
+  const { user: currentUser } = useSaaSAuth();
 
   useEffect(() => {
     getWorkspace(workspaceId).then(setWorkspace);
@@ -68,10 +68,13 @@ const WorkspaceSettingsFeatures: React.FC<{ workspaceId: string }> = ({ workspac
           <div className="flex flex-col gap-y-3.5">
             {allFeatures.map(feature => {
               const state = workspace?.features?.[feature.slug];
-              const isUpdating = updatingFeatures[feature.slug] !== null && updatingFeatures[feature.slug] !== undefined;
+              const isUpdating =
+                updatingFeatures[feature.slug] !== null &&
+                updatingFeatures[feature.slug] !== undefined;
               const targetValue = updatingFeatures[feature.slug];
-              const actionText = targetValue === true ? 'Enabling' : targetValue === false ? 'Disabling' : '';
-              
+              const actionText =
+                targetValue === true ? 'Enabling' : targetValue === false ? 'Disabling' : '';
+
               return (
                 <div key={feature._id} className="flex items-center gap-x-2 justify-between w-full">
                   <div className="flex gap-x-2 flex-col">

@@ -6,8 +6,8 @@ import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
 import { Label } from '../../../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '../../../components/ui/select';
-import { useAppSelector } from '../../../contexts';
 import { handleError } from '../../../lib/error-handler';
+import { useSaaSAuth } from '../../auth/hooks';
 import { useSaaSSettings } from '../../os/hooks';
 import { useSaaSWorkspaces } from '../hooks';
 import { IWorkspace, IWorkspaceUser } from '../types';
@@ -15,7 +15,7 @@ import { isWorkspaceOwner } from '../utils';
 import SettingSkeleton from './Skeleton';
 
 const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace }) => {
-  const currentUser = useAppSelector(state => state.auth.session?.user || null);
+  const { user: currentUser } = useSaaSAuth();
   const [refreshCounter, setRefreshCounter] = useState(0);
   const [loading, setLoading] = useState(false);
   const [workspaceUsers, setWorkspaceUsers] = useState<IWorkspaceUser[]>([]);
@@ -149,12 +149,7 @@ const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace
           </div>
         </div>
         <div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={refresh}
-            progress={loading}
-          >
+          <Button variant="ghost" size="sm" onClick={refresh} progress={loading}>
             {loading ? 'Refreshing...' : 'Refresh'}
           </Button>
         </div>

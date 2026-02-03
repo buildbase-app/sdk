@@ -7,8 +7,8 @@ import {
   UsersIcon,
 } from 'lucide-react';
 import React from 'react';
-import { useAppSelector } from '../../../contexts';
 import { cn } from '../../../lib/utils';
+import { useSaaSAuth } from '../../auth/hooks';
 import { IWorkspace } from '../types';
 import type { WorkspaceSettingsSection } from './SettingsDialog';
 
@@ -19,7 +19,7 @@ interface Props {
 }
 
 const Sidebar: React.FC<Props> = ({ workspace, section, setSection }) => {
-  const currentUser = useAppSelector(state => state.auth.session?.user || null);
+  const { user: currentUser } = useSaaSAuth();
 
   const createdBy =
     typeof workspace.createdBy === 'object' && workspace.createdBy !== null

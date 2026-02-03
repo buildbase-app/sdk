@@ -2,11 +2,12 @@ import { useCallback, useMemo } from 'react';
 import { authActions, useAppDispatch, useAppSelector } from '../../contexts';
 import { defaultApiClient } from '../../lib/api-client';
 import { handleError } from '../../lib/error-handler';
+import { useSaaSOs } from '../os/hooks';
 import { useSaaSWorkspaces } from '../workspace/hooks';
 import { workspaceSettingsManager } from '../workspace/settings-manager';
+import { WorkspaceSettingsSection } from '../workspace/ui/SettingsDialog';
 import { getAuthFlags } from './types';
 import { removeSession } from './utils';
-import { WorkspaceSettingsSection } from '../workspace/ui/SettingsDialog';
 
 /**
  * Main authentication hook for the SDK.
@@ -69,10 +70,16 @@ import { WorkspaceSettingsSection } from '../workspace/ui/SettingsDialog';
  * }
  * ```
  */
+
+/** Internal: select auth slice. Used by AuthProviderWrapper and useSaaSAuth. */
+export function useAuthState() {
+  return useAppSelector(state => state.auth);
+}
+
 export function useSaaSAuth() {
   const dispatch = useAppDispatch();
-  const auth = useAppSelector(state => state.auth);
-  const os = useAppSelector(state => state.os);
+  const auth = useAuthState();
+  const os = useSaaSOs();
   const { serverUrl, orgId, auth: authConfig } = os;
   const { resetCurrentWorkspace, currentWorkspace } = useSaaSWorkspaces();
 

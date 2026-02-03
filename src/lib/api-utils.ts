@@ -2,8 +2,8 @@
  * API utility functions for consistent error handling and request management
  */
 
-import { isDevelopment } from './utils';
 import { sdkLog } from './logger';
+import { isDevelopment } from './utils';
 
 /** Redact sensitive keys in objects used for dev logging */
 function redactForLog(obj: unknown): unknown {
@@ -42,8 +42,7 @@ function redactForLog(obj: unknown): unknown {
 export function isAbortError(error: unknown): boolean {
   return (
     error instanceof Error &&
-    (error.name === 'AbortError' ||
-      (error as Error & { code?: string }).code === 'ERR_CANCELED')
+    (error.name === 'AbortError' || (error as Error & { code?: string }).code === 'ERR_CANCELED')
   );
 }
 
@@ -94,10 +93,7 @@ export function isAbortError(error: unknown): boolean {
  * }
  * ```
  */
-export async function safeFetch(
-  url: string,
-  options?: RequestInit
-): Promise<Response> {
+export async function safeFetch(url: string, options?: RequestInit): Promise<Response> {
   try {
     const response = await fetch(url, options);
     if (isDevelopment()) {
@@ -165,10 +161,7 @@ export async function safeFetch(
  * }
  * ```
  */
-export async function getErrorMessage(
-  response: Response,
-  defaultMsg: string
-): Promise<string> {
+export async function getErrorMessage(response: Response, defaultMsg: string): Promise<string> {
   try {
     const data = await response.json();
     return (data?.message || data?.error || defaultMsg) as string;
@@ -222,10 +215,7 @@ export async function parseJsonResponse<T>(response: Response): Promise<T> {
  * }
  * ```
  */
-export function createApiError(
-  response: Response,
-  defaultMessage: string
-): Error {
+export function createApiError(response: Response, defaultMessage: string): Error {
   // Try to extract error message from response
   // Note: This doesn't await the JSON, so it's safe for immediate use
   // The caller should handle JSON parsing separately if needed
@@ -239,12 +229,9 @@ export function createApiError(
     503: 'Service unavailable',
   };
 
-  const statusMessage =
-    statusMessages[response.status] || response.statusText || defaultMessage;
+  const statusMessage = statusMessages[response.status] || response.statusText || defaultMessage;
 
-  return new Error(
-    `${defaultMessage} (${response.status}: ${statusMessage})`
-  );
+  return new Error(`${defaultMessage} (${response.status}: ${statusMessage})`);
 }
 
 /**
@@ -282,9 +269,7 @@ export async function handleApiResponse<T>(
   if (!response.ok) {
     let errorMessage = defaultErrorMessage;
     try {
-      const error = await parseJsonResponse<{ message?: string; error?: string }>(
-        response
-      );
+      const error = await parseJsonResponse<{ message?: string; error?: string }>(response);
       errorMessage = error.message || error.error || errorMessage;
     } catch {
       // If JSON parsing fails, use status-based message

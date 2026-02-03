@@ -30,7 +30,7 @@ export type { OnWorkspaceChangeParams } from './providers/auth/types';
 
 // Export hooks
 export { useSaaSAuth } from './providers/auth/hooks';
-export { useSaaSSettings } from './providers/os/hooks';
+export { useSaaSOs, useSaaSSettings } from './providers/os/hooks';
 export { useUserAttributes, useUserFeatures } from './providers/user/hooks';
 
 // Export workspace provider and dialog
@@ -77,26 +77,26 @@ export type {
   IInvoice,
   IInvoiceListResponse,
   IInvoiceResponse,
-  InvoiceStatus,
   IPlan,
   IPlanGroup,
   IPlanGroupLatestVersion,
   IPlanGroupResponse,
   IPlanGroupVersion,
-  IPlanGroupVersionsResponse,
   IPlanGroupVersionWithPlans,
+  IPlanGroupVersionsResponse,
   IPlanVersion,
   IPlanVersionWithPlan,
   IPublicPlanItem,
   IPublicPlanItemCategory,
   IPublicPlanPricing,
   IPublicPlanQuotaValue,
-  IPublicPlansResponse,
   IPublicPlanVersion,
+  IPublicPlansResponse,
   IQuotaValue,
   ISubscription,
   ISubscriptionItem,
   ISubscriptionResponse,
   ISubscriptionUpdateRequest,
   ISubscriptionUpdateResponse,
+  InvoiceStatus,
 } from './api/types';

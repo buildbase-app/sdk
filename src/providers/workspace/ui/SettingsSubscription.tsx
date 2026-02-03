@@ -1,12 +1,12 @@
-import { CreditCard, Loader2, AlertTriangle, Calendar } from 'lucide-react';
-import React, { useState, useMemo } from 'react';
+import { AlertTriangle, Calendar, CreditCard, Loader2 } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
 import {
   BillingInterval,
   ICheckoutSessionResponse,
   IPlanGroupVersionWithPlans,
   IPlanVersion,
   IPlanVersionWithPlan,
-  ISubscriptionItem
+  ISubscriptionItem,
 } from '../../../api/types';
 import {
   AlertDialog,
@@ -27,12 +27,14 @@ import {
   useSubscriptionManagement,
 } from '../subscription-hooks';
 import { IWorkspace } from '../types';
-import SettingSkeleton from './Skeleton';
 import SettingsInvoices from './SettingsInvoices';
+import SettingSkeleton from './Skeleton';
 // Lazy load SubscriptionDialog to reduce bundle size
 // This component is only rendered when subscription dialog is opened
 import { lazy, Suspense } from 'react';
-const SubscriptionDialog = lazy(() => import('./SubscriptionDialog').then(m => ({ default: m.default })));
+const SubscriptionDialog = lazy(() =>
+  import('./SubscriptionDialog').then(m => ({ default: m.default }))
+);
 
 // Helper to derive billing interval from price ID by comparing with plan's stripe prices
 const getBillingIntervalFromPriceId = (
@@ -59,10 +61,14 @@ const getBillingIntervalFromPriceId = (
 // Get display label for billing interval
 const getBillingIntervalLabel = (interval: BillingInterval | null): string => {
   switch (interval) {
-    case 'monthly': return 'Monthly';
-    case 'quarterly': return 'Quarterly';
-    case 'yearly': return 'Yearly';
-    default: return 'Unknown';
+    case 'monthly':
+      return 'Monthly';
+    case 'quarterly':
+      return 'Quarterly';
+    case 'yearly':
+      return 'Yearly';
+    default:
+      return 'Unknown';
   }
 };
 
@@ -118,15 +124,24 @@ const getPlanDetailsFromItems = (planVersion: IPlanVersion | null | undefined) =
 
 const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ workspace }) => {
   const workspaceId = workspace._id?.toString();
-  const { subscription, loading: subscriptionLoading, error: subscriptionError, updateSubscription, refetch: refetchSubscription } =
-    useSubscriptionManagement(workspaceId);
+  const {
+    subscription,
+    loading: subscriptionLoading,
+    error: subscriptionError,
+    updateSubscription,
+    refetch: refetchSubscription,
+  } = useSubscriptionManagement(workspaceId);
   const { createCheckoutSession } = useCreateCheckoutSession(workspaceId);
   const { cancelSubscription, loading: cancelLoading } = useCancelSubscription(workspaceId);
   const { resumeSubscription, loading: resumeLoading } = useResumeSubscription(workspaceId);
 
   // Fetch plan group versions (includes currentVersion and availableVersions)
-  const { versions: planGroupVersions, loading: versionsLoading, error: versionsError, refetch: refetchVersions } =
-    usePlanGroupVersions(workspaceId);
+  const {
+    versions: planGroupVersions,
+    loading: versionsLoading,
+    error: versionsError,
+    refetch: refetchVersions,
+  } = usePlanGroupVersions(workspaceId);
 
   const loading = subscriptionLoading || versionsLoading;
   const error = subscriptionError || versionsError;
@@ -157,14 +172,13 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
 
     // Check if user's current version is older than the latest
     // Only relevant if user has an active subscription
-    const hasNewer = hasActiveSubscription && latest && userCurrentVersion
-      ? latest.version > userCurrentVersion.version
-      : false;
+    const hasNewer =
+      hasActiveSubscription && latest && userCurrentVersion
+        ? latest.version > userCurrentVersion.version
+        : false;
 
     // Determine which plans to show: always show latest version plans
-    const plans = latest?.plans && latest.plans.length > 0
-      ? latest.plans
-      : [];
+    const plans = latest?.plans && latest.plans.length > 0 ? latest.plans : [];
 
     return {
       currentVersion: userCurrentVersion,
@@ -189,16 +203,22 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
     await Promise.all([refetchSubscription(), refetchVersions()]);
   };
 
-  const handlePlanChange = async (planVersionId: string, billingInterval: BillingInterval = 'monthly') => {
+  const handlePlanChange = async (
+    planVersionId: string,
+    billingInterval: BillingInterval = 'monthly'
+  ) => {
     if (!workspaceId) return;
 
     // Find the target plan to get its price ID for the selected interval
     const targetPlan = plansToShow?.find(p => p._id === planVersionId);
-    const targetPriceId = targetPlan?.stripePrices?.[
-      billingInterval === 'monthly' ? 'monthlyPriceId' :
-      billingInterval === 'yearly' ? 'yearlyPriceId' :
-      'quarterlyPriceId'
-    ] || targetPlan?.stripePrices?.[billingInterval === 'monthly' ? 'monthly' : 'yearly'];
+    const targetPriceId =
+      targetPlan?.stripePrices?.[
+        billingInterval === 'monthly'
+          ? 'monthlyPriceId'
+          : billingInterval === 'yearly'
+            ? 'yearlyPriceId'
+            : 'quarterlyPriceId'
+      ] || targetPlan?.stripePrices?.[billingInterval === 'monthly' ? 'monthly' : 'yearly'];
 
     // Don't update if the target price ID matches the current subscription's price ID
     const currentPriceId = subscription?.subscription?.stripePriceId;
@@ -342,11 +362,15 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
           <div>
             <p className="font-medium">Error loading subscription data</p>
             <p className="text-sm mt-1">{error}</p>
-            <p className="text-xs mt-2 text-red-600">
-              Please check your connection and try again.
-            </p>
+            <p className="text-xs mt-2 text-red-600">Please check your connection and try again.</p>
           </div>
-          <Button variant="outline" size="sm" onClick={refetch} disabled={loading} className="flex-shrink-0 border-red-200 text-red-700 hover:bg-red-100">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={refetch}
+            disabled={loading}
+            className="flex-shrink-0 border-red-200 text-red-700 hover:bg-red-100"
+          >
             {loading ? 'Retrying...' : 'Retry'}
           </Button>
         </div>
@@ -392,20 +416,22 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
           <button
             type="button"
             onClick={() => setActiveTab('subscription')}
-            className={`border-b-2 py-3 text-sm font-medium transition-colors ${activeTab === 'subscription'
-              ? 'border-primary text-primary'
-              : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-              }`}
+            className={`border-b-2 py-3 text-sm font-medium transition-colors ${
+              activeTab === 'subscription'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+            }`}
           >
             Plan
           </button>
           <button
             type="button"
             onClick={() => setActiveTab('invoices')}
-            className={`border-b-2 py-3 text-sm font-medium transition-colors ${activeTab === 'invoices'
-              ? 'border-primary text-primary'
-              : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-              }`}
+            className={`border-b-2 py-3 text-sm font-medium transition-colors ${
+              activeTab === 'invoices'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+            }`}
           >
             Invoices
           </button>
@@ -433,7 +459,8 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                     Your Current Plan is Deprecated
                   </h3>
                   <p className="text-sm text-amber-700 mb-2">
-                    A new version of the pricing plans is now available. Please upgrade to one of the new plans below to continue receiving updates and support.
+                    A new version of the pricing plans is now available. Please upgrade to one of
+                    the new plans below to continue receiving updates and support.
                   </p>
                   <div className="flex items-center gap-2 text-xs text-amber-600 mb-3">
                     <span>Current: Version {currentVersion?.version || 'N/A'}</span>
@@ -442,25 +469,36 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                   </div>
 
                   {/* Show What's New */}
-                  {whatsNew && (whatsNew.newPlans.length > 0 || whatsNew.updatedPlans.length > 0) && (
-                    <div className="mt-3 pt-3 border-t border-amber-200">
-                      <h4 className="text-xs font-semibold text-amber-800 mb-2">What's New in Version {latestVersion?.version}:</h4>
-                      <div className="space-y-1.5 text-xs text-amber-700">
-                        {whatsNew.newPlans.length > 0 && (
-                          <div>
-                            <span className="font-medium">New Plans: </span>
-                            <span>{whatsNew.newPlans.map((p: IPlanVersionWithPlan) => p.plan.name).join(', ')}</span>
-                          </div>
-                        )}
-                        {whatsNew.updatedPlans.length > 0 && (
-                          <div>
-                            <span className="font-medium">Updated Plans: </span>
-                            <span>{whatsNew.updatedPlans.map((p: IPlanVersionWithPlan) => p.plan.name).join(', ')}</span>
-                          </div>
-                        )}
+                  {whatsNew &&
+                    (whatsNew.newPlans.length > 0 || whatsNew.updatedPlans.length > 0) && (
+                      <div className="mt-3 pt-3 border-t border-amber-200">
+                        <h4 className="text-xs font-semibold text-amber-800 mb-2">
+                          What's New in Version {latestVersion?.version}:
+                        </h4>
+                        <div className="space-y-1.5 text-xs text-amber-700">
+                          {whatsNew.newPlans.length > 0 && (
+                            <div>
+                              <span className="font-medium">New Plans: </span>
+                              <span>
+                                {whatsNew.newPlans
+                                  .map((p: IPlanVersionWithPlan) => p.plan.name)
+                                  .join(', ')}
+                              </span>
+                            </div>
+                          )}
+                          {whatsNew.updatedPlans.length > 0 && (
+                            <div>
+                              <span className="font-medium">Updated Plans: </span>
+                              <span>
+                                {whatsNew.updatedPlans
+                                  .map((p: IPlanVersionWithPlan) => p.plan.name)
+                                  .join(', ')}
+                              </span>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
                 </div>
               </div>
             </div>
@@ -474,7 +512,8 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
               </div>
               <div className="flex items-center gap-2">
                 {/* Hide Change Plan when canceling to prevent multiple overlapping subscriptions */}
-                {subscription?.subscription?.cancelAtPeriodEnd || cancelLoading ? null : subscription?.subscription ? (
+                {subscription?.subscription?.cancelAtPeriodEnd ||
+                cancelLoading ? null : subscription?.subscription ? (
                   <Button variant="outline" size="sm" onClick={() => setDialogOpen(true)}>
                     Change Plan
                   </Button>
@@ -483,9 +522,13 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                     View Pricing Plans
                   </Button>
                 ) : null}
-                <Button variant="ghost" size="sm"
+                <Button
+                  variant="ghost"
+                  size="sm"
                   progress={loading}
-                  onClick={refetch} disabled={loading || updating}>
+                  onClick={refetch}
+                  disabled={loading || updating}
+                >
                   {loading ? 'Refreshing...' : 'Refresh'}
                 </Button>
               </div>
@@ -497,18 +540,29 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                   subscription.subscription.stripePriceId,
                   subscription.planVersion
                 );
-                const currentPrice = billingInterval && subscription.planVersion?.basePricing
-                  ? subscription.planVersion.basePricing[billingInterval]
-                  : null;
-                const formattedPrice = currentPrice !== null && currentPrice !== undefined
-                  ? currentPrice === 0 ? 'Free' : `$${(currentPrice / 100).toFixed(2)}`
-                  : null;
-                const intervalLabel = billingInterval === 'monthly' ? '/month'
-                  : billingInterval === 'quarterly' ? '/quarter'
-                  : billingInterval === 'yearly' ? '/year' : '';
+                const currentPrice =
+                  billingInterval && subscription.planVersion?.basePricing
+                    ? subscription.planVersion.basePricing[billingInterval]
+                    : null;
+                const formattedPrice =
+                  currentPrice !== null && currentPrice !== undefined
+                    ? currentPrice === 0
+                      ? 'Free'
+                      : `$${(currentPrice / 100).toFixed(2)}`
+                    : null;
+                const intervalLabel =
+                  billingInterval === 'monthly'
+                    ? '/month'
+                    : billingInterval === 'quarterly'
+                      ? '/quarter'
+                      : billingInterval === 'yearly'
+                        ? '/year'
+                        : '';
 
                 return (
-                  <div className={`border rounded-lg overflow-hidden ${isDeprecated ? 'border-amber-300' : 'border-gray-200'}`}>
+                  <div
+                    className={`border rounded-lg overflow-hidden ${isDeprecated ? 'border-amber-300' : 'border-gray-200'}`}
+                  >
                     {/* Plan Header */}
                     <div className={`p-5 ${isDeprecated ? 'bg-amber-50/50' : 'bg-gray-50/50'}`}>
                       <div className="flex items-start justify-between">
@@ -529,17 +583,27 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                                       : 'bg-red-100 text-red-800'
                               }`}
                             >
-                              {subscription.subscription.subscriptionStatus === 'active' && 'Active'}
-                              {subscription.subscription.subscriptionStatus === 'trialing' && 'Trial'}
-                              {subscription.subscription.subscriptionStatus === 'canceled' && 'Canceled'}
-                              {subscription.subscription.subscriptionStatus === 'past_due' && 'Past Due'}
+                              {subscription.subscription.subscriptionStatus === 'active' &&
+                                'Active'}
+                              {subscription.subscription.subscriptionStatus === 'trialing' &&
+                                'Trial'}
+                              {subscription.subscription.subscriptionStatus === 'canceled' &&
+                                'Canceled'}
+                              {subscription.subscription.subscriptionStatus === 'past_due' &&
+                                'Past Due'}
                             </span>
                             {subscription.subscription.subscriptionStatus === 'trialing' &&
-                              formatPeriodEndDate(subscription.subscription.stripeCurrentPeriodEnd) && (
-                              <span className="text-xs text-gray-500">
-                                (ends {formatPeriodEndDate(subscription.subscription.stripeCurrentPeriodEnd)})
-                              </span>
-                            )}
+                              formatPeriodEndDate(
+                                subscription.subscription.stripeCurrentPeriodEnd
+                              ) && (
+                                <span className="text-xs text-gray-500">
+                                  (ends{' '}
+                                  {formatPeriodEndDate(
+                                    subscription.subscription.stripeCurrentPeriodEnd
+                                  )}
+                                  )
+                                </span>
+                              )}
                             {isDeprecated && (
                               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
                                 <AlertTriangle className="h-3 w-3" />
@@ -570,17 +634,21 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                           {(subscription.subscription.subscriptionStatus === 'active' ||
                             subscription.subscription.subscriptionStatus === 'trialing') &&
                             !subscription.subscription.cancelAtPeriodEnd &&
-                            formatPeriodEndDate(subscription.subscription.stripeCurrentPeriodEnd) && (
-                            <div className="flex items-center gap-1.5 mt-2 text-xs text-gray-500">
-                              <Calendar className="h-3.5 w-3.5 flex-shrink-0" />
-                              <span>
-                                Next billing:{' '}
-                                <span className="font-medium text-gray-700">
-                                  {formatPeriodEndDate(subscription.subscription.stripeCurrentPeriodEnd)}
+                            formatPeriodEndDate(
+                              subscription.subscription.stripeCurrentPeriodEnd
+                            ) && (
+                              <div className="flex items-center gap-1.5 mt-2 text-xs text-gray-500">
+                                <Calendar className="h-3.5 w-3.5 flex-shrink-0" />
+                                <span>
+                                  Next billing:{' '}
+                                  <span className="font-medium text-gray-700">
+                                    {formatPeriodEndDate(
+                                      subscription.subscription.stripeCurrentPeriodEnd
+                                    )}
+                                  </span>
                                 </span>
-                              </span>
-                            </div>
-                          )}
+                              </div>
+                            )}
                         </div>
                       </div>
 
@@ -625,11 +693,10 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                         <div className="flex items-start gap-3">
                           <AlertTriangle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
                           <div>
-                            <p className="text-sm font-medium text-red-800">
-                              Payment past due
-                            </p>
+                            <p className="text-sm font-medium text-red-800">Payment past due</p>
                             <p className="text-sm text-red-700 mt-0.5">
-                              Please update your payment method to avoid service interruption. Check your invoices for details.
+                              Please update your payment method to avoid service interruption. Check
+                              your invoices for details.
                             </p>
                             <Button
                               variant="outline"
@@ -654,16 +721,20 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                               Subscription scheduled for cancellation
                             </p>
                             <p className="text-sm text-amber-700 mt-0.5">
-                              {formatPeriodEndDate(subscription.subscription.stripeCurrentPeriodEnd) ? (
+                              {formatPeriodEndDate(
+                                subscription.subscription.stripeCurrentPeriodEnd
+                              ) ? (
                                 <>
                                   Your subscription will end on{' '}
                                   <span className="font-medium">
-                                    {formatPeriodEndDate(subscription.subscription.stripeCurrentPeriodEnd)}
+                                    {formatPeriodEndDate(
+                                      subscription.subscription.stripeCurrentPeriodEnd
+                                    )}
                                   </span>
                                   . You'll retain access until then and won't be charged again.
                                 </>
                               ) : (
-                                'Your subscription will be canceled at the end of the current billing period. You won\'t be charged again.'
+                                "Your subscription will be canceled at the end of the current billing period. You won't be charged again."
                               )}
                             </p>
                           </div>
@@ -672,83 +743,100 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                     )}
 
                     {/* Plan Details */}
-                    {subscription.planVersion && (() => {
-                      const planDetails = getPlanDetailsFromItems(subscription.planVersion);
-                      const hasDetails = planDetails.features.length > 0 || planDetails.limits.length > 0 || planDetails.quotas.length > 0;
+                    {subscription.planVersion &&
+                      (() => {
+                        const planDetails = getPlanDetailsFromItems(subscription.planVersion);
+                        const hasDetails =
+                          planDetails.features.length > 0 ||
+                          planDetails.limits.length > 0 ||
+                          planDetails.quotas.length > 0;
 
-                      if (!hasDetails) return null;
+                        if (!hasDetails) return null;
 
-                      return (
-                        <div className="p-5 border-t border-gray-100">
-                          <div className="space-y-6">
-                            {/* Features */}
-                            {planDetails.features.length > 0 && (
-                              <div>
-                                <h4 className="text-xs font-semibold text-gray-900 uppercase tracking-wider mb-3">
-                                  Features
-                                </h4>
-                                <ul className="space-y-2">
-                                  {planDetails.features.sort((a) => a.enabled ? -1 : 1).map(({ item, enabled }) => (
-                                    <li key={item._id} className="flex items-start gap-2 text-sm">
-                                      <span className={`mt-0.5 flex-shrink-0 ${enabled ? 'text-green-500' : 'text-gray-300'}`}>
-                                        {enabled ? '✓' : '—'}
-                                      </span>
-                                      <span className={enabled ? 'text-gray-700' : 'text-gray-400'}>
-                                        {item.name}
-                                      </span>
-                                    </li>
-                                  ))}
-                                </ul>
-                              </div>
-                            )}
+                        return (
+                          <div className="p-5 border-t border-gray-100">
+                            <div className="space-y-6">
+                              {/* Features */}
+                              {planDetails.features.length > 0 && (
+                                <div>
+                                  <h4 className="text-xs font-semibold text-gray-900 uppercase tracking-wider mb-3">
+                                    Features
+                                  </h4>
+                                  <ul className="space-y-2">
+                                    {planDetails.features
+                                      .sort(a => (a.enabled ? -1 : 1))
+                                      .map(({ item, enabled }) => (
+                                        <li
+                                          key={item._id}
+                                          className="flex items-start gap-2 text-sm"
+                                        >
+                                          <span
+                                            className={`mt-0.5 flex-shrink-0 ${enabled ? 'text-green-500' : 'text-gray-300'}`}
+                                          >
+                                            {enabled ? '✓' : '—'}
+                                          </span>
+                                          <span
+                                            className={enabled ? 'text-gray-700' : 'text-gray-400'}
+                                          >
+                                            {item.name}
+                                          </span>
+                                        </li>
+                                      ))}
+                                  </ul>
+                                </div>
+                              )}
 
-                            {/* Limits */}
-                            {planDetails.limits.length > 0 && (
-                              <div>
-                                <h4 className="text-xs font-semibold text-gray-900 uppercase tracking-wider mb-3">
-                                  Limits
-                                </h4>
-                                <ul className="space-y-2">
-                                  {planDetails.limits.map(({ item, value }) => (
-                                    <li key={item._id} className="text-sm">
-                                      <div className="flex items-center justify-between">
-                                        <span className="text-gray-600">{item.name}</span>
-                                        <span className="font-medium text-gray-900">{value}</span>
-                                      </div>
-                                    </li>
-                                  ))}
-                                </ul>
-                              </div>
-                            )}
-
-                            {/* Quotas */}
-                            {planDetails.quotas.length > 0 && (
-                              <div>
-                                <h4 className="text-xs font-semibold text-gray-900 uppercase tracking-wider mb-3">
-                                  Usage Quotas
-                                </h4>
-                                <ul className="space-y-2">
-                                  {planDetails.quotas.map(({ item, value }) => {
-                                    const quotaDisplay =
-                                      typeof value === 'object' && value !== null && 'included' in value
-                                        ? `${value.included}${value.overage ? ` (+${value.overage})` : ''}`
-                                        : String(value);
-                                    return (
+                              {/* Limits */}
+                              {planDetails.limits.length > 0 && (
+                                <div>
+                                  <h4 className="text-xs font-semibold text-gray-900 uppercase tracking-wider mb-3">
+                                    Limits
+                                  </h4>
+                                  <ul className="space-y-2">
+                                    {planDetails.limits.map(({ item, value }) => (
                                       <li key={item._id} className="text-sm">
                                         <div className="flex items-center justify-between">
                                           <span className="text-gray-600">{item.name}</span>
-                                          <span className="font-medium text-gray-900">{quotaDisplay}</span>
+                                          <span className="font-medium text-gray-900">{value}</span>
                                         </div>
                                       </li>
-                                    );
-                                  })}
-                                </ul>
-                              </div>
-                            )}
-                        </div>
-                      </div>
-                    );
-                  })()}
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+
+                              {/* Quotas */}
+                              {planDetails.quotas.length > 0 && (
+                                <div>
+                                  <h4 className="text-xs font-semibold text-gray-900 uppercase tracking-wider mb-3">
+                                    Usage Quotas
+                                  </h4>
+                                  <ul className="space-y-2">
+                                    {planDetails.quotas.map(({ item, value }) => {
+                                      const quotaDisplay =
+                                        typeof value === 'object' &&
+                                        value !== null &&
+                                        'included' in value
+                                          ? `${value.included}${value.overage ? ` (+${value.overage})` : ''}`
+                                          : String(value);
+                                      return (
+                                        <li key={item._id} className="text-sm">
+                                          <div className="flex items-center justify-between">
+                                            <span className="text-gray-600">{item.name}</span>
+                                            <span className="font-medium text-gray-900">
+                                              {quotaDisplay}
+                                            </span>
+                                          </div>
+                                        </li>
+                                      );
+                                    })}
+                                  </ul>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })()}
                   </div>
                 );
               })()
@@ -784,9 +872,14 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                   </p>
                 )}
               </div>
-              <Button variant="outline" size="sm"
+              <Button
+                variant="outline"
+                size="sm"
                 progress={loading}
-                onClick={refetch} disabled={loading} className="mt-4">
+                onClick={refetch}
+                disabled={loading}
+                className="mt-4"
+              >
                 {loading ? 'Refreshing...' : 'Refresh'}
               </Button>
             </div>
@@ -814,16 +907,18 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
 
       {/* Subscription Dialog */}
       {plansToShow && plansToShow.length > 0 && (
-        <Suspense fallback={
-          dialogOpen ? (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Loader2 className="h-5 w-5 animate-spin" />
-                <span>Loading plans...</span>
+        <Suspense
+          fallback={
+            dialogOpen ? (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  <span>Loading plans...</span>
+                </div>
               </div>
-            </div>
-          ) : null
-        }>
+            ) : null
+          }
+        >
           <SubscriptionDialog
             open={dialogOpen}
             onOpenChange={setDialogOpen}
@@ -861,11 +956,16 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                   </div>
                   <div className="flex items-start gap-2">
                     <span className="text-amber-600 mt-0.5">•</span>
-                    <span>Your subscription will continue automatically and you'll be billed according to your plan</span>
+                    <span>
+                      Your subscription will continue automatically and you'll be billed according
+                      to your plan
+                    </span>
                   </div>
                   <div className="flex items-start gap-2">
                     <span className="text-blue-600 mt-0.5">ℹ</span>
-                    <span>You can cancel anytime before the next billing date if you change your mind</span>
+                    <span>
+                      You can cancel anytime before the next billing date if you change your mind
+                    </span>
                   </div>
                 </div>
               </div>
@@ -873,10 +973,7 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={resumeLoading}>Keep Canceled</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleResumeSubscription}
-              disabled={resumeLoading}
-            >
+            <AlertDialogAction onClick={handleResumeSubscription} disabled={resumeLoading}>
               {resumeLoading ? 'Resuming...' : 'Yes, Resume Subscription'}
             </AlertDialogAction>
           </AlertDialogFooter>

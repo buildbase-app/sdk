@@ -1,5 +1,5 @@
-import { updateField, updateFields } from '../shared/utils/reducerHelpers';
 import { ApiVersion, type IOsState } from '../../providers/os/types';
+import { updateField, updateFields } from '../shared/utils/reducerHelpers';
 import type { OSAction } from './types';
 
 /**

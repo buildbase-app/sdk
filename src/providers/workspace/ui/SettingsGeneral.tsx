@@ -17,8 +17,8 @@ import { Input } from '../../../components/ui/input';
 import { Label } from '../../../components/ui/label';
 import { RadioGroup, RadioGroupItem } from '../../../components/ui/radio-group';
 import { ScrollArea } from '../../../components/ui/scroll-area';
-import { useAppSelector } from '../../../contexts';
 import { handleError } from '../../../lib/error-handler';
+import { useSaaSAuth } from '../../auth/hooks';
 import { useSaaSWorkspaces } from '../hooks';
 import { IWorkspace } from '../types';
 import { isWorkspaceOwner } from '../utils';
@@ -31,7 +31,7 @@ const WorkspaceSettingsGeneral: React.FC<{ workspace: IWorkspace }> = ({ workspa
   const [selectedEmoji, setSelectedEmoji] = useState<string>();
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const { updateWorkspace } = useSaaSWorkspaces();
-  const currentUser = useAppSelector(state => state.auth.session?.user || null);
+  const { user: currentUser } = useSaaSAuth();
 
   const formSchema = z.object({
     name: z.string().min(2, {

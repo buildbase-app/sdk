@@ -1,13 +1,13 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import type { IAuthState } from '../../providers/auth/types';
-import { useSelectWithEquality } from './useSelectWithEquality';
 import type { IOsState } from '../../providers/os/types';
 import { useAuthState } from '../AuthContext';
 import { useOSState } from '../OSContext';
 import { useWorkspaceState } from '../WorkspaceContext';
 import type { WorkspaceState } from '../WorkspaceContext/types';
+import { useSelectWithEquality } from './useSelectWithEquality';
 
 /**
  * Combined SDK State

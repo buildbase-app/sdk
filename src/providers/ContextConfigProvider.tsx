@@ -1,12 +1,13 @@
 'use client';
 
 import React, { useEffect } from 'react';
-import { osActions, useAppDispatch, useAppSelector } from '../contexts';
-import { handleError } from '../lib/error-handler';
+import { osActions, useAppDispatch } from '../contexts';
 import { safeFetch } from '../lib/api-utils';
+import { handleError } from '../lib/error-handler';
 import { useAsyncEffect } from '../lib/useAsyncEffect';
 import type { IAuthConfig } from './auth/types';
 import { getAuthHeaders } from './auth/utils';
+import { useSaaSOs } from './os/hooks';
 import type { IOsState } from './os/types';
 import type { ISettings } from './types';
 
@@ -24,7 +25,7 @@ interface ContextConfigProviderProps {
 export const ContextConfigProvider: React.FC<ContextConfigProviderProps> = React.memo(
   ({ config, auth, children }) => {
     const dispatch = useAppDispatch();
-    const os = useAppSelector(state => state.os);
+    const os = useSaaSOs();
 
     // Memoize auth config to prevent unnecessary updates
     // Store full auth config including callbacks so they can be accessed in hooks
@@ -54,10 +55,10 @@ export const ContextConfigProvider: React.FC<ContextConfigProviderProps> = React
         if (!serverUrl || !version || !orgId || settings) return;
 
         const headers = getAuthHeaders();
-        const response = await safeFetch(
-          `${serverUrl}/api/${version}/public/${orgId}/settings`,
-          { headers, signal }
-        );
+        const response = await safeFetch(`${serverUrl}/api/${version}/public/${orgId}/settings`, {
+          headers,
+          signal,
+        });
         if (response.ok) {
           const data: ISettings = await response.json();
           dispatch.os(osActions.setSettings(data));

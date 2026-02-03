@@ -23,6 +23,7 @@ SaaSOSProvider (root)
 ```
 
 **Design Decision**: Nested providers allow for:
+
 - Clear separation of concerns
 - Independent feature enablement
 - Proper dependency ordering (auth before workspace, etc.)
@@ -32,25 +33,30 @@ SaaSOSProvider (root)
 The SDK uses multiple React contexts for state management:
 
 #### AuthContext
+
 - **Purpose**: Manages authentication state and session
 - **State**: `{ session: AuthSession | null, status: AuthStatus }`
 - **Design**: Single source of truth for auth state. Status enum drives all auth flags (derived, not stored).
 
 #### OSContext
+
 - **Purpose**: Manages SDK configuration (serverUrl, version, orgId, settings)
 - **State**: `{ serverUrl, version, orgId, settings, auth }`
 - **Design**: Immutable config that rarely changes after initialization.
 
 #### WorkspaceContext
+
 - **Purpose**: Manages workspace state and operations
 - **State**: `{ workspaces[], currentWorkspace, loading, error, ... }`
 - **Design**: Centralized workspace state with optimistic updates.
 
 #### SDKContext
+
 - **Purpose**: Combines all contexts into a single provider
 - **Design**: Reduces provider nesting and provides unified state access.
 
 **Design Decision**: Multiple contexts instead of single context:
+
 - Better performance (components only re-render when their context changes)
 - Clearer separation of concerns
 - Easier to test individual features
@@ -60,11 +66,13 @@ The SDK uses multiple React contexts for state management:
 The SDK uses a centralized API client pattern:
 
 #### WorkspaceApi
+
 - **Purpose**: Handles all workspace-related API calls
 - **Location**: `src/providers/workspace/api.ts`
 - **Design**: Class-based API client that encapsulates API logic.
 
 #### API Utilities
+
 - **Purpose**: Shared utilities for API calls
 - **Location**: `src/lib/api-utils.ts`
 - **Functions**:
@@ -74,6 +82,7 @@ The SDK uses a centralized API client pattern:
   - `fetchWithTimeout`: Timeout support
 
 **Design Decision**: Centralized API utilities:
+
 - Consistent error handling across all API calls
 - Automatic request/response logging in dev mode
 - AbortController support for request cancellation
@@ -81,42 +90,56 @@ The SDK uses a centralized API client pattern:
 
 ### 4. Hook Layer
 
-The SDK exposes hooks for consuming context and performing operations:
+The SDK exposes hooks for consuming context and performing operations. **Prefer these hooks over `useAppSelector`** for state access so the SDK can evolve internal state without breaking consumers.
 
 #### Auth Hooks
-- `useSaaSAuth()`: Main auth hook with signIn/signOut
+
+- `useSaaSAuth()`: Main auth hook (user, session, status, signIn, signOut, openWorkspaceSettings)
+
+#### OS Hooks
+
+- `useSaaSOs()`: Full OS config (serverUrl, version, orgId, auth, settings). Use when you need the config object.
+- `useSaaSSettings()`: Organization settings and getSettings. Prefer this when you only need settings.
 
 #### Workspace Hooks
-- `useSaaSWorkspaces()`: Main workspace management hook
+
+- `useSaaSWorkspaces()`: Main workspace management hook (workspaces, currentWorkspace, loading, switching, switchingToId, CRUD and switch actions)
 - Subscription hooks: `useSubscription`, `usePlanGroup`, etc.
 
 #### User Hooks
+
 - `useUserAttributes()`: User attributes access
 - `useUserFeatures()`: User feature flags
 
 **Design Decision**: Hooks pattern:
+
 - Familiar React API
 - Automatic re-renders on state changes
 - Easy to use in functional components
 - Type-safe with TypeScript
+- Single public API for state; internal use of `useAppSelector` is limited to hook/context implementation
 
 ### 5. Component Layer
 
 The SDK provides conditional rendering components:
 
 #### Auth Components
+
 - `WhenAuthenticated`: Renders when user is authenticated
 - `WhenUnauthenticated`: Renders when user is not authenticated
 
 #### Role Components
+
 - `WhenRoles`: Renders based on user's global role
 - `WhenWorkspaceRoles`: Renders based on user's workspace role
 
 #### Feature Components
+
 - `WhenUserFeatureEnabled/Disabled`: Renders based on user feature flags
 - `WhenWorkspaceFeatureEnabled/Disabled`: Renders based on workspace feature flags
 
 **Design Decision**: Conditional components:
+
 - Declarative API for feature gating
 - Reduces boilerplate in consumer apps
 - Type-safe with TypeScript
@@ -128,6 +151,7 @@ The SDK provides conditional rendering components:
 **Decision**: Use React Context instead of Redux.
 
 **Rationale**:
+
 - Simpler for SDK consumers (no Redux setup required)
 - Less bundle size
 - Sufficient for SDK's state management needs
@@ -149,6 +173,7 @@ function authReducer(state: IAuthState, action: AuthAction): IAuthState {
 ```
 
 **Design Decision**: Reducer pattern:
+
 - Predictable state updates
 - Easy to debug (action-based)
 - Type-safe with TypeScript
@@ -164,6 +189,7 @@ const flags = getAuthFlags(auth.status);
 ```
 
 **Design Decision**: Derived state:
+
 - Single source of truth (status enum)
 - Prevents state inconsistencies
 - Reduces state size
@@ -187,6 +213,7 @@ const flags = getAuthFlags(auth.status);
 - **Expiration**: Handled by server (401 response triggers sign-out)
 
 **Design Decision**: localStorage for session:
+
 - Persists across page reloads
 - Accessible to SDK on mount
 - Simple implementation
@@ -212,6 +239,7 @@ React Error Boundaries catch component errors:
 - Logs errors automatically
 
 **Design Decision**: Multiple error handling layers:
+
 - Network errors: Handled in API utilities
 - Component errors: Handled by Error Boundaries
 - Application errors: Handled by error handler
@@ -237,6 +265,7 @@ React Error Boundaries catch component errors:
 - Prevents memory leaks and race conditions
 
 **Design Decision**: AbortController pattern:
+
 - Prevents race conditions
 - Reduces unnecessary network traffic
 - Better user experience (no stale data)
@@ -259,6 +288,7 @@ All public types exported from `src/index.ts`:
 - Component prop types
 
 **Design Decision**: Comprehensive type exports:
+
 - Better developer experience
 - Type-safe SDK usage
 - IDE autocomplete support
@@ -278,6 +308,7 @@ The SDK includes an event emitter for workspace/user events:
 - etc.
 
 **Design Decision**: Event system:
+
 - Allows consumers to react to SDK events
 - Decouples SDK from consumer app logic
 - Supports custom event handlers via callbacks
@@ -338,6 +369,7 @@ The BuildBase SDK follows a layered architecture:
 5. **Components**: Conditional rendering components
 
 Key design principles:
+
 - **Simplicity**: Easy to use, minimal setup
 - **Type Safety**: Full TypeScript coverage
 - **Performance**: Memoization, request deduplication, AbortController

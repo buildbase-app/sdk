@@ -375,6 +375,7 @@ function WorkspaceManager() {
     loading, // Loading state
     refreshing, // Refreshing state
     switching, // True when a workspace switch is in progress
+    switchingToId, // Workspace ID currently being switched to (null when not switching)
     error, // Error message
     fetchWorkspaces, // Fetch all workspaces
     refreshWorkspaces, // Background refresh
@@ -461,12 +462,12 @@ function PublicPricingPage() {
 }
 ```
 
-| Prop | Type | Description |
-|------|------|-------------|
-| `slug` | `string` | Plan group slug (e.g. 'main-pricing', 'enterprise') |
-| `children` | `(details) => ReactNode` | Render prop receiving `{ loading, error, items, plans, refetch }` |
-| `loadingFallback` | `ReactNode` | Custom loading UI (defaults to skeleton) |
-| `errorFallback` | `(error: string) => ReactNode` | Custom error UI |
+| Prop              | Type                           | Description                                                       |
+| ----------------- | ------------------------------ | ----------------------------------------------------------------- |
+| `slug`            | `string`                       | Plan group slug (e.g. 'main-pricing', 'enterprise')               |
+| `children`        | `(details) => ReactNode`       | Render prop receiving `{ loading, error, items, plans, refetch }` |
+| `loadingFallback` | `ReactNode`                    | Custom loading UI (defaults to skeleton)                          |
+| `errorFallback`   | `(error: string) => ReactNode` | Custom error UI                                                   |
 
 **Response shape**: `items` = subscription item definitions (features, limits, quotas with category); `plans` = plan versions with `pricing`, `quotas`, `features`, `limits`.
 
@@ -594,6 +595,22 @@ function SettingsExample() {
 ```
 
 ## 📚 API Reference
+
+### Hooks
+
+Prefer these SDK hooks for state and operations instead of `useAppSelector`:
+
+| Hook                  | Purpose                                                                                    |
+| --------------------- | ------------------------------------------------------------------------------------------ |
+| `useSaaSAuth()`       | Auth state (user, session, status), signIn, signOut, openWorkspaceSettings                 |
+| `useSaaSWorkspaces()` | Workspaces, currentWorkspace, loading, switching/switchingToId, CRUD and switch actions    |
+| `useSaaSOs()`         | OS config (serverUrl, version, orgId, auth, settings) when you need the full config object |
+| `useSaaSSettings()`   | Organization settings and getSettings (prefer this when you only need settings)            |
+| `useUserAttributes()` | User attributes and update/refresh                                                         |
+| `useUserFeatures()`   | User feature flags                                                                         |
+| Subscription hooks    | `usePublicPlans`, `useSubscription`, `usePlanGroup`, etc.                                  |
+
+Using hooks keeps your code stable if internal state shape changes and avoids direct Redux/context coupling.
 
 ### Enums
 
@@ -769,7 +786,7 @@ function App() {
     }
   }, [currentWorkspace]);
 
-  // Show loading during switch (switchingToId !== null)
+  // Show loading during switch; use switchingToId for the workspace ID being switched to
   if (switching) return <LoadingOverlay />;
 
   return <YourApp />;
@@ -1008,15 +1025,29 @@ try {
 }
 ```
 
-### 3. Workspace Management
+### 3. State Access: Prefer SDK Hooks Over useAppSelector
+
+✅ **Do**: Use SDK hooks for auth, workspace, and OS state.
+
+```tsx
+// ✅ Good – use hooks
+const { user, isAuthenticated } = useSaaSAuth();
+const { workspaces, currentWorkspace, switchingToId } = useSaaSWorkspaces();
+const { settings } = useSaaSSettings();
+const os = useSaaSOs(); // when you need full OS config (serverUrl, version, orgId, etc.)
+```
+
+❌ **Don't**: Use `useAppSelector(state => state.auth)` or similar in app code—prefer the hooks above so the SDK can evolve internal state without breaking you.
+
+### 4. Workspace Management
 
 ✅ **Do**: Use `useSaaSWorkspaces` hook for workspace operations.
 
 ```tsx
 // ✅ Good
-const { currentWorkspace, switchToWorkspace, switching } = useSaaSWorkspaces();
+const { currentWorkspace, switchToWorkspace, switching, switchingToId } = useSaaSWorkspaces();
 // switchToWorkspace: runs onWorkspaceChange first (token gen, etc.)
-// switching: true when switch is in progress
+// switching: true when switch is in progress; switchingToId: workspace ID being switched to
 ```
 
 ✅ **Do**: Configure `onWorkspaceChange` in auth callbacks for token generation—receives `{ workspace, user, role }`.
@@ -1028,7 +1059,7 @@ const { currentWorkspace, switchToWorkspace, switching } = useSaaSWorkspaces();
 const [workspace, setWorkspace] = useState(null); // Don't do this
 ```
 
-### 4. Feature Flags
+### 5. Feature Flags
 
 ✅ **Do**: Use feature flag components for conditional rendering.
 
@@ -1049,7 +1080,7 @@ if (isFeatureEnabled('premium')) {
 }
 ```
 
-### 5. Authentication
+### 6. Authentication
 
 ✅ **Do**: Use `WhenAuthenticated`/`WhenUnauthenticated` for route protection.
 
@@ -1070,7 +1101,7 @@ const { signIn, status } = useSaaSAuth();
 </button>;
 ```
 
-### 6. Event Handling
+### 7. Event Handling
 
 ✅ **Do**: Handle events in your provider configuration. Use `onWorkspaceChange` for prep before switch (e.g. generate token), and `handleEvent` for post-switch notifications.
 
@@ -1092,7 +1123,7 @@ const { signIn, status } = useSaaSAuth();
 >
 ```
 
-### 7. TypeScript
+### 8. TypeScript
 
 ✅ **Do**: Use TypeScript for better type safety.
 
@@ -1105,7 +1136,7 @@ function MyComponent({ workspace }: { workspace: IWorkspace }) {
 }
 ```
 
-### 8. Performance
+### 9. Performance
 
 ✅ **Do**: Memoize expensive computations.
 

@@ -1,9 +1,9 @@
 'use client';
 
-import React, { ReactNode } from 'react';
-import { Skeleton } from '../ui/skeleton';
-import { usePublicPlans } from '../../providers/workspace/subscription-hooks';
+import { ReactNode } from 'react';
 import type { IPublicPlanItem, IPublicPlanVersion } from '../../api/types';
+import { usePublicPlans } from '../../providers/workspace/subscription-hooks';
+import { Skeleton } from '../ui/skeleton';
 
 export interface PricingPageDetails {
   /** Whether plan data is being fetched */
@@ -51,12 +51,7 @@ export interface PricingPageProps {
  * </PricingPage>
  * ```
  */
-export function PricingPage({
-  slug,
-  children,
-  loadingFallback,
-  errorFallback,
-}: PricingPageProps) {
+export function PricingPage({ slug, children, loadingFallback, errorFallback }: PricingPageProps) {
   const { items, plans, loading, error, refetch } = usePublicPlans(slug);
 
   if (loading) {

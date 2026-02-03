@@ -2,10 +2,12 @@
 
 import React, { ReactNode, useCallback, useEffect, useMemo } from 'react';
 import { IUser } from '../../api/types';
-import { authActions, useAppDispatch, useAppSelector } from '../../contexts';
+import { authActions, useAppDispatch } from '../../contexts';
 import { handleApiResponse, safeFetch } from '../../lib/api-utils';
 import { handleError, handleErrorUnlessAborted } from '../../lib/error-handler';
 import { useAsyncEffect } from '../../lib/useAsyncEffect';
+import { useSaaSOs } from '../os/hooks';
+import { useAuthState } from './hooks';
 import { getAuthFlags, IAuthCallbacks } from './types';
 import {
   createSession,
@@ -27,8 +29,8 @@ interface IProps {
  */
 export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) => {
   const dispatch = useAppDispatch();
-  const authState = useAppSelector(state => state.auth);
-  const osState = useAppSelector(state => state.os);
+  const authState = useAuthState();
+  const osState = useSaaSOs();
   const isAuthenticated = getAuthFlags(authState.status).isAuthenticated;
 
   // Track if we're processing an auth redirect to prevent duplicate processing
@@ -73,11 +75,7 @@ export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) 
             'Failed to fetch user profile'
           );
 
-          const authUser = mapIUserToAuthUser(
-            userData,
-            orgId,
-            currentOsState.auth?.clientId || ''
-          );
+          const authUser = mapIUserToAuthUser(userData, orgId, currentOsState.auth?.clientId || '');
 
           // Create session with user and sessionId
           const session = createSession(authUser, sessionId);
@@ -147,24 +145,26 @@ export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) 
             },
             signal,
           });
-          userData = await handleApiResponse<IUser>(profileResponse, 'Failed to fetch user profile');
+          userData = await handleApiResponse<IUser>(
+            profileResponse,
+            'Failed to fetch user profile'
+          );
         } catch (error) {
-          if (!handleErrorUnlessAborted(error, {
-            component: 'AuthProviderWrapper',
-            action: 'fetchUserProfile',
-            metadata: { step: 'fetchProfile' },
-          })) return;
+          if (
+            !handleErrorUnlessAborted(error, {
+              component: 'AuthProviderWrapper',
+              action: 'fetchUserProfile',
+              metadata: { step: 'fetchProfile' },
+            })
+          )
+            return;
           fetchingProfileRef.current = false;
           removeSession();
           dispatch.auth(authActions.authenticationFailed());
           return;
         }
 
-        const authUser = mapIUserToAuthUser(
-          userData,
-          orgId,
-          osState.auth?.clientId || ''
-        );
+        const authUser = mapIUserToAuthUser(userData, orgId, osState.auth?.clientId || '');
 
         const session = createSession(authUser, sessionId);
         dispatch.auth(authActions.setSession(session));
@@ -173,11 +173,14 @@ export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) 
           error instanceof Error &&
           (error.message === 'User data missing required ID field' ||
             error.message === 'User data missing required email field');
-        if (!handleErrorUnlessAborted(error, {
-          component: 'AuthProviderWrapper',
-          action: 'fetchUserProfile',
-          metadata: { step: isValidationError ? 'validateUserData' : 'pageLoad' },
-        })) return;
+        if (
+          !handleErrorUnlessAborted(error, {
+            component: 'AuthProviderWrapper',
+            action: 'fetchUserProfile',
+            metadata: { step: isValidationError ? 'validateUserData' : 'pageLoad' },
+          })
+        )
+          return;
         removeSession();
         dispatch.auth(authActions.authenticationFailed());
       } finally {
@@ -189,7 +192,7 @@ export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) 
 
   /**
    * Handle OAuth redirect: when user returns with ?code=... in URL.
-   * 
+   *
    * Flow:
    * 1. User clicks signIn() → redirects to OAuth provider.
    * 2. OAuth provider redirects back with ?code=... in URL.
@@ -198,7 +201,7 @@ export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) 
    *    - Fetches user profile with sessionId.
    *    - Creates session and dispatches setSession() → status: authenticated.
    *    - Removes code from URL.
-   * 
+   *
    * Note: This takes priority over localStorage hydration (hydration effect skips when code exists).
    */
   useEffect(() => {

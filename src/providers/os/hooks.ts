@@ -5,6 +5,15 @@ import { handleErrorUnlessAborted } from '../../lib/error-handler';
 import { useAsyncEffect } from '../../lib/useAsyncEffect';
 import { getAuthHeaders } from '../auth/utils';
 import type { ISettings } from '../types';
+import type { IOsState } from './types';
+
+/**
+ * Hook to access OS (organization) state (serverUrl, version, orgId, auth, settings).
+ * Prefer useSaaSSettings() when you only need settings.
+ */
+export function useSaaSOs(): IOsState {
+  return useAppSelector(state => state.os);
+}
 
 /**
  * Hook to access organization settings from the OS context.
@@ -47,7 +56,7 @@ import type { ISettings } from '../types';
  */
 export function useSaaSSettings() {
   const dispatch = useAppDispatch();
-  const os = useAppSelector(state => state.os);
+  const os = useSaaSOs();
   const { serverUrl, version, orgId, settings } = os;
   const fetchingSettingsRef = useRef(false);
 
@@ -72,10 +81,10 @@ export function useSaaSSettings() {
       try {
         const headers = getAuthHeaders();
 
-        const response = await safeFetch(
-          `${serverUrl}/api/${version}/public/${orgId}/settings`,
-          { headers, signal }
-        );
+        const response = await safeFetch(`${serverUrl}/api/${version}/public/${orgId}/settings`, {
+          headers,
+          signal,
+        });
 
         if (!response.ok) {
           throw new Error('Failed to fetch settings');
