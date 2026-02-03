@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   BillingInterval,
   ICheckoutSessionRequest,
@@ -13,7 +13,7 @@ import {
 } from '../../api/types';
 import { handleError } from '../../lib/error-handler';
 import { useSaaSOs } from '../os/hooks';
-import { WorkspaceApi } from './api';
+import { useWorkspaceApi } from './hooks';
 
 /**
  * Hook to get public plans by slug (no auth required).
@@ -25,7 +25,7 @@ import { WorkspaceApi } from './api';
  */
 export const usePublicPlans = (slug: string) => {
   const os = useSaaSOs();
-  const api = useMemo(() => new WorkspaceApi(os), [os.serverUrl, os.version, os.orgId]);
+  const api = useWorkspaceApi(os);
   const isConfigReady = Boolean(os.serverUrl && os.version && os.orgId);
 
   const [data, setData] = useState<IPublicPlansResponse | null>(null);
@@ -105,7 +105,7 @@ export const usePublicPlans = (slug: string) => {
  */
 export const usePublicPlanGroupVersion = (groupVersionId: string | null | undefined) => {
   const os = useSaaSOs();
-  const api = useMemo(() => new WorkspaceApi(os), [os.serverUrl, os.version, os.orgId]);
+  const api = useWorkspaceApi(os);
 
   const [planGroupVersion, setPlanGroupVersion] = useState<IPlanGroupVersion | null>(null);
   const [loading, setLoading] = useState(false);
@@ -187,7 +187,7 @@ export const usePublicPlanGroupVersion = (groupVersionId: string | null | undefi
  */
 export const useSubscription = (workspaceId: string | null | undefined) => {
   const os = useSaaSOs();
-  const api = useMemo(() => new WorkspaceApi(os), [os.serverUrl, os.version, os.orgId]);
+  const api = useWorkspaceApi(os);
 
   const [subscription, setSubscription] = useState<ISubscriptionResponse | null>(null);
   const [loading, setLoading] = useState(false);
@@ -280,7 +280,7 @@ export const usePlanGroup = (
   groupVersionId?: string | null
 ) => {
   const os = useSaaSOs();
-  const api = useMemo(() => new WorkspaceApi(os), [os.serverUrl, os.version, os.orgId]);
+  const api = useWorkspaceApi(os);
 
   const [planGroup, setPlanGroup] = useState<IPlanGroupResponse | null>(null);
   const [loading, setLoading] = useState(false);
@@ -358,7 +358,7 @@ export const usePlanGroup = (
  */
 export const usePlanGroupVersions = (workspaceId: string | null | undefined) => {
   const os = useSaaSOs();
-  const api = useMemo(() => new WorkspaceApi(os), [os.serverUrl, os.version, os.orgId]);
+  const api = useWorkspaceApi(os);
 
   const [versions, setVersions] = useState<IPlanGroupVersionsResponse | null>(null);
   const [loading, setLoading] = useState(false);
@@ -461,7 +461,7 @@ export const usePlanGroupVersions = (workspaceId: string | null | undefined) => 
  */
 export const useCreateCheckoutSession = (workspaceId: string | null | undefined) => {
   const os = useSaaSOs();
-  const api = useMemo(() => new WorkspaceApi(os), [os.serverUrl, os.version, os.orgId]);
+  const api = useWorkspaceApi(os);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -570,7 +570,7 @@ export const useCreateCheckoutSession = (workspaceId: string | null | undefined)
  */
 export const useUpdateSubscription = (workspaceId: string | null | undefined) => {
   const os = useSaaSOs();
-  const api = useMemo(() => new WorkspaceApi(os), [os.serverUrl, os.version, os.orgId]);
+  const api = useWorkspaceApi(os);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -749,7 +749,7 @@ export const useInvoices = (
   startingAfter?: string
 ) => {
   const os = useSaaSOs();
-  const api = useMemo(() => new WorkspaceApi(os), [os.serverUrl, os.version, os.orgId]);
+  const api = useWorkspaceApi(os);
 
   const [invoices, setInvoices] = useState<IInvoice[]>([]);
   const [hasMore, setHasMore] = useState(false);
@@ -832,7 +832,7 @@ export const useInvoice = (
   invoiceId: string | null | undefined
 ) => {
   const os = useSaaSOs();
-  const api = useMemo(() => new WorkspaceApi(os), [os.serverUrl, os.version, os.orgId]);
+  const api = useWorkspaceApi(os);
 
   const [invoice, setInvoice] = useState<IInvoice | null>(null);
   const [loading, setLoading] = useState(false);
@@ -911,7 +911,7 @@ export const useInvoice = (
  */
 export const useCancelSubscription = (workspaceId: string | null | undefined) => {
   const os = useSaaSOs();
-  const api = useMemo(() => new WorkspaceApi(os), [os.serverUrl, os.version, os.orgId]);
+  const api = useWorkspaceApi(os);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -984,7 +984,7 @@ export const useCancelSubscription = (workspaceId: string | null | undefined) =>
  */
 export const useResumeSubscription = (workspaceId: string | null | undefined) => {
   const os = useSaaSOs();
-  const api = useMemo(() => new WorkspaceApi(os), [os.serverUrl, os.version, os.orgId]);
+  const api = useWorkspaceApi(os);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
