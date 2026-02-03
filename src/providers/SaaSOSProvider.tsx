@@ -3,6 +3,8 @@
 import React, { useEffect } from 'react';
 import { SDKErrorBoundary } from '../components/ErrorBoundary';
 import { SDKContextProvider } from '../contexts';
+
+import { SubscriptionContextProvider } from '../contexts/SubscriptionContext';
 import '../styles/globals.css';
 import { AuthProviderWrapper } from './auth/provider';
 import { ContextConfigProvider } from './ContextConfigProvider';
@@ -11,7 +13,6 @@ import { ApiVersion, IOsState } from './os/types';
 import PortalProvider from './PortalContainer';
 import { UserProvider } from './user/provider';
 import { WorkspaceSettingsProvider } from './workspace/WorkspaceSettingsProvider';
-
 export interface SaaSOSProviderProps extends IOsState {
   children: React.ReactNode;
 }
@@ -188,7 +189,9 @@ export const SaaSOSProvider: React.FC<SaaSOSProviderProps> = React.memo(
             <PortalProvider>
               <ContextConfigProvider config={config} auth={auth}>
                 <UserProvider>
-                  <WorkspaceSettingsProvider>{children}</WorkspaceSettingsProvider>
+                  <WorkspaceSettingsProvider>
+                    <SubscriptionContextProvider>{children}</SubscriptionContextProvider>
+                  </WorkspaceSettingsProvider>
                 </UserProvider>
               </ContextConfigProvider>
             </PortalProvider>

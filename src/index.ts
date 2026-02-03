@@ -24,6 +24,18 @@ export {
   WhenWorkspaceFeatureEnabled,
 } from './components/features';
 
+// Export subscription gate components (must be used within SubscriptionContextProvider)
+export {
+  WhenNoSubscription,
+  WhenSubscription,
+  WhenSubscriptionToPlans,
+} from './components/subscription';
+export {
+  SubscriptionContextProvider,
+  useSubscriptionContext,
+} from './contexts/SubscriptionContext';
+export type { SubscriptionContextValue } from './contexts/SubscriptionContext';
+
 // Export auth status and types (flags are derived in useSaaSAuth)
 export { AuthStatus } from './providers/auth/types';
 export type { OnWorkspaceChangeParams } from './providers/auth/types';

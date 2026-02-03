@@ -11,6 +11,7 @@ import {
   ISubscriptionResponse,
   ISubscriptionUpdateResponse,
 } from '../../api/types';
+import { invalidateSubscription } from '../../contexts/SubscriptionContext/subscriptionInvalidation';
 import { handleError } from '../../lib/error-handler';
 import { isOsConfigReady } from '../os/types';
 import { useWorkspaceApiWithOs } from './hooks';
@@ -587,6 +588,7 @@ export const useUpdateSubscription = (workspaceId: string | null | undefined) =>
           ...(options?.cancelUrl && { cancelUrl: options.cancelUrl }),
         };
         const result = await api.updateSubscription(workspaceId, request);
+        invalidateSubscription();
         return result;
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Failed to update subscription';
@@ -909,6 +911,7 @@ export const useCancelSubscription = (workspaceId: string | null | undefined) =>
     setError(null);
     try {
       const result = await api.cancelSubscriptionAtPeriodEnd(workspaceId);
+      invalidateSubscription();
       return result;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to cancel subscription';
@@ -979,6 +982,7 @@ export const useResumeSubscription = (workspaceId: string | null | undefined) =>
     setError(null);
     try {
       const result = await api.resumeSubscription(workspaceId);
+      invalidateSubscription();
       return result;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to resume subscription';

@@ -38,6 +38,9 @@ export type { WorkspaceAction, WorkspaceContextValue, WorkspaceState } from './W
 export { SDKContextProvider } from './SDKContext';
 export type { SDKContextValue } from './SDKContext';
 
+export { SubscriptionContextProvider, useSubscriptionContext } from './SubscriptionContext';
+export type { SubscriptionContextValue } from './SubscriptionContext';
+
 // Combined Selector and Dispatch
 export { useAppSelector } from './shared/useAppSelector';
 export type { SDKState } from './shared/useAppSelector';
