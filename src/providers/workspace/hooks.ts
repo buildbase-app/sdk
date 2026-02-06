@@ -269,7 +269,7 @@ export const useSaaSWorkspaces = () => {
       dispatch.workspaces(workspaceActions.setLoading(false));
       fetchingRef.current = false;
     }
-  }, [api, workspace.loading, workspace.currentWorkspace?._id, dispatch, switchToWorkspace]);
+  }, [api, workspace.loading, dispatch, switchToWorkspace]);
 
   // Background refresh (does not block UI, updates memo/data)
   const refreshWorkspaces = useCallback(async () => {
@@ -290,7 +290,7 @@ export const useSaaSWorkspaces = () => {
   }, [api, workspace.refreshing, dispatch]);
 
   const createWorkspace = useCallback(
-    async (name: string, image: string) => {
+    async (name: string, image?: string) => {
       const data = await api.createWorkspace({ name, image });
       dispatch.workspaces(workspaceActions.setWorkspaces([...workspace.workspaces, data]));
       // Trigger workspace created event
@@ -384,14 +384,14 @@ export const useSaaSWorkspaces = () => {
     }
 
     // Only update if the workspace object reference changed (data was updated)
-    // Use reference equality check to avoid unnecessary updates
+    // Dispatch directly so we update state/storage with fresh data without emitting workspace:changed
     if (updatedWorkspace !== workspace.currentWorkspace) {
-      setCurrentWorkspaceWithStorage(updatedWorkspace);
+      dispatch.workspaces(workspaceActions.setCurrentWorkspace(updatedWorkspace));
     }
   }, [
     workspace.workspaces,
     workspace.currentWorkspace,
-    setCurrentWorkspaceWithStorage,
+    dispatch,
     switchToWorkspace,
   ]);
 
