@@ -61,6 +61,7 @@ export interface ISubscription {
   stripePriceId?: string;
   stripeCurrentPeriodEnd?: string; // ISO date string for when current billing period ends
   cancelAtPeriodEnd: boolean;
+  billingInterval?: BillingInterval;
   createdAt: string;
   updatedAt: string;
   plan?: {
@@ -86,6 +87,22 @@ export interface IQuotaValue {
   stripePriceId?: string;
 }
 
+/** Per-interval quota value (new plan-group/versions schema) */
+export interface IQuotaIntervalValue {
+  included: number;
+  overage: number;
+  priceId: string;
+  /** Optional unit size for overage pricing (e.g. 1000 = price per 1000 units). */
+  unitSize?: number;
+}
+
+/** Quota defined per billing interval (new plan-group/versions schema) */
+export interface IQuotaByInterval {
+  monthly?: IQuotaIntervalValue;
+  yearly?: IQuotaIntervalValue;
+  quarterly?: IQuotaIntervalValue;
+}
+
 export interface IBasePricing {
   monthly: number;
   yearly: number;
@@ -99,7 +116,8 @@ export interface IPlanVersion {
   status: 'draft' | 'published';
   features?: Record<string, boolean>;
   limits?: Record<string, number>;
-  quotas?: Record<string, number | IQuotaValue>;
+  /** Legacy: number | IQuotaValue. New schema: IQuotaByInterval (per-interval included/overage/priceId) */
+  quotas?: Record<string, number | IQuotaValue | IQuotaByInterval>;
   basePricing?: IBasePricing;
   stripePrices?: {
     monthlyPriceId?: string;
@@ -116,6 +134,12 @@ export interface IPlanVersion {
   createdAt?: string;
   updatedAt?: string;
   id?: string;
+  stripeProductId?: string;
+}
+
+/** Plan version summary (e.g. plan.latestVersion from subscription API) with subscriptionItems as IDs. */
+export interface IPlanVersionSummary extends Omit<IPlanVersion, 'subscriptionItems'> {
+  subscriptionItems?: string[];
 }
 
 export interface IPlan {
@@ -123,7 +147,7 @@ export interface IPlan {
   name: string;
   slug: string;
   description?: string;
-  latestVersion?: IPlanVersion;
+  latestVersion?: IPlanVersionSummary;
   archived?: boolean;
   deleted?: boolean;
   createdAt?: string;
@@ -205,22 +229,25 @@ export interface IPlanGroupVersionWithPlans {
   };
 }
 
+export interface IPlanGroupInfo {
+  _id: string;
+  name: string;
+  slug: string;
+  description?: string;
+}
+
+/** Response from GET workspaces/:id/subscription/plan-group (and by version). */
 export interface IPlanGroupResponse {
-  group: {
-    _id: string;
-    name: string;
-    slug: string;
-  };
-  currentVersion: IPlanGroupVersionWithPlans;
-  availableVersions: IPlanGroupVersionWithPlans[];
+  /** Plan group with latestVersion, archived, deleted, timestamps. */
+  group: IPlanGroup;
+  /** Current group version with populated planVersionIds (or IDs). */
+  groupVersion: IPlanGroupVersion;
+  /** Full plan versions for display (subscriptionItems, basePricing, quotas, etc.). */
+  plans: IPlanVersionWithPlan[];
 }
 
 export interface IPlanGroupVersionsResponse {
-  group: {
-    _id: string;
-    name: string;
-    slug: string;
-  };
+  group: IPlanGroupInfo;
   currentVersion: IPlanGroupVersionWithPlans;
   availableVersions: IPlanGroupVersionWithPlans[];
 }

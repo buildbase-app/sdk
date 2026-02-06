@@ -252,7 +252,7 @@ export const useSubscription = (workspaceId: string | null | undefined) => {
  *
  *   return (
  *     <div>
- *       <h3>{planGroup.name}</h3>
+ *       <h3>{planGroup.group.name}</h3>
  *       {planGroup.plans.map(plan => (
  *         <PlanCard key={plan._id} plan={plan} />
  *       ))}
