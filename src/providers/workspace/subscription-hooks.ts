@@ -65,6 +65,7 @@ export const usePublicPlans = (slug: string) => {
   return {
     items: data?.items ?? [],
     plans: data?.plans ?? [],
+    notes: data?.notes,
     loading: isLoading,
     error,
     refetch: fetchPlans,

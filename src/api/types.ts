@@ -1,6 +1,7 @@
 export interface IDocument {
   _id: string;
-  id: string;
+  /** Optional; some APIs only return _id. Prefer _id for identity. */
+  id?: string;
   createdAt: string;
   updatedAt: string;
   deleted: boolean;
@@ -15,12 +16,17 @@ export interface IUser extends IDocument {
   _id: string;
   name: string;
   email: string;
-  image: string;
+  /** Profile image URL. Often omitted or empty from API. */
+  image?: string;
   role: string;
-  country: string;
-  timezone: string;
-  language: string;
-  currency: string;
+  /** ISO country code. May be omitted. */
+  country?: string;
+  /** IANA timezone. May be omitted. */
+  timezone?: string;
+  /** Language code. May be omitted. */
+  language?: string;
+  /** Currency code. May be omitted. */
+  currency?: string;
   attributes?: Record<string, string | number | boolean>;
 }
 
@@ -103,6 +109,7 @@ export interface IQuotaByInterval {
   quarterly?: IQuotaIntervalValue;
 }
 
+/** Base pricing per interval. Values are often in cents (Stripe); convert for display. */
 export interface IBasePricing {
   monthly: number;
   yearly: number;
@@ -301,7 +308,7 @@ export interface IPublicPlanItem {
   _id: string;
   name: string;
   slug: string;
-  description: string;
+  description?: string;
   type: 'feature' | 'limit' | 'quota';
   category: IPublicPlanItemCategory;
 }
@@ -318,13 +325,20 @@ export interface IPublicPlanQuotaValue {
   stripePriceId?: string;
 }
 
+/**
+ * Public plan version (e.g. from GET /api/v1/public/:orgId/plans/:slug).
+ * Pricing is typically in cents; convert to dollars for display (see response.notes).
+ * Quotas may be flat (legacy) or per-interval (monthly/yearly/quarterly with priceId, unitSize).
+ */
 export interface IPublicPlanVersion {
   _id: string;
   name: string;
   version: number;
   status: 'draft' | 'published';
+  /** Prices per interval (usually in cents). */
   pricing: IPublicPlanPricing;
-  quotas: Record<string, IPublicPlanQuotaValue>;
+  /** Keyed by item slug. Value is flat (legacy) or per-interval (IQuotaByInterval). Use getQuotaDisplayValue(plan.quotas[slug], interval) for display. */
+  quotas: Record<string, IPublicPlanQuotaValue | IQuotaByInterval>;
   features: Record<string, boolean>;
   limits: Record<string, number>;
 }
@@ -332,6 +346,8 @@ export interface IPublicPlanVersion {
 export interface IPublicPlansResponse {
   items: IPublicPlanItem[];
   plans: IPublicPlanVersion[];
+  /** Optional note from API (e.g. "Pricing is in cents. Please convert to dollars for display."). */
+  notes?: string;
 }
 
 // Invoice Types

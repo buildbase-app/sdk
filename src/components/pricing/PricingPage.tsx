@@ -14,6 +14,8 @@ export interface PricingPageDetails {
   items: IPublicPlanItem[];
   /** Plan versions with pricing, features, limits, quotas */
   plans: IPublicPlanVersion[];
+  /** Optional note from API (e.g. "Pricing is in cents. Please convert to dollars for display.") */
+  notes?: string;
   /** Refetch plan data */
   refetch: () => Promise<void>;
 }
@@ -52,7 +54,7 @@ export interface PricingPageProps {
  * ```
  */
 export function PricingPage({ slug, children, loadingFallback, errorFallback }: PricingPageProps) {
-  const { items, plans, loading, error, refetch } = usePublicPlans(slug);
+  const { items, plans, notes, loading, error, refetch } = usePublicPlans(slug);
 
   if (loading) {
     if (loadingFallback !== undefined) {
@@ -81,5 +83,5 @@ export function PricingPage({ slug, children, loadingFallback, errorFallback }: 
     );
   }
 
-  return <>{children({ loading, error, items, plans, refetch })}</>;
+  return <>{children({ loading, error, items, plans, notes, refetch })}</>;
 }
