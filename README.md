@@ -318,6 +318,18 @@ function FeatureExample() {
 
 Use the `useUserFeatures` hook to check feature flags programmatically:
 
+```tsx
+import { useUserFeatures } from '@buildbase/sdk';
+
+function FeatureCheck() {
+  const { features, isFeatureEnabled, refreshFeatures } = useUserFeatures();
+
+  return (
+    <div>{isFeatureEnabled('premium-features') ? <PremiumContent /> : <StandardContent />}</div>
+  );
+}
+```
+
 ## 📋 Subscription Gates
 
 Control UI visibility based on the current workspace’s subscription. Subscription data is loaded once per workspace and refetched when the workspace changes or when the subscription is updated (e.g. upgrade, cancel, resume).
@@ -410,22 +422,6 @@ function SubscriptionStatus() {
 - When the current workspace changes (automatic).
 - When subscription is updated via SDK (e.g. `useUpdateSubscription`, cancel, resume) — refetch is triggered automatically.
 - When you call `refetch()` (e.g. after redirect from checkout).
-
-### Feature Flags Hook
-
-Use the `useUserFeatures` hook to check feature flags programmatically:
-
-```tsx
-import { useUserFeatures } from '@buildbase/sdk';
-
-function FeatureCheck() {
-  const { features, isFeatureEnabled, refreshFeatures } = useUserFeatures();
-
-  return (
-    <div>{isFeatureEnabled('premium-features') ? <PremiumContent /> : <StandardContent />}</div>
-  );
-}
-```
 
 ## 👤 User Management
 
@@ -640,7 +636,7 @@ import { SaaSOSProvider, eventEmitter } from '@buildbase/sdk';
 
 ## 🛡️ Error Handling
 
-The SDK handles errors internally: API failures, auth errors, and component errors are logged and surfaced through hook states (e.g. `error` from `useSaaSWorkspaces`) and callbacks. Wrap your app in an error boundary of your choice to catch React errors. For failed operations, check the `error` property on hooks and handle it in your UI (e.g. toast or inline message).
+The SDK handles errors internally: API failures, auth errors, and component errors are logged and surfaced through hook states (e.g. `error` from `useSaaSWorkspaces`) and callbacks. **SaaSOSProvider** wraps its children in an internal **SDKErrorBoundary** to catch React render errors inside the SDK tree. For app-level errors, wrap your app (or routes) in your own error boundary (e.g. React’s `ErrorBoundary` or your framework’s error UI). For failed async operations, check the `error` property on hooks and show user feedback (e.g. toast or inline message). See [Error codes](docs/ERROR_CODES.md) for SDK error codes and HTTP mappings.
 
 ## ⚙️ Settings
 
@@ -674,21 +670,18 @@ All SDK API clients extend a shared base class and are exported from the package
 | `WorkspaceApi`   | Workspaces, subscription, invoices, users                                       |
 | `SettingsApi`    | Organization settings                                                           |
 
-Use the hooks (`useUserApi`, `useWorkspaceApi`, etc.) for a ready-made instance with OS config, or instantiate with your own config:
+Get OS config from `useSaaSOs()` and instantiate API classes when you need low-level access; otherwise prefer the high-level hooks (`useSaaSWorkspaces`, `useUserAttributes`, `useSaaSSettings`, etc.):
 
 ```tsx
 import { UserApi, WorkspaceApi, SettingsApi, useSaaSOs } from '@buildbase/sdk';
 
-// Via hook (uses OS config from context)
-const api = useWorkspaceApi(); // or useUserApi(), etc.
-
-// Or instantiate with config
 const os = useSaaSOs();
 const workspaceApi = new WorkspaceApi({
   serverUrl: os.serverUrl,
   version: os.version,
   orgId: os.orgId,
 });
+// Similarly: new UserApi({ ... }), new SettingsApi({ ... })
 ```
 
 ### Hooks
@@ -719,7 +712,7 @@ All TypeScript types are exported for type safety. See the [TypeScript definitio
 
 ### Further documentation
 
-- [Architecture](docs/ARCHITECTURE.md) – Layers, APIs (BaseApi, UserApi, WorkspaceApi, SettingsApi), state, auth flow
+- [Architecture](docs/ARCHITECTURE.md) – Layers, providers, APIs (BaseApi, UserApi, WorkspaceApi, SettingsApi), state, auth flow
 - [Error codes](docs/ERROR_CODES.md) – SDK error codes and HTTP status mappings
 
 ## ⚙️ Configuration Reference

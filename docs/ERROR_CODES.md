@@ -1,6 +1,6 @@
 # Error Codes Reference
 
-This document lists all error codes used in the BuildBase SDK and their meanings.
+This document lists error codes used in the BuildBase SDK and their meanings. These codes can be used with `createSDKError()` and may be set on `SDKError.code` when the SDK throws. Not every code is used in every release; this doc serves as the canonical reference.
 
 ## SDK Error Codes
 

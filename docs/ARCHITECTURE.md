@@ -86,7 +86,7 @@ The SDK uses a **central base class + domain APIs** pattern. All domain API clas
 | **WorkspaceApi** | `src/providers/workspace/api.ts` | Workspaces, subscription, invoices, users |
 | **SettingsApi**  | `src/providers/os/api.ts`        | Organization settings                     |
 
-All are exported from the package; consumers can use hooks (e.g. `useUserApi`, `useWorkspaceApi`) or instantiate classes with OS config.
+All are exported from the package; consumers typically use the high-level hooks (e.g. `useSaaSWorkspaces`, `useUserAttributes`) or instantiate API classes with config from `useSaaSOs()`.
 
 #### API Utilities
 
