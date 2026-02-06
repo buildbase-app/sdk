@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { formatQuotaWithPrice, getQuotaDisplayValue } from '../../../api/quota-utils';
 import { BillingInterval, IPlanVersionWithPlan, ISubscriptionItem } from '../../../api/types';
 import { Button } from '../../../components/ui/button';
 import {
@@ -227,14 +228,15 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
 
   const getValueForPlan = (
     planVersion: IPlanVersionWithPlan,
-    item: ISubscriptionItem
-  ): boolean | number | { included: number; overage?: number; stripePriceId?: string } | null => {
+    item: ISubscriptionItem,
+    interval: BillingInterval = 'monthly'
+  ): boolean | number | { included: number; overage?: number } | null => {
     if (item.type === 'feature') {
       return planVersion.features?.[item.slug] ?? false;
     } else if (item.type === 'limit') {
       return planVersion.limits?.[item.slug] ?? null;
     } else if (item.type === 'quota') {
-      return planVersion.quotas?.[item.slug] ?? null;
+      return getQuotaDisplayValue(planVersion.quotas?.[item.slug], interval);
     }
     return null;
   };
@@ -248,10 +250,13 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
     } else if (item.type === 'limit') {
       return value !== null && value !== undefined ? String(value) : '—';
     } else if (item.type === 'quota') {
-      if (typeof value === 'object' && value !== null && 'included' in value) {
-        return `${value.included}${value.overage ? ` (+${value.overage})` : ''}`;
-      }
-      return value !== null && value !== undefined ? String(value) : '—';
+      const quotaValue =
+        typeof value === 'object' && value !== null && 'included' in value
+          ? value
+          : typeof value === 'number'
+            ? value
+            : null;
+      return formatQuotaWithPrice(quotaValue, item.name.toLowerCase());
     }
     return '—';
   };
@@ -422,7 +427,7 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                               )}
                             </td>
                             {sortedPlans.map(planVersion => {
-                              const value = getValueForPlan(planVersion, item);
+                              const value = getValueForPlan(planVersion, item, selectedInterval);
                               const formatted = formatValue(value, item);
                               const isEnabled = item.type === 'feature' && value === true;
                               return (
@@ -476,7 +481,7 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                               )}
                             </td>
                             {sortedPlans.map(planVersion => {
-                              const value = getValueForPlan(planVersion, item);
+                              const value = getValueForPlan(planVersion, item, selectedInterval);
                               const formatted = formatValue(value, item);
                               return (
                                 <td
@@ -525,7 +530,7 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                               )}
                             </td>
                             {sortedPlans.map(planVersion => {
-                              const value = getValueForPlan(planVersion, item);
+                              const value = getValueForPlan(planVersion, item, selectedInterval);
                               const formatted = formatValue(value, item);
                               return (
                                 <td

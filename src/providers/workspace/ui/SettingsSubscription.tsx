@@ -1,5 +1,6 @@
 import { AlertTriangle, Calendar, CreditCard, Loader2 } from 'lucide-react';
 import React, { useMemo, useState } from 'react';
+import { formatQuotaWithPrice, getQuotaDisplayValue } from '../../../api/quota-utils';
 import {
   BillingInterval,
   ICheckoutSessionResponse,
@@ -99,7 +100,7 @@ const getPlanDetailsFromItems = (planVersion: IPlanVersion | null | undefined) =
   const limits: Array<{ item: ISubscriptionItem; value: number }> = [];
   const quotas: Array<{
     item: ISubscriptionItem;
-    value: number | { included: number; overage?: number; stripePriceId?: string } | null;
+    value: ReturnType<typeof getQuotaDisplayValue>;
   }> = [];
 
   planVersion.subscriptionItems.forEach(item => {
@@ -112,7 +113,7 @@ const getPlanDetailsFromItems = (planVersion: IPlanVersion | null | undefined) =
       const value = planVersion.limits?.[slug] ?? 0;
       limits.push({ item, value });
     } else if (item.type === 'quota') {
-      const value = planVersion.quotas?.[slug] ?? null;
+      const value = getQuotaDisplayValue(planVersion.quotas?.[slug], 'monthly');
       if (value !== null && value !== undefined) {
         quotas.push({ item, value });
       }
@@ -813,12 +814,10 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                                   </h4>
                                   <ul className="space-y-2">
                                     {planDetails.quotas.map(({ item, value }) => {
-                                      const quotaDisplay =
-                                        typeof value === 'object' &&
-                                        value !== null &&
-                                        'included' in value
-                                          ? `${value.included}${value.overage ? ` (+${value.overage})` : ''}`
-                                          : String(value);
+                                      const quotaDisplay = formatQuotaWithPrice(
+                                        value,
+                                        item.name.toLowerCase()
+                                      );
                                       return (
                                         <li key={item._id} className="text-sm">
                                           <div className="flex items-center justify-between">

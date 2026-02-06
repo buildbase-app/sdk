@@ -85,6 +85,12 @@ export { BaseApi, SettingsApi, UserApi, WorkspaceApi } from './api';
 export type { IBaseApiConfig } from './api';
 
 // Export subscription types
+export { formatQuotaWithPrice, getQuotaDisplayValue } from './api/quota-utils';
+export type {
+  FormatQuotaWithPriceOptions,
+  QuotaDisplayValue,
+} from './api/quota-utils';
+
 export type {
   BillingInterval,
   IBasePricing,
@@ -95,12 +101,14 @@ export type {
   IInvoiceResponse,
   IPlan,
   IPlanGroup,
+  IPlanGroupInfo,
   IPlanGroupLatestVersion,
   IPlanGroupResponse,
   IPlanGroupVersion,
   IPlanGroupVersionWithPlans,
   IPlanGroupVersionsResponse,
   IPlanVersion,
+  IPlanVersionSummary,
   IPlanVersionWithPlan,
   IPublicPlanItem,
   IPublicPlanItemCategory,
@@ -108,6 +116,8 @@ export type {
   IPublicPlanQuotaValue,
   IPublicPlanVersion,
   IPublicPlansResponse,
+  IQuotaByInterval,
+  IQuotaIntervalValue,
   IQuotaValue,
   ISubscription,
   ISubscriptionItem,
