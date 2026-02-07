@@ -3,6 +3,7 @@ import { ImageIcon, Smile } from 'lucide-react';
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
+import { getCurrencyFlag } from '../../../api/currency-utils';
 import { Button } from '../../../components/ui/button';
 import {
   Form,
@@ -106,6 +107,18 @@ const WorkspaceSettingsGeneral: React.FC<{ workspace: IWorkspace }> = ({ workspa
               </FormItem>
             )}
           />
+
+          {workspace.billingCurrency?.trim() && (
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium text-muted-foreground">Billing currency</Label>
+              <div className="flex items-center gap-2 text-sm">
+                {getCurrencyFlag(workspace.billingCurrency) && (
+                  <span className="text-base">{getCurrencyFlag(workspace.billingCurrency)}</span>
+                )}
+                <span>{workspace.billingCurrency.trim().toUpperCase()}</span>
+              </div>
+            </div>
+          )}
 
           <div className="space-y-4">
             <div>

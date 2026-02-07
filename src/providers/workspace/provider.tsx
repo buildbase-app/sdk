@@ -1,15 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import {
-  Building2,
-  DollarSign,
-  Image,
-  Loader2,
-  Plus,
-  RefreshCcw,
-  Search,
-  Smile,
-  Users,
-} from 'lucide-react';
+import { Building2, Image, Loader2, Plus, RefreshCcw, Search, Smile, Users } from 'lucide-react';
 import { ReactNode, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -268,7 +258,8 @@ function WorkspaceItem(props: WorkspaceItemProps) {
       .slice(0, 2);
   };
   const subscription = workspace.subscription ?? null;
-  const plan = subscription?.plan ?? null;
+  const plan =
+    subscription != null && typeof subscription === 'object' ? (subscription.plan ?? null) : null;
   const planName = plan?.name ?? '';
   return (
     <div
@@ -297,8 +288,7 @@ function WorkspaceItem(props: WorkspaceItemProps) {
         {planName && (
           <div className="max-w-fit">
             <div className="flex items-center gap-1 text-sm text-muted-foreground bg-green-500 text-white rounded-full px-2 py-0.5">
-              <DollarSign className="h-3 w-3" />
-              <span className="text-xs">Subscription: {planName}</span>
+              <span className="text-xs">{planName}</span>
             </div>
           </div>
         )}

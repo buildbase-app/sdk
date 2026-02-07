@@ -1,4 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { formatCents, getCurrencyFlag } from '../../../api/currency-utils';
+import {
+  getAvailableCurrenciesFromPlans,
+  getBasePriceCents,
+  getBillingIntervalAndCurrencyFromPriceId,
+  getQuotaDisplayWithVariant,
+} from '../../../api/pricing-variant-utils';
 import { formatQuotaWithPrice, getQuotaDisplayValue } from '../../../api/quota-utils';
 import { BillingInterval, IPlanVersionWithPlan, ISubscriptionItem } from '../../../api/types';
 import { Button } from '../../../components/ui/button';
@@ -15,34 +22,19 @@ interface SubscriptionDialogProps {
   planVersions: IPlanVersionWithPlan[];
   currentPlanVersionId?: string | null;
   currentStripePriceId?: string | null;
-  onSelectPlan: (planVersionId: string, billingInterval: BillingInterval) => Promise<void>;
+  /**
+   * When set, only this currency is allowed (workspace has existing Stripe billing; Stripe does not allow multiple currencies per customer).
+   * When null/undefined, all plan currencies are available.
+   */
+  billingCurrency?: string | null;
+  /** Called when user selects a plan. Currency is optional (for display/logging only; not sent to API). */
+  onSelectPlan: (
+    planVersionId: string,
+    billingInterval: BillingInterval,
+    currency?: string
+  ) => Promise<void>;
   loading?: boolean;
 }
-
-// Helper to determine billing interval from price ID by comparing with plan's stripe prices
-const getBillingIntervalFromPriceId = (
-  priceId: string | null | undefined,
-  planVersions: IPlanVersionWithPlan[]
-): BillingInterval | null => {
-  if (!priceId) return null;
-
-  for (const plan of planVersions) {
-    const stripePrices = plan.stripePrices;
-    if (!stripePrices) continue;
-
-    if (stripePrices.monthlyPriceId === priceId || stripePrices.monthly === priceId) {
-      return 'monthly';
-    }
-    if (stripePrices.yearlyPriceId === priceId || stripePrices.yearly === priceId) {
-      return 'yearly';
-    }
-    if (stripePrices.quarterlyPriceId === priceId) {
-      return 'quarterly';
-    }
-  }
-
-  return null;
-};
 
 // Get all unique subscription items across all plans
 const getAllSubscriptionItems = (planVersions: IPlanVersionWithPlan[]) => {
@@ -59,12 +51,11 @@ const getAllSubscriptionItems = (planVersions: IPlanVersionWithPlan[]) => {
   return Array.from(allItems.values());
 };
 
-// Format price for display (converts cents to dollars)
-const formatPrice = (priceInCents: number | undefined | null): string => {
+// Format price for display (cents → localized amount with correct currency symbol). Caller must pass currency.
+const formatPrice = (priceInCents: number | undefined | null, currency: string): string => {
   if (priceInCents === undefined || priceInCents === null) return 'Free';
   if (priceInCents === 0) return 'Free';
-  const priceInDollars = priceInCents / 100;
-  return `$${priceInDollars.toFixed(2)}`;
+  return formatCents(priceInCents, currency);
 };
 
 // Get interval label
@@ -111,27 +102,60 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
   planVersions: propPlanVersions,
   currentPlanVersionId,
   currentStripePriceId,
+  billingCurrency: workspaceBillingCurrency,
   onSelectPlan,
   loading: isUpdating = false,
 }) => {
   const [localLoading, setLocalLoading] = useState(false);
   const [processingPlanId, setProcessingPlanId] = useState<string | null>(null);
 
-  // Derive current billing interval from price ID comparison
-  const currentBillingInterval = useMemo(() => {
-    return getBillingIntervalFromPriceId(currentStripePriceId, propPlanVersions);
+  // Derive current billing interval and currency from price ID
+  const currentIntervalAndCurrency = useMemo(() => {
+    return getBillingIntervalAndCurrencyFromPriceId(currentStripePriceId, propPlanVersions);
   }, [currentStripePriceId, propPlanVersions]);
+
+  const currentBillingInterval = currentIntervalAndCurrency?.interval ?? null;
+  const currentCurrency = currentIntervalAndCurrency?.currency ?? null;
+
+  const allPlanCurrencies = useMemo(
+    () => getAvailableCurrenciesFromPlans(propPlanVersions),
+    [propPlanVersions]
+  );
+
+  // When workspace has billingCurrency set, only allow that currency (Stripe single-currency per customer). Otherwise show all.
+  const availableCurrencies = useMemo(() => {
+    const locked = workspaceBillingCurrency?.trim().toLowerCase();
+    if (locked) {
+      return allPlanCurrencies.includes(locked) ? [locked] : [];
+    }
+    return allPlanCurrencies;
+  }, [workspaceBillingCurrency, allPlanCurrencies]);
 
   const [selectedInterval, setSelectedInterval] = useState<BillingInterval>(
     currentBillingInterval || 'monthly'
   );
+  const [selectedCurrency, setSelectedCurrency] = useState<string>(() => {
+    if (currentCurrency && availableCurrencies.includes(currentCurrency)) return currentCurrency;
+    return availableCurrencies.length > 0 ? availableCurrencies[0]! : '';
+  });
 
-  // Sync selected interval when dialog opens or current billing changes
+  // Effective currency for display/checkout: workspace lock or user selection (never hardcoded).
+  const effectiveCurrency = workspaceBillingCurrency?.trim() || selectedCurrency;
+
+  // Sync selected interval and currency when dialog opens or current subscription changes
   useEffect(() => {
     if (open) {
       setSelectedInterval(currentBillingInterval || 'monthly');
+      if (currentCurrency && availableCurrencies.includes(currentCurrency)) {
+        setSelectedCurrency(currentCurrency);
+      } else if (
+        availableCurrencies.length > 0 &&
+        !availableCurrencies.includes(selectedCurrency)
+      ) {
+        setSelectedCurrency(availableCurrencies[0]!);
+      }
     }
-  }, [open, currentBillingInterval]);
+  }, [open, currentBillingInterval, currentCurrency, availableCurrencies]);
 
   // Sort plans by version number
   const sortedPlans = useMemo(() => {
@@ -153,7 +177,7 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
     setLocalLoading(true);
     setProcessingPlanId(planVersionId);
     try {
-      await onSelectPlan(planVersionId, selectedInterval);
+      await onSelectPlan(planVersionId, selectedInterval, effectiveCurrency);
       onOpenChange(false);
     } catch (error) {
       // Error handling is done in parent
@@ -163,12 +187,16 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
     }
   };
 
-  // Get price for a plan based on selected interval
+  // Get price for a plan based on effective currency and interval (multi-currency aware)
   const getPriceForInterval = (planVersion: IPlanVersionWithPlan): number | null => {
-    const pricing = planVersion.basePricing;
-    if (!pricing) return null;
-    return pricing[selectedInterval] ?? null;
+    return getBasePriceCents(planVersion, effectiveCurrency, selectedInterval);
   };
+
+  // Whether this plan has a pricing variant for the effective currency (for disabling subscribe when unavailable)
+  const hasVariantForCurrency = (planVersion: IPlanVersionWithPlan): boolean =>
+    !!planVersion.pricingVariants?.some(
+      v => v.currency?.toLowerCase() === effectiveCurrency.toLowerCase()
+    );
 
   const isLoading = isUpdating || localLoading;
 
@@ -230,20 +258,28 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
     planVersion: IPlanVersionWithPlan,
     item: ISubscriptionItem,
     interval: BillingInterval = 'monthly'
-  ): boolean | number | { included: number; overage?: number } | null => {
+  ): boolean | number | { included: number; overage?: number; unitSize?: number } | null => {
     if (item.type === 'feature') {
       return planVersion.features?.[item.slug] ?? false;
     } else if (item.type === 'limit') {
       return planVersion.limits?.[item.slug] ?? null;
     } else if (item.type === 'quota') {
+      const withVariant = getQuotaDisplayWithVariant(
+        planVersion,
+        effectiveCurrency,
+        item.slug,
+        interval
+      );
+      if (withVariant) return withVariant;
       return getQuotaDisplayValue(planVersion.quotas?.[item.slug], interval);
     }
     return null;
   };
 
   const formatValue = (
-    value: boolean | number | { included: number; overage?: number } | null,
-    item: ISubscriptionItem
+    value: boolean | number | { included: number; overage?: number; unitSize?: number } | null,
+    item: ISubscriptionItem,
+    currency: string
   ): string => {
     if (item.type === 'feature') {
       return value === true ? '✓' : '—';
@@ -251,12 +287,8 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
       return value !== null && value !== undefined ? String(value) : '—';
     } else if (item.type === 'quota') {
       const quotaValue =
-        typeof value === 'object' && value !== null && 'included' in value
-          ? value
-          : typeof value === 'number'
-            ? value
-            : null;
-      return formatQuotaWithPrice(quotaValue, item.name.toLowerCase());
+        typeof value === 'object' && value !== null && 'included' in value ? value : null;
+      return formatQuotaWithPrice(quotaValue, item.name.toLowerCase(), { currency });
     }
     return '—';
   };
@@ -264,50 +296,89 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="inset-0 w-screen h-screen max-w-none rounded-none translate-x-0 translate-y-0 p-0 flex flex-col">
-        <div className="flex-shrink-0 flex items-center justify-between p-6 border-b">
+        <div className="flex-shrink-0 p-6 border-b space-y-4">
           <div>
             <DialogTitle className="text-2xl font-bold">Choose Your Plan</DialogTitle>
             <DialogDescription className="mt-1">
               Compare plans and select the one that fits your needs
             </DialogDescription>
           </div>
-          {/* Billing Interval Selector */}
-          <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-lg">
-            {(['monthly', 'quarterly', 'yearly'] as BillingInterval[]).map(interval => {
-              const isCurrentInterval = currentBillingInterval === interval;
-              return (
-                <button
-                  key={interval}
-                  onClick={() => setSelectedInterval(interval)}
-                  className={`px-4 py-2 text-sm font-medium rounded-md transition-all relative ${
-                    selectedInterval === interval
-                      ? 'bg-white text-slate-900 shadow-sm'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  <span className="flex items-center gap-1.5">
-                    {interval === 'monthly' && 'Monthly'}
-                    {interval === 'quarterly' && 'Quarterly'}
-                    {interval === 'yearly' && 'Yearly'}
-                    {interval === 'yearly' && (
-                      <span className="text-xs px-1.5 py-0.5 bg-emerald-100 text-emerald-700 rounded-full font-semibold">
-                        Save
-                      </span>
-                    )}
-                    {isCurrentInterval && currentPlanVersionId && (
-                      <span className="text-xs px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded-full font-semibold">
-                        Current
-                      </span>
-                    )}
-                  </span>
-                </button>
-              );
-            })}
+          {/* Row below title: currency on the left (only when workspace has no billingCurrency), interval on the right */}
+          <div className="flex items-center justify-between gap-4">
+            {/* Currency selector (left) – only show when workspace has no locked billing currency */}
+            <div className="flex items-center gap-2">
+              {!workspaceBillingCurrency?.trim() && availableCurrencies.length > 1 && (
+                <>
+                  <span className="text-sm text-slate-600">Currency</span>
+                  <select
+                    aria-label="Select billing currency"
+                    value={selectedCurrency}
+                    onChange={e => setSelectedCurrency(e.target.value)}
+                    className="rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  >
+                    {availableCurrencies.map(code => {
+                      const flag = getCurrencyFlag(code);
+                      return (
+                        <option key={code} value={code}>
+                          {flag ? `${flag} ${code.toUpperCase()}` : code.toUpperCase()}
+                        </option>
+                      );
+                    })}
+                  </select>
+                </>
+              )}
+            </div>
+            {/* Billing interval selector (right) */}
+            <div
+              className="flex items-center gap-1 p-1 bg-slate-100 rounded-lg"
+              role="group"
+              aria-label="Billing interval"
+            >
+              {(['monthly', 'quarterly', 'yearly'] as BillingInterval[]).map(interval => {
+                const isCurrentInterval = currentBillingInterval === interval;
+                return (
+                  <button
+                    key={interval}
+                    onClick={() => setSelectedInterval(interval)}
+                    className={`px-4 py-2 text-sm font-medium rounded-md transition-all relative ${
+                      selectedInterval === interval
+                        ? 'bg-white text-slate-900 shadow-sm'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    <span className="flex items-center gap-1.5">
+                      {interval === 'monthly' && 'Monthly'}
+                      {interval === 'quarterly' && 'Quarterly'}
+                      {interval === 'yearly' && 'Yearly'}
+                      {interval === 'yearly' && (
+                        <span className="text-xs px-1.5 py-0.5 bg-emerald-100 text-emerald-700 rounded-full font-semibold">
+                          Save
+                        </span>
+                      )}
+                      {isCurrentInterval && currentPlanVersionId && (
+                        <span className="text-xs px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded-full font-semibold">
+                          Current
+                        </span>
+                      )}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
 
         <div className="flex-1 min-h-0 flex flex-col">
-          {sortedPlans.length === 0 ? (
+          {workspaceBillingCurrency?.trim() && availableCurrencies.length === 0 ? (
+            <div className="text-center py-12 px-4">
+              <p className="text-slate-600 font-medium">
+                No plans available for your billing currency.
+              </p>
+              <p className="text-slate-500 text-sm mt-2">
+                Something went wrong. Please contact support.
+              </p>
+            </div>
+          ) : sortedPlans.length === 0 ? (
             <div className="text-center py-12 text-gray-500">
               <p>No plans available</p>
             </div>
@@ -337,11 +408,20 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                         const buttonState = getPlanButtonState(planVersion);
                         const isPlanLoading = isLoading && planVersion._id === processingPlanId;
                         const price = getPriceForInterval(planVersion);
-                        const monthlyPrice = planVersion.basePricing?.monthly ?? 0;
+                        const monthlyPrice =
+                          getBasePriceCents(planVersion, effectiveCurrency, 'monthly') ?? 0;
                         const savings =
                           selectedInterval !== 'monthly' && price !== null
                             ? calculateSavings(monthlyPrice, price, selectedInterval)
                             : null;
+                        const hasVariant = hasVariantForCurrency(planVersion);
+                        const displayCurrency =
+                          planVersion.pricingVariants?.length &&
+                          planVersion.pricingVariants.some(
+                            v => v.currency?.toLowerCase() === effectiveCurrency.toLowerCase()
+                          )
+                            ? effectiveCurrency
+                            : (planVersion.plan?.currency ?? effectiveCurrency ?? '');
 
                         return (
                           <th
@@ -368,15 +448,19 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                               <div className="flex flex-col items-start">
                                 <div className="flex items-baseline gap-1">
                                   <span className="text-2xl font-bold text-slate-900">
-                                    {formatPrice(price)}
+                                    {hasVariant && price !== null
+                                      ? formatPrice(price, displayCurrency)
+                                      : !hasVariant
+                                        ? '—'
+                                        : formatPrice(price, displayCurrency)}
                                   </span>
-                                  {price !== null && price > 0 && (
+                                  {price !== null && price > 0 && hasVariant && (
                                     <span className="text-sm text-slate-500">
                                       {getIntervalLabel(selectedInterval)}
                                     </span>
                                   )}
                                 </div>
-                                {savings !== null && savings > 0 && (
+                                {savings !== null && savings > 0 && hasVariant && (
                                   <span className="text-xs text-emerald-600 font-medium mt-0.5">
                                     Save {savings}% vs monthly
                                   </span>
@@ -391,11 +475,15 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                               <Button
                                 className="mt-auto w-full"
                                 variant={buttonState.variant}
-                                disabled={buttonState.disabled || isLoading}
+                                disabled={buttonState.disabled || isLoading || !hasVariant}
                                 progress={isPlanLoading}
                                 onClick={() => handleSelectPlan(planVersion._id)}
                               >
-                                {isPlanLoading ? 'Processing...' : buttonState.label}
+                                {isPlanLoading
+                                  ? 'Processing...'
+                                  : !hasVariant
+                                    ? 'Unavailable'
+                                    : buttonState.label}
                               </Button>
                             </div>
                           </th>
@@ -428,7 +516,10 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                             </td>
                             {sortedPlans.map(planVersion => {
                               const value = getValueForPlan(planVersion, item, selectedInterval);
-                              const formatted = formatValue(value, item);
+                              const displayCurrency = planVersion.pricingVariants?.length
+                                ? effectiveCurrency
+                                : (planVersion.plan?.currency ?? effectiveCurrency ?? '');
+                              const formatted = formatValue(value, item, displayCurrency);
                               const isEnabled = item.type === 'feature' && value === true;
                               return (
                                 <td
@@ -482,7 +573,10 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                             </td>
                             {sortedPlans.map(planVersion => {
                               const value = getValueForPlan(planVersion, item, selectedInterval);
-                              const formatted = formatValue(value, item);
+                              const displayCurrency = planVersion.pricingVariants?.length
+                                ? effectiveCurrency
+                                : (planVersion.plan?.currency ?? effectiveCurrency ?? '');
+                              const formatted = formatValue(value, item, displayCurrency);
                               return (
                                 <td
                                   key={planVersion._id}
@@ -531,7 +625,10 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                             </td>
                             {sortedPlans.map(planVersion => {
                               const value = getValueForPlan(planVersion, item, selectedInterval);
-                              const formatted = formatValue(value, item);
+                              const displayCurrency = planVersion.pricingVariants?.length
+                                ? effectiveCurrency
+                                : (planVersion.plan?.currency ?? effectiveCurrency ?? '');
+                              const formatted = formatValue(value, item, displayCurrency);
                               return (
                                 <td
                                   key={planVersion._id}

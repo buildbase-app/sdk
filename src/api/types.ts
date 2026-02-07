@@ -75,6 +75,8 @@ export interface ISubscription {
     name: string;
     slug: string;
     description?: string;
+    /** Stripe currency code (e.g. 'usd', 'inr', 'eur'). */
+    currency?: string;
   };
 }
 
@@ -87,18 +89,14 @@ export interface ISubscriptionItem {
   category: string;
 }
 
-export interface IQuotaValue {
-  included: number;
-  overage?: number;
-  stripePriceId?: string;
-}
-
-/** Per-interval quota value (new plan-group/versions schema) */
+/** Per-interval quota value (plan-group/versions and public plans schema). */
 export interface IQuotaIntervalValue {
   included: number;
-  overage: number;
-  priceId: string;
-  /** Optional unit size for overage pricing (e.g. 1000 = price per 1000 units). */
+  /** Overage price in cents. Omitted in public plans; use pricingVariant.quotaOverages for display. */
+  overage?: number;
+  /** Stripe price ID for overage. Omitted in public plans; use pricingVariant.quotaOveragePriceIds. */
+  priceId?: string;
+  /** Unit size for overage pricing (e.g. 1000 = price per 1000 units). */
   unitSize?: number;
 }
 
@@ -116,6 +114,42 @@ export interface IBasePricing {
   quarterly: number;
 }
 
+/** Stripe price IDs per billing interval (for a single currency variant). */
+export interface IStripePricesByInterval {
+  monthlyPriceId?: string;
+  yearlyPriceId?: string;
+  quarterlyPriceId?: string;
+  monthly?: string;
+  yearly?: string;
+}
+
+/** Overage amounts in cents per interval, keyed by quota slug. Used in pricing variants. */
+export type IQuotaOveragesByInterval = Record<
+  string,
+  { monthly?: number; yearly?: number; quarterly?: number }
+>;
+
+/** Overage Stripe price IDs per interval, keyed by quota slug. Used in pricing variants. */
+export type IQuotaOveragePriceIdsByInterval = Record<
+  string,
+  { monthly?: string; yearly?: string; quarterly?: string }
+>;
+
+/**
+ * Multi-currency pricing variant at plan version level.
+ * Each plan version can have multiple variants (e.g. usd, eur, inr, sgd).
+ */
+export interface IPricingVariant {
+  _id: string;
+  currency: string;
+  basePricing: IBasePricing;
+  stripePrices: IStripePricesByInterval;
+  /** Overage cents per quota slug per interval. */
+  quotaOverages?: IQuotaOveragesByInterval;
+  /** Stripe price IDs for overage per quota slug per interval. */
+  quotaOveragePriceIds?: IQuotaOveragePriceIdsByInterval;
+}
+
 export interface IPlanVersion {
   _id: string;
   version: number;
@@ -123,16 +157,10 @@ export interface IPlanVersion {
   status: 'draft' | 'published';
   features?: Record<string, boolean>;
   limits?: Record<string, number>;
-  /** Legacy: number | IQuotaValue. New schema: IQuotaByInterval (per-interval included/overage/priceId) */
-  quotas?: Record<string, number | IQuotaValue | IQuotaByInterval>;
-  basePricing?: IBasePricing;
-  stripePrices?: {
-    monthlyPriceId?: string;
-    yearlyPriceId?: string;
-    quarterlyPriceId?: string;
-    monthly?: string;
-    yearly?: string;
-  };
+  /** Per-interval quotas (included, unitSize; overage from pricingVariant.quotaOverages). */
+  quotas?: Record<string, IQuotaByInterval>;
+  /** Multi-currency pricing. Each variant has currency, basePricing, stripePrices, quotaOverages. */
+  pricingVariants?: IPricingVariant[];
   subscriptionItems?: ISubscriptionItem[];
   isCurrent?: boolean;
   isLegacy?: boolean;
@@ -154,6 +182,8 @@ export interface IPlan {
   name: string;
   slug: string;
   description?: string;
+  /** Stripe currency code (e.g. 'usd', 'inr', 'eur'). Used for pricing display. */
+  currency?: string;
   latestVersion?: IPlanVersionSummary;
   archived?: boolean;
   deleted?: boolean;
@@ -219,14 +249,20 @@ export interface ISubscriptionResponse {
   groupVersion: IPlanGroupVersion | null;
 }
 
+/** Plan version with nested plan info (name, slug, currency for display). */
 export interface IPlanVersionWithPlan extends IPlanVersion {
   plan: IPlan;
 }
 
+/**
+ * Plan group version with full plan versions (for GET .../plan-group/versions).
+ * Each plan has plan, subscriptionItems, quotas (per-interval), pricingVariants.
+ */
 export interface IPlanGroupVersionWithPlans {
   _id: string;
   version: number;
   description?: string;
+  /** Full plan versions with nested plan (name, slug, currency). */
   plans: IPlanVersionWithPlan[];
   isCurrent?: boolean;
   whatsNew?: {
@@ -245,20 +281,29 @@ export interface IPlanGroupInfo {
 
 /** Response from GET workspaces/:id/subscription/plan-group (and by version). */
 export interface IPlanGroupResponse {
-  /** Plan group with latestVersion, archived, deleted, timestamps. */
-  group: IPlanGroup;
+  /** Plan group with latestVersion, archived, deleted, timestamps. May be null in some API responses. */
+  group: IPlanGroup | null;
   /** Current group version with populated planVersionIds (or IDs). */
   groupVersion: IPlanGroupVersion;
-  /** Full plan versions for display (subscriptionItems, basePricing, quotas, etc.). */
+  /** Full plan versions for display (subscriptionItems, pricingVariants, quotas). */
   plans: IPlanVersionWithPlan[];
 }
 
+/**
+ * Response from GET workspaces/:workspaceId/subscription/plan-group/versions.
+ * Group summary plus current and available group versions; each version has plans with
+ * per-interval quotas and pricingVariants.
+ */
 export interface IPlanGroupVersionsResponse {
+  /** Plan group summary (_id, name, slug). */
   group: IPlanGroupInfo;
+  /** Current group version (user's version when subscribed, or latest published when not). */
   currentVersion: IPlanGroupVersionWithPlans;
+  /** Newer versions when user has subscription; empty when no subscription. */
   availableVersions: IPlanGroupVersionWithPlans[];
 }
 
+/** Request body for POST .../workspaces/:id/subscription/checkout. Only these fields are allowed. */
 export interface ICheckoutSessionRequest {
   planVersionId: string;
   billingInterval?: BillingInterval;
@@ -278,6 +323,7 @@ export interface ICheckoutSessionResponse {
   };
 }
 
+/** Request body for PATCH .../workspaces/:id/subscription. Only these fields are allowed. */
 export interface ISubscriptionUpdateRequest {
   planVersionId: string;
   billingInterval?: BillingInterval;
@@ -313,32 +359,21 @@ export interface IPublicPlanItem {
   category: IPublicPlanItemCategory;
 }
 
-export interface IPublicPlanPricing {
-  monthly: number;
-  yearly: number;
-  quarterly: number;
-}
-
-export interface IPublicPlanQuotaValue {
-  included: number;
-  overage: number;
-  stripePriceId?: string;
-}
-
 /**
  * Public plan version (e.g. from GET /api/v1/public/:orgId/plans/:slug).
- * Pricing is typically in cents; convert to dollars for display (see response.notes).
- * Quotas may be flat (legacy) or per-interval (monthly/yearly/quarterly with priceId, unitSize).
+ * Each plan has _id, name (plan display name), version, status, pricingVariants, quotas, features, limits.
+ * Pricing is in cents (see response.notes).
  */
 export interface IPublicPlanVersion {
   _id: string;
+  /** Plan display name (e.g. "Pro", "Base Plan"). */
   name: string;
   version: number;
   status: 'draft' | 'published';
-  /** Prices per interval (usually in cents). */
-  pricing: IPublicPlanPricing;
-  /** Keyed by item slug. Value is flat (legacy) or per-interval (IQuotaByInterval). Use getQuotaDisplayValue(plan.quotas[slug], interval) for display. */
-  quotas: Record<string, IPublicPlanQuotaValue | IQuotaByInterval>;
+  /** Multi-currency pricing. Use getBasePriceCents(plan, currency, interval) and getQuotaDisplayWithVariant for display. */
+  pricingVariants?: IPricingVariant[];
+  /** Keyed by item slug. Per-interval: included, unitSize; overage from pricingVariant.quotaOverages. */
+  quotas: Record<string, IQuotaByInterval>;
   features: Record<string, boolean>;
   limits: Record<string, number>;
 }

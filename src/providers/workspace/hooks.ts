@@ -388,12 +388,7 @@ export const useSaaSWorkspaces = () => {
     if (updatedWorkspace !== workspace.currentWorkspace) {
       dispatch.workspaces(workspaceActions.setCurrentWorkspace(updatedWorkspace));
     }
-  }, [
-    workspace.workspaces,
-    workspace.currentWorkspace,
-    dispatch,
-    switchToWorkspace,
-  ]);
+  }, [workspace.workspaces, workspace.currentWorkspace, dispatch, switchToWorkspace]);
 
   const getUsers = useCallback(
     async (workspaceId: string) => {

@@ -1,0 +1,175 @@
+/**
+ * Centralized formatting for subscription/quota display: cents, overage rates, included + overage text.
+ * Currency must be provided by the caller (e.g. workspace.billingCurrency, plan.currency, or selected currency).
+ */
+
+/** Common currency display (code or symbol). Use lowercase Stripe codes (usd, eur, etc.). */
+export const CURRENCY_DISPLAY: Record<string, string> = {
+  usd: '$',
+  eur: '\u20AC',
+  gbp: '\u00A3',
+  jpy: '\u00A5',
+  cad: 'CA$',
+  aud: 'A$',
+  chf: 'CHF',
+  cny: '\u00A5',
+  hkd: 'HK$',
+  sgd: 'S$',
+  inr: '\u20B9',
+  mxn: 'MX$',
+  brl: 'R$',
+  nzd: 'NZ$',
+  sek: 'kr',
+  nok: 'kr',
+  dkk: 'kr',
+  pln: 'z\u0142',
+  thb: '\u0E3F',
+};
+
+/** Currency code to flag emoji (country/region associated with the currency). Use for dropdowns. */
+export const CURRENCY_FLAG: Record<string, string> = {
+  usd: '\uD83C\uDDFA\uD83C\uDDF8', // 🇺🇸
+  eur: '\uD83C\uDDEA\uD83C\uDDFA', // 🇪🇺
+  gbp: '\uD83C\uDDEC\uD83C\uDDE7', // 🇬🇧
+  jpy: '\uD83C\uDDEF\uD83C\uDDF5', // 🇯🇵
+  cad: '\uD83C\uDDE8\uD83C\uDDE6', // 🇨🇦
+  aud: '\uD83C\uDDE6\uD83C\uDDFA', // 🇦🇺
+  chf: '\uD83C\uDDE8\uD83C\uDDED', // 🇨🇭
+  cny: '\uD83C\uDDE8\uD83C\uDDF3', // 🇨🇳
+  hkd: '\uD83C\uDDED\uD83C\uDDF0', // 🇭🇰
+  sgd: '\uD83C\uDDF8\uD83C\uDDEC', // 🇸🇬
+  inr: '\uD83C\uDDEE\uD83C\uDDF3', // 🇮🇳
+  mxn: '\uD83C\uDDF2\uD83C\uDDFD', // 🇲🇽
+  brl: '\uD83C\uDDE7\uD83C\uDDF7', // 🇧🇷
+  nzd: '\uD83C\uDDF3\uD83C\uDDFF', // 🇳🇿
+  sek: '\uD83C\uDDF8\uD83C\uDDEA', // 🇸🇪
+  nok: '\uD83C\uDDF3\uD83C\uDDF4', // 🇳🇴
+  dkk: '\uD83C\uDDE9\uD83C\uDDF0', // 🇩🇰
+  pln: '\uD83C\uDDF5\uD83C\uDDF1', // 🇵🇱
+  thb: '\uD83C\uDDF9\uD83C\uDDED', // 🇹🇭
+};
+
+/** Get flag emoji for a currency code. Returns empty string when unknown or empty. */
+export function getCurrencyFlag(currency: string): string {
+  if (!currency || !currency.trim()) return '';
+  return CURRENCY_FLAG[currency.trim().toLowerCase()] ?? '';
+}
+
+/** Get currency symbol for display. Use lowercase Stripe codes (usd, eur). Returns code when unknown; empty string when currency is empty. */
+export function getCurrencySymbol(currency: string): string {
+  if (!currency || !currency.trim()) return '';
+  const key = currency.trim().toLowerCase();
+  return CURRENCY_DISPLAY[key] ?? key.toUpperCase();
+}
+
+/** Allowed plan/pricing currency codes (must match server ALLOWED_BILLING_CURRENCIES). Use for dropdowns and validation. */
+export const PLAN_CURRENCY_CODES = [
+  'usd',
+  'eur',
+  'gbp',
+  'jpy',
+  'cad',
+  'aud',
+  'chf',
+  'cny',
+  'hkd',
+  'sgd',
+  'inr',
+  'mxn',
+  'brl',
+  'nzd',
+  'sek',
+  'nok',
+  'dkk',
+  'pln',
+  'thb',
+] as const;
+
+/** Options for plan currency select: { value, label } with symbol. Use in CreateOrEditPlan and anywhere a currency dropdown is needed. */
+export const PLAN_CURRENCY_OPTIONS = PLAN_CURRENCY_CODES.map(value => ({
+  value,
+  label: `${value.toUpperCase()} (${getCurrencySymbol(value)})`,
+}));
+
+/** Format cents as money string (e.g. 1999, "usd" -> "$19.99"). Caller must pass currency (e.g. from plan or workspace). */
+export function formatCents(cents: number, currency: string): string {
+  return getCurrencySymbol(currency) + (cents / 100).toFixed(2);
+}
+
+/**
+ * Format overage rate for display. When unitSize > 1: "$1.00/1,000 units"; else "$1.00/unit".
+ * Returns null if overageCents is missing or negative.
+ */
+export function formatOverageRate(
+  overageCents: number | undefined,
+  unitSize: number | undefined,
+  currency: string
+): string | null {
+  if (overageCents == null || overageCents < 0) return null;
+  const unitSizeN = unitSize != null && unitSize >= 1 ? unitSize : 1;
+  const symbol = getCurrencySymbol(currency);
+  const amount = (overageCents / 100).toFixed(2);
+  if (unitSizeN === 1) return `${symbol}${amount}/unit`;
+  return `${symbol}${amount}/${unitSizeN.toLocaleString()} units`;
+}
+
+/**
+ * Format overage rate with optional unit label for comparison/preview UIs.
+ * e.g. formatOverageRateWithLabel(50, 1000, "video") -> "$0.50/1,000 videos"
+ *      formatOverageRateWithLabel(46, 1, "video") -> "$0.46/video"
+ * When unitLabel is omitted, falls back to formatOverageRate behavior.
+ */
+export function formatOverageRateWithLabel(
+  overageCents: number | undefined,
+  unitSize: number | undefined,
+  unitLabel: string | undefined,
+  currency: string
+): string | null {
+  if (overageCents == null || overageCents < 0) return null;
+  const unitSizeN = unitSize != null && unitSize >= 1 ? unitSize : 1;
+  const symbol = getCurrencySymbol(currency);
+  const amount = (overageCents / 100).toFixed(2);
+  if (unitLabel) {
+    const plural = unitLabel.endsWith('s') ? unitLabel : `${unitLabel}s`;
+    if (unitSizeN >= 2) return `${symbol}${amount}/${unitSizeN.toLocaleString()} ${plural}`;
+    return `${symbol}${amount}/${unitLabel}`;
+  }
+  if (unitSizeN === 1) return `${symbol}${amount}/unit`;
+  return `${symbol}${amount}/${unitSizeN.toLocaleString()} units`;
+}
+
+/**
+ * Get singular unit label from item name or slug (e.g. "Videos" -> "video", "reels" -> "reel").
+ * Used for quota display in comparison and preview.
+ */
+export function getQuotaUnitLabelFromName(nameOrSlug: string): string {
+  const raw = (nameOrSlug || '').trim().toLowerCase();
+  if (!raw) return 'unit';
+  const word = raw.split(/\s+/)[0] ?? raw;
+  if (word.endsWith('ies')) return word.slice(0, -3) + 'y';
+  if (word.endsWith('s') && word.length > 1) return word.slice(0, -1);
+  return word || 'unit';
+}
+
+/**
+ * Format quota "included + overage" for display.
+ * When unitSize >= 2: "Included: 1,000, after that $1.00/1,000 emails".
+ * Otherwise: "Included: 5, after that $0.30/image".
+ */
+export function formatQuotaIncludedOverage(
+  included: number | undefined,
+  overageCents: number | undefined,
+  unitLabel: string,
+  currency: string,
+  unitSize?: number
+): string {
+  const perUnit =
+    unitSize != null && unitSize >= 2 ? `${unitSize.toLocaleString()} ${unitLabel}s` : unitLabel;
+  if (included != null && overageCents != null) {
+    return `Included: ${included.toLocaleString()}, after that ${formatCents(overageCents, currency)}/${perUnit}`;
+  }
+  if (included != null) return `Included: ${included.toLocaleString()}`;
+  if (overageCents != null)
+    return `After included: ${formatCents(overageCents, currency)}/${perUnit}`;
+  return '\u2014';
+}
