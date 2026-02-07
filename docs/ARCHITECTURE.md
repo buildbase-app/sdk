@@ -88,10 +88,22 @@ The SDK uses a **central base class + domain APIs** pattern. All domain API clas
 
 All are exported from the package; consumers typically use the high-level hooks (e.g. `useSaaSWorkspaces`, `useUserAttributes`) or instantiate API classes with config from `useSaaSOs()`.
 
-#### API Utilities
+#### API utilities (shared helpers)
 
 - **Location**: `src/lib/api-utils.ts`
 - **Functions**: `safeFetch`, `handleApiResponse`, `getErrorMessage`, `isAbortError`, `fetchWithTimeout`
+
+#### Currency, pricing variant & quota utilities
+
+Multi-currency plans use **pricing variants** (`IPricingVariant`) and **per-interval quotas** (`IQuotaByInterval`). These modules are in `src/api/` and are exported from the package:
+
+| Module                 | Purpose                                                                 |
+| ---------------------- | ----------------------------------------------------------------------- |
+| **currency-utils**     | `CURRENCY_DISPLAY`, `CURRENCY_FLAG`, `PLAN_CURRENCY_CODES`, `PLAN_CURRENCY_OPTIONS`, `getCurrencySymbol`, `getCurrencyFlag`, `formatCents`, `formatOverageRate`, `formatOverageRateWithLabel`, `formatQuotaIncludedOverage`, `getQuotaUnitLabelFromName` |
+| **pricing-variant-utils** | `getPricingVariant`, `getBasePriceCents`, `getStripePriceIdForInterval`, `getQuotaOverageCents`, `getQuotaDisplayWithVariant`, `getAvailableCurrenciesFromPlans`, `getDisplayCurrency`, `getBillingIntervalAndCurrencyFromPriceId`; types: `IPricingVariant`, `PlanVersionWithPricingVariants`, `QuotaDisplayWithOverage` |
+| **quota-utils**        | `getQuotaDisplayValue`, `formatQuotaWithPrice`; types: `QuotaDisplayValue`, `FormatQuotaWithPriceOptions` |
+
+Plan and subscription types use `IPlanVersion.pricingVariants` (instead of single `basePricing`/`stripePrices`) and `IQuotaByInterval` / `IQuotaIntervalValue` for quotas and overages per billing interval.
 
 **Design Decision**: Central base class + domain APIs:
 
@@ -311,7 +323,9 @@ React Error Boundaries catch component errors:
 
 All public types exported from `src/index.ts`:
 
-- API types (subscriptions, invoices, etc.)
+- API types (subscriptions, invoices, plans, pricing variants, quotas, etc.)
+- Plan/subscription: `IPlanVersion`, `IPricingVariant`, `IQuotaByInterval`, `IQuotaIntervalValue`, `IStripePricesByInterval`, `IQuotaOveragesByInterval`, `IPublicPlanVersion`, `IPublicPlansResponse`, and related
+- Currency/quota helpers: `QuotaDisplayValue`, `FormatQuotaWithPriceOptions`, `PlanVersionWithPricingVariants`, `QuotaDisplayWithOverage`
 - Context types
 - Error types
 - Component prop types

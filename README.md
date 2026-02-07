@@ -14,6 +14,7 @@ A React SDK for [BuildBase](https://www.buildbase.app/) that provides essential 
 - [User Management](#-user-management)
 - [Workspace Management](#-complete-workspace-management)
 - [Public Pricing (No Login)](#-public-pricing-no-login)
+- [Multi-Currency & Pricing Utilities](#-multi-currency--pricing-utilities)
 - [Beta Form Component](#-beta-form-component)
 - [Event System](#-event-system)
 - [Error Handling](#️-error-handling)
@@ -569,6 +570,72 @@ function PublicPricingPage() {
 
 **Backend requirement**: `GET /api/v1/public/{orgId}/plans/{groupSlug}` must be implemented and allow unauthenticated access.
 
+## 💱 Multi-Currency & Pricing Utilities
+
+Plans support **pricing variants** (multi-currency). Use these utilities for display and lookup.
+
+### Currency utilities
+
+| Export | Purpose |
+|--------|--------|
+| `CURRENCY_DISPLAY` | Map of currency code → symbol (e.g. `usd` → `$`) |
+| `CURRENCY_FLAG` | Map of currency code → flag emoji |
+| `PLAN_CURRENCY_CODES` | Allowed billing currency codes (for dropdowns/validation) |
+| `PLAN_CURRENCY_OPTIONS` | Options array for plan currency selects |
+| `getCurrencySymbol(currency)` | Symbol for a Stripe currency code |
+| `getCurrencyFlag(currency)` | Flag emoji for a currency code |
+| `formatCents(cents, currency)` | Format cents as localized price string |
+| `formatOverageRate(cents, currency)` | Format overage rate for display |
+| `formatOverageRateWithLabel(...)` | Overage rate with optional unit label |
+| `formatQuotaIncludedOverage(...)` | "X included, then $Y / unit" style text |
+| `getQuotaUnitLabelFromName(name)` | Human-readable unit label from quota name |
+
+### Pricing variant utilities
+
+| Export | Purpose |
+|--------|--------|
+| `getPricingVariant(planVersion, currency)` | Get variant for a currency, or `null` |
+| `getBasePriceCents(planVersion, currency, interval)` | Base price in cents for currency/interval |
+| `getStripePriceIdForInterval(planVersion, currency, interval)` | Stripe price ID for checkout |
+| `getQuotaOverageCents(planVersion, currency, quotaSlug, interval)` | Overage cents for a quota |
+| `getQuotaDisplayWithVariant(planVersion, currency, quotaSlug, interval)` | Display value with overage for a variant |
+| `getAvailableCurrenciesFromPlans(plans)` | Unique currency codes across plan versions |
+| `getDisplayCurrency(planVersion, currency)` | Display currency (variant exists ? currency : plan.currency) |
+| `getBillingIntervalAndCurrencyFromPriceId(planVersions, priceId)` | Resolve price ID to interval + currency |
+
+Types: `IPricingVariant`, `PlanVersionWithPricingVariants`, `QuotaDisplayWithOverage`.
+
+### Quota utilities
+
+| Export | Purpose |
+|--------|--------|
+| `getQuotaDisplayValue(quotaByInterval, interval?)` | Normalize `IQuotaByInterval` to `{ included, overage?, unitSize? }` |
+| `formatQuotaWithPrice(value, unitName, options?)` | Format as "X included, then $Y.YY / unit" |
+
+Types: `QuotaDisplayValue`, `FormatQuotaWithPriceOptions`. Plan/subscription types use `IQuotaByInterval` and `IQuotaIntervalValue` for per-interval quotas and overages.
+
+```tsx
+import {
+  getCurrencySymbol,
+  formatCents,
+  getPricingVariant,
+  getBasePriceCents,
+  getQuotaDisplayValue,
+  formatQuotaWithPrice,
+} from '@buildbase/sdk';
+
+// Display price for a plan version in a currency
+const variant = getPricingVariant(planVersion, 'usd');
+const cents = getBasePriceCents(planVersion, 'usd', 'monthly');
+if (cents != null) {
+  console.log(getCurrencySymbol('usd') + (cents / 100).toFixed(2));
+}
+
+// Quota display with overage
+const display = getQuotaDisplayValue(planVersion.quotas?.videos, 'monthly');
+const text = formatQuotaWithPrice(display, 'video', { currency: 'usd' });
+```
+
 ## 📝 Beta Form Component
 
 Use the pre-built `BetaForm` component for signup/waitlist forms:
@@ -667,8 +734,16 @@ All SDK API clients extend a shared base class and are exported from the package
 | `BaseApi`        | Abstract base (URL, auth, `fetchJson`/`fetchResponse`) – extend for custom APIs |
 | `IBaseApiConfig` | Config type: `serverUrl`, `version`, optional `orgId`                           |
 | `UserApi`        | User attributes and features                                                    |
-| `WorkspaceApi`   | Workspaces, subscription, invoices, users                                       |
+| `WorkspaceApi`   | Workspaces, subscription, invoices, users                                        |
 | `SettingsApi`    | Organization settings                                                           |
+
+### Currency, pricing variant & quota utilities
+
+| Category | Exports |
+| -------- | ------- |
+| **Currency** | `CURRENCY_DISPLAY`, `CURRENCY_FLAG`, `PLAN_CURRENCY_CODES`, `PLAN_CURRENCY_OPTIONS`, `getCurrencySymbol`, `getCurrencyFlag`, `formatCents`, `formatOverageRate`, `formatOverageRateWithLabel`, `formatQuotaIncludedOverage`, `getQuotaUnitLabelFromName` |
+| **Pricing variants** | `getPricingVariant`, `getBasePriceCents`, `getStripePriceIdForInterval`, `getQuotaOverageCents`, `getQuotaDisplayWithVariant`, `getAvailableCurrenciesFromPlans`, `getDisplayCurrency`, `getBillingIntervalAndCurrencyFromPriceId`; types: `IPricingVariant`, `PlanVersionWithPricingVariants`, `QuotaDisplayWithOverage` |
+| **Quota** | `getQuotaDisplayValue`, `formatQuotaWithPrice`; types: `QuotaDisplayValue`, `FormatQuotaWithPriceOptions`. Plan types use `IQuotaByInterval`, `IQuotaIntervalValue` for per-interval quotas. |
 
 Get OS config from `useSaaSOs()` and instantiate API classes when you need low-level access; otherwise prefer the high-level hooks (`useSaaSWorkspaces`, `useUserAttributes`, `useSaaSSettings`, etc.):
 
