@@ -1,5 +1,13 @@
 import { AlertTriangle, Calendar, CreditCard, Loader2 } from 'lucide-react';
 import React, { useMemo, useState } from 'react';
+import { formatCents } from '../../../api/currency-utils';
+import {
+  getBasePriceCents,
+  getBillingIntervalAndCurrencyFromPriceId,
+  getQuotaDisplayWithVariant,
+  getStripePriceIdForInterval,
+} from '../../../api/pricing-variant-utils';
+import type { QuotaDisplayValue } from '../../../api/quota-utils';
 import { formatQuotaWithPrice, getQuotaDisplayValue } from '../../../api/quota-utils';
 import {
   BillingInterval,
@@ -8,6 +16,7 @@ import {
   IPlanVersion,
   IPlanVersionWithPlan,
   ISubscriptionItem,
+  ISubscriptionUpdateResponse,
 } from '../../../api/types';
 import {
   AlertDialog,
@@ -37,26 +46,13 @@ const SubscriptionDialog = lazy(() =>
   import('./SubscriptionDialog').then(m => ({ default: m.default }))
 );
 
-// Helper to derive billing interval from price ID by comparing with plan's stripe prices
+// Derive billing interval (and currency) from price ID by checking plan versions and their pricingVariants
 const getBillingIntervalFromPriceId = (
   priceId: string | null | undefined,
-  planVersion: IPlanVersion | null | undefined
+  planVersions: IPlanVersionWithPlan[] | undefined
 ): BillingInterval | null => {
-  if (!priceId || !planVersion?.stripePrices) return null;
-
-  const stripePrices = planVersion.stripePrices;
-
-  if (stripePrices.monthlyPriceId === priceId || stripePrices.monthly === priceId) {
-    return 'monthly';
-  }
-  if (stripePrices.yearlyPriceId === priceId || stripePrices.yearly === priceId) {
-    return 'yearly';
-  }
-  if (stripePrices.quarterlyPriceId === priceId) {
-    return 'quarterly';
-  }
-
-  return null;
+  const resolved = getBillingIntervalAndCurrencyFromPriceId(priceId, planVersions ?? []);
+  return resolved?.interval ?? null;
 };
 
 // Get display label for billing interval
@@ -90,18 +86,19 @@ const formatPeriodEndDate = (isoDate: string | undefined | null): string => {
   }
 };
 
-// Helper function to get plan details from subscriptionItems
-const getPlanDetailsFromItems = (planVersion: IPlanVersion | null | undefined) => {
+// Helper function to get plan details from subscriptionItems (optionally with currency for multi-currency quota overage)
+const getPlanDetailsFromItems = (
+  planVersion: IPlanVersion | null | undefined,
+  currency?: string,
+  interval: BillingInterval = 'monthly'
+) => {
   if (!planVersion?.subscriptionItems) {
     return { features: [], limits: [], quotas: [] };
   }
 
   const features: Array<{ item: ISubscriptionItem; enabled: boolean }> = [];
   const limits: Array<{ item: ISubscriptionItem; value: number }> = [];
-  const quotas: Array<{
-    item: ISubscriptionItem;
-    value: ReturnType<typeof getQuotaDisplayValue>;
-  }> = [];
+  const quotas: Array<{ item: ISubscriptionItem; value: QuotaDisplayValue }> = [];
 
   planVersion.subscriptionItems.forEach(item => {
     const slug = item.slug;
@@ -113,7 +110,10 @@ const getPlanDetailsFromItems = (planVersion: IPlanVersion | null | undefined) =
       const value = planVersion.limits?.[slug] ?? 0;
       limits.push({ item, value });
     } else if (item.type === 'quota') {
-      const value = getQuotaDisplayValue(planVersion.quotas?.[slug], 'monthly');
+      const value =
+        currency && planVersion.pricingVariants?.length
+          ? getQuotaDisplayWithVariant(planVersion, currency, slug, interval)
+          : getQuotaDisplayValue(planVersion.quotas?.[slug], interval);
       if (value !== null && value !== undefined) {
         quotas.push({ item, value });
       }
@@ -204,24 +204,33 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
     await Promise.all([refetchSubscription(), refetchVersions()]);
   };
 
+  const currentIntervalAndCurrency = useMemo(
+    () =>
+      getBillingIntervalAndCurrencyFromPriceId(
+        subscription?.subscription?.stripePriceId,
+        plansToShow ?? []
+      ),
+    [subscription?.subscription?.stripePriceId, plansToShow]
+  );
+
   const handlePlanChange = async (
     planVersionId: string,
-    billingInterval: BillingInterval = 'monthly'
+    billingInterval: BillingInterval = 'monthly',
+    currency?: string
   ) => {
     if (!workspaceId) return;
 
-    // Find the target plan to get its price ID for the selected interval
     const targetPlan = plansToShow?.find(p => p._id === planVersionId);
-    const targetPriceId =
-      targetPlan?.stripePrices?.[
-        billingInterval === 'monthly'
-          ? 'monthlyPriceId'
-          : billingInterval === 'yearly'
-            ? 'yearlyPriceId'
-            : 'quarterlyPriceId'
-      ] || targetPlan?.stripePrices?.[billingInterval === 'monthly' ? 'monthly' : 'yearly'];
+    const effectiveCurrency =
+      currency ??
+      currentIntervalAndCurrency?.currency ??
+      subscription?.plan?.currency ??
+      workspace?.billingCurrency ??
+      '';
+    const targetPriceId = targetPlan
+      ? getStripePriceIdForInterval(targetPlan, effectiveCurrency, billingInterval)
+      : null;
 
-    // Don't update if the target price ID matches the current subscription's price ID
     const currentPriceId = subscription?.subscription?.stripePriceId;
     if (targetPriceId && currentPriceId && targetPriceId === currentPriceId) {
       return;
@@ -232,8 +241,6 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
     setUpdateSuccess(null);
 
     try {
-      // Generate success and cancel URLs based on current location
-      // Ensure URLs have proper scheme (https:// or http://)
       let successUrl: string;
       let cancelUrl: string;
 
@@ -242,7 +249,6 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
         successUrl = currentUrl.toString();
         cancelUrl = currentUrl.toString();
       } catch {
-        // Fallback if URL construction fails
         const protocol = window.location.protocol || 'https:';
         const host = window.location.host || window.location.hostname || '';
         const pathname = window.location.pathname || '/';
@@ -251,9 +257,8 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
         cancelUrl = baseUrl;
       }
 
-      let result: ICheckoutSessionResponse | any;
+      let result: ICheckoutSessionResponse | ISubscriptionUpdateResponse;
 
-      // If no active subscription, create checkout session
       if (!subscription?.subscription) {
         result = await createCheckoutSession({
           planVersionId,
@@ -262,7 +267,6 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
           cancelUrl,
         });
       } else {
-        // If subscription exists, update it (may return checkout session)
         result = await updateSubscription(planVersionId, {
           billingInterval,
           successUrl,
@@ -537,19 +541,30 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
 
             {subscription?.subscription ? (
               (() => {
-                const billingInterval = getBillingIntervalFromPriceId(
+                const resolved = getBillingIntervalAndCurrencyFromPriceId(
                   subscription.subscription.stripePriceId,
-                  subscription.planVersion
+                  plansToShow ?? []
                 );
+                const billingInterval = resolved?.interval ?? null;
+                const subscriptionCurrency =
+                  resolved?.currency ??
+                  subscription.plan?.currency ??
+                  workspace?.billingCurrency ??
+                  '';
                 const currentPrice =
-                  billingInterval && subscription.planVersion?.basePricing
-                    ? subscription.planVersion.basePricing[billingInterval]
+                  billingInterval && subscription.planVersion
+                    ? getBasePriceCents(
+                        subscription.planVersion,
+                        subscriptionCurrency,
+                        billingInterval
+                      )
                     : null;
+                const planCurrency = subscriptionCurrency;
                 const formattedPrice =
                   currentPrice !== null && currentPrice !== undefined
                     ? currentPrice === 0
                       ? 'Free'
-                      : `$${(currentPrice / 100).toFixed(2)}`
+                      : formatCents(currentPrice, planCurrency)
                     : null;
                 const intervalLabel =
                   billingInterval === 'monthly'
@@ -746,7 +761,11 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                     {/* Plan Details */}
                     {subscription.planVersion &&
                       (() => {
-                        const planDetails = getPlanDetailsFromItems(subscription.planVersion);
+                        const planDetails = getPlanDetailsFromItems(
+                          subscription.planVersion,
+                          subscriptionCurrency,
+                          billingInterval ?? 'monthly'
+                        );
                         const hasDetails =
                           planDetails.features.length > 0 ||
                           planDetails.limits.length > 0 ||
@@ -816,7 +835,8 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                                     {planDetails.quotas.map(({ item, value }) => {
                                       const quotaDisplay = formatQuotaWithPrice(
                                         value,
-                                        item.name.toLowerCase()
+                                        item.name.toLowerCase(),
+                                        { currency: subscriptionCurrency }
                                       );
                                       return (
                                         <li key={item._id} className="text-sm">
@@ -924,6 +944,7 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
             planVersions={plansToShow}
             currentPlanVersionId={currentPlanVersionId || null}
             currentStripePriceId={subscription?.subscription?.stripePriceId}
+            billingCurrency={workspace.billingCurrency}
             onSelectPlan={handlePlanChange}
             loading={updating || loading}
           />

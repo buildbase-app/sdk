@@ -84,12 +84,39 @@ export type {
 export { BaseApi, SettingsApi, UserApi, WorkspaceApi } from './api';
 export type { IBaseApiConfig } from './api';
 
+// Export currency utilities
+export {
+  CURRENCY_DISPLAY,
+  CURRENCY_FLAG,
+  PLAN_CURRENCY_CODES,
+  PLAN_CURRENCY_OPTIONS,
+  formatCents,
+  formatOverageRate,
+  formatOverageRateWithLabel,
+  formatQuotaIncludedOverage,
+  getCurrencyFlag,
+  getCurrencySymbol,
+  getQuotaUnitLabelFromName,
+} from './api/currency-utils';
+
 // Export subscription types
 export { formatQuotaWithPrice, getQuotaDisplayValue } from './api/quota-utils';
+export type { FormatQuotaWithPriceOptions, QuotaDisplayValue } from './api/quota-utils';
+
+export {
+  getAvailableCurrenciesFromPlans,
+  getBasePriceCents,
+  getBillingIntervalAndCurrencyFromPriceId,
+  getDisplayCurrency,
+  getPricingVariant,
+  getQuotaDisplayWithVariant,
+  getQuotaOverageCents,
+  getStripePriceIdForInterval,
+} from './api/pricing-variant-utils';
 export type {
-  FormatQuotaWithPriceOptions,
-  QuotaDisplayValue,
-} from './api/quota-utils';
+  PlanVersionWithPricingVariants,
+  QuotaDisplayWithOverage,
+} from './api/pricing-variant-utils';
 
 export type {
   BillingInterval,
@@ -110,15 +137,16 @@ export type {
   IPlanVersion,
   IPlanVersionSummary,
   IPlanVersionWithPlan,
+  IPricingVariant,
   IPublicPlanItem,
   IPublicPlanItemCategory,
-  IPublicPlanPricing,
-  IPublicPlanQuotaValue,
   IPublicPlanVersion,
   IPublicPlansResponse,
   IQuotaByInterval,
   IQuotaIntervalValue,
-  IQuotaValue,
+  IQuotaOveragePriceIdsByInterval,
+  IQuotaOveragesByInterval,
+  IStripePricesByInterval,
   ISubscription,
   ISubscriptionItem,
   ISubscriptionResponse,

@@ -5,11 +5,13 @@ import { Button } from '../../../components/ui/button';
 import { useInvoices } from '../subscription-hooks';
 import SettingSkeleton from './Skeleton';
 
-// Helper function to format currency amount
-const formatCurrency = (amount: number, currency: string = 'usd'): string => {
+// Helper function to format currency amount. Caller must pass currency (e.g. from invoice).
+const formatCurrency = (amount: number, currency: string): string => {
+  const c = (currency ?? '').trim();
+  if (!c) return (amount / 100).toFixed(2);
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
-    currency: currency.toUpperCase(),
+    currency: c.toUpperCase(),
     minimumFractionDigits: 2,
   }).format(amount / 100); // Convert cents to dollars
 };

@@ -1,4 +1,4 @@
-// Workspace context and API types
+// Workspace context and API types (aligned with backend IWorkspace)
 
 export interface IWorkspace {
   _id: string;
@@ -9,7 +9,24 @@ export interface IWorkspace {
   roles: string[];
   createdBy: string | IUser;
   features: Record<string, boolean>;
-  subscription?: ISubscription | null;
+  /**
+   * Quota usage tracking: { [quotaSlug]: number } – how much of each quota has been used.
+   */
+  quotas?: Record<string, number>;
+  /**
+   * Subscription limits snapshot: { [limitSlug]: number | null } – synced from subscription plan.
+   * Limits are maximum values (e.g. max-users, max-workspaces). Updated when subscription is assigned/updated.
+   */
+  limits?: Record<string, number | null>;
+  subscription?: ISubscription | string | null;
+  /** Stripe Customer ID for this workspace. */
+  stripeCustomerId?: string;
+  /**
+   * Billing currency locked for this workspace (set on first subscription).
+   * Stripe allows one currency per customer; all future subscriptions must use this currency.
+   * When set, subscription UI only shows/uses this currency.
+   */
+  billingCurrency?: string | null;
 }
 export interface IWorkspaceFeature {
   _id: string;

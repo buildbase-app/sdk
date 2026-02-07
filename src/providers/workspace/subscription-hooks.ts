@@ -9,6 +9,7 @@ import {
   IPlanGroupVersionsResponse,
   IPublicPlansResponse,
   ISubscriptionResponse,
+  ISubscriptionUpdateRequest,
   ISubscriptionUpdateResponse,
 } from '../../api/types';
 import { invalidateSubscription } from '../../contexts/SubscriptionContext/subscriptionInvalidation';
@@ -582,7 +583,7 @@ export const useUpdateSubscription = (workspaceId: string | null | undefined) =>
       setLoading(true);
       setError(null);
       try {
-        const request = {
+        const request: ISubscriptionUpdateRequest = {
           planVersionId,
           ...(options?.billingInterval && { billingInterval: options.billingInterval }),
           ...(options?.successUrl && { successUrl: options.successUrl }),
