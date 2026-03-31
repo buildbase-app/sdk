@@ -1203,9 +1203,10 @@ Prefer these SDK hooks for state and operations instead of `useAppSelector`:
 | `useUserAttributes()`      | User attributes and update/refresh                                                                      |
 | `useUserFeatures()`        | User feature flags                                                                                      |
 | `useSubscriptionContext()` | Subscription for current workspace (response, loading, refetch); use inside SubscriptionContextProvider |
-| Subscription hooks         | `usePublicPlans`, `useSubscription`, `usePlanGroup`, `useCreateCheckoutSession`, `useUpdateSubscription`, `useCancelSubscription`, `useResumeSubscription`, `useInvoices`, `useInvoice` |
+| Subscription hooks         | `usePublicPlans`, `useSubscription`, `useSubscriptionManagement`, `usePlanGroup`, `usePlanGroupVersions`, `usePublicPlanGroupVersion`, `useCreateCheckoutSession`, `useUpdateSubscription`, `useCancelSubscription`, `useResumeSubscription`, `useInvoices`, `useInvoice` |
 | `useQuotaUsageContext()`   | Quota usage for current workspace (quotas, loading, refetch); use inside QuotaUsageContextProvider      |
 | Quota usage hooks          | `useRecordUsage`, `useQuotaUsageStatus`, `useAllQuotaUsage`, `useUsageLogs`                             |
+| Invalidation helpers       | `invalidateSubscription()`, `invalidateQuotaUsage()` — trigger context refetch after server-side mutations |
 
 Using hooks keeps your code stable if internal state shape changes and avoids direct Redux/context coupling.
 
