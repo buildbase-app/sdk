@@ -190,11 +190,11 @@ export const SaaSOSProvider: React.FC<SaaSOSProviderProps> = React.memo(
             <PortalProvider>
               <ContextConfigProvider config={config} auth={auth}>
                 <UserProvider>
-                  <WorkspaceSettingsProvider>
-                    <SubscriptionContextProvider>
-                      <QuotaUsageContextProvider>{children}</QuotaUsageContextProvider>
-                    </SubscriptionContextProvider>
-                  </WorkspaceSettingsProvider>
+                  <SubscriptionContextProvider>
+                    <QuotaUsageContextProvider>
+                      <WorkspaceSettingsProvider>{children}</WorkspaceSettingsProvider>
+                    </QuotaUsageContextProvider>
+                  </SubscriptionContextProvider>
                 </UserProvider>
               </ContextConfigProvider>
             </PortalProvider>
