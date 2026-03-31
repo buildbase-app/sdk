@@ -86,3 +86,6 @@ export const WhenUnauthenticated = (props: IProps) => {
 
   return children;
 };
+
+WhenAuthenticated.displayName = 'WhenAuthenticated';
+WhenUnauthenticated.displayName = 'WhenUnauthenticated';

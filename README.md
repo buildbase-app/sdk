@@ -15,6 +15,8 @@ A React SDK for [BuildBase](https://www.buildbase.app/) that provides essential 
 - [Workspace Management](#-complete-workspace-management)
 - [Public Pricing (No Login)](#-public-pricing-no-login)
 - [Multi-Currency & Pricing Utilities](#-multi-currency--pricing-utilities)
+- [Quota Usage Tracking](#-quota-usage-tracking)
+- [Quota Gates](#-quota-gates)
 - [Beta Form Component](#-beta-form-component)
 - [Event System](#-event-system)
 - [Error Handling](#️-error-handling)
@@ -33,6 +35,7 @@ A React SDK for [BuildBase](https://www.buildbase.app/) that provides essential 
 - **👥 Role-Based Access Control** - User roles and workspace-specific permissions
 - **🎯 Feature Flags** - Workspace-level and user-level feature toggles
 - **📋 Subscription Gates** - Show or hide UI based on current workspace subscription (plan)
+- **📊 Quota Usage Tracking** - Record and monitor metered usage (API calls, storage, etc.) with real-time status
 - **👤 User Management** - User attributes and feature flags management
 - **📝 Beta Form** - Pre-built signup/waitlist form component
 - **📡 Event System** - Subscribe to user and workspace events
@@ -636,6 +639,419 @@ const display = getQuotaDisplayValue(planVersion.quotas?.videos, 'monthly');
 const text = formatQuotaWithPrice(display, 'video', { currency: 'usd' });
 ```
 
+## 📊 Quota Usage Tracking
+
+Track and monitor metered usage for subscription quotas (e.g., API calls, emails, storage). Usage can be recorded from both the **client-side** (React app) and **server-side** (your backend).
+
+### When to use which?
+
+| Scenario | Where to record | Why |
+|----------|----------------|-----|
+| User clicks "Send Email" button | Client-side (SDK hook) | User-initiated, immediate UI feedback needed |
+| API request hits your backend | Server-side (REST API) | Backend controls the resource, more secure |
+| Background job processes data | Server-side (REST API) | No browser context available |
+| File upload completes | Either | Depends on where validation happens |
+
+As a general rule: **record usage where the resource is consumed**. If your backend processes the work, record from the backend. If it's a client-side action, record from the client.
+
+---
+
+### Client-Side (React SDK)
+
+Use the SDK hooks inside your React app. Quota gate components (see [Quota Gates](#-quota-gates)) automatically refresh after recording.
+
+#### Record Usage
+
+```tsx
+import { useRecordUsage, useSaaSWorkspaces } from '@buildbase/sdk';
+
+function SendEmailButton() {
+  const { currentWorkspace } = useSaaSWorkspaces();
+  const { recordUsage, loading, error } = useRecordUsage(currentWorkspace?._id);
+
+  const handleSend = async () => {
+    try {
+      const result = await recordUsage({
+        quotaSlug: 'emails',
+        quantity: 1,
+        source: 'web-app',           // optional: track where usage came from
+        idempotencyKey: 'email-abc',  // optional: prevent duplicate recordings
+      });
+      console.log(`Used: ${result.consumed}/${result.included}, Available: ${result.available}`);
+      if (result.overage > 0) {
+        console.warn(`Overage: ${result.overage} units`);
+      }
+    } catch (err) {
+      console.error('Failed to record usage:', err);
+    }
+  };
+
+  return <button onClick={handleSend} disabled={loading}>Send Email</button>;
+}
+```
+
+#### Check Single Quota Status
+
+```tsx
+import { useQuotaUsageStatus, useSaaSWorkspaces } from '@buildbase/sdk';
+
+function QuotaStatusBar({ quotaSlug }: { quotaSlug: string }) {
+  const { currentWorkspace } = useSaaSWorkspaces();
+  const { status, loading, refetch } = useQuotaUsageStatus(currentWorkspace?._id, quotaSlug);
+
+  if (loading) return <Spinner />;
+  if (!status) return null;
+
+  const usagePercent = Math.round((status.consumed / status.included) * 100);
+
+  return (
+    <div>
+      <p>{quotaSlug}: {status.consumed} / {status.included} ({usagePercent}%)</p>
+      <p>Available: {status.available}</p>
+      {status.hasOverage && <p>Overage: {status.overage} units</p>}
+      <button onClick={refetch}>Refresh</button>
+    </div>
+  );
+}
+```
+
+#### Check All Quotas
+
+```tsx
+import { useAllQuotaUsage, useSaaSWorkspaces } from '@buildbase/sdk';
+
+function QuotaDashboard() {
+  const { currentWorkspace } = useSaaSWorkspaces();
+  const { quotas, loading, refetch } = useAllQuotaUsage(currentWorkspace?._id);
+
+  if (loading) return <Spinner />;
+  if (!quotas) return <p>No quota data available</p>;
+
+  return (
+    <div>
+      {Object.entries(quotas).map(([slug, usage]) => (
+        <div key={slug}>
+          <strong>{slug}</strong>: {usage.consumed} / {usage.included}
+          {usage.hasOverage && <span> (overage: {usage.overage})</span>}
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+#### Usage Logs
+
+```tsx
+import { useUsageLogs, useSaaSWorkspaces } from '@buildbase/sdk';
+
+function UsageLogsTable() {
+  const { currentWorkspace } = useSaaSWorkspaces();
+  const {
+    logs, totalDocs, totalPages, page, hasNextPage, loading, refetch,
+  } = useUsageLogs(
+    currentWorkspace?._id,
+    'api_calls',                       // optional: filter by quota slug
+    { limit: 20, page: 1 }            // optional: pagination and filters
+  );
+
+  if (loading) return <Spinner />;
+
+  return (
+    <div>
+      <table>
+        <thead>
+          <tr><th>Quota</th><th>Quantity</th><th>Source</th><th>Date</th></tr>
+        </thead>
+        <tbody>
+          {logs.map(log => (
+            <tr key={log._id}>
+              <td>{log.quotaSlug}</td>
+              <td>{log.quantity}</td>
+              <td>{log.source ?? '-'}</td>
+              <td>{new Date(log.createdAt).toLocaleString()}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p>Page {page} of {totalPages} ({totalDocs} total)</p>
+    </div>
+  );
+}
+```
+
+**`useUsageLogs` parameters:**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `workspaceId` | `string \| null \| undefined` | Yes | Workspace ID (null/undefined disables fetching) |
+| `quotaSlug` | `string` | No | Filter logs by quota slug |
+| `options.from` | `string` | No | ISO date string — filter logs from this date |
+| `options.to` | `string` | No | ISO date string — filter logs until this date |
+| `options.source` | `string` | No | Filter logs by source |
+| `options.page` | `number` | No | Page number (default: 1) |
+| `options.limit` | `number` | No | Results per page (default: 20) |
+
+#### Client-Side Hooks Summary
+
+| Hook | Purpose |
+|------|---------|
+| `useRecordUsage(workspaceId)` | Record quota consumption (mutation) |
+| `useQuotaUsageStatus(workspaceId, quotaSlug)` | Get single quota status (auto-fetches) |
+| `useAllQuotaUsage(workspaceId)` | Get all quotas status (auto-fetches) |
+| `useUsageLogs(workspaceId, quotaSlug?, options?)` | Get paginated usage history (auto-fetches) |
+
+---
+
+### Server-Side (REST API)
+
+For backend services, background jobs, or API routes — call the BuildBase API directly. This is the recommended approach when usage happens on your server (e.g., processing an API request, running a cron job, handling webhooks).
+
+#### Step 1: Get a Session ID
+
+Exchange your org API token for a session ID. You can do this once and reuse the session for multiple requests (default expiry: 30 days).
+
+```ts
+// Do this once at startup or cache the result
+const TOKEN = 'your-org-id:your-api-secret'; // from BuildBase dashboard
+
+async function getSessionId(): Promise<string> {
+  const response = await fetch('https://your-server.buildbase.app/api/v1/public/token/exchange', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      token: TOKEN,
+      expiresIn: 2592000, // 30 days (optional, default is 30 days)
+    }),
+  });
+  const data = await response.json();
+  return data.sessionId;
+}
+```
+
+#### Step 2: Record Usage
+
+```ts
+const SESSION_ID = await getSessionId();
+const BASE_URL = 'https://your-server.buildbase.app/api/v1/public';
+
+async function recordUsage(workspaceId: string, quotaSlug: string, quantity: number) {
+  const response = await fetch(`${BASE_URL}/workspaces/${workspaceId}/subscription/usage`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-session-id': SESSION_ID,
+    },
+    body: JSON.stringify({
+      quotaSlug,
+      quantity,
+      source: 'backend',         // optional: helps distinguish from client-side usage
+      metadata: {},              // optional: attach custom data
+      idempotencyKey: undefined, // optional: prevent duplicate recordings
+    }),
+  });
+  return response.json();
+}
+
+// Example: Record usage in an Express route handler
+app.post('/api/generate-report', async (req, res) => {
+  const { workspaceId } = req.user; // your auth
+
+  // Record quota usage BEFORE or AFTER doing the work
+  const usage = await recordUsage(workspaceId, 'reports', 1);
+
+  if (usage.available <= 0 && !usage.hasOverage) {
+    return res.status(429).json({ error: 'Report quota exceeded' });
+  }
+
+  // ... generate the report ...
+  res.json({ success: true, quotaRemaining: usage.available });
+});
+```
+
+#### Step 3: Check Usage Status (Optional)
+
+```ts
+// Get status for a single quota
+async function getQuotaStatus(workspaceId: string, quotaSlug: string) {
+  const response = await fetch(
+    `${BASE_URL}/workspaces/${workspaceId}/subscription/usage/status?quotaSlug=${quotaSlug}`,
+    { headers: { 'x-session-id': SESSION_ID } }
+  );
+  return response.json();
+  // Returns: { quotaSlug, consumed, included, available, overage, hasOverage }
+}
+
+// Get status for ALL quotas
+async function getAllQuotaStatus(workspaceId: string) {
+  const response = await fetch(
+    `${BASE_URL}/workspaces/${workspaceId}/subscription/usage/all`,
+    { headers: { 'x-session-id': SESSION_ID } }
+  );
+  return response.json();
+  // Returns: { quotas: { [slug]: { consumed, included, available, overage, hasOverage } } }
+}
+
+// Example: Check before allowing an action
+app.post('/api/send-email', async (req, res) => {
+  const status = await getQuotaStatus(req.user.workspaceId, 'emails');
+
+  if (status.available <= 0) {
+    return res.status(429).json({
+      error: 'Email quota exceeded',
+      consumed: status.consumed,
+      included: status.included,
+    });
+  }
+
+  await recordUsage(req.user.workspaceId, 'emails', 1);
+  // ... send the email ...
+});
+```
+
+#### Server-Side API Reference
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/v1/public/token/exchange` | POST | Exchange API token for session ID |
+| `/api/v1/public/workspaces/:id/subscription/usage` | POST | Record quota usage |
+| `/api/v1/public/workspaces/:id/subscription/usage/status?quotaSlug=X` | GET | Get single quota status |
+| `/api/v1/public/workspaces/:id/subscription/usage/all` | GET | Get all quotas status |
+| `/api/v1/public/workspaces/:id/subscription/usage/logs` | GET | Get paginated usage logs |
+
+All endpoints (except `/token/exchange`) require the `x-session-id` header.
+
+**Record usage request body:**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `quotaSlug` | `string` | Yes | Quota identifier (e.g. `'api_calls'`, `'emails'`, `'storage'`) |
+| `quantity` | `number` | Yes | Units to consume (minimum 1) |
+| `metadata` | `object` | No | Custom metadata to attach to the usage record |
+| `source` | `string` | No | Source identifier (e.g. `'backend'`, `'worker'`, `'cron'`) |
+| `idempotencyKey` | `string` | No | Unique key for deduplication |
+
+**Record usage response:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `used` | `number` | Quantity recorded in this request |
+| `consumed` | `number` | Total usage in the current billing period |
+| `included` | `number` | Total units included in the plan |
+| `available` | `number` | Remaining units before overage |
+| `overage` | `number` | Units used beyond the included amount |
+| `billedAsync` | `boolean` | Whether overage billing was queued to Stripe |
+
+## 🚦 Quota Gates
+
+Control UI visibility based on quota usage status. Quota data is loaded once per workspace via `QuotaUsageContextProvider` (included in `SaaSOSProvider` by default) and refetched automatically after recording usage.
+
+### Gate Components
+
+```tsx
+import {
+  WhenQuotaAvailable,
+  WhenQuotaExhausted,
+  WhenQuotaOverage,
+  WhenQuotaThreshold,
+} from '@buildbase/sdk';
+
+function Dashboard() {
+  return (
+    <div>
+      {/* Show action button only when quota has remaining units */}
+      <WhenQuotaAvailable slug="api_calls">
+        <MakeApiCallButton />
+      </WhenQuotaAvailable>
+
+      {/* Show upgrade prompt when quota is fully consumed */}
+      <WhenQuotaExhausted slug="api_calls">
+        <UpgradePrompt message="You've used all your API calls this month." />
+      </WhenQuotaExhausted>
+
+      {/* Show warning when usage exceeds included amount (overage billing active) */}
+      <WhenQuotaOverage slug="api_calls">
+        <OverageBillingWarning />
+      </WhenQuotaOverage>
+
+      {/* Show warning when usage reaches 80% of included amount */}
+      <WhenQuotaThreshold slug="api_calls" threshold={80}>
+        <p>Warning: You've used over 80% of your API calls.</p>
+      </WhenQuotaThreshold>
+    </div>
+  );
+}
+```
+
+### With Loading and Fallback
+
+All quota gate components support optional `loadingComponent` and `fallbackComponent` props:
+
+```tsx
+<WhenQuotaAvailable
+  slug="emails"
+  loadingComponent={<Skeleton className="h-10" />}
+  fallbackComponent={<p>Email quota exhausted. <a href="/upgrade">Upgrade now</a></p>}
+>
+  <SendEmailButton />
+</WhenQuotaAvailable>
+
+<WhenQuotaThreshold
+  slug="storage"
+  threshold={90}
+  loadingComponent={<Spinner />}
+  fallbackComponent={null}
+>
+  <StorageWarningBanner />
+</WhenQuotaThreshold>
+```
+
+### Quota Gate Components Reference
+
+| Component | Renders children when | Props |
+|-----------|----------------------|-------|
+| `WhenQuotaAvailable` | Quota has remaining units (`available > 0`) | `slug`, `children`, `loadingComponent?`, `fallbackComponent?` |
+| `WhenQuotaExhausted` | Quota is fully consumed (`available <= 0`) | `slug`, `children`, `loadingComponent?`, `fallbackComponent?` |
+| `WhenQuotaOverage` | Usage exceeds included amount (`hasOverage`) | `slug`, `children`, `loadingComponent?`, `fallbackComponent?` |
+| `WhenQuotaThreshold` | Usage percentage >= threshold | `slug`, `threshold` (0-100), `children`, `loadingComponent?`, `fallbackComponent?` |
+
+All gates must be used inside `QuotaUsageContextProvider` (included in `SaaSOSProvider`). By default they return `null` while loading or when the condition is not met.
+
+### useQuotaUsageContext
+
+Use the hook when you need raw quota data or a manual refetch (e.g. after a bulk operation):
+
+```tsx
+import { useQuotaUsageContext } from '@buildbase/sdk';
+
+function QuotaDebug() {
+  const { quotas, loading, refetch } = useQuotaUsageContext();
+
+  if (loading) return <Spinner />;
+  if (!quotas) return <p>No quota data</p>;
+
+  return (
+    <div>
+      {Object.entries(quotas).map(([slug, usage]) => (
+        <p key={slug}>{slug}: {usage.consumed}/{usage.included}</p>
+      ))}
+      <button onClick={() => refetch()}>Refresh</button>
+    </div>
+  );
+}
+```
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `quotas` | `Record<string, IQuotaUsageStatus> \| null` | Current quota usage data keyed by slug |
+| `loading` | `boolean` | True while quota data is being fetched |
+| `refetch` | `() => Promise<void>` | Manually refetch all quota usage |
+
+**When quota usage refetches:**
+- When the current workspace changes (automatic).
+- When usage is recorded via `useRecordUsage` — refetch is triggered automatically.
+- When you call `refetch()` manually.
+
 ## 📝 Beta Form Component
 
 Use the pre-built `BetaForm` component for signup/waitlist forms:
@@ -734,7 +1150,7 @@ All SDK API clients extend a shared base class and are exported from the package
 | `BaseApi`        | Abstract base (URL, auth, `fetchJson`/`fetchResponse`) – extend for custom APIs |
 | `IBaseApiConfig` | Config type: `serverUrl`, `version`, optional `orgId`                           |
 | `UserApi`        | User attributes and features                                                    |
-| `WorkspaceApi`   | Workspaces, subscription, invoices, users                                        |
+| `WorkspaceApi`   | Workspaces, subscription, invoices, quota usage, users                            |
 | `SettingsApi`    | Organization settings                                                           |
 
 ### Currency, pricing variant & quota utilities
@@ -772,7 +1188,9 @@ Prefer these SDK hooks for state and operations instead of `useAppSelector`:
 | `useUserAttributes()`      | User attributes and update/refresh                                                                      |
 | `useUserFeatures()`        | User feature flags                                                                                      |
 | `useSubscriptionContext()` | Subscription for current workspace (response, loading, refetch); use inside SubscriptionContextProvider |
-| Subscription hooks         | `usePublicPlans`, `useSubscription`, `usePlanGroup`, etc.                                               |
+| Subscription hooks         | `usePublicPlans`, `useSubscription`, `usePlanGroup`, `useCreateCheckoutSession`, `useUpdateSubscription`, `useCancelSubscription`, `useResumeSubscription`, `useInvoices`, `useInvoice` |
+| `useQuotaUsageContext()`   | Quota usage for current workspace (quotas, loading, refetch); use inside QuotaUsageContextProvider      |
+| Quota usage hooks          | `useRecordUsage`, `useQuotaUsageStatus`, `useAllQuotaUsage`, `useUsageLogs`                             |
 
 Using hooks keeps your code stable if internal state shape changes and avoids direct Redux/context coupling.
 
@@ -963,6 +1381,32 @@ function BillingPage() {
 ```
 
 SubscriptionContextProvider is included in SaaSOSProvider by default, so no extra wrapper is needed.
+
+### Pattern 4c: Quota-Gated UI
+
+```tsx
+import { WhenQuotaAvailable, WhenQuotaExhausted, WhenQuotaThreshold } from '@buildbase/sdk';
+
+function FeatureWithQuota() {
+  return (
+    <div>
+      <WhenQuotaThreshold slug="api_calls" threshold={80}>
+        <WarningBanner message="You're running low on API calls" />
+      </WhenQuotaThreshold>
+
+      <WhenQuotaAvailable slug="api_calls" fallbackComponent={<UpgradePrompt />}>
+        <ApiCallButton />
+      </WhenQuotaAvailable>
+
+      <WhenQuotaExhausted slug="api_calls">
+        <p>No API calls remaining. <a href="/billing">Upgrade your plan</a></p>
+      </WhenQuotaExhausted>
+    </div>
+  );
+}
+```
+
+QuotaUsageContextProvider is included in SaaSOSProvider by default, so no extra wrapper is needed. Quota data auto-refreshes after `useRecordUsage` calls.
 
 ### Pattern 5: Handling Workspace Changes
 

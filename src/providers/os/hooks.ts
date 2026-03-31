@@ -61,7 +61,7 @@ export function useSaaSSettings() {
 
   const settingsApi = useMemo(
     () => (isOsConfigReady(os) ? new SettingsApi({ serverUrl, version, orgId }) : null),
-    [serverUrl, version, orgId, os]
+    [serverUrl, version, orgId]
   );
 
   const getSettings = useCallback(

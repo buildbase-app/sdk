@@ -104,3 +104,6 @@ export const WhenWorkspaceRoles = (props: IProps) => {
   }
   return children;
 };
+
+WhenRoles.displayName = 'WhenRoles';
+WhenWorkspaceRoles.displayName = 'WhenWorkspaceRoles';

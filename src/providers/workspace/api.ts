@@ -1,4 +1,5 @@
 import {
+  IAllQuotaUsageResponse,
   ICheckoutSessionRequest,
   ICheckoutSessionResponse,
   IInvoiceListResponse,
@@ -7,9 +8,14 @@ import {
   IPlanGroupVersion,
   IPlanGroupVersionsResponse,
   IPublicPlansResponse,
+  IQuotaUsageStatusResponse,
+  IRecordUsageRequest,
+  IRecordUsageResponse,
   ISubscriptionResponse,
   ISubscriptionUpdateRequest,
   ISubscriptionUpdateResponse,
+  IUsageLogsQuery,
+  IUsageLogsResponse,
   IUser,
 } from '../../api/types';
 import { BaseApi } from '../../lib/api-base';
@@ -157,7 +163,7 @@ export class WorkspaceApi extends BaseApi {
       if (!result.success) {
         throw new Error(result.message || 'Failed to fetch subscription');
       }
-      return result.data;
+      return result.data || result;
     }
     // If no success field, assume the response is the data directly
     return result;
@@ -193,7 +199,7 @@ export class WorkspaceApi extends BaseApi {
       if (!result.success) {
         throw new Error(result.message || 'Failed to fetch plan group');
       }
-      return result.data;
+      return result.data || result;
     }
     // If no success field, assume the response is the data directly
     return result;
@@ -234,7 +240,7 @@ export class WorkspaceApi extends BaseApi {
       if (!result.success) {
         throw new Error(result.message || 'Failed to fetch plan group version');
       }
-      return result.data;
+      return result.data || result;
     }
     // If no success field, assume the response is the data directly
     return result;
@@ -275,7 +281,7 @@ export class WorkspaceApi extends BaseApi {
       if (!result.success) {
         throw new Error(result.message || 'Failed to fetch plan group versions');
       }
-      return result.data;
+      return result.data || result;
     }
     // If no success field, assume the response is the data directly
     return result;
@@ -345,7 +351,7 @@ export class WorkspaceApi extends BaseApi {
       if (!result.success) {
         throw new Error(result.message || 'Failed to fetch plan group version');
       }
-      return result.data;
+      return result.data || result;
     }
     // If no success field, assume the response is the data directly
     return result;
@@ -424,7 +430,7 @@ export class WorkspaceApi extends BaseApi {
       if (result.data?.checkoutUrl || result.checkoutUrl) {
         return result.data || result;
       }
-      return result.data;
+      return result.data || result;
     }
     // If no success field, check if it's a checkout session response
     if (result.checkoutUrl) {
@@ -600,6 +606,169 @@ export class WorkspaceApi extends BaseApi {
     if (result.success !== undefined) {
       if (!result.success) {
         throw new Error(result.message || 'Failed to resume subscription');
+      }
+      return result.data || result;
+    }
+    return result;
+  }
+
+  // Quota Usage Methods
+
+  /**
+   * Record quota usage for a workspace
+   * @param workspaceId - The workspace ID
+   * @param request - Usage request with quotaSlug, quantity, and optional metadata/source
+   * @returns Usage result with consumed/included/available/overage
+   */
+  async recordUsage(
+    workspaceId: string,
+    request: IRecordUsageRequest
+  ): Promise<IRecordUsageResponse> {
+    const response = await this.fetchResponse(`workspaces/${workspaceId}/subscription/usage`, {
+      method: 'POST',
+      body: JSON.stringify(request),
+    });
+
+    if (!response.ok) {
+      let errorMessage = 'Failed to record usage';
+      try {
+        const error = await response.json();
+        errorMessage = error.message || errorMessage;
+      } catch {
+        errorMessage = `Failed to record usage (${response.status}: ${response.statusText})`;
+      }
+      throw new Error(errorMessage);
+    }
+
+    const result = await response.json();
+    if (result.success !== undefined) {
+      if (!result.success) {
+        throw new Error(result.message || 'Failed to record usage');
+      }
+      return result.data || result;
+    }
+    return result;
+  }
+
+  /**
+   * Get usage status for a single quota
+   * @param workspaceId - The workspace ID
+   * @param quotaSlug - The quota slug to check
+   * @returns Quota usage status with consumed/included/available/overage/hasOverage
+   */
+  async getQuotaUsageStatus(
+    workspaceId: string,
+    quotaSlug: string
+  ): Promise<IQuotaUsageStatusResponse> {
+    const response = await this.fetchResponse(
+      `workspaces/${workspaceId}/subscription/usage/status?quotaSlug=${encodeURIComponent(quotaSlug)}`
+    );
+
+    if (!response.ok) {
+      let errorMessage = 'Failed to fetch quota usage status';
+      try {
+        const error = await response.json();
+        errorMessage = error.message || errorMessage;
+      } catch {
+        if (response.status === 404) {
+          errorMessage = 'Workspace not found or no subscription available';
+        } else if (response.status === 401) {
+          errorMessage = 'Unauthorized - Please check your session';
+        } else {
+          errorMessage = `Failed to fetch quota usage status (${response.status}: ${response.statusText})`;
+        }
+      }
+      throw new Error(errorMessage);
+    }
+
+    const result = await response.json();
+    if (result.success !== undefined) {
+      if (!result.success) {
+        throw new Error(result.message || 'Failed to fetch quota usage status');
+      }
+      return result.data || result;
+    }
+    return result;
+  }
+
+  /**
+   * Get usage status for all quotas in the workspace's current plan
+   * @param workspaceId - The workspace ID
+   * @returns All quota usage statuses keyed by quota slug
+   */
+  async getAllQuotaUsage(workspaceId: string): Promise<IAllQuotaUsageResponse> {
+    const response = await this.fetchResponse(
+      `workspaces/${workspaceId}/subscription/usage/all`
+    );
+
+    if (!response.ok) {
+      let errorMessage = 'Failed to fetch all quota usage';
+      try {
+        const error = await response.json();
+        errorMessage = error.message || errorMessage;
+      } catch {
+        if (response.status === 404) {
+          errorMessage = 'Workspace not found or no subscription available';
+        } else if (response.status === 401) {
+          errorMessage = 'Unauthorized - Please check your session';
+        } else {
+          errorMessage = `Failed to fetch all quota usage (${response.status}: ${response.statusText})`;
+        }
+      }
+      throw new Error(errorMessage);
+    }
+
+    const result = await response.json();
+    if (result.success !== undefined) {
+      if (!result.success) {
+        throw new Error(result.message || 'Failed to fetch all quota usage');
+      }
+      return result.data || result;
+    }
+    return result;
+  }
+
+  /**
+   * Get paginated usage logs for a workspace
+   * @param workspaceId - The workspace ID
+   * @param query - Optional filters: quotaSlug, from, to, source, page, limit
+   * @returns Paginated usage log entries
+   */
+  async getUsageLogs(workspaceId: string, query?: IUsageLogsQuery): Promise<IUsageLogsResponse> {
+    const params = new URLSearchParams();
+    if (query?.quotaSlug) params.append('quotaSlug', query.quotaSlug);
+    if (query?.from) params.append('from', query.from);
+    if (query?.to) params.append('to', query.to);
+    if (query?.source) params.append('source', query.source);
+    if (query?.page) params.append('page', query.page.toString());
+    if (query?.limit) params.append('limit', query.limit.toString());
+
+    const queryString = params.toString();
+    const url = `workspaces/${workspaceId}/subscription/usage/logs${queryString ? `?${queryString}` : ''}`;
+
+    const response = await this.fetchResponse(url);
+
+    if (!response.ok) {
+      let errorMessage = 'Failed to fetch usage logs';
+      try {
+        const error = await response.json();
+        errorMessage = error.message || errorMessage;
+      } catch {
+        if (response.status === 404) {
+          errorMessage = 'Workspace not found';
+        } else if (response.status === 401) {
+          errorMessage = 'Unauthorized - Please check your session';
+        } else {
+          errorMessage = `Failed to fetch usage logs (${response.status}: ${response.statusText})`;
+        }
+      }
+      throw new Error(errorMessage);
+    }
+
+    const result = await response.json();
+    if (result.success !== undefined) {
+      if (!result.success) {
+        throw new Error(result.message || 'Failed to fetch usage logs');
       }
       return result.data || result;
     }

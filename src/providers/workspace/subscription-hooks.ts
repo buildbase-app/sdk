@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
   BillingInterval,
+  IAllQuotaUsageResponse,
   ICheckoutSessionRequest,
   ICheckoutSessionResponse,
   IInvoice,
@@ -8,10 +9,18 @@ import {
   IPlanGroupVersion,
   IPlanGroupVersionsResponse,
   IPublicPlansResponse,
+  IQuotaUsageStatus,
+  IQuotaUsageStatusResponse,
+  IRecordUsageRequest,
+  IRecordUsageResponse,
   ISubscriptionResponse,
   ISubscriptionUpdateRequest,
   ISubscriptionUpdateResponse,
+  IUsageLogEntry,
+  IUsageLogsQuery,
+  IUsageLogsResponse,
 } from '../../api/types';
+import { invalidateQuotaUsage } from '../../contexts/QuotaUsageContext/quotaUsageInvalidation';
 import { invalidateSubscription } from '../../contexts/SubscriptionContext/subscriptionInvalidation';
 import { handleError } from '../../lib/error-handler';
 import { isOsConfigReady } from '../os/types';
@@ -664,7 +673,7 @@ export const useSubscriptionManagement = (
 
   const refetchAll = useCallback(async () => {
     await Promise.all([subscription.refetch(), planGroup.refetch()]);
-  }, [subscription, planGroup]);
+  }, [subscription.refetch, planGroup.refetch]);
 
   return {
     subscription: subscription.subscription,
@@ -1004,5 +1013,360 @@ export const useResumeSubscription = (workspaceId: string | null | undefined) =>
     resumeSubscription,
     loading,
     error,
+  };
+};
+
+// ─── Quota Usage Hooks ────────────────────────────────────────────────────────
+
+/**
+ * Hook to record quota usage for a workspace.
+ * Returns a function to record usage (mutation pattern).
+ *
+ * @param workspaceId - The workspace ID. Can be null/undefined.
+ * @returns An object containing:
+ * - `recordUsage(request)`: Function to record usage (throws if workspaceId is null)
+ * - `loading`: Boolean indicating if recording is in progress
+ * - `error`: Error message string (null if no error)
+ *
+ * @example
+ * ```tsx
+ * function RecordUsageButton() {
+ *   const { currentWorkspace } = useSaaSWorkspaces();
+ *   const { recordUsage, loading } = useRecordUsage(currentWorkspace?._id);
+ *
+ *   const handleRecord = async () => {
+ *     try {
+ *       const result = await recordUsage({
+ *         quotaSlug: 'api_calls',
+ *         quantity: 1,
+ *         source: 'web-app',
+ *       });
+ *       console.log(`Used: ${result.consumed}/${result.included}`);
+ *     } catch (error) {
+ *       console.error('Failed to record usage:', error);
+ *     }
+ *   };
+ *
+ *   return (
+ *     <button onClick={handleRecord} disabled={loading}>
+ *       {loading ? 'Recording...' : 'Record Usage'}
+ *     </button>
+ *   );
+ * }
+ * ```
+ */
+export const useRecordUsage = (workspaceId: string | null | undefined) => {
+  const { api } = useWorkspaceApiWithOs();
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const recordUsage = useCallback(
+    async (request: IRecordUsageRequest): Promise<IRecordUsageResponse> => {
+      if (!workspaceId) throw new Error('Workspace ID is required');
+
+      setLoading(true);
+      setError(null);
+      try {
+        const result = await api.recordUsage(workspaceId, request);
+        invalidateQuotaUsage();
+        return result;
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to record usage';
+        setError(errorMessage);
+        handleError(err, {
+          component: 'useRecordUsage',
+          action: 'recordUsage',
+          metadata: { workspaceId, request },
+        });
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [api, workspaceId]
+  );
+
+  return {
+    recordUsage,
+    loading,
+    error,
+  };
+};
+
+/**
+ * Hook to get usage status for a single quota.
+ * Automatically fetches when workspaceId or quotaSlug changes.
+ *
+ * @param workspaceId - The workspace ID. Can be null/undefined to disable fetching.
+ * @param quotaSlug - The quota slug to check. Can be null/undefined to disable fetching.
+ * @returns An object containing:
+ * - `status`: Quota usage status (null if not loaded)
+ * - `loading`: Boolean indicating if status is being fetched
+ * - `error`: Error message string (null if no error)
+ * - `refetch()`: Function to manually refetch the status
+ *
+ * @example
+ * ```tsx
+ * function QuotaStatusDisplay() {
+ *   const { currentWorkspace } = useSaaSWorkspaces();
+ *   const { status, loading } = useQuotaUsageStatus(currentWorkspace?._id, 'api_calls');
+ *
+ *   if (loading) return <Loading />;
+ *   if (!status) return null;
+ *
+ *   return (
+ *     <div>
+ *       <p>Used: {status.consumed} / {status.included}</p>
+ *       <p>Available: {status.available}</p>
+ *       {status.hasOverage && <p>Overage: {status.overage}</p>}
+ *     </div>
+ *   );
+ * }
+ * ```
+ */
+export const useQuotaUsageStatus = (
+  workspaceId: string | null | undefined,
+  quotaSlug: string | null | undefined
+) => {
+  const { api } = useWorkspaceApiWithOs();
+
+  const [status, setStatus] = useState<IQuotaUsageStatusResponse | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchStatus = useCallback(async () => {
+    if (!workspaceId || !quotaSlug) {
+      setStatus(null);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await api.getQuotaUsageStatus(workspaceId, quotaSlug);
+      setStatus(data);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch quota usage status';
+      setError(errorMessage);
+      handleError(err, {
+        component: 'useQuotaUsageStatus',
+        action: 'fetchStatus',
+        metadata: { workspaceId, quotaSlug },
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [api, workspaceId, quotaSlug]);
+
+  useEffect(() => {
+    fetchStatus();
+  }, [fetchStatus]);
+
+  return {
+    status,
+    loading,
+    error,
+    refetch: fetchStatus,
+  };
+};
+
+/**
+ * Hook to get usage status for all quotas in the workspace's current plan.
+ * Automatically fetches when workspaceId changes.
+ *
+ * @param workspaceId - The workspace ID. Can be null/undefined to disable fetching.
+ * @returns An object containing:
+ * - `quotas`: Record of quota usage statuses keyed by slug (null if not loaded)
+ * - `loading`: Boolean indicating if statuses are being fetched
+ * - `error`: Error message string (null if no error)
+ * - `refetch()`: Function to manually refetch all statuses
+ *
+ * @example
+ * ```tsx
+ * function AllQuotasDisplay() {
+ *   const { currentWorkspace } = useSaaSWorkspaces();
+ *   const { quotas, loading } = useAllQuotaUsage(currentWorkspace?._id);
+ *
+ *   if (loading) return <Loading />;
+ *   if (!quotas) return null;
+ *
+ *   return (
+ *     <div>
+ *       {Object.entries(quotas).map(([slug, usage]) => (
+ *         <div key={slug}>
+ *           <p>{slug}: {usage.consumed}/{usage.included}</p>
+ *           {usage.hasOverage && <p>Overage: {usage.overage}</p>}
+ *         </div>
+ *       ))}
+ *     </div>
+ *   );
+ * }
+ * ```
+ */
+export const useAllQuotaUsage = (workspaceId: string | null | undefined) => {
+  const { api } = useWorkspaceApiWithOs();
+
+  const [quotas, setQuotas] = useState<Record<string, IQuotaUsageStatus> | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchAllUsage = useCallback(async () => {
+    if (!workspaceId) {
+      setQuotas(null);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await api.getAllQuotaUsage(workspaceId);
+      setQuotas(data.quotas);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch all quota usage';
+      setError(errorMessage);
+      handleError(err, {
+        component: 'useAllQuotaUsage',
+        action: 'fetchAllUsage',
+        metadata: { workspaceId },
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [api, workspaceId]);
+
+  useEffect(() => {
+    fetchAllUsage();
+  }, [fetchAllUsage]);
+
+  return {
+    quotas,
+    loading,
+    error,
+    refetch: fetchAllUsage,
+  };
+};
+
+/**
+ * Hook to get paginated usage logs for a workspace.
+ * Automatically fetches when workspaceId or filter params change.
+ *
+ * @param workspaceId - The workspace ID. Can be null/undefined to disable fetching.
+ * @param quotaSlug - Optional quota slug to filter logs by.
+ * @param options - Optional filters: from, to, source, page, limit
+ * @returns An object containing:
+ * - `logs`: Array of usage log entries
+ * - `totalDocs`: Total number of log entries matching the query
+ * - `totalPages`: Total number of pages
+ * - `page`: Current page number
+ * - `hasNextPage`: Whether there are more pages after the current one
+ * - `hasPrevPage`: Whether there are pages before the current one
+ * - `loading`: Boolean indicating if logs are being fetched
+ * - `error`: Error message string (null if no error)
+ * - `refetch()`: Function to manually refetch logs
+ *
+ * @example
+ * ```tsx
+ * function UsageLogsTable() {
+ *   const { currentWorkspace } = useSaaSWorkspaces();
+ *   const { logs, totalPages, page, hasNextPage, loading } = useUsageLogs(
+ *     currentWorkspace?._id,
+ *     'api_calls',
+ *     { limit: 20 }
+ *   );
+ *
+ *   if (loading) return <Loading />;
+ *
+ *   return (
+ *     <div>
+ *       {logs.map(log => (
+ *         <div key={log._id}>
+ *           {log.quotaSlug}: {log.quantity} ({log.createdAt})
+ *         </div>
+ *       ))}
+ *       <p>Page {page} of {totalPages}</p>
+ *     </div>
+ *   );
+ * }
+ * ```
+ */
+export const useUsageLogs = (
+  workspaceId: string | null | undefined,
+  quotaSlug?: string,
+  options?: { from?: string; to?: string; source?: string; page?: number; limit?: number }
+) => {
+  const { api } = useWorkspaceApiWithOs();
+
+  const [logs, setLogs] = useState<IUsageLogEntry[]>([]);
+  const [totalDocs, setTotalDocs] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [page, setPage] = useState(1);
+  const [hasNextPage, setHasNextPage] = useState(false);
+  const [hasPrevPage, setHasPrevPage] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const from = options?.from;
+  const to = options?.to;
+  const source = options?.source;
+  const pageNum = options?.page;
+  const limit = options?.limit;
+
+  const fetchLogs = useCallback(async () => {
+    if (!workspaceId) {
+      setLogs([]);
+      setTotalDocs(0);
+      setTotalPages(0);
+      setPage(1);
+      setHasNextPage(false);
+      setHasPrevPage(false);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    try {
+      const query: IUsageLogsQuery = {
+        ...(quotaSlug && { quotaSlug }),
+        ...(from && { from }),
+        ...(to && { to }),
+        ...(source && { source }),
+        ...(pageNum && { page: pageNum }),
+        ...(limit && { limit }),
+      };
+      const data = await api.getUsageLogs(workspaceId, query);
+      setLogs(data.docs || []);
+      setTotalDocs(data.totalDocs || 0);
+      setTotalPages(data.totalPages || 0);
+      setPage(data.page || 1);
+      setHasNextPage(data.hasNextPage || false);
+      setHasPrevPage(data.hasPrevPage || false);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch usage logs';
+      setError(errorMessage);
+      handleError(err, {
+        component: 'useUsageLogs',
+        action: 'fetchLogs',
+        metadata: { workspaceId, quotaSlug },
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [api, workspaceId, quotaSlug, from, to, source, pageNum, limit]);
+
+  useEffect(() => {
+    fetchLogs();
+  }, [fetchLogs]);
+
+  return {
+    logs,
+    totalDocs,
+    totalPages,
+    page,
+    hasNextPage,
+    hasPrevPage,
+    loading,
+    error,
+    refetch: fetchLogs,
   };
 };
