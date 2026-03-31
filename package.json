@@ -1,6 +1,6 @@
 {
   "name": "@buildbase/sdk",
-  "version": "0.0.20",
+  "version": "0.0.21",
   "type": "module",
   "description": "A SDK for Buildbase",
   "main": "dist/index.js",
@@ -45,6 +45,7 @@
     "react-dom": "^19.0.0"
   },
   "dependencies": {
+    "@buildbase/sdk": "file:.yalc/@buildbase/sdk",
     "@radix-ui/react-alert-dialog": "^1.1.13",
     "@radix-ui/react-avatar": "^1.1.9",
     "@radix-ui/react-dialog": "^1.1.13",
