@@ -36,6 +36,7 @@ A React SDK for [BuildBase](https://www.buildbase.app/) that provides essential 
 - **🎯 Feature Flags** - Workspace-level and user-level feature toggles
 - **📋 Subscription Gates** - Show or hide UI based on current workspace subscription (plan)
 - **📊 Quota Usage Tracking** - Record and monitor metered usage (API calls, storage, etc.) with real-time status
+- **📈 Usage Dashboard** - Built-in workspace settings page showing quota consumption, overage billing breakdowns, and billing period info
 - **👤 User Management** - User attributes and feature flags management
 - **📝 Beta Form** - Pre-built signup/waitlist form component
 - **📡 Event System** - Subscribe to user and workspace events
@@ -224,8 +225,22 @@ const {
   status, // AuthStatus: 'loading' | 'redirecting' | 'authenticating' | 'authenticated' | 'unauthenticated' (use AuthStatus enum for type-safe checks)
   signIn, // Function: initiates sign-in flow
   signOut, // Function: signs out the user
-  openWorkspaceSettings, // Function: opens workspace settings dialog
+  openWorkspaceSettings, // Function: opens workspace settings dialog to a specific section
 } = useSaaSAuth();
+```
+
+#### Workspace Settings Sections
+
+Open the workspace settings dialog to a specific section:
+
+```tsx
+openWorkspaceSettings('profile');      // Account profile
+openWorkspaceSettings('general');      // Workspace name, icon
+openWorkspaceSettings('users');        // Workspace members
+openWorkspaceSettings('subscription'); // Plan & Billing
+openWorkspaceSettings('usage');        // Quota usage dashboard
+openWorkspaceSettings('features');     // Feature toggles
+openWorkspaceSettings('danger');       // Delete workspace (owner only)
 ```
 
 ### Authentication Components
