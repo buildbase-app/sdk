@@ -25,15 +25,15 @@ const CONTEXT_ERROR =
 export const SubscriptionContextProvider: React.FC<{ children: ReactNode }> = React.memo(
   function SubscriptionContextProvider({ children }) {
     const { currentWorkspace } = useSaaSWorkspaces();
-    const { subscription: response, loading, refetch } = useSubscription(currentWorkspace?._id);
+    const { subscription: response, loading, error, refetch } = useSubscription(currentWorkspace?._id);
 
     useEffect(() => {
       return subscribeSubscriptionInvalidate(refetch);
     }, [refetch]);
 
     const value = useMemo<SubscriptionContextValue>(
-      () => ({ response, loading, refetch }),
-      [response, loading, refetch]
+      () => ({ response, loading, error, refetch }),
+      [response, loading, error, refetch]
     );
 
     return <SubscriptionContext.Provider value={value}>{children}</SubscriptionContext.Provider>;

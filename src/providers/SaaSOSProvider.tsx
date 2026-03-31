@@ -4,6 +4,7 @@ import React, { useEffect } from 'react';
 import { SDKErrorBoundary } from '../components/ErrorBoundary';
 import { SDKContextProvider } from '../contexts';
 
+import { QuotaUsageContextProvider } from '../contexts/QuotaUsageContext';
 import { SubscriptionContextProvider } from '../contexts/SubscriptionContext';
 import '../styles/globals.css';
 import { AuthProviderWrapper } from './auth/provider';
@@ -190,7 +191,9 @@ export const SaaSOSProvider: React.FC<SaaSOSProviderProps> = React.memo(
               <ContextConfigProvider config={config} auth={auth}>
                 <UserProvider>
                   <WorkspaceSettingsProvider>
-                    <SubscriptionContextProvider>{children}</SubscriptionContextProvider>
+                    <SubscriptionContextProvider>
+                      <QuotaUsageContextProvider>{children}</QuotaUsageContextProvider>
+                    </SubscriptionContextProvider>
                   </WorkspaceSettingsProvider>
                 </UserProvider>
               </ContextConfigProvider>

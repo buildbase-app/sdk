@@ -30,11 +30,27 @@ export {
   WhenSubscription,
   WhenSubscriptionToPlans,
 } from './components/subscription';
+
+// Export quota usage gate components (must be used within QuotaUsageContextProvider)
+export {
+  WhenQuotaAvailable,
+  WhenQuotaExhausted,
+  WhenQuotaOverage,
+  WhenQuotaThreshold,
+} from './components/quota';
 export {
   SubscriptionContextProvider,
   useSubscriptionContext,
 } from './contexts/SubscriptionContext';
 export type { SubscriptionContextValue } from './contexts/SubscriptionContext';
+export { invalidateSubscription } from './contexts/SubscriptionContext/subscriptionInvalidation';
+
+export {
+  QuotaUsageContextProvider,
+  useQuotaUsageContext,
+} from './contexts/QuotaUsageContext';
+export type { QuotaUsageContextValue } from './contexts/QuotaUsageContext';
+export { invalidateQuotaUsage } from './contexts/QuotaUsageContext/quotaUsageInvalidation';
 
 // Export auth status and types (flags are derived in useSaaSAuth)
 export { AuthStatus } from './providers/auth/types';
@@ -51,6 +67,8 @@ export { WorkspaceSwitcher } from './providers/workspace/provider';
 
 // Export subscription hooks
 export {
+  useAllQuotaUsage,
+  useCancelSubscription,
   useCreateCheckoutSession,
   useInvoice,
   useInvoices,
@@ -58,9 +76,13 @@ export {
   usePlanGroupVersions,
   usePublicPlanGroupVersion,
   usePublicPlans,
+  useQuotaUsageStatus,
+  useRecordUsage,
+  useResumeSubscription,
   useSubscription,
   useSubscriptionManagement,
   useUpdateSubscription,
+  useUsageLogs,
 } from './providers/workspace/subscription-hooks';
 
 // Export event types and emitter
@@ -120,6 +142,7 @@ export type {
 
 export type {
   BillingInterval,
+  IAllQuotaUsageResponse,
   IBasePricing,
   ICheckoutSessionRequest,
   ICheckoutSessionResponse,
@@ -146,11 +169,18 @@ export type {
   IQuotaIntervalValue,
   IQuotaOveragePriceIdsByInterval,
   IQuotaOveragesByInterval,
+  IQuotaUsageStatus,
+  IQuotaUsageStatusResponse,
+  IRecordUsageRequest,
+  IRecordUsageResponse,
   IStripePricesByInterval,
   ISubscription,
   ISubscriptionItem,
   ISubscriptionResponse,
   ISubscriptionUpdateRequest,
   ISubscriptionUpdateResponse,
+  IUsageLogEntry,
+  IUsageLogsQuery,
+  IUsageLogsResponse,
   InvoiceStatus,
 } from './api/types';

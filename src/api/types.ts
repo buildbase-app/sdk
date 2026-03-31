@@ -307,6 +307,7 @@ export interface IPlanGroupVersionsResponse {
 export interface ICheckoutSessionRequest {
   planVersionId: string;
   billingInterval?: BillingInterval;
+  currency?: string;
   successUrl?: string;
   cancelUrl?: string;
 }
@@ -412,4 +413,76 @@ export interface IInvoiceListResponse {
 export interface IInvoiceResponse {
   success: boolean;
   invoice: IInvoice;
+}
+
+// Quota Usage Types
+
+/** Request body for POST .../workspaces/:id/subscription/usage */
+export interface IRecordUsageRequest {
+  quotaSlug: string;
+  quantity: number;
+  metadata?: Record<string, unknown>;
+  source?: string;
+  idempotencyKey?: string;
+}
+
+/** Response from POST .../workspaces/:id/subscription/usage */
+export interface IRecordUsageResponse {
+  used: number;
+  consumed: number;
+  included: number;
+  available: number;
+  overage: number;
+  billedAsync: boolean;
+}
+
+/** Single quota usage status (shared between status and all endpoints). */
+export interface IQuotaUsageStatus {
+  consumed: number;
+  included: number;
+  available: number;
+  overage: number;
+  hasOverage: boolean;
+}
+
+/** Response from GET .../workspaces/:id/subscription/usage/status?quotaSlug=X */
+export interface IQuotaUsageStatusResponse extends IQuotaUsageStatus {
+  quotaSlug: string;
+}
+
+/** Response from GET .../workspaces/:id/subscription/usage/all */
+export interface IAllQuotaUsageResponse {
+  quotas: Record<string, IQuotaUsageStatus>;
+}
+
+/** Single usage log entry from GET .../usage/logs */
+export interface IUsageLogEntry {
+  _id: string;
+  quotaSlug: string;
+  quantity: number;
+  source?: string;
+  workspace: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Query parameters for GET .../workspaces/:id/subscription/usage/logs */
+export interface IUsageLogsQuery {
+  quotaSlug?: string;
+  from?: string;
+  to?: string;
+  source?: string;
+  page?: number;
+  limit?: number;
+}
+
+/** Paginated response from GET .../workspaces/:id/subscription/usage/logs */
+export interface IUsageLogsResponse {
+  docs: IUsageLogEntry[];
+  totalDocs: number;
+  limit: number;
+  page: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
 }

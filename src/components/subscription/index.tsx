@@ -140,3 +140,7 @@ export const WhenSubscriptionToPlans = (props: IWhenSubscriptionToPlansProps) =>
 
   return children;
 };
+
+WhenSubscription.displayName = 'WhenSubscription';
+WhenNoSubscription.displayName = 'WhenNoSubscription';
+WhenSubscriptionToPlans.displayName = 'WhenSubscriptionToPlans';

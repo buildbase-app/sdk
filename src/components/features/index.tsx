@@ -144,3 +144,8 @@ export const WhenUserFeatureDisabled = (props: IProps) => {
   if (isFeatureEnabled(slug)) return null;
   return children;
 };
+
+WhenWorkspaceFeatureEnabled.displayName = 'WhenWorkspaceFeatureEnabled';
+WhenWorkspaceFeatureDisabled.displayName = 'WhenWorkspaceFeatureDisabled';
+WhenUserFeatureEnabled.displayName = 'WhenUserFeatureEnabled';
+WhenUserFeatureDisabled.displayName = 'WhenUserFeatureDisabled';
