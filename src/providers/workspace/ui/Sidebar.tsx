@@ -1,5 +1,6 @@
 import {
   AlertTriangle,
+  BarChart3,
   CreditCard,
   SettingsIcon,
   ToggleRight,
@@ -28,7 +29,7 @@ const Sidebar: React.FC<Props> = ({ workspace, section, setSection }) => {
   const isCreatedByMe = createdBy === currentUser?.id;
 
   return (
-    <div className="w-56 h-full flex flex-col space-y-6">
+    <div className="w-44 sm:w-56 h-full flex flex-col space-y-4 sm:space-y-6 shrink-0">
       {workspace && (
         <div className="border-b p-2 py-4">
           <div className="flex items-center gap-x-2">
@@ -96,6 +97,13 @@ const Sidebar: React.FC<Props> = ({ workspace, section, setSection }) => {
           label="Plan & Billing"
           section="subscription"
           onClick={() => setSection('subscription')}
+        />
+        <SidebarItem
+          activeSection={section}
+          icon={<BarChart3 className="h-3.5 w-3.5" />}
+          label="Usage"
+          section="usage"
+          onClick={() => setSection('usage')}
         />
         <SidebarItem
           activeSection={section}

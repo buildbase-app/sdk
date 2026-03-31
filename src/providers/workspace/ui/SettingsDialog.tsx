@@ -14,6 +14,7 @@ import WorkspaceSettingsFeatures from './SettingsFeatures';
 import WorkspaceSettingsGeneral from './SettingsGeneral';
 import WorkspaceSettingsProfile from './SettingsProfile';
 import WorkspaceSettingsSubscription from './SettingsSubscription';
+import WorkspaceSettingsUsage from './SettingsUsage';
 import WorkspaceSettingsUsers from './SettingsUsers';
 import WorkspaceSettingsSidebar from './Sidebar';
 
@@ -22,6 +23,7 @@ export type WorkspaceSettingsSection =
   | 'general'
   | 'users'
   | 'subscription'
+  | 'usage'
   | 'features'
   | 'danger';
 
@@ -87,6 +89,7 @@ const WorkspaceSettingsDialog: React.FC<WorkspaceSettingsDialogProps> = ({
             {section === 'general' && 'Workspace Settings'}
             {section === 'users' && 'Workspace Members'}
             {section === 'subscription' && 'Plan & Billing'}
+            {section === 'usage' && 'Usage'}
             {section === 'features' && 'Workspace Features'}
             {section === 'danger' && 'Danger Zone'}
           </DialogTitle>
@@ -95,6 +98,7 @@ const WorkspaceSettingsDialog: React.FC<WorkspaceSettingsDialogProps> = ({
             {section === 'general' && <WorkspaceSettingsGeneral workspace={workspace} />}
             {section === 'users' && <WorkspaceSettingsUsers workspace={workspace} />}
             {section === 'subscription' && <WorkspaceSettingsSubscription workspace={workspace} />}
+            {section === 'usage' && <WorkspaceSettingsUsage />}
             {section === 'features' && (
               <WorkspaceSettingsFeatures workspaceId={workspace._id?.toString()} />
             )}
