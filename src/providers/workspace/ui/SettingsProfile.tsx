@@ -132,7 +132,7 @@ const WorkspaceSettingsProfile: React.FC<{ workspace: IWorkspace }> = ({ workspa
               <div className="flex flex-col gap-0.5">
                 <div className="text-sm font-medium">Language</div>
                 <SelectLanguage
-                  value={form.getValues('language')}
+                  value={form.watch('language')}
                   onChange={newValue => {
                     form.setValue('language', newValue);
                   }}
@@ -141,7 +141,7 @@ const WorkspaceSettingsProfile: React.FC<{ workspace: IWorkspace }> = ({ workspa
               <div className="flex flex-col gap-0.5">
                 <div className="text-sm font-medium">Country</div>
                 <SelectCountry
-                  value={form.getValues('country')}
+                  value={form.watch('country')}
                   onChange={newValue => {
                     form.setValue('country', newValue);
                   }}
@@ -150,7 +150,7 @@ const WorkspaceSettingsProfile: React.FC<{ workspace: IWorkspace }> = ({ workspa
               <div className="flex flex-col gap-0.5">
                 <div className="text-sm font-medium">Currency</div>
                 <SelectCurrency
-                  value={form.getValues('currency')}
+                  value={form.watch('currency')}
                   onChange={newValue => {
                     form.setValue('currency', newValue);
                   }}
@@ -159,7 +159,7 @@ const WorkspaceSettingsProfile: React.FC<{ workspace: IWorkspace }> = ({ workspa
               <div className="flex flex-col gap-0.5">
                 <div className="text-sm font-medium">Timezone</div>
                 <SelectTimeZone
-                  value={form.getValues('timezone')}
+                  value={form.watch('timezone')}
                   onChange={newValue => {
                     form.setValue('timezone', newValue);
                   }}

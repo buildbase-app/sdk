@@ -144,6 +144,7 @@ export const useSaaSWorkspaces = () => {
       }
       if (ws) {
         const previousWorkspace = workspace.currentWorkspace;
+        workspaceStorage.saveCurrentWorkspace(ws);
         dispatch.workspaces(workspaceActions.setCurrentWorkspace(ws));
         // Trigger workspace changed event (always when forceEmit, so app can generate token etc.)
         eventEmitter.emitWorkspaceChanged(ws, previousWorkspace).catch(error => {
@@ -220,6 +221,7 @@ export const useSaaSWorkspaces = () => {
   ]);
 
   const resetCurrentWorkspaceWithStorage = useCallback(() => {
+    workspaceStorage.clearCurrentWorkspace();
     dispatch.workspaces(workspaceActions.resetCurrentWorkspace());
   }, [dispatch]);
 
@@ -292,7 +294,7 @@ export const useSaaSWorkspaces = () => {
   const createWorkspace = useCallback(
     async (name: string, image?: string) => {
       const data = await api.createWorkspace({ name, image });
-      dispatch.workspaces(workspaceActions.setWorkspaces([...workspace.workspaces, data]));
+      dispatch.workspaces(workspaceActions.addWorkspace(data));
       // Trigger workspace created event
       eventEmitter.emitWorkspaceCreated(data).catch(error => {
         handleError(error, {
@@ -302,15 +304,13 @@ export const useSaaSWorkspaces = () => {
         });
       });
     },
-    [api, workspace.workspaces, dispatch]
+    [api, dispatch]
   );
 
   const updateWorkspace = useCallback(
     async (ws: IWorkspace, _data: Partial<IWorkspace>) => {
       const data = await api.updateWorkspace(ws._id, _data);
-      dispatch.workspaces(
-        workspaceActions.setWorkspaces(workspace.workspaces.map(w => (w._id === ws._id ? data : w)))
-      );
+      dispatch.workspaces(workspaceActions.updateWorkspace(data));
       // Trigger workspace updated event
       eventEmitter.emitWorkspaceUpdated(data).catch(error => {
         handleError(error, {
@@ -320,7 +320,7 @@ export const useSaaSWorkspaces = () => {
         });
       });
     },
-    [api, workspace.workspaces, dispatch]
+    [api, dispatch]
   );
 
   const getFeatures = useCallback(async () => {
@@ -386,6 +386,7 @@ export const useSaaSWorkspaces = () => {
     // Only update if the workspace object reference changed (data was updated)
     // Dispatch directly so we update state/storage with fresh data without emitting workspace:changed
     if (updatedWorkspace !== workspace.currentWorkspace) {
+      workspaceStorage.saveCurrentWorkspace(updatedWorkspace);
       dispatch.workspaces(workspaceActions.setCurrentWorkspace(updatedWorkspace));
     }
   }, [workspace.workspaces, workspace.currentWorkspace, dispatch, switchToWorkspace]);
@@ -544,11 +545,10 @@ export const useSaaSWorkspaces = () => {
 
       const data = await api.deleteWorkspace(workspaceId);
       // Remove workspace from state
-      dispatch.workspaces(
-        workspaceActions.setWorkspaces(workspace.workspaces.filter(w => w._id !== workspaceId))
-      );
+      dispatch.workspaces(workspaceActions.removeWorkspace(workspaceId));
       // If deleted workspace was current, reset current workspace
       if (workspace.currentWorkspace?._id === workspaceId) {
+        workspaceStorage.clearCurrentWorkspace();
         dispatch.workspaces(workspaceActions.resetCurrentWorkspace());
       }
       // Trigger workspace deleted event

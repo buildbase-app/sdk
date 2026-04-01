@@ -154,9 +154,9 @@ const validateProps = (serverUrl: string, version: ApiVersion, orgId: string): v
   }
 };
 
-export const SaaSOSProvider: React.FC<SaaSOSProviderProps> = React.memo(
+const SaaSOSProviderInner: React.FC<SaaSOSProviderProps> = React.memo(
   ({ serverUrl, version, orgId, auth, children }) => {
-    // Validate props synchronously - throw errors immediately if invalid
+    // Validate props synchronously - throws are caught by the parent SDKErrorBoundary
     validateProps(serverUrl, version, orgId);
 
     // Memoize config to prevent unnecessary re-renders in ContextConfigProvider
@@ -184,25 +184,33 @@ export const SaaSOSProvider: React.FC<SaaSOSProviderProps> = React.memo(
     }, [memoizedHandleEvent]);
 
     return (
-      <SDKErrorBoundary>
-        <SDKContextProvider>
-          <AuthProviderWrapper callbacks={memoizedCallbacks}>
-            <PortalProvider>
-              <ContextConfigProvider config={config} auth={auth}>
-                <UserProvider>
-                  <SubscriptionContextProvider>
-                    <QuotaUsageContextProvider>
-                      <WorkspaceSettingsProvider>{children}</WorkspaceSettingsProvider>
-                    </QuotaUsageContextProvider>
-                  </SubscriptionContextProvider>
-                </UserProvider>
-              </ContextConfigProvider>
-            </PortalProvider>
-          </AuthProviderWrapper>
-        </SDKContextProvider>
-      </SDKErrorBoundary>
+      <SDKContextProvider>
+        <AuthProviderWrapper callbacks={memoizedCallbacks}>
+          <PortalProvider>
+            <ContextConfigProvider config={config} auth={auth}>
+              <UserProvider>
+                <SubscriptionContextProvider>
+                  <QuotaUsageContextProvider>
+                    <WorkspaceSettingsProvider>{children}</WorkspaceSettingsProvider>
+                  </QuotaUsageContextProvider>
+                </SubscriptionContextProvider>
+              </UserProvider>
+            </ContextConfigProvider>
+          </PortalProvider>
+        </AuthProviderWrapper>
+      </SDKContextProvider>
     );
   }
 );
+
+SaaSOSProviderInner.displayName = 'SaaSOSProviderInner';
+
+export const SaaSOSProvider: React.FC<SaaSOSProviderProps> = ({ children, ...props }) => {
+  return (
+    <SDKErrorBoundary>
+      <SaaSOSProviderInner {...props}>{children}</SaaSOSProviderInner>
+    </SDKErrorBoundary>
+  );
+};
 
 SaaSOSProvider.displayName = 'SaaSOSProvider';

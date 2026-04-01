@@ -11,6 +11,21 @@ export const workspaceActions = {
     payload: workspaces,
   }),
 
+  addWorkspace: (workspace: IWorkspace): WorkspaceAction => ({
+    type: 'ADD_WORKSPACE',
+    payload: workspace,
+  }),
+
+  updateWorkspace: (workspace: IWorkspace): WorkspaceAction => ({
+    type: 'UPDATE_WORKSPACE',
+    payload: workspace,
+  }),
+
+  removeWorkspace: (workspaceId: string): WorkspaceAction => ({
+    type: 'REMOVE_WORKSPACE',
+    payload: workspaceId,
+  }),
+
   setAllFeatures: (features: IWorkspaceFeature[]): WorkspaceAction => ({
     type: 'SET_ALL_FEATURES',
     payload: features,

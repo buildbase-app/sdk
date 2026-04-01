@@ -4,7 +4,7 @@
  * so SubscriptionContextProvider refetches and gates stay in sync.
  */
 type Listener = () => void;
-let listeners: Listener[] = [];
+const listeners = new Set<Listener>();
 
 /**
  * Subscribe a refetch callback to be called when subscription is invalidated.
@@ -13,9 +13,9 @@ let listeners: Listener[] = [];
  * @returns Unsubscribe function to remove the callback
  */
 export function subscribeSubscriptionInvalidate(fn: Listener): () => void {
-  listeners.push(fn);
+  listeners.add(fn);
   return () => {
-    listeners = listeners.filter(l => l !== fn);
+    listeners.delete(fn);
   };
 }
 
@@ -25,4 +25,9 @@ export function subscribeSubscriptionInvalidate(fn: Listener): () => void {
  */
 export function invalidateSubscription(): void {
   listeners.forEach(fn => fn());
+}
+
+/** Reset all listeners. Intended for test cleanup. */
+export function resetSubscriptionInvalidation(): void {
+  listeners.clear();
 }

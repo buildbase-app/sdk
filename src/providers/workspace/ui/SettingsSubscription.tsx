@@ -154,7 +154,7 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
   const { currentVersion, latestVersion, isDeprecated, whatsNew, plansToShow } = useMemo(() => {
     const userCurrentVersion = planGroupVersions?.currentVersion;
     const availableVersions = planGroupVersions?.availableVersions || [];
-    const hasActiveSubscription = subscription?.subscription !== null;
+    const hasActiveSubscription = subscription?.subscription != null;
 
     // Find the latest available version
     // If user has subscription: latest is the highest in availableVersions (newer versions)

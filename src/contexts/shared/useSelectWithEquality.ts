@@ -18,8 +18,8 @@ export function useSelectWithEquality<TState, TSelected>(
 ): TSelected {
   const selectorRef = useRef(selector);
   const equalityFnRef = useRef(equalityFn);
-  const prevSelectedRef = useRef<TSelected | undefined>(undefined);
-  const prevStateRef = useRef<TState>(state);
+  const prevSelectedRef = useRef<TSelected>(undefined as TSelected);
+  const hasInitializedRef = useRef(false);
 
   selectorRef.current = selector;
   equalityFnRef.current = equalityFn;
@@ -27,18 +27,18 @@ export function useSelectWithEquality<TState, TSelected>(
   return useMemo(() => {
     const result = selectorRef.current(state);
 
-    if (prevSelectedRef.current !== undefined) {
+    if (hasInitializedRef.current) {
       const isEqual = equalityFnRef.current
         ? equalityFnRef.current(prevSelectedRef.current, result)
         : Object.is(prevSelectedRef.current, result);
 
-      if (isEqual && prevStateRef.current === state) {
+      if (isEqual) {
         return prevSelectedRef.current;
       }
     }
 
     prevSelectedRef.current = result;
-    prevStateRef.current = state;
+    hasInitializedRef.current = true;
 
     return result;
   }, [state]);
