@@ -82,7 +82,7 @@ export const WhenUnauthenticated = (props: IProps) => {
   const { children } = props;
   const { status } = useSaaSAuth();
 
-  if (status === AuthStatus.authenticated) return null;
+  if (status !== AuthStatus.unauthenticated) return null;
 
   return children;
 };

@@ -3,6 +3,9 @@ import type { IWorkspace, IWorkspaceFeature } from '../../providers/workspace/ty
 
 export type WorkspaceAction =
   | { type: 'SET_WORKSPACES'; payload: IWorkspace[] }
+  | { type: 'ADD_WORKSPACE'; payload: IWorkspace }
+  | { type: 'UPDATE_WORKSPACE'; payload: IWorkspace }
+  | { type: 'REMOVE_WORKSPACE'; payload: string }
   | { type: 'SET_ALL_FEATURES'; payload: IWorkspaceFeature[] }
   | { type: 'SET_CURRENT_WORKSPACE'; payload: IWorkspace }
   | { type: 'RESET_CURRENT_WORKSPACE' }

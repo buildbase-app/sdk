@@ -1,9 +1,5 @@
 import type { IAuthState } from '../../providers/auth/types';
 import { AuthStatus } from '../../providers/auth/types';
-import {
-  removeSession as removeSessionStorage,
-  setSessionId as setSessionIdStorage,
-} from '../../providers/auth/utils';
 import { updateField, updateFields } from '../shared/utils/reducerHelpers';
 import type { AuthAction } from './types';
 
@@ -42,12 +38,10 @@ export const authReducer = (state: IAuthState, action: AuthAction): IAuthState =
 
     case 'SET_SESSION': {
       const session = action.payload;
-      setSessionIdStorage(session.sessionId);
       return updateFields(state, { session, status: AuthStatus.authenticated });
     }
 
     case 'REMOVE_SESSION':
-      removeSessionStorage();
       return updateFields(state, { session: null, status: AuthStatus.unauthenticated });
 
     default:

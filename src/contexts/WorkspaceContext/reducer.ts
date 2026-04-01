@@ -1,4 +1,3 @@
-import { workspaceStorage } from '../../providers/workspace/utils';
 import { updateField } from '../shared/utils/reducerHelpers';
 import type { WorkspaceAction, WorkspaceState } from './types';
 
@@ -30,16 +29,30 @@ export const workspaceReducer = (
     case 'SET_WORKSPACES':
       return updateField(state, 'workspaces', action.payload);
 
+    case 'ADD_WORKSPACE':
+      return updateField(state, 'workspaces', [...state.workspaces, action.payload]);
+
+    case 'UPDATE_WORKSPACE':
+      return updateField(
+        state,
+        'workspaces',
+        state.workspaces.map(w => (w._id === action.payload._id ? action.payload : w))
+      );
+
+    case 'REMOVE_WORKSPACE':
+      return updateField(
+        state,
+        'workspaces',
+        state.workspaces.filter(w => w._id !== action.payload)
+      );
+
     case 'SET_ALL_FEATURES':
       return updateField(state, 'allFeatures', action.payload);
 
-    case 'SET_CURRENT_WORKSPACE': {
-      workspaceStorage.saveCurrentWorkspace(action.payload);
+    case 'SET_CURRENT_WORKSPACE':
       return updateField(state, 'currentWorkspace', action.payload);
-    }
 
     case 'RESET_CURRENT_WORKSPACE':
-      workspaceStorage.clearCurrentWorkspace();
       return updateField(state, 'currentWorkspace', null);
 
     case 'SET_IS_INITIALIZED':

@@ -127,21 +127,16 @@ export function useSaaSAuth() {
       ) {
         await authConfig.callbacks.onSignOut();
       }
-
-      // Remove session from state and localStorage using centralized functions
-      dispatch.auth(authActions.removeSession());
-      resetCurrentWorkspace();
-
-      // Explicit cleanup: ensure session is removed even if dispatch fails
-      // Using centralized removeSession function
-      removeSession();
     } catch (error) {
       handleError(error, {
         component: 'useSaaSAuth',
         action: 'signOut',
       });
-      // Ensure cleanup even on error using centralized function
+    } finally {
+      // Always clean up state and localStorage, even if onSignOut callback throws
       removeSession();
+      dispatch.auth(authActions.removeSession());
+      resetCurrentWorkspace();
     }
   }, [dispatch, resetCurrentWorkspace, authConfig?.callbacks?.onSignOut]);
 

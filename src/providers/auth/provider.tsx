@@ -17,6 +17,7 @@ import {
   mapIUserToAuthUser,
   removeSession,
   removeTokenFromUrl,
+  setSessionId,
 } from './utils';
 
 interface IProps {
@@ -73,8 +74,8 @@ export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) 
           // Create session with user and sessionId
           const session = createSession(authUser, sessionId);
 
-          // Dispatch setSession action to update auth state
-          // The reducer will save only sessionId to localStorage, user data stays in context
+          // Save sessionId to localStorage, then update auth state
+          setSessionId(session.sessionId);
           dispatch.auth(authActions.setSession(session));
 
           // Remove token from URL
@@ -151,6 +152,7 @@ export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) 
         const authUser = mapIUserToAuthUser(userData, orgId, osState.auth?.clientId || '');
 
         const session = createSession(authUser, sessionId);
+        setSessionId(session.sessionId);
         dispatch.auth(authActions.setSession(session));
       } catch (error) {
         const isValidationError =
@@ -210,16 +212,20 @@ export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) 
     processingAuthRedirectRef.current = true;
     processedCodeRef.current = code;
 
+    let cancelled = false;
+
     // Set status to authenticating (without redirecting flag) to show we're processing the OAuth callback
     dispatch.auth(authActions.authenticationProcessing());
 
     // OS config is ready, process auth redirect
     handleAuthRedirect(code)
       .then(() => {
+        if (cancelled) return;
         // Success - code will be removed from URL in handleAuthRedirect
         processedCodeRef.current = null;
       })
       .catch(error => {
+        if (cancelled) return;
         // Error is already handled in handleAuthRedirect
         handleError(error, {
           component: 'AuthProviderWrapper',
@@ -232,6 +238,10 @@ export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) 
       .finally(() => {
         processingAuthRedirectRef.current = false;
       });
+
+    return () => {
+      cancelled = true;
+    };
   }, [handleAuthRedirect, osState.serverUrl, osState.version, osState.orgId]);
 
   // WorkspaceProvider is already in SDKContextProvider, so we don't need to wrap here
