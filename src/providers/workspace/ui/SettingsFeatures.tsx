@@ -1,5 +1,5 @@
 import { Loader2 } from 'lucide-react';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Switch } from '../../../components/ui/switch';
 import { handleError } from '../../../lib/error-handler';
 import { useSaaSAuth } from '../../auth/hooks';
@@ -11,7 +11,12 @@ import SettingSkeleton from './Skeleton';
 const WorkspaceSettingsFeatures: React.FC<{ workspaceId: string }> = ({ workspaceId }) => {
   const [updatingFeatures, setUpdatingFeatures] = useState<Record<string, boolean | null>>({});
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const successTimerRef = useRef<ReturnType<typeof setTimeout>>();
   const { allFeatures, updateFeature, getWorkspace } = useSaaSWorkspaces();
+
+  useEffect(() => {
+    return () => { clearTimeout(successTimerRef.current); };
+  }, []);
   const [workspace, setWorkspace] = useState<IWorkspace | null>(null);
   const { user: currentUser } = useSaaSAuth();
 
@@ -29,7 +34,8 @@ const WorkspaceSettingsFeatures: React.FC<{ workspaceId: string }> = ({ workspac
       const feature = allFeatures.find(f => f.slug === key);
       const featureName = feature?.name || 'Feature';
       setSuccessMessage(`${featureName} ${value ? 'enabled' : 'disabled'} successfully`);
-      setTimeout(() => {
+      clearTimeout(successTimerRef.current);
+      successTimerRef.current = setTimeout(() => {
         setSuccessMessage(null);
       }, 5000);
     } catch (error) {

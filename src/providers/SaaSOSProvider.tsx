@@ -165,14 +165,20 @@ const SaaSOSProviderInner: React.FC<SaaSOSProviderProps> = React.memo(
       [serverUrl, version, orgId]
     );
 
-    // Memoize callbacks to prevent unnecessary re-renders
-    const memoizedCallbacks = React.useMemo(() => auth?.callbacks, [auth?.callbacks]);
-
-    // Memoize event handler from auth callbacks
-    const memoizedHandleEvent = React.useMemo(
-      () => auth?.callbacks?.handleEvent,
-      [auth?.callbacks]
+    // Memoize callbacks by individual function references to avoid re-renders
+    // when parent creates a new callbacks object with the same functions
+    const memoizedCallbacks = React.useMemo(
+      () => auth?.callbacks,
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      [
+        auth?.callbacks?.handleAuthentication,
+        auth?.callbacks?.onSignOut,
+        auth?.callbacks?.handleEvent,
+        auth?.callbacks?.onWorkspaceChange,
+      ]
     );
+
+    const memoizedHandleEvent = auth?.callbacks?.handleEvent;
 
     // Set event handler in the event emitter
     useEffect(() => {

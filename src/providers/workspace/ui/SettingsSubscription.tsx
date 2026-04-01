@@ -1,5 +1,5 @@
 import { AlertTriangle, Calendar, CreditCard, Loader2 } from 'lucide-react';
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { formatCents } from '../../../api/currency-utils';
 import {
   getBasePriceCents,
@@ -195,8 +195,13 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
   const [updating, setUpdating] = useState(false);
   const [updateError, setUpdateError] = useState<string | null>(null);
   const [updateSuccess, setUpdateSuccess] = useState<string | null>(null);
+  const messageTimerRef = useRef<ReturnType<typeof setTimeout>>();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+
+  useEffect(() => {
+    return () => { clearTimeout(messageTimerRef.current); };
+  }, []);
   const [resumeDialogOpen, setResumeDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'subscription' | 'invoices'>('subscription');
 
@@ -289,7 +294,8 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
       setUpdateError(errorMessage);
     } finally {
       setUpdating(false);
-      setTimeout(() => {
+      clearTimeout(messageTimerRef.current);
+      messageTimerRef.current = setTimeout(() => {
         setUpdateError(null);
         setUpdateSuccess(null);
       }, 5000);
@@ -314,7 +320,8 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
       setUpdateError(errorMessage);
     } finally {
       setUpdating(false);
-      setTimeout(() => {
+      clearTimeout(messageTimerRef.current);
+      messageTimerRef.current = setTimeout(() => {
         setUpdateError(null);
         setUpdateSuccess(null);
       }, 5000);
@@ -338,7 +345,8 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
       setUpdateError(errorMessage);
     } finally {
       setUpdating(false);
-      setTimeout(() => {
+      clearTimeout(messageTimerRef.current);
+      messageTimerRef.current = setTimeout(() => {
         setUpdateError(null);
         setUpdateSuccess(null);
       }, 5000);

@@ -11,6 +11,7 @@ import React from 'react';
 import { cn } from '../../../lib/utils';
 import { useSaaSAuth } from '../../auth/hooks';
 import { IWorkspace } from '../types';
+import { getWorkspaceUserRole } from '../utils';
 import type { WorkspaceSettingsSection } from './SettingsDialog';
 
 interface Props {
@@ -27,6 +28,8 @@ const Sidebar: React.FC<Props> = ({ workspace, section, setSection }) => {
       ? workspace.createdBy._id
       : workspace.createdBy;
   const isCreatedByMe = createdBy === currentUser?.id;
+  const myRole = getWorkspaceUserRole(workspace, currentUser?.id ?? null);
+  const canAccessDangerZone = isCreatedByMe || myRole?.toLowerCase() === 'admin';
 
   return (
     <div className="w-44 sm:w-56 h-full flex flex-col space-y-4 sm:space-y-6 shrink-0">
@@ -112,7 +115,7 @@ const Sidebar: React.FC<Props> = ({ workspace, section, setSection }) => {
           section="features"
           onClick={() => setSection('features')}
         />
-        {isCreatedByMe && (
+        {canAccessDangerZone && (
           <SidebarItem
             activeSection={section}
             icon={<AlertTriangle className="h-3.5 w-3.5" />}

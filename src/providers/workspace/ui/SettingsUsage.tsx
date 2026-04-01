@@ -184,8 +184,10 @@ const WorkspaceSettingsUsage: React.FC = () => {
   }
 
   const overageCount = entries.filter(([, q]) => q.hasOverage).length;
-  const totalConsumed = entries.reduce((sum, [, q]) => sum + q.consumed, 0);
-  const totalIncluded = entries.reduce((sum, [, q]) => sum + q.included, 0);
+  // Compute average usage percentage across quotas (each quota weighted equally)
+  const avgUsagePercent = entries.length > 0
+    ? Math.round(entries.reduce((sum, [, q]) => sum + (q.included > 0 ? (q.consumed / q.included) * 100 : 0), 0) / entries.length)
+    : 0;
 
   const totalOverageCost = Object.values(overagePricing).reduce((sum, info) => sum + info.estimatedCost, 0);
   const anyCurrency = Object.values(overagePricing)[0]?.currencySymbol ?? '$';
@@ -231,9 +233,7 @@ const WorkspaceSettingsUsage: React.FC = () => {
         <div className="border border-gray-200 rounded-lg p-3 sm:p-4">
           <p className="text-xs text-gray-500 font-medium">Overall Usage</p>
           <p className="text-lg sm:text-xl font-semibold text-gray-900 mt-1">
-            {totalIncluded > 0
-              ? Math.round((totalConsumed / totalIncluded) * 100) + '%'
-              : '0%'}
+            {avgUsagePercent + '%'}
           </p>
         </div>
         <div className={cn(

@@ -191,7 +191,9 @@ const SettingsInvoices: React.FC<SettingsInvoicesProps> = ({
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <Button
                       size="sm"
+                      disabled={!invoice.hosted_invoice_url}
                       onClick={() =>
+                        invoice.hosted_invoice_url &&
                         window.open(invoice.hosted_invoice_url, '_blank', 'noopener,noreferrer')
                       }
                       className={action.color}

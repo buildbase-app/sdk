@@ -5,7 +5,7 @@ export const formSchema = z.object({
     .string()
     .min(1, 'Please enter your name')
     .max(50, 'Name must be less than 50 characters')
-    .regex(/^[a-zA-Z\s]*$/, 'Name can only contain letters and spaces'),
+    .regex(/^[\p{L}\p{M}\s'-]*$/u, 'Name can only contain letters and spaces'),
   email: z
     .string()
     .min(1, 'Please enter your email address')

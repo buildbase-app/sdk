@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { IUser } from '../../../api/types';
@@ -28,6 +28,11 @@ const WorkspaceSettingsProfile: React.FC<{ workspace: IWorkspace }> = ({ workspa
   const [user, setUser] = useState<IUser>();
   const [reloadCounter, setReloadCounter] = useState(0);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const successTimerRef = useRef<ReturnType<typeof setTimeout>>();
+
+  useEffect(() => {
+    return () => { clearTimeout(successTimerRef.current); };
+  }, []);
 
   const formSchema = z.object({
     name: z.string().min(2, {
@@ -77,7 +82,8 @@ const WorkspaceSettingsProfile: React.FC<{ workspace: IWorkspace }> = ({ workspa
         currency: values.currency,
       });
       setSuccessMessage('Profile saved successfully');
-      setTimeout(() => {
+      clearTimeout(successTimerRef.current);
+      successTimerRef.current = setTimeout(() => {
         setSuccessMessage(null);
       }, 5000);
     } catch (error) {

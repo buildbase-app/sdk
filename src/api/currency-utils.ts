@@ -146,8 +146,16 @@ export function getQuotaUnitLabelFromName(nameOrSlug: string): string {
   const raw = (nameOrSlug || '').trim().toLowerCase();
   if (!raw) return 'unit';
   const word = raw.split(/\s+/)[0] ?? raw;
-  if (word.endsWith('ies')) return word.slice(0, -3) + 'y';
-  if (word.endsWith('s') && word.length > 1) return word.slice(0, -1);
+  // Words that are the same in singular and plural, or end in 's' naturally
+  const invariant = new Set([
+    'series', 'species', 'status', 'analysis', 'basis', 'bus', 'campus', 'corpus', 'axis',
+  ]);
+  if (invariant.has(word)) return word;
+  if (word.endsWith('ies') && word.length > 3) return word.slice(0, -3) + 'y';
+  if (word.endsWith('ses') || word.endsWith('xes') || word.endsWith('zes') || word.endsWith('ches') || word.endsWith('shes')) {
+    return word.slice(0, -2);
+  }
+  if (word.endsWith('s') && !word.endsWith('ss') && word.length > 1) return word.slice(0, -1);
   return word || 'unit';
 }
 
@@ -163,8 +171,9 @@ export function formatQuotaIncludedOverage(
   currency: string,
   unitSize?: number
 ): string {
+  const plural = unitLabel.endsWith('s') ? unitLabel : `${unitLabel}s`;
   const perUnit =
-    unitSize != null && unitSize >= 2 ? `${unitSize.toLocaleString()} ${unitLabel}s` : unitLabel;
+    unitSize != null && unitSize >= 2 ? `${unitSize.toLocaleString()} ${plural}` : unitLabel;
   if (included != null && overageCents != null) {
     return `Included: ${included.toLocaleString()}, after that ${formatCents(overageCents, currency)}/${perUnit}`;
   }

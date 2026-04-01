@@ -54,13 +54,25 @@ export function removeStorageItem(key: string): void {
 }
 
 /**
- * Safe JSON parse from localStorage
+ * Safe JSON parse from localStorage.
+ * Optionally accepts a validate function to verify the parsed data matches expected shape.
+ * If validation fails, the corrupted entry is removed and null is returned.
  */
-export function getStorageJSON<T>(key: string): T | null {
+export function getStorageJSON<T>(key: string, validate?: (data: unknown) => data is T): T | null {
   const item = getStorageItem(key);
   if (!item) return null;
   try {
-    return JSON.parse(item) as T;
+    const parsed = JSON.parse(item);
+    if (validate && !validate(parsed)) {
+      handleError(new Error('Storage data failed validation'), {
+        component: 'storage',
+        action: 'getStorageJSON',
+        metadata: { key },
+      });
+      removeStorageItem(key);
+      return null;
+    }
+    return parsed as T;
   } catch (error) {
     handleError(error, {
       component: 'storage',
