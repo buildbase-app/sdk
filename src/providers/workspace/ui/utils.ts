@@ -1,5 +1,11 @@
 export function getSvgImage(emoji: string) {
-  return `data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text x="50%" y="50%" dominant-baseline="middle" alignment-baseline="middle" text-anchor="middle" font-size="50" font-family="sans-serif">${emoji}</text></svg>`;
+  const escaped = emoji
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+  return `data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text x="50%" y="50%" dominant-baseline="middle" alignment-baseline="middle" text-anchor="middle" font-size="50" font-family="sans-serif">${escaped}</text></svg>`;
 }
 
 export const workspaceEmojis = [

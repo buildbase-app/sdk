@@ -18,8 +18,16 @@ export class ApiClient {
   private client: AxiosInstance;
 
   constructor(config: ApiClientConfig = {}) {
+    if (config.baseURL) {
+      try {
+        new URL(config.baseURL);
+      } catch {
+        throw new Error(`[BuildBase SDK] Invalid baseURL: "${config.baseURL}"`);
+      }
+    }
+
     this.client = axios.create({
-      baseURL: config.baseURL || 'https://api.example.com',
+      baseURL: config.baseURL || '',
       timeout: config.timeout || 10000,
       headers: {
         'Content-Type': 'application/json',

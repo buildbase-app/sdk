@@ -224,7 +224,7 @@ export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) 
         handleError(error, {
           component: 'AuthProviderWrapper',
           action: 'handleAuthRedirectEffect',
-          metadata: { code: code.substring(0, 10) + '...' }, // Log partial code for debugging
+          metadata: { hasCode: true }, // Never log auth codes, even partially
         });
         // Reset on error so it can be retried if needed
         processedCodeRef.current = null;
