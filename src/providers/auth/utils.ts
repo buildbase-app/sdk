@@ -109,6 +109,7 @@ export function getTokenFromUrl(): string | null {
 }
 
 export function removeTokenFromUrl() {
+  if (typeof window === 'undefined') return;
   try {
     const newUrl = new URL(window.location.href);
     newUrl.searchParams.delete(AUTH_TOKEN_PARAM);

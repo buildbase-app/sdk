@@ -87,7 +87,7 @@ class ErrorHandler {
     const sdkError =
       normalizedError instanceof SDKError
         ? normalizedError
-        : new SDKError(normalizedError.message, normalizedError.name, context, normalizedError);
+        : new SDKError(normalizedError.message, 'SDK_ERROR', context, normalizedError);
 
     // Log to console in development
     if (this.config.enableConsoleLogging) {

@@ -15,14 +15,30 @@ export const useBetaForm = () => {
   const [message, setMessage] = useState<string | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
     const fetchConfig = async () => {
       setIsLoading(true);
-      const betaForm = new BetaForm(osState);
-      const config = await betaForm.fetchConfig();
-      setConfig(config);
-      setIsLoading(false);
+      setError(null);
+      try {
+        const betaForm = new BetaForm(osState);
+        const result = await betaForm.fetchConfig();
+        if (!cancelled) {
+          setConfig(result);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : 'Failed to load beta form config');
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      }
     };
     fetchConfig();
+    return () => {
+      cancelled = true;
+    };
   }, [osState]);
 
   const submitBetaForm = useCallback(

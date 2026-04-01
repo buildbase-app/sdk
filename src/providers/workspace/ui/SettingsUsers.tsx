@@ -1,6 +1,6 @@
 import { SelectValue } from '@radix-ui/react-select';
 import { Loader2, TrashIcon } from 'lucide-react';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { IUser } from '../../../api/types';
 import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
@@ -234,7 +234,12 @@ function InviteMember({ onInvite, workspaceId }: { onInvite: () => void; workspa
   const [inviting, setInviting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const messageTimerRef = useRef<ReturnType<typeof setTimeout>>();
   const { addUser, getWorkspace } = useSaaSWorkspaces();
+
+  useEffect(() => {
+    return () => { clearTimeout(messageTimerRef.current); };
+  }, []);
   const [workspace, setWorkspace] = useState<IWorkspace | null>(null);
   const { settings } = useSaaSSettings();
   const roles = settings?.workspace.roles ?? workspace?.roles ?? [];
@@ -276,7 +281,8 @@ function InviteMember({ onInvite, workspaceId }: { onInvite: () => void; workspa
       .finally(() => {
         setInviting(false);
 
-        setTimeout(() => {
+        clearTimeout(messageTimerRef.current);
+        messageTimerRef.current = setTimeout(() => {
           clearMessages();
         }, 6000);
       });
