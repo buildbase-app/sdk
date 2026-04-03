@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo } from 'react';
 import { IUser } from '../../api/types';
 import { useAppDispatch, useAppSelector, workspaceActions } from '../../contexts';
+import { invalidateSubscription } from '../../contexts/SubscriptionContext/subscriptionInvalidation';
 import { handleError } from '../../lib/error-handler';
 import { eventEmitter } from '../events';
 import { useSaaSOs } from '../os/hooks';
@@ -414,9 +415,12 @@ export const useSaaSWorkspaces = () => {
           });
         });
       }
+      // Refresh workspace data so users array + seat counts update
+      refreshWorkspaces().catch(() => {});
+      invalidateSubscription();
       return data;
     },
-    [api, workspace.workspaces]
+    [api, workspace.workspaces, refreshWorkspaces]
   );
 
   const removeUser = useCallback(
@@ -448,9 +452,12 @@ export const useSaaSWorkspaces = () => {
           });
         });
       }
+      // Refresh workspace data so users array + seat counts update
+      refreshWorkspaces().catch(() => {});
+      invalidateSubscription();
       return data;
     },
-    [api, workspace.workspaces]
+    [api, workspace.workspaces, refreshWorkspaces]
   );
 
   const updateUser = useCallback(

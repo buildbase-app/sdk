@@ -159,3 +159,64 @@ export function getBillingIntervalAndCurrencyFromPriceId(
   }
   return null;
 }
+
+// --- Seat Pricing Utilities ---
+
+/** Get per-seat pricing config for a plan version and currency. Null if not enabled. */
+export function getSeatPricing(
+  planVersion: IPlanVersion,
+  currency: string
+): IPricingVariant['seatPricing'] | null {
+  const variant = getPricingVariant(planVersion, currency);
+  return variant?.seatPricing?.enabled ? variant.seatPricing : null;
+}
+
+/** Get per-seat price in cents for a billing interval. Null if seat pricing not enabled. */
+export function getPerSeatPriceCents(
+  planVersion: IPlanVersion,
+  currency: string,
+  interval: BillingInterval
+): number | null {
+  const seatPricing = getSeatPricing(planVersion, currency);
+  if (!seatPricing?.perSeat) return null;
+  return seatPricing.perSeat[interval] ?? null;
+}
+
+/** Calculate billable seats: max(0, currentSeats - includedSeats). */
+export function calculateBillableSeats(
+  currentSeatCount: number,
+  includedSeats: number
+): number {
+  return Math.max(0, currentSeatCount - (includedSeats || 0));
+}
+
+/** Calculate total seat overage cost in cents. Null if seat pricing not enabled. */
+export function calculateSeatOverageCents(
+  planVersion: IPlanVersion,
+  currency: string,
+  interval: BillingInterval,
+  currentSeatCount: number
+): number | null {
+  const seatPricing = getSeatPricing(planVersion, currency);
+  if (!seatPricing) return null;
+  const billable = calculateBillableSeats(currentSeatCount, seatPricing.includedSeats);
+  const perSeat = getPerSeatPriceCents(planVersion, currency, interval);
+  return billable * (perSeat ?? 0);
+}
+
+/**
+ * Calculate total subscription price in cents: base + seat overage (if enabled).
+ * Does not include metered usage (billed at period end).
+ */
+export function calculateTotalSubscriptionCents(
+  planVersion: IPlanVersion,
+  currency: string,
+  interval: BillingInterval,
+  currentSeatCount?: number
+): number | null {
+  const basePrice = getBasePriceCents(planVersion, currency, interval);
+  if (basePrice === null) return null;
+  if (currentSeatCount === undefined) return basePrice;
+  const seatOverage = calculateSeatOverageCents(planVersion, currency, interval, currentSeatCount);
+  return basePrice + (seatOverage ?? 0);
+}

@@ -1,5 +1,6 @@
 import {
   IAllQuotaUsageResponse,
+  CheckoutResult,
   ICheckoutSessionRequest,
   ICheckoutSessionResponse,
   IInvoiceListResponse,
@@ -366,7 +367,7 @@ export class WorkspaceApi extends BaseApi {
   async createCheckoutSession(
     workspaceId: string,
     request: ICheckoutSessionRequest
-  ): Promise<ICheckoutSessionResponse> {
+  ): Promise<CheckoutResult> {
     const response = await this.fetchResponse(`workspaces/${workspaceId}/subscription/checkout`, {
       method: 'POST',
       body: JSON.stringify(request),
@@ -774,4 +775,5 @@ export class WorkspaceApi extends BaseApi {
     }
     return result;
   }
+
 }

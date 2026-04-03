@@ -141,6 +141,104 @@ export const WhenSubscriptionToPlans = (props: IWhenSubscriptionToPlansProps) =>
   return children;
 };
 
+interface IWhenTrialingProps {
+  /** Content to render when the condition is met. */
+  children: React.ReactNode;
+  /** Optional component/element to show while subscription is loading. */
+  loadingComponent?: React.ReactNode;
+  /** Optional component/element to show when condition is not met. */
+  fallbackComponent?: React.ReactNode;
+}
+
+/**
+ * Renders children only when the current workspace subscription is in trial (status === 'trialing').
+ * Must be used within SubscriptionContextProvider.
+ *
+ * @example
+ * ```tsx
+ * <WhenTrialing fallbackComponent={<NormalContent />}>
+ *   <TrialBanner />
+ * </WhenTrialing>
+ * ```
+ */
+export const WhenTrialing = (props: IWhenTrialingProps) => {
+  const { children, loadingComponent, fallbackComponent } = props;
+  const { response, loading } = useSubscriptionContext();
+
+  if (loading) return loadingComponent ?? null;
+  if (response?.subscription?.subscriptionStatus !== 'trialing') return fallbackComponent ?? null;
+  return children;
+};
+
+/**
+ * Renders children only when the current workspace subscription is NOT in trial.
+ * This includes: no subscription, active, canceled, past_due, etc.
+ * Must be used within SubscriptionContextProvider.
+ *
+ * @example
+ * ```tsx
+ * <WhenNotTrialing>
+ *   <RegularPricingPage />
+ * </WhenNotTrialing>
+ * ```
+ */
+export const WhenNotTrialing = (props: IWhenTrialingProps) => {
+  const { children, loadingComponent, fallbackComponent } = props;
+  const { response, loading } = useSubscriptionContext();
+
+  if (loading) return loadingComponent ?? null;
+  if (response?.subscription?.subscriptionStatus === 'trialing') return fallbackComponent ?? null;
+  return children;
+};
+
+interface IWhenTrialEndingProps {
+  /** Content to render when trial is ending soon. */
+  children: React.ReactNode;
+  /** Optional component/element to show while subscription is loading. */
+  loadingComponent?: React.ReactNode;
+  /** Optional component/element to show when trial is not ending soon. */
+  fallbackComponent?: React.ReactNode;
+  /** Number of days threshold to consider "ending soon". Defaults to 3. */
+  daysThreshold?: number;
+}
+
+/**
+ * Renders children only when the subscription is trialing AND the trial ends within
+ * the given threshold (default 3 days). Useful for showing urgent upgrade prompts.
+ * Must be used within SubscriptionContextProvider.
+ *
+ * @example
+ * ```tsx
+ * <WhenTrialEnding daysThreshold={5}>
+ *   <UpgradeBanner />
+ * </WhenTrialEnding>
+ * ```
+ */
+export const WhenTrialEnding = (props: IWhenTrialEndingProps) => {
+  const { children, loadingComponent, fallbackComponent, daysThreshold = 3 } = props;
+  const { response, loading } = useSubscriptionContext();
+
+  if (loading) return loadingComponent ?? null;
+
+  const subscription = response?.subscription;
+  if (!subscription || subscription.subscriptionStatus !== 'trialing') {
+    return fallbackComponent ?? null;
+  }
+
+  // Prefer trialEnd; fall back to stripeCurrentPeriodEnd (equals trial end during Stripe trials)
+  const trialEndStr = subscription.trialEnd || subscription.stripeCurrentPeriodEnd;
+  if (!trialEndStr) return fallbackComponent ?? null;
+
+  const trialEnd = new Date(trialEndStr);
+  const daysRemaining = Math.max(0, Math.ceil((trialEnd.getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
+
+  if (daysRemaining > daysThreshold) return fallbackComponent ?? null;
+  return children;
+};
+
 WhenSubscription.displayName = 'WhenSubscription';
 WhenNoSubscription.displayName = 'WhenNoSubscription';
 WhenSubscriptionToPlans.displayName = 'WhenSubscriptionToPlans';
+WhenTrialing.displayName = 'WhenTrialing';
+WhenNotTrialing.displayName = 'WhenNotTrialing';
+WhenTrialEnding.displayName = 'WhenTrialEnding';

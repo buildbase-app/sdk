@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
   BillingInterval,
+  CheckoutResult,
   IAllQuotaUsageResponse,
   ICheckoutSessionRequest,
   ICheckoutSessionResponse,
@@ -473,13 +474,21 @@ export const useCreateCheckoutSession = (workspaceId: string | null | undefined)
   const [error, setError] = useState<string | null>(null);
 
   const createCheckoutSession = useCallback(
-    async (request: ICheckoutSessionRequest): Promise<ICheckoutSessionResponse> => {
+    async (request: ICheckoutSessionRequest): Promise<CheckoutResult> => {
       if (!workspaceId) throw new Error('Workspace ID is required');
 
       setLoading(true);
       setError(null);
       try {
         const result = await api.createCheckoutSession(workspaceId, request);
+
+        // No-card trial was started server-side: invalidate subscription
+        // context so gates and UI update immediately (no redirect needed).
+        if (result.type === 'trial_started') {
+          invalidateSubscription();
+          invalidateQuotaUsage();
+        }
+
         return result;
       } catch (err) {
         const errorMessage =
@@ -1370,3 +1379,4 @@ export const useUsageLogs = (
     refetch: fetchLogs,
   };
 };
+

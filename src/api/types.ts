@@ -63,11 +63,23 @@ export type BillingInterval = 'monthly' | 'yearly' | 'quarterly';
 
 export interface ISubscription {
   _id: string;
-  subscriptionStatus: 'active' | 'trialing' | 'canceled' | 'past_due';
+  subscriptionStatus: 'active' | 'trialing' | 'canceled' | 'past_due' | 'paused' | 'incomplete' | 'unpaid';
   stripePriceId?: string;
   stripeCurrentPeriodEnd?: string; // ISO date string for when current billing period ends
   cancelAtPeriodEnd: boolean;
   billingInterval?: BillingInterval;
+  /** Trial start date (ISO string). Set when subscription is in trial. */
+  trialStart?: string;
+  /** Trial end date (ISO string). Set when subscription is in trial. */
+  trialEnd?: string;
+  /** When the subscription was canceled (ISO string). Soft-delete marker. */
+  canceledAt?: string;
+  /** Dunning state: 'none', 'notified', 'warning', 'final', 'suspended'. */
+  dunningState?: string;
+  /** Whether this subscription uses per-seat pricing. */
+  seatPricingEnabled?: boolean;
+  /** Current billable seat count. */
+  currentSeatCount?: number;
   createdAt: string;
   updatedAt: string;
   plan?: {
@@ -144,6 +156,16 @@ export interface IPricingVariant {
   currency: string;
   basePricing: IBasePricing;
   stripePrices: IStripePricesByInterval;
+  /** Per-seat pricing config. When enabled, a second recurring item is on the subscription. */
+  seatPricing?: {
+    enabled: boolean;
+    includedSeats: number;
+    /** Maximum seats allowed. 0 or undefined = unlimited. */
+    maxSeats?: number;
+    perSeat: IBasePricing;
+  };
+  /** Stripe Price IDs for the per-seat recurring price. */
+  seatStripePrices?: IStripePricesByInterval;
   /** Overage cents per quota slug per interval. */
   quotaOverages?: IQuotaOveragesByInterval;
   /** Stripe price IDs for overage per quota slug per interval. */
@@ -313,6 +335,8 @@ export interface ICheckoutSessionRequest {
 }
 
 export interface ICheckoutSessionResponse {
+  /** Response type discriminator. Added for centralized checkout flow. */
+  type?: 'checkout' | 'trial_started' | 'existing';
   success: boolean;
   checkoutUrl: string;
   sessionId: string;
@@ -323,6 +347,41 @@ export interface ICheckoutSessionResponse {
     name: string;
   };
 }
+
+/** No-card trial started server-side; no redirect needed. */
+export interface ICheckoutTrialResult {
+  type: 'trial_started';
+  success: boolean;
+  checkoutUrl: null;
+  sessionId: null;
+  subscription: ISubscription;
+  message: string;
+}
+
+/** Workspace already has a matching active subscription. */
+export interface ICheckoutExistingResult {
+  type: 'existing';
+  success: boolean;
+  checkoutUrl: null;
+  sessionId: null;
+  message: string;
+  existingSubscription?: {
+    _id: string;
+    subscriptionStatus: string;
+    stripePriceId?: string;
+  };
+}
+
+/**
+ * Discriminated union for POST /subscription/checkout responses.
+ * - `checkout`: Stripe checkout session created, redirect user to checkoutUrl
+ * - `trial_started`: No-card trial started server-side, no redirect needed
+ * - `existing`: Workspace already has a matching subscription
+ */
+export type CheckoutResult =
+  | (ICheckoutSessionResponse & { type: 'checkout' })
+  | ICheckoutTrialResult
+  | ICheckoutExistingResult;
 
 /** Request body for PATCH .../workspaces/:id/subscription. Only these fields are allowed. */
 export interface ISubscriptionUpdateRequest {
