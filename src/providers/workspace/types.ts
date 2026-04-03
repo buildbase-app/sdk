@@ -27,6 +27,11 @@ export interface IWorkspace {
    * When set, subscription UI only shows/uses this currency.
    */
   billingCurrency?: string | null;
+  /** Workspace onboarding config. Set on creation based on org settings. SDK shows trial CTA. */
+  pendingOnboarding?: {
+    mode: 'trial';
+    planVersionId: string;
+  } | null;
 }
 export interface IWorkspaceFeature {
   _id: string;

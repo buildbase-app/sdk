@@ -4,13 +4,16 @@ import { formatCents } from '../../../api/currency-utils';
 import {
   getBasePriceCents,
   getBillingIntervalAndCurrencyFromPriceId,
+  getPerSeatPriceCents,
   getQuotaDisplayWithVariant,
+  getSeatPricing,
   getStripePriceIdForInterval,
 } from '../../../api/pricing-variant-utils';
 import type { QuotaDisplayValue } from '../../../api/quota-utils';
 import { formatQuotaWithPrice, getQuotaDisplayValue } from '../../../api/quota-utils';
 import {
   BillingInterval,
+  CheckoutResult,
   ICheckoutSessionResponse,
   IPlanGroupVersionWithPlans,
   IPlanVersion,
@@ -262,7 +265,7 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
         cancelUrl = baseUrl;
       }
 
-      let result: ICheckoutSessionResponse | ISubscriptionUpdateResponse;
+      let result: CheckoutResult | ICheckoutSessionResponse | ISubscriptionUpdateResponse;
 
       if (!subscription?.subscription) {
         result = await createCheckoutSession({
@@ -568,6 +571,20 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                       )
                     : null;
                 const planCurrency = subscriptionCurrency;
+
+                // Seat pricing info (display only — no total calculation, Stripe handles billing)
+                const seatPricingConfig = subscription.planVersion
+                  ? getSeatPricing(subscription.planVersion, subscriptionCurrency)
+                  : null;
+                const perSeatPrice = seatPricingConfig && billingInterval
+                  ? getPerSeatPriceCents(subscription.planVersion!, subscriptionCurrency, billingInterval)
+                  : null;
+                const memberCount = Array.isArray((workspace as any)?.users) ? (workspace as any).users.length : 1;
+                const includedSeats = seatPricingConfig?.includedSeats ?? 0;
+                const billableSeats = Math.max(0, memberCount - includedSeats);
+                const seatCount = memberCount;
+
+                // Show base price only — Stripe calculates the actual total with proration
                 const formattedPrice =
                   currentPrice !== null && currentPrice !== undefined
                     ? currentPrice === 0
@@ -587,6 +604,27 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                   <div
                     className={`border rounded-lg overflow-hidden ${isDeprecated ? 'border-amber-300' : 'border-gray-200'}`}
                   >
+                    {/* Trial Banner */}
+                    {subscription.subscription.subscriptionStatus === 'trialing' && (() => {
+                      const trialEndStr = subscription.subscription.trialEnd || subscription.subscription.stripeCurrentPeriodEnd;
+                      const trialEnd = trialEndStr ? new Date(trialEndStr) : null;
+                      const daysRemaining = trialEnd
+                        ? Math.max(0, Math.ceil((trialEnd.getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+                        : null;
+                      return (
+                        <div className={`px-5 py-3 text-sm flex items-center justify-between ${daysRemaining !== null && daysRemaining <= 3 ? 'bg-amber-50 text-amber-800 border-b border-amber-200' : 'bg-blue-50 text-blue-800 border-b border-blue-200'}`}>
+                          <span>
+                            {daysRemaining !== null && daysRemaining <= 0
+                              ? 'Your trial has ended.'
+                              : daysRemaining !== null
+                                ? `Your trial ends in ${daysRemaining} day${daysRemaining === 1 ? '' : 's'}.`
+                                : 'You are on a trial.'}
+                            {' '}Upgrade to keep access after the trial.
+                          </span>
+                        </div>
+                      );
+                    })()}
+
                     {/* Plan Header */}
                     <div className={`p-5 ${isDeprecated ? 'bg-amber-50/50' : 'bg-gray-50/50'}`}>
                       <div className="flex items-start justify-between">
@@ -618,12 +656,12 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                             </span>
                             {subscription.subscription.subscriptionStatus === 'trialing' &&
                               formatPeriodEndDate(
-                                subscription.subscription.stripeCurrentPeriodEnd
+                                subscription.subscription.trialEnd || subscription.subscription.stripeCurrentPeriodEnd
                               ) && (
                                 <span className="text-xs text-gray-500">
                                   (ends{' '}
                                   {formatPeriodEndDate(
-                                    subscription.subscription.stripeCurrentPeriodEnd
+                                    subscription.subscription.trialEnd || subscription.subscription.stripeCurrentPeriodEnd
                                   )}
                                   )
                                 </span>
@@ -641,7 +679,7 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                         </div>
 
                         {/* Price Display */}
-                        <div className="text-right ml-4">
+                        <div className="text-right ml-4 shrink-0">
                           <div className="flex items-baseline justify-end gap-1">
                             <span className="text-2xl font-bold text-gray-900">
                               {formattedPrice || 'N/A'}
@@ -650,10 +688,10 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                               <span className="text-sm text-gray-500">{intervalLabel}</span>
                             )}
                           </div>
-                          {billingInterval && (
-                            <span className="text-xs text-gray-500 mt-1 inline-block">
-                              Billed {getBillingIntervalLabel(billingInterval).toLowerCase()}
-                            </span>
+                          {seatPricingConfig && perSeatPrice && perSeatPrice > 0 && (
+                            <div className="text-xs text-gray-500 mt-1">
+                              + {formatCents(perSeatPrice, planCurrency)}/seat{intervalLabel}
+                            </div>
                           )}
                           {(subscription.subscription.subscriptionStatus === 'active' ||
                             subscription.subscription.subscriptionStatus === 'trialing') &&
@@ -683,9 +721,11 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                       )}
 
                       {/* Cancel/Resume Actions */}
-                      {subscription.subscription.subscriptionStatus === 'active' && (
+                      {(subscription.subscription.subscriptionStatus === 'active' ||
+                        subscription.subscription.subscriptionStatus === 'trialing') && (
                         <div className="flex items-center gap-3 mt-4 pt-4 border-t border-gray-200">
-                          {subscription.subscription.cancelAtPeriodEnd ? (
+                          {subscription.subscription.subscriptionStatus === 'active' &&
+                           subscription.subscription.cancelAtPeriodEnd ? (
                             <Button
                               variant="outline"
                               size="sm"
@@ -704,7 +744,11 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                               disabled={updating || cancelLoading || resumeLoading}
                               progress={cancelLoading || updating}
                             >
-                              {cancelLoading || updating ? 'Canceling...' : 'Cancel Subscription'}
+                              {cancelLoading || updating
+                                ? 'Canceling...'
+                                : subscription.subscription.subscriptionStatus === 'trialing'
+                                  ? 'Cancel Trial'
+                                  : 'Cancel Subscription'}
                             </Button>
                           )}
                         </div>
@@ -730,6 +774,48 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                             >
                               View Invoices
                             </Button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Dunning Banner (payment recovery in progress) */}
+                    {subscription.subscription.subscriptionStatus === 'past_due' &&
+                      subscription.subscription.dunningState &&
+                      subscription.subscription.dunningState !== 'none' && (
+                      <div className="px-5 py-3 bg-red-50 border-t border-red-200">
+                        <div className="flex items-start gap-3">
+                          <AlertTriangle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+                          <div>
+                            <p className="text-sm font-medium text-red-800">
+                              {subscription.subscription.dunningState === 'final'
+                                ? 'Final warning: Subscription will be suspended'
+                                : subscription.subscription.dunningState === 'suspended'
+                                  ? 'Subscription suspended'
+                                  : 'Payment recovery in progress'}
+                            </p>
+                            <p className="text-sm text-red-700 mt-0.5">
+                              {subscription.subscription.dunningState === 'suspended'
+                                ? 'Your subscription has been suspended due to repeated payment failures. Update your payment method to restore access.'
+                                : 'We were unable to process your payment. Please update your payment method to avoid losing access.'}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Paused Banner */}
+                    {subscription.subscription.subscriptionStatus === 'paused' && (
+                      <div className="px-5 py-3 bg-blue-50 border-t border-blue-200">
+                        <div className="flex items-start gap-3">
+                          <Calendar className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                          <div>
+                            <p className="text-sm font-medium text-blue-800">
+                              Subscription paused
+                            </p>
+                            <p className="text-sm text-blue-700 mt-0.5">
+                              Your subscription is currently paused. Resume to restore full access.
+                            </p>
                           </div>
                         </div>
                       </div>
@@ -860,6 +946,37 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                                   </ul>
                                 </div>
                               )}
+
+                              {/* Seats */}
+                              {seatPricingConfig && (
+                                <div>
+                                  <h4 className="text-xs font-semibold text-gray-900 uppercase tracking-wider mb-3">
+                                    Seats
+                                  </h4>
+                                  <div className="bg-gray-50 rounded-lg p-3 space-y-2">
+                                    <div className="flex items-center justify-between text-sm">
+                                      <span className="text-gray-600">Current members</span>
+                                      <span className="font-semibold text-gray-900">{seatCount}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between text-sm">
+                                      <span className="text-gray-600">Included with plan</span>
+                                      <span className="text-gray-900">{includedSeats}</span>
+                                    </div>
+                                    {perSeatPrice && perSeatPrice > 0 && (
+                                      <div className="flex items-center justify-between text-sm">
+                                        <span className="text-gray-600">Extra seat price</span>
+                                        <span className="text-gray-900">{formatCents(perSeatPrice, subscriptionCurrency)}{intervalLabel}</span>
+                                      </div>
+                                    )}
+                                    {(seatPricingConfig as any).maxSeats > 0 && (
+                                      <div className="flex items-center justify-between text-sm">
+                                        <span className="text-gray-600">Seat limit</span>
+                                        <span className="text-gray-900">{(seatPricingConfig as any).maxSeats}</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           </div>
                         );
@@ -867,7 +984,52 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                   </div>
                 );
               })()
+            ) : workspace.pendingOnboarding ? (
+              // Pending trial: org configured auto-trial for new workspaces
+              <div className="border rounded-lg p-6 text-center">
+                <div className="mb-4">
+                  <CreditCard className="h-12 w-12 mx-auto mb-3 text-blue-400" />
+                  <p className="text-lg font-medium text-gray-700">
+                    Start your free trial
+                  </p>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Try the full plan with no commitment. You can upgrade or cancel anytime.
+                  </p>
+                </div>
+                <Button
+                  size="sm"
+                  progress={updating}
+                  onClick={async () => {
+                    try {
+                      setUpdating(true);
+                      const result = await createCheckoutSession({
+                        planVersionId: workspace.pendingOnboarding!.planVersionId,
+                      });
+                      if (result && 'checkoutUrl' in result && result.checkoutUrl) {
+                        window.location.href = result.checkoutUrl;
+                      }
+                    } catch (err: any) {
+                      // Show error or fallback
+                    } finally {
+                      setUpdating(false);
+                    }
+                  }}
+                >
+                  Start Free Trial
+                </Button>
+                {plansToShow && plansToShow.length > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="ml-2"
+                    onClick={() => setDialogOpen(true)}
+                  >
+                    View All Plans
+                  </Button>
+                )}
+              </div>
             ) : (
+              // No subscription, no pending trial
               <div className="border rounded-lg p-6 text-center">
                 <div className="mb-4">
                   <CreditCard className="h-12 w-12 mx-auto text-gray-400 mb-3" />

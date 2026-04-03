@@ -6,6 +6,9 @@ import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
 import { Label } from '../../../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '../../../components/ui/select';
+import { useSubscriptionContext } from '../../../contexts/SubscriptionContext';
+import { formatCents } from '../../../api/currency-utils';
+import { getPerSeatPriceCents, getSeatPricing } from '../../../api/pricing-variant-utils';
 import { handleError } from '../../../lib/error-handler';
 import { useSaaSAuth } from '../../auth/hooks';
 import { useSaaSSettings } from '../../os/hooks';
@@ -22,6 +25,7 @@ const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace
   const [updatingRoleUserId, setUpdatingRoleUserId] = useState<string | null>(null);
   const { getUsers, removeUser, updateUser } = useSaaSWorkspaces();
   const { settings } = useSaaSSettings();
+  const { response: subscriptionResponse } = useSubscriptionContext();
 
   useEffect(() => {
     if (!workspace) return;
@@ -122,9 +126,30 @@ const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace
 
   const amIAdmin = myRole === 'admin';
 
-  const totalAllowedUsers = settings?.workspace.maxWorkspaceUsers ?? Number.MAX_VALUE;
+  // Seat pricing details from subscription plan version
+  const sub = subscriptionResponse?.subscription;
+  const planVersion = subscriptionResponse?.planVersion;
+  const hasSeatPricing = sub?.seatPricingEnabled;
+  const billingCurrency = (workspace as any)?.billingCurrency || 'usd';
+  const seatConfig = planVersion ? getSeatPricing(planVersion as any, billingCurrency) : null;
+  const includedSeats = seatConfig?.includedSeats ?? 0;
+  const maxSeats = seatConfig?.maxSeats ?? 0; // 0 = unlimited
   const currentUsersCount = workspaceUsers.length;
-  const allowedToInviteUser = totalAllowedUsers > (currentUsersCount ?? 0);
+  const billableSeats = Math.max(0, currentUsersCount - includedSeats);
+
+  // Determine if invite is allowed
+  const atMaxSeats = hasSeatPricing && maxSeats > 0 && currentUsersCount >= maxSeats;
+  const fallbackLimit = settings?.workspace.maxWorkspaceUsers ?? Number.MAX_VALUE;
+  const allowedToInviteUser = hasSeatPricing
+    ? !atMaxSeats // Seat pricing: allow unless at hard max
+    : fallbackLimit > currentUsersCount; // No seat pricing: use settings limit
+
+  // Per-seat cost for the invite warning
+  const billingInterval = sub?.billingInterval ?? 'monthly';
+  const perSeatCents = planVersion
+    ? getPerSeatPriceCents(planVersion as any, billingCurrency, billingInterval as any)
+    : null;
+  const willBeBilled = hasSeatPricing && currentUsersCount >= includedSeats;
 
   return (
     <div>
@@ -134,18 +159,85 @@ const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace
 
       {amIAdmin && (
         <div className="mb-4">
-          {allowedToInviteUser && <InviteMember onInvite={refresh} workspaceId={workspace._id} />}
-          {!allowedToInviteUser && (
-            <div className="text-red-500">
-              You have reached the maximum number of users for this workspace.
+          {allowedToInviteUser ? (
+            <div>
+              <InviteMember onInvite={refresh} workspaceId={workspace._id} />
+              {willBeBilled && perSeatCents && perSeatCents > 0 && (
+                <div className="flex items-center gap-1.5 mt-2 text-xs text-amber-600 bg-amber-50 px-3 py-1.5 rounded-md">
+                  <span>Each additional member adds <span className="font-medium">{formatCents(perSeatCents, billingCurrency)}/{billingInterval === 'yearly' ? 'yr' : billingInterval === 'quarterly' ? 'qtr' : 'mo'}</span> to your subscription</span>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="flex items-center justify-between p-3 bg-red-50 border border-red-100 rounded-md">
+              <div>
+                <p className="text-sm font-medium text-red-700">
+                  {atMaxSeats ? 'Seat limit reached' : 'Member limit reached'}
+                </p>
+                <p className="text-xs text-red-600 mt-0.5">
+                  {atMaxSeats
+                    ? `Your plan allows up to ${maxSeats} members. Upgrade for more seats.`
+                    : 'Contact your admin to increase the workspace member limit.'}
+                </p>
+              </div>
             </div>
           )}
         </div>
       )}
+      {/* Seat status card */}
+      {hasSeatPricing && seatConfig && (
+        <div className="mb-4 rounded-lg border bg-gray-50 p-4">
+          <div className="flex items-center justify-between mb-2">
+            <h4 className="text-sm font-semibold text-gray-900">Seats</h4>
+            {maxSeats > 0 && (
+              <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                currentUsersCount >= maxSeats
+                  ? 'bg-red-100 text-red-700'
+                  : currentUsersCount >= maxSeats * 0.8
+                    ? 'bg-amber-100 text-amber-700'
+                    : 'bg-emerald-100 text-emerald-700'
+              }`}>
+                {currentUsersCount} / {maxSeats}
+              </span>
+            )}
+          </div>
+
+          {/* Progress bar */}
+          {maxSeats > 0 && (
+            <div className="w-full h-1.5 bg-gray-200 rounded-full mb-3">
+              <div
+                className={`h-1.5 rounded-full transition-all ${
+                  currentUsersCount >= maxSeats
+                    ? 'bg-red-500'
+                    : currentUsersCount >= maxSeats * 0.8
+                      ? 'bg-amber-500'
+                      : 'bg-emerald-500'
+                }`}
+                style={{ width: `${Math.min(100, (currentUsersCount / maxSeats) * 100)}%` }}
+              />
+            </div>
+          )}
+
+          <div className="flex items-center justify-between text-sm text-gray-600">
+            <div>
+              <span className="text-gray-900 font-medium">{includedSeats}</span> included
+              {perSeatCents && perSeatCents > 0 && (
+                <span className="text-gray-400"> · {formatCents(perSeatCents, billingCurrency)}/extra seat</span>
+              )}
+            </div>
+            {maxSeats > 0 ? (
+              <span>{Math.max(0, maxSeats - currentUsersCount)} available</span>
+            ) : (
+              <span className="text-gray-400">No seat limit</span>
+            )}
+          </div>
+        </div>
+      )}
+
       <div className="mb-4 flex items-center justify-between">
         <div>
-          <div className="text-sm text-gray-600 mb-2">
-            {workspaceUsers.length} member{workspaceUsers.length !== 1 ? 's' : ''}
+          <div className="text-sm text-gray-600">
+            {currentUsersCount} member{currentUsersCount !== 1 ? 's' : ''}
           </div>
         </div>
         <div>

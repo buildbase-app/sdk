@@ -4,7 +4,9 @@ import {
   getAvailableCurrenciesFromPlans,
   getBasePriceCents,
   getBillingIntervalAndCurrencyFromPriceId,
+  getPerSeatPriceCents,
   getQuotaDisplayWithVariant,
+  getSeatPricing,
 } from '../../../api/pricing-variant-utils';
 import { formatQuotaWithPrice, getQuotaDisplayValue } from '../../../api/quota-utils';
 import { BillingInterval, IPlanVersionWithPlan, ISubscriptionItem } from '../../../api/types';
@@ -465,6 +467,21 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                                     Save {savings}% vs monthly
                                   </span>
                                 )}
+                                {/* Seat pricing info */}
+                                {(() => {
+                                  const seatConfig = getSeatPricing(planVersion, effectiveCurrency);
+                                  if (!seatConfig) return null;
+                                  const perSeat = getPerSeatPriceCents(planVersion, effectiveCurrency, selectedInterval);
+                                  if (!perSeat || perSeat <= 0) return null;
+                                  return (
+                                    <div className="text-xs text-slate-500 mt-1 border-t border-slate-100 pt-1">
+                                      <span>+ {formatCents(perSeat, displayCurrency)}/seat{getIntervalLabel(selectedInterval)}</span>
+                                      {seatConfig.includedSeats > 0 && (
+                                        <span className="text-slate-400"> ({seatConfig.includedSeats} included)</span>
+                                      )}
+                                    </div>
+                                  );
+                                })()}
                               </div>
 
                               {planVersion.plan.description && (
@@ -650,6 +667,75 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                             })}
                           </tr>
                         ))}
+                      </>
+                    )}
+
+                    {/* Seats Section */}
+                    {sortedPlans.some(pv => {
+                      const sp = getSeatPricing(pv, effectiveCurrency);
+                      return sp?.enabled;
+                    }) && (
+                      <>
+                        <tr>
+                          <td className="sticky left-0 z-10 border-t border-emerald-200 bg-emerald-50 px-4 py-2.5 font-semibold text-xs uppercase tracking-wider text-emerald-700 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.06)]">
+                            Seats
+                          </td>
+                          <td
+                            colSpan={sortedPlans.length}
+                            className="border-t border-emerald-200 bg-emerald-50"
+                          />
+                        </tr>
+                        {/* Included seats row */}
+                        <tr className="group hover:bg-slate-50/50">
+                          <td className="sticky left-0 z-10 border-t border-slate-100 bg-white p-4 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.06)] group-hover:bg-slate-50/80">
+                            <div className="font-medium text-sm text-slate-900">Included seats</div>
+                            <div className="text-xs text-slate-500 mt-0.5">Free with base price</div>
+                          </td>
+                          {sortedPlans.map(planVersion => {
+                            const sp = getSeatPricing(planVersion, effectiveCurrency);
+                            return (
+                              <td key={planVersion._id} className={`border-t border-slate-100 p-4 text-center align-middle ${planVersion._id === currentPlanVersionId ? 'bg-blue-50/50' : 'bg-white'}`}>
+                                <span className="text-sm font-medium text-slate-700">
+                                  {sp?.enabled ? (sp.includedSeats || 0) : '—'}
+                                </span>
+                              </td>
+                            );
+                          })}
+                        </tr>
+                        {/* Max seats row */}
+                        <tr className="group hover:bg-slate-50/50">
+                          <td className="sticky left-0 z-10 border-t border-slate-100 bg-white p-4 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.06)] group-hover:bg-slate-50/80">
+                            <div className="font-medium text-sm text-slate-900">Max seats</div>
+                          </td>
+                          {sortedPlans.map(planVersion => {
+                            const sp = getSeatPricing(planVersion, effectiveCurrency);
+                            return (
+                              <td key={planVersion._id} className={`border-t border-slate-100 p-4 text-center align-middle ${planVersion._id === currentPlanVersionId ? 'bg-blue-50/50' : 'bg-white'}`}>
+                                <span className="text-sm font-medium text-slate-700">
+                                  {sp?.enabled ? ((sp as any).maxSeats > 0 ? (sp as any).maxSeats : 'Unlimited') : '—'}
+                                </span>
+                              </td>
+                            );
+                          })}
+                        </tr>
+                        {/* Per seat price row */}
+                        <tr className="group hover:bg-slate-50/50">
+                          <td className="sticky left-0 z-10 border-t border-slate-100 bg-white p-4 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.06)] group-hover:bg-slate-50/80">
+                            <div className="font-medium text-sm text-slate-900">Per extra seat</div>
+                          </td>
+                          {sortedPlans.map(planVersion => {
+                            const perSeat = getPerSeatPriceCents(planVersion, effectiveCurrency, selectedInterval);
+                            const displayCurrency = planVersion.pricingVariants?.length
+                              ? effectiveCurrency : (planVersion.plan?.currency ?? effectiveCurrency ?? '');
+                            return (
+                              <td key={planVersion._id} className={`border-t border-slate-100 p-4 text-center align-middle ${planVersion._id === currentPlanVersionId ? 'bg-blue-50/50' : 'bg-white'}`}>
+                                <span className="text-sm font-medium text-slate-700">
+                                  {perSeat && perSeat > 0 ? `${formatCents(perSeat, displayCurrency)}${getIntervalLabel(selectedInterval)}` : '—'}
+                                </span>
+                              </td>
+                            );
+                          })}
+                        </tr>
                       </>
                     )}
                   </tbody>

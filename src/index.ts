@@ -29,6 +29,9 @@ export {
   WhenNoSubscription,
   WhenSubscription,
   WhenSubscriptionToPlans,
+  WhenTrialing,
+  WhenNotTrialing,
+  WhenTrialEnding,
 } from './components/subscription';
 
 // Export quota usage gate components (must be used within QuotaUsageContextProvider)
@@ -85,6 +88,14 @@ export {
   useUsageLogs,
 } from './providers/workspace/subscription-hooks';
 
+// Export trial hooks
+export { useTrialStatus } from './hooks/use-trial-status';
+export type { TrialStatus } from './hooks/use-trial-status';
+
+// Export seat hooks
+export { useSeatStatus } from './hooks/use-seat-status';
+export type { SeatStatus } from './hooks/use-seat-status';
+
 // Export event types and emitter
 export { eventEmitter } from './providers/events';
 export type {
@@ -126,13 +137,18 @@ export { formatQuotaWithPrice, getQuotaDisplayValue } from './api/quota-utils';
 export type { FormatQuotaWithPriceOptions, QuotaDisplayValue } from './api/quota-utils';
 
 export {
+  calculateBillableSeats,
+  calculateSeatOverageCents,
+  calculateTotalSubscriptionCents,
   getAvailableCurrenciesFromPlans,
   getBasePriceCents,
   getBillingIntervalAndCurrencyFromPriceId,
   getDisplayCurrency,
+  getPerSeatPriceCents,
   getPricingVariant,
   getQuotaDisplayWithVariant,
   getQuotaOverageCents,
+  getSeatPricing,
   getStripePriceIdForInterval,
 } from './api/pricing-variant-utils';
 export type {
@@ -142,6 +158,7 @@ export type {
 
 export type {
   BillingInterval,
+  CheckoutResult,
   IAllQuotaUsageResponse,
   IBasePricing,
   ICheckoutSessionRequest,
