@@ -1003,7 +1003,7 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                     try {
                       setUpdating(true);
                       const result = await createCheckoutSession({
-                        planVersionId: workspace.pendingOnboarding!.planVersionId,
+                        planVersionId: workspace.pendingOnboarding?.planVersionId ?? '',
                       });
                       if (result && 'checkoutUrl' in result && result.checkoutUrl) {
                         window.location.href = result.checkoutUrl;
