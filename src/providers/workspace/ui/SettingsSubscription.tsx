@@ -198,12 +198,12 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
   const [updating, setUpdating] = useState(false);
   const [updateError, setUpdateError] = useState<string | null>(null);
   const [updateSuccess, setUpdateSuccess] = useState<string | null>(null);
-  const messageTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const messageTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
 
   useEffect(() => {
-    return () => { clearTimeout(messageTimerRef.current); };
+    return () => { if (messageTimerRef.current) clearTimeout(messageTimerRef.current); };
   }, []);
   const [resumeDialogOpen, setResumeDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'subscription' | 'invoices'>('subscription');
@@ -297,7 +297,7 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
       setUpdateError(errorMessage);
     } finally {
       setUpdating(false);
-      clearTimeout(messageTimerRef.current);
+      if (messageTimerRef.current) clearTimeout(messageTimerRef.current);
       messageTimerRef.current = setTimeout(() => {
         setUpdateError(null);
         setUpdateSuccess(null);
@@ -323,7 +323,7 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
       setUpdateError(errorMessage);
     } finally {
       setUpdating(false);
-      clearTimeout(messageTimerRef.current);
+      if (messageTimerRef.current) clearTimeout(messageTimerRef.current);
       messageTimerRef.current = setTimeout(() => {
         setUpdateError(null);
         setUpdateSuccess(null);
@@ -348,7 +348,7 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
       setUpdateError(errorMessage);
     } finally {
       setUpdating(false);
-      clearTimeout(messageTimerRef.current);
+      if (messageTimerRef.current) clearTimeout(messageTimerRef.current);
       messageTimerRef.current = setTimeout(() => {
         setUpdateError(null);
         setUpdateSuccess(null);
@@ -607,7 +607,8 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                     {/* Trial Banner */}
                     {subscription.subscription.subscriptionStatus === 'trialing' && (() => {
                       const trialEndStr = subscription.subscription.trialEnd || subscription.subscription.stripeCurrentPeriodEnd;
-                      const trialEnd = trialEndStr ? new Date(trialEndStr) : null;
+                      const trialEndRaw = trialEndStr ? new Date(trialEndStr) : null;
+                      const trialEnd = trialEndRaw && !isNaN(trialEndRaw.getTime()) ? trialEndRaw : null;
                       const daysRemaining = trialEnd
                         ? Math.max(0, Math.ceil((trialEnd.getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
                         : null;

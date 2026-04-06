@@ -1,6 +1,13 @@
 import { useMemo } from 'react';
 import { useSubscriptionContext } from '../contexts/SubscriptionContext';
 
+/** Parse a date value safely — returns null for invalid/missing dates instead of Invalid Date. */
+function safeDate(value: string | Date | undefined | null): Date | null {
+  if (!value) return null;
+  const d = new Date(value);
+  return isNaN(d.getTime()) ? null : d;
+}
+
 export interface TrialStatus {
   /** Whether the current subscription is in trial. */
   isTrialing: boolean;
@@ -46,16 +53,12 @@ export function useTrialStatus(): TrialStatus {
     }
 
     // Prefer trialEnd (explicitly set), fall back to stripeCurrentPeriodEnd
-    // (during a Stripe trial, current_period_end equals the trial end date)
-    const trialEndsAt = subscription.trialEnd
-      ? new Date(subscription.trialEnd)
-      : subscription.stripeCurrentPeriodEnd
-        ? new Date(subscription.stripeCurrentPeriodEnd)
-        : null;
+    // (during a Stripe trial, current_period_end equals the trial end date).
+    // Use safeDate to prevent Invalid Date objects from breaking calculations.
+    const trialEndsAt = safeDate(subscription.trialEnd)
+      ?? safeDate(subscription.stripeCurrentPeriodEnd);
 
-    const trialStartedAt = subscription.trialStart
-      ? new Date(subscription.trialStart)
-      : null;
+    const trialStartedAt = safeDate(subscription.trialStart);
 
     const daysRemaining = trialEndsAt
       ? Math.max(0, Math.ceil((trialEndsAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
