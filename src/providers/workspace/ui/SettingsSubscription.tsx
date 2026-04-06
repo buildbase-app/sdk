@@ -466,58 +466,22 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
           )}
           {/* Deprecation Notice - Show if user's plan is on an older version */}
           {isDeprecated && subscription?.subscription && (
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-              <div className="flex items-start gap-3">
-                <div className="flex-shrink-0">
-                  <AlertTriangle className="h-5 w-5 text-amber-600" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-sm font-semibold text-amber-800 mb-1">
-                    Your Current Plan is Deprecated
-                  </h3>
-                  <p className="text-sm text-amber-700 mb-2">
-                    A new version of the pricing plans is now available. Please upgrade to one of
-                    the new plans below to continue receiving updates and support.
-                  </p>
-                  <div className="flex items-center gap-2 text-xs text-amber-600 mb-3">
-                    <span>Current: Version {currentVersion?.version || 'N/A'}</span>
-                    <span>•</span>
-                    <span>Latest: Version {latestVersion?.version || 'N/A'}</span>
-                  </div>
-
-                  {/* Show What's New */}
-                  {whatsNew &&
-                    (whatsNew.newPlans.length > 0 || whatsNew.updatedPlans.length > 0) && (
-                      <div className="mt-3 pt-3 border-t border-amber-200">
-                        <h4 className="text-xs font-semibold text-amber-800 mb-2">
-                          What's New in Version {latestVersion?.version}:
-                        </h4>
-                        <div className="space-y-1.5 text-xs text-amber-700">
-                          {whatsNew.newPlans.length > 0 && (
-                            <div>
-                              <span className="font-medium">New Plans: </span>
-                              <span>
-                                {whatsNew.newPlans
-                                  .map((p: IPlanVersionWithPlan) => p.plan.name)
-                                  .join(', ')}
-                              </span>
-                            </div>
-                          )}
-                          {whatsNew.updatedPlans.length > 0 && (
-                            <div>
-                              <span className="font-medium">Updated Plans: </span>
-                              <span>
-                                {whatsNew.updatedPlans
-                                  .map((p: IPlanVersionWithPlan) => p.plan.name)
-                                  .join(', ')}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                </div>
+            <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0" />
+                <span className="text-sm text-amber-800">
+                  <span className="font-medium">Plan update available</span>
+                  <span className="text-amber-600"> — v{currentVersion?.version || '?'} → v{latestVersion?.version || '?'}</span>
+                </span>
               </div>
+              <Button
+                size="sm"
+                variant="outline"
+                className="shrink-0 border-amber-300 text-amber-700 hover:bg-amber-100"
+                onClick={() => setDialogOpen(true)}
+              >
+                View Plans
+              </Button>
             </div>
           )}
 
@@ -613,76 +577,87 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                       const daysRemaining = trialEnd
                         ? Math.max(0, Math.ceil((trialEnd.getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
                         : null;
+                      const isUrgent = daysRemaining !== null && daysRemaining <= 3;
                       return (
-                        <div className={`px-5 py-3 text-sm flex items-center justify-between ${daysRemaining !== null && daysRemaining <= 3 ? 'bg-amber-50 text-amber-800 border-b border-amber-200' : 'bg-blue-50 text-blue-800 border-b border-blue-200'}`}>
+                        <div className={`px-4 py-3 sm:px-5 text-sm flex flex-col sm:flex-row sm:items-center justify-between gap-2 ${isUrgent ? 'bg-amber-50 text-amber-800 border-b border-amber-200' : 'bg-blue-50 text-blue-800 border-b border-blue-200'}`}>
                           <span>
                             {daysRemaining !== null && daysRemaining <= 0
                               ? 'Your trial has ended.'
                               : daysRemaining !== null
                                 ? `Your trial ends in ${daysRemaining} day${daysRemaining === 1 ? '' : 's'}.`
                                 : 'You are on a trial.'}
-                            {' '}Upgrade to keep access after the trial.
+                            {' '}Upgrade to keep access.
                           </span>
+                          <Button
+                            size="sm"
+                            variant={isUrgent ? 'default' : 'outline'}
+                            className={`shrink-0 ${isUrgent ? '' : 'border-blue-300 text-blue-700 hover:bg-blue-100'}`}
+                            onClick={() => setDialogOpen(true)}
+                          >
+                            Upgrade Now
+                          </Button>
                         </div>
                       );
                     })()}
 
                     {/* Plan Header */}
-                    <div className={`p-5 ${isDeprecated ? 'bg-amber-50/50' : 'bg-gray-50/50'}`}>
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            <h3 className="text-lg font-semibold text-gray-900">
-                              {subscription.plan?.name || 'No plan assigned'}
-                            </h3>
-                            {/* Status Badge */}
-                            <span
-                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                subscription.subscription.subscriptionStatus === 'active'
-                                  ? 'bg-green-100 text-green-800'
-                                  : subscription.subscription.subscriptionStatus === 'trialing'
-                                    ? 'bg-blue-100 text-blue-800'
-                                    : subscription.subscription.subscriptionStatus === 'canceled'
-                                      ? 'bg-gray-100 text-gray-800'
-                                      : 'bg-red-100 text-red-800'
-                              }`}
-                            >
-                              {subscription.subscription.subscriptionStatus === 'active' &&
-                                'Active'}
-                              {subscription.subscription.subscriptionStatus === 'trialing' &&
-                                'Trial'}
-                              {subscription.subscription.subscriptionStatus === 'canceled' &&
-                                'Canceled'}
-                              {subscription.subscription.subscriptionStatus === 'past_due' &&
-                                'Past Due'}
-                            </span>
-                            {subscription.subscription.subscriptionStatus === 'trialing' &&
-                              formatPeriodEndDate(
+                    <div className={`p-4 sm:p-5 ${isDeprecated ? 'bg-amber-50/50' : 'bg-gray-50/50'}`}>
+                      {/* Plan name + badges — wrap on mobile */}
+                      <div className="flex flex-wrap items-center gap-2 mb-2">
+                        <h3 className="text-lg font-semibold text-gray-900">
+                          {subscription.plan?.name || 'No plan assigned'}
+                        </h3>
+                        {/* Status Badge */}
+                        <span
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            subscription.subscription.subscriptionStatus === 'active'
+                              ? subscription.subscription.cancelAtPeriodEnd
+                                ? 'bg-amber-100 text-amber-800'
+                                : 'bg-green-100 text-green-800'
+                              : subscription.subscription.subscriptionStatus === 'trialing'
+                                ? 'bg-blue-100 text-blue-800'
+                                : subscription.subscription.subscriptionStatus === 'canceled'
+                                  ? 'bg-gray-100 text-gray-800'
+                                  : 'bg-red-100 text-red-800'
+                          }`}
+                        >
+                          {subscription.subscription.subscriptionStatus === 'active' &&
+                            (subscription.subscription.cancelAtPeriodEnd ? 'Canceling' : 'Active')}
+                          {subscription.subscription.subscriptionStatus === 'trialing' &&
+                            'Trial'}
+                          {subscription.subscription.subscriptionStatus === 'canceled' &&
+                            'Canceled'}
+                          {subscription.subscription.subscriptionStatus === 'past_due' &&
+                            'Past Due'}
+                        </span>
+                        {subscription.subscription.subscriptionStatus === 'trialing' &&
+                          formatPeriodEndDate(
+                            subscription.subscription.trialEnd || subscription.subscription.stripeCurrentPeriodEnd
+                          ) && (
+                            <span className="text-xs text-gray-500">
+                              (ends{' '}
+                              {formatPeriodEndDate(
                                 subscription.subscription.trialEnd || subscription.subscription.stripeCurrentPeriodEnd
-                              ) && (
-                                <span className="text-xs text-gray-500">
-                                  (ends{' '}
-                                  {formatPeriodEndDate(
-                                    subscription.subscription.trialEnd || subscription.subscription.stripeCurrentPeriodEnd
-                                  )}
-                                  )
-                                </span>
                               )}
-                            {isDeprecated && (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
-                                <AlertTriangle className="h-3 w-3" />
-                                Deprecated
-                              </span>
-                            )}
-                          </div>
-                          {subscription.plan?.description && (
-                            <p className="text-sm text-gray-600">{subscription.plan.description}</p>
+                              )
+                            </span>
                           )}
-                        </div>
+                        {isDeprecated && (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                            <AlertTriangle className="h-3 w-3" />
+                            Deprecated
+                          </span>
+                        )}
+                      </div>
 
-                        {/* Price Display */}
-                        <div className="text-right ml-4 shrink-0">
-                          <div className="flex items-baseline justify-end gap-1">
+                      {subscription.plan?.description && (
+                        <p className="text-sm text-gray-600 mb-3">{subscription.plan.description}</p>
+                      )}
+
+                      {/* Price + billing info — stack on mobile, side by side on desktop */}
+                      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
+                        <div>
+                          <div className="flex items-baseline gap-1">
                             <span className="text-2xl font-bold text-gray-900">
                               {formattedPrice || 'N/A'}
                             </span>
@@ -695,25 +670,28 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                               + {formatCents(perSeatPrice, planCurrency)}/seat{intervalLabel}
                             </div>
                           )}
-                          {(subscription.subscription.subscriptionStatus === 'active' ||
-                            subscription.subscription.subscriptionStatus === 'trialing') &&
-                            !subscription.subscription.cancelAtPeriodEnd &&
-                            formatPeriodEndDate(
-                              subscription.subscription.stripeCurrentPeriodEnd
-                            ) && (
-                              <div className="flex items-center gap-1.5 mt-2 text-xs text-gray-500">
-                                <Calendar className="h-3.5 w-3.5 flex-shrink-0" />
-                                <span>
-                                  Next billing:{' '}
-                                  <span className="font-medium text-gray-700">
-                                    {formatPeriodEndDate(
-                                      subscription.subscription.stripeCurrentPeriodEnd
-                                    )}
-                                  </span>
-                                </span>
-                              </div>
-                            )}
+                          {/* Estimated total with seats */}
+                          {seatPricingConfig && perSeatPrice && perSeatPrice > 0 && billableSeats > 0 && formattedPrice && formattedPrice !== 'Free' && currentPrice != null && (
+                            <div className="text-xs text-gray-500 mt-1 pt-1 border-t border-gray-200">
+                              Est. total: <span className="font-medium text-gray-700">{formatCents(currentPrice + (perSeatPrice * billableSeats), planCurrency)}{intervalLabel}</span>
+                              <span className="text-gray-400"> ({billableSeats} extra seat{billableSeats !== 1 ? 's' : ''})</span>
+                            </div>
+                          )}
                         </div>
+                        {(subscription.subscription.subscriptionStatus === 'active' ||
+                          subscription.subscription.subscriptionStatus === 'trialing') &&
+                          !subscription.subscription.cancelAtPeriodEnd &&
+                          formatPeriodEndDate(subscription.subscription.stripeCurrentPeriodEnd) && (
+                            <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                              <Calendar className="h-3.5 w-3.5 flex-shrink-0" />
+                              <span>
+                                Next billing:{' '}
+                                <span className="font-medium text-gray-700">
+                                  {formatPeriodEndDate(subscription.subscription.stripeCurrentPeriodEnd)}
+                                </span>
+                              </span>
+                            </div>
+                          )}
                       </div>
 
                       {isDeprecated && (
@@ -725,7 +703,7 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                       {/* Cancel/Resume Actions */}
                       {(subscription.subscription.subscriptionStatus === 'active' ||
                         subscription.subscription.subscriptionStatus === 'trialing') && (
-                        <div className="flex items-center gap-3 mt-4 pt-4 border-t border-gray-200">
+                        <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-4 pt-4 border-t border-gray-200">
                           {subscription.subscription.subscriptionStatus === 'active' &&
                            subscription.subscription.cancelAtPeriodEnd ? (
                             <Button
@@ -870,30 +848,23 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                         if (!hasDetails) return null;
 
                         return (
-                          <div className="p-5 border-t border-gray-100">
-                            <div className="space-y-6">
+                          <div className="px-4 py-4 sm:px-5 sm:py-5 border-t border-gray-100">
+                            <div className="space-y-5">
                               {/* Features */}
                               {planDetails.features.length > 0 && (
                                 <div>
-                                  <h4 className="text-xs font-semibold text-gray-900 uppercase tracking-wider mb-3">
+                                  <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
                                     Features
                                   </h4>
-                                  <ul className="space-y-2">
+                                  <ul className="space-y-1.5">
                                     {planDetails.features
                                       .sort(a => (a.enabled ? -1 : 1))
                                       .map(({ item, enabled }) => (
-                                        <li
-                                          key={item._id}
-                                          className="flex items-start gap-2 text-sm"
-                                        >
-                                          <span
-                                            className={`mt-0.5 flex-shrink-0 ${enabled ? 'text-green-500' : 'text-gray-300'}`}
-                                          >
-                                            {enabled ? '✓' : '—'}
+                                        <li key={item._id} className="flex items-center gap-2 text-sm">
+                                          <span className={`w-4 text-center shrink-0 ${enabled ? 'text-green-500' : 'text-gray-300'}`}>
+                                            {enabled ? '✓' : '✕'}
                                           </span>
-                                          <span
-                                            className={enabled ? 'text-gray-700' : 'text-gray-400'}
-                                          >
+                                          <span className={enabled ? 'text-gray-700' : 'text-gray-400'}>
                                             {item.name}
                                           </span>
                                         </li>
@@ -905,16 +876,14 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                               {/* Limits */}
                               {planDetails.limits.length > 0 && (
                                 <div>
-                                  <h4 className="text-xs font-semibold text-gray-900 uppercase tracking-wider mb-3">
+                                  <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
                                     Limits
                                   </h4>
-                                  <ul className="space-y-2">
+                                  <ul className="space-y-1.5">
                                     {planDetails.limits.map(({ item, value }) => (
-                                      <li key={item._id} className="text-sm">
-                                        <div className="flex items-center justify-between">
-                                          <span className="text-gray-600">{item.name}</span>
-                                          <span className="font-medium text-gray-900">{value}</span>
-                                        </div>
+                                      <li key={item._id} className="flex items-center justify-between text-sm">
+                                        <span className="text-gray-600">{item.name}</span>
+                                        <span className="font-medium text-gray-900">{value}</span>
                                       </li>
                                     ))}
                                   </ul>
@@ -924,10 +893,10 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                               {/* Quotas */}
                               {planDetails.quotas.length > 0 && (
                                 <div>
-                                  <h4 className="text-xs font-semibold text-gray-900 uppercase tracking-wider mb-3">
+                                  <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
                                     Usage Quotas
                                   </h4>
-                                  <ul className="space-y-2">
+                                  <ul className="space-y-1.5">
                                     {planDetails.quotas.map(({ item, value }) => {
                                       const quotaDisplay = formatQuotaWithPrice(
                                         value,
@@ -936,9 +905,9 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                                       );
                                       return (
                                         <li key={item._id} className="text-sm">
-                                          <div className="flex items-center justify-between">
+                                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-0.5">
                                             <span className="text-gray-600">{item.name}</span>
-                                            <span className="font-medium text-gray-900">
+                                            <span className="font-medium text-gray-900 text-xs sm:text-sm">
                                               {quotaDisplay}
                                             </span>
                                           </div>
@@ -952,27 +921,33 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                               {/* Seats */}
                               {seatPricingConfig && (
                                 <div>
-                                  <h4 className="text-xs font-semibold text-gray-900 uppercase tracking-wider mb-3">
+                                  <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
                                     Seats
                                   </h4>
-                                  <div className="bg-gray-50 rounded-lg p-3 space-y-2">
+                                  <div className="bg-gray-50 rounded-lg p-3 space-y-1.5">
                                     <div className="flex items-center justify-between text-sm">
-                                      <span className="text-gray-600">Current members</span>
-                                      <span className="font-semibold text-gray-900">{seatCount}</span>
+                                      <span className="text-gray-600">Members</span>
+                                      <span className="font-semibold text-gray-900">{memberCount}</span>
                                     </div>
                                     <div className="flex items-center justify-between text-sm">
-                                      <span className="text-gray-600">Included with plan</span>
+                                      <span className="text-gray-600">Included</span>
                                       <span className="text-gray-900">{includedSeats}</span>
                                     </div>
+                                    {billableSeats > 0 && (
+                                      <div className="flex items-center justify-between text-sm">
+                                        <span className="text-gray-600">Billable</span>
+                                        <span className="font-medium text-amber-600">{billableSeats} extra</span>
+                                      </div>
+                                    )}
                                     {perSeatPrice && perSeatPrice > 0 && (
                                       <div className="flex items-center justify-between text-sm">
-                                        <span className="text-gray-600">Extra seat price</span>
+                                        <span className="text-gray-600">Per extra seat</span>
                                         <span className="text-gray-900">{formatCents(perSeatPrice, subscriptionCurrency)}{intervalLabel}</span>
                                       </div>
                                     )}
                                     {(seatPricingConfig as any).maxSeats > 0 && (
                                       <div className="flex items-center justify-between text-sm">
-                                        <span className="text-gray-600">Seat limit</span>
+                                        <span className="text-gray-600">Limit</span>
                                         <span className="text-gray-900">{(seatPricingConfig as any).maxSeats}</span>
                                       </div>
                                     )}

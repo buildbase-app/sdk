@@ -148,72 +148,64 @@ const SettingsInvoices: React.FC<SettingsInvoicesProps> = ({
                 key={invoice.id}
                 className="border rounded-lg bg-white hover:shadow-sm transition-shadow p-3"
               >
-                <div className="flex items-center justify-between gap-4">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1.5">
-                      <span className="text-sm font-medium text-gray-900">
-                        {invoice.description || invoice.number || `Invoice ${invoice.id.slice(-8)}`}
-                      </span>
-                      <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${getStatusBadgeColor(
-                          invoice.status
-                        )}`}
-                      >
-                        {invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-4 text-sm text-gray-600">
-                      <span className="font-medium text-gray-900">
-                        {formatCurrency(invoice.amount_due, invoice.currency)}
-                      </span>
-                      {invoice.created && (
-                        <>
-                          <span className="text-gray-300">•</span>
-                          <span>Created: {formatDate(invoice.created)}</span>
-                        </>
-                      )}
-                      {invoice.due_date && (
-                        <>
-                          <span className="text-gray-300">•</span>
-                          <span>Due: {formatDate(invoice.due_date)}</span>
-                        </>
-                      )}
-                      {invoice.amount_paid > 0 && invoice.amount_due > 0 && (
-                        <>
-                          <span className="text-gray-300">•</span>
-                          <span className="text-xs text-gray-500">
-                            Paid: {formatCurrency(invoice.amount_paid, invoice.currency)}
-                          </span>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 flex-shrink-0">
+                {/* Top: invoice ID + status badge */}
+                <div className="flex items-center justify-between gap-2 mb-1.5">
+                  <span className="text-sm font-medium text-gray-900 truncate min-w-0">
+                    {invoice.description || invoice.number || `Invoice ${invoice.id.slice(-8)}`}
+                  </span>
+                  <span
+                    className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium shrink-0 ${getStatusBadgeColor(
+                      invoice.status
+                    )}`}
+                  >
+                    {invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}
+                  </span>
+                </div>
+
+                {/* Middle: amount + date — wrap on mobile */}
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-sm text-gray-600 mb-2.5">
+                  <span className="font-medium text-gray-900">
+                    {formatCurrency(invoice.amount_due, invoice.currency)}
+                  </span>
+                  {invoice.created && (
+                    <>
+                      <span className="text-gray-300 hidden sm:inline">·</span>
+                      <span>{formatDate(invoice.created)}</span>
+                    </>
+                  )}
+                  {invoice.amount_paid > 0 && invoice.amount_due > 0 && (
+                    <span className="text-xs text-gray-500">
+                      Paid: {formatCurrency(invoice.amount_paid, invoice.currency)}
+                    </span>
+                  )}
+                </div>
+
+                {/* Bottom: action buttons */}
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    disabled={!invoice.hosted_invoice_url}
+                    onClick={() =>
+                      invoice.hosted_invoice_url &&
+                      window.open(invoice.hosted_invoice_url, '_blank', 'noopener,noreferrer')
+                    }
+                    className={action.color}
+                  >
+                    {action.text}
+                    <ExternalLink className="h-3 w-3 ml-1.5" />
+                  </Button>
+                  {invoice.invoice_pdf && (
                     <Button
                       size="sm"
-                      disabled={!invoice.hosted_invoice_url}
+                      variant="outline"
                       onClick={() =>
-                        invoice.hosted_invoice_url &&
-                        window.open(invoice.hosted_invoice_url, '_blank', 'noopener,noreferrer')
+                        window.open(invoice.invoice_pdf!, '_blank', 'noopener,noreferrer')
                       }
-                      className={action.color}
                     >
-                      {action.text}
-                      <ExternalLink className="h-3 w-3 ml-1.5" />
+                      <Download className="h-3 w-3 mr-1.5" />
+                      PDF
                     </Button>
-                    {invoice.invoice_pdf && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() =>
-                          window.open(invoice.invoice_pdf!, '_blank', 'noopener,noreferrer')
-                        }
-                      >
-                        <Download className="h-3 w-3 mr-1.5" />
-                        PDF
-                      </Button>
-                    )}
-                  </div>
+                  )}
                 </div>
               </div>
             );
