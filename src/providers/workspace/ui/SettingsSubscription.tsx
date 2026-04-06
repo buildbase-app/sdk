@@ -271,6 +271,7 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
         result = await createCheckoutSession({
           planVersionId,
           billingInterval,
+          currency: effectiveCurrency || undefined,
           successUrl,
           cancelUrl,
         });
