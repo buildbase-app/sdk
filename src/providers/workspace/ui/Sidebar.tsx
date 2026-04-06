@@ -1,6 +1,7 @@
 import {
   AlertTriangle,
   BarChart3,
+  Bell,
   CreditCard,
   SettingsIcon,
   ToggleRight,
@@ -114,6 +115,13 @@ const Sidebar: React.FC<Props> = ({ workspace, section, setSection }) => {
           label="Features"
           section="features"
           onClick={() => setSection('features')}
+        />
+        <SidebarItem
+          activeSection={section}
+          icon={<Bell className="h-3.5 w-3.5" />}
+          label="Notifications"
+          section="notifications"
+          onClick={() => setSection('notifications')}
         />
         {canAccessDangerZone && (
           <SidebarItem

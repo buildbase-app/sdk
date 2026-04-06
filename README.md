@@ -12,6 +12,7 @@ A React SDK for [BuildBase](https://www.buildbase.app/) that provides essential 
 - [Feature Flags](#️-feature-flags)
 - [Subscription Gates](#-subscription-gates)
 - [Trial Gates](#-trial-gates)
+- [Push Notifications](#-push-notifications)
 - [User Management](#-user-management)
 - [Workspace Management](#-complete-workspace-management)
 - [Public Pricing (No Login)](#-public-pricing-no-login)
@@ -37,6 +38,7 @@ A React SDK for [BuildBase](https://www.buildbase.app/) that provides essential 
 - **🎯 Feature Flags** - Workspace-level and user-level feature toggles
 - **📋 Subscription Gates** - Show or hide UI based on current workspace subscription (plan)
 - **⏳ Trial Gates** - `WhenTrialing`, `WhenNotTrialing`, `WhenTrialEnding` components + `useTrialStatus` hook
+- **🔔 Push Notifications** - Browser push notifications with `usePushNotifications` hook, auto-triggers for billing events, and campaign management
 - **💺 Seat-Based Pricing** - Per-seat billing with included seats, billable seat tracking, and seat limit enforcement
 - **💱 Multi-Currency** - Per-currency pricing variants with workspace billing currency lock
 - **📊 Quota Usage Tracking** - Record and monitor metered usage (API calls, storage, etc.) with real-time status
@@ -513,6 +515,40 @@ function TrialInfo() {
 | `trialEndsAt`   | `Date \| null` | Trial end date                                   |
 | `trialStartedAt`| `Date \| null` | Trial start date                                 |
 | `isTrialEnding` | `boolean`      | True when 3 or fewer days remaining              |
+
+## 🔔 Push Notifications
+
+Browser push notifications — built into the SDK. Users can enable/disable from the **Notifications** tab in workspace settings. Billing events (payment failed, trial ending) auto-send push notifications.
+
+**Only setup required:** Create `public/push-sw.js` in your app:
+
+```js
+self.addEventListener('push', function(event) {
+  if (!event.data) return;
+  try {
+    var payload = event.data.json();
+    event.waitUntil(self.registration.showNotification(payload.title || 'Notification', {
+      body: payload.body || '',
+      icon: payload.icon || undefined,
+      badge: payload.icon || undefined,
+      data: { url: payload.url, ...(payload.data || {}) },
+    }));
+  } catch (e) { console.error('[PushSW]', e); }
+});
+
+self.addEventListener('notificationclick', function(event) {
+  event.notification.close();
+  var url = event.notification.data && event.notification.data.url;
+  if (url) {
+    event.waitUntil(clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(list) {
+      for (var i = 0; i < list.length; i++) { if (list[i].url === url && 'focus' in list[i]) return list[i].focus(); }
+      if (clients.openWindow) return clients.openWindow(url);
+    }));
+  }
+});
+```
+
+Everything else is built-in — permission handling, subscribe/unsubscribe, settings UI, billing auto-triggers, and browser-specific unblock instructions.
 
 ## 👤 User Management
 
@@ -1285,6 +1321,7 @@ Prefer these SDK hooks for state and operations instead of `useAppSelector`:
 | `useUserFeatures()`        | User feature flags                                                                                      |
 | `useSubscriptionContext()` | Subscription for current workspace (response, loading, refetch); use inside SubscriptionContextProvider |
 | `useTrialStatus()`         | Trial state: `isTrialing`, `daysRemaining`, `trialEndsAt`, `isTrialEnding`                              |
+| `usePushNotifications()`   | Push notification state and actions: `isSubscribed`, `subscribe()`, `unsubscribe()`                     |
 | Subscription hooks         | `usePublicPlans`, `useSubscription`, `useSubscriptionManagement`, `usePlanGroup`, `usePlanGroupVersions`, `usePublicPlanGroupVersion`, `useCreateCheckoutSession`, `useUpdateSubscription`, `useCancelSubscription`, `useResumeSubscription`, `useInvoices`, `useInvoice` |
 | `useQuotaUsageContext()`   | Quota usage for current workspace (quotas, loading, refetch); use inside QuotaUsageContextProvider      |
 | Quota usage hooks          | `useRecordUsage`, `useQuotaUsageStatus`, `useAllQuotaUsage`, `useUsageLogs`                             |

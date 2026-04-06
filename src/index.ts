@@ -97,6 +97,13 @@ export type { TrialStatus } from './hooks/use-trial-status';
 export { useSeatStatus } from './hooks/use-seat-status';
 export type { SeatStatus } from './hooks/use-seat-status';
 
+// Push notifications
+export {
+  PushNotificationProvider,
+  usePushNotifications,
+} from './providers/push/PushNotificationContext';
+export { PUSH_SERVICE_WORKER_SCRIPT } from './providers/push/service-worker-template';
+
 // Export event types and emitter
 export { eventEmitter } from './providers/events';
 export type {
