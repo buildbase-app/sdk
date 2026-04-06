@@ -6,6 +6,7 @@ import { SDKContextProvider } from '../contexts';
 
 import { QuotaUsageContextProvider } from '../contexts/QuotaUsageContext';
 import { SubscriptionContextProvider } from '../contexts/SubscriptionContext';
+import { PushNotificationProvider } from './push/PushNotificationContext';
 import '../styles/globals.css';
 import { AuthProviderWrapper } from './auth/provider';
 import { ContextConfigProvider } from './ContextConfigProvider';
@@ -197,7 +198,9 @@ const SaaSOSProviderInner: React.FC<SaaSOSProviderProps> = React.memo(
               <UserProvider>
                 <SubscriptionContextProvider>
                   <QuotaUsageContextProvider>
-                    <WorkspaceSettingsProvider>{children}</WorkspaceSettingsProvider>
+                    <PushNotificationProvider>
+                      <WorkspaceSettingsProvider>{children}</WorkspaceSettingsProvider>
+                    </PushNotificationProvider>
                   </QuotaUsageContextProvider>
                 </SubscriptionContextProvider>
               </UserProvider>
