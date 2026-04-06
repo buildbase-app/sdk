@@ -93,7 +93,7 @@ const WorkspaceSettingsDialog: React.FC<WorkspaceSettingsDialogProps> = ({
             {section === 'features' && 'Workspace Features'}
             {section === 'danger' && 'Danger Zone'}
           </DialogTitle>
-          <div className="max-h-[500px] overflow-y-auto">
+          <div className="sm:max-h-[500px] overflow-y-auto">
             {section === 'profile' && <WorkspaceSettingsProfile workspace={workspace} />}
             {section === 'general' && <WorkspaceSettingsGeneral workspace={workspace} />}
             {section === 'users' && <WorkspaceSettingsUsers workspace={workspace} />}
