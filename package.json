@@ -1,6 +1,6 @@
 {
   "name": "@buildbase/sdk",
-  "version": "0.0.24",
+  "version": "0.0.25",
   "type": "module",
   "description": "A SDK for Buildbase",
   "main": "dist/index.js",
@@ -23,7 +23,8 @@
     "**/*.css"
   ],
   "scripts": {
-    "build": "rollup -c",
+    "build": "rollup -c && npm run postbuild",
+    "postbuild": "rimraf dist/types dist/*.map",
     "build:analyze": "rollup --config rollup.config.analyze.js",
     "dev": "rollup -c -w",
     "clean": "rimraf dist",
