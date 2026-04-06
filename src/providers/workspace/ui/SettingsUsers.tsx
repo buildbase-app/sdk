@@ -326,7 +326,7 @@ function InviteMember({ onInvite, workspaceId }: { onInvite: () => void; workspa
   const [inviting, setInviting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const messageTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const messageTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
   const { addUser, getWorkspace } = useSaaSWorkspaces();
 
   useEffect(() => {
