@@ -31,11 +31,11 @@ const WorkspaceSettingsGeneral: React.FC<{ workspace: IWorkspace }> = ({ workspa
   const [imageType, setImageType] = useState<'emoji' | 'url'>('emoji');
   const [selectedEmoji, setSelectedEmoji] = useState<string>();
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const successTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const successTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
   const { updateWorkspace } = useSaaSWorkspaces();
 
   useEffect(() => {
-    return () => { clearTimeout(successTimerRef.current); };
+    return () => { if (successTimerRef.current) clearTimeout(successTimerRef.current); };
   }, []);
   const { user: currentUser } = useSaaSAuth();
 
@@ -60,7 +60,7 @@ const WorkspaceSettingsGeneral: React.FC<{ workspace: IWorkspace }> = ({ workspa
     try {
       await updateWorkspace(workspace, values);
       setSuccessMessage('Workspace settings saved successfully');
-      clearTimeout(successTimerRef.current);
+      if (successTimerRef.current) clearTimeout(successTimerRef.current);
       successTimerRef.current = setTimeout(() => {
         setSuccessMessage(null);
       }, 5000);

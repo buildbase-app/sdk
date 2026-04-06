@@ -110,6 +110,8 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
 }) => {
   const [localLoading, setLocalLoading] = useState(false);
   const [processingPlanId, setProcessingPlanId] = useState<string | null>(null);
+  // Synchronous guard against double-clicks (state updates are async and can be bypassed by rapid clicks)
+  const submittingRef = React.useRef(false);
 
   // Derive current billing interval and currency from price ID
   const currentIntervalAndCurrency = useMemo(() => {
@@ -174,8 +176,10 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
     // Block if same plan AND same interval, or if already loading
     const isSamePlanAndInterval =
       planVersionId === currentPlanVersionId && currentBillingInterval === selectedInterval;
-    if (isSamePlanAndInterval || isUpdating || localLoading) return;
+    if (isSamePlanAndInterval || isUpdating || localLoading || submittingRef.current) return;
 
+    // Synchronous ref guard prevents double-click (state updates are batched/async)
+    submittingRef.current = true;
     setLocalLoading(true);
     setProcessingPlanId(planVersionId);
     try {
@@ -184,6 +188,7 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
     } catch (error) {
       // Error handling is done in parent
     } finally {
+      submittingRef.current = false;
       setLocalLoading(false);
       setProcessingPlanId(null);
     }

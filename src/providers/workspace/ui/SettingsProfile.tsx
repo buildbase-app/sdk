@@ -28,10 +28,10 @@ const WorkspaceSettingsProfile: React.FC<{ workspace: IWorkspace }> = ({ workspa
   const [user, setUser] = useState<IUser>();
   const [reloadCounter, setReloadCounter] = useState(0);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const successTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const successTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
 
   useEffect(() => {
-    return () => { clearTimeout(successTimerRef.current); };
+    return () => { if (successTimerRef.current) clearTimeout(successTimerRef.current); };
   }, []);
 
   const formSchema = z.object({
@@ -82,7 +82,7 @@ const WorkspaceSettingsProfile: React.FC<{ workspace: IWorkspace }> = ({ workspa
         currency: values.currency,
       });
       setSuccessMessage('Profile saved successfully');
-      clearTimeout(successTimerRef.current);
+      if (successTimerRef.current) clearTimeout(successTimerRef.current);
       successTimerRef.current = setTimeout(() => {
         setSuccessMessage(null);
       }, 5000);

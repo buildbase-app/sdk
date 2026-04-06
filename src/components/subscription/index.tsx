@@ -230,6 +230,7 @@ export const WhenTrialEnding = (props: IWhenTrialEndingProps) => {
   if (!trialEndStr) return fallbackComponent ?? null;
 
   const trialEnd = new Date(trialEndStr);
+  if (isNaN(trialEnd.getTime())) return fallbackComponent ?? null; // Guard against Invalid Date
   const daysRemaining = Math.max(0, Math.ceil((trialEnd.getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
 
   if (daysRemaining > daysThreshold) return fallbackComponent ?? null;

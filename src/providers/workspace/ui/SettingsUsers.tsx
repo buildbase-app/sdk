@@ -330,7 +330,7 @@ function InviteMember({ onInvite, workspaceId }: { onInvite: () => void; workspa
   const { addUser, getWorkspace } = useSaaSWorkspaces();
 
   useEffect(() => {
-    return () => { clearTimeout(messageTimerRef.current); };
+    return () => { if (messageTimerRef.current) clearTimeout(messageTimerRef.current); };
   }, []);
   const [workspace, setWorkspace] = useState<IWorkspace | null>(null);
   const { settings } = useSaaSSettings();
@@ -373,7 +373,7 @@ function InviteMember({ onInvite, workspaceId }: { onInvite: () => void; workspa
       .finally(() => {
         setInviting(false);
 
-        clearTimeout(messageTimerRef.current);
+        if (messageTimerRef.current) clearTimeout(messageTimerRef.current);
         messageTimerRef.current = setTimeout(() => {
           clearMessages();
         }, 6000);
