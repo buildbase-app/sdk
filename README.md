@@ -11,6 +11,7 @@ A React SDK for [BuildBase](https://www.buildbase.app/) that provides essential 
 - [Role-Based Access Control](#-role-based-access-control)
 - [Feature Flags](#️-feature-flags)
 - [Subscription Gates](#-subscription-gates)
+- [Trial Gates](#-trial-gates)
 - [User Management](#-user-management)
 - [Workspace Management](#-complete-workspace-management)
 - [Public Pricing (No Login)](#-public-pricing-no-login)
@@ -35,6 +36,9 @@ A React SDK for [BuildBase](https://www.buildbase.app/) that provides essential 
 - **👥 Role-Based Access Control** - User roles and workspace-specific permissions
 - **🎯 Feature Flags** - Workspace-level and user-level feature toggles
 - **📋 Subscription Gates** - Show or hide UI based on current workspace subscription (plan)
+- **⏳ Trial Gates** - `WhenTrialing`, `WhenNotTrialing`, `WhenTrialEnding` components + `useTrialStatus` hook
+- **💺 Seat-Based Pricing** - Per-seat billing with included seats, billable seat tracking, and seat limit enforcement
+- **💱 Multi-Currency** - Per-currency pricing variants with workspace billing currency lock
 - **📊 Quota Usage Tracking** - Record and monitor metered usage (API calls, storage, etc.) with real-time status
 - **📈 Usage Dashboard** - Built-in workspace settings page showing quota consumption, overage billing breakdowns, and billing period info
 - **👤 User Management** - User attributes and feature flags management
@@ -441,6 +445,74 @@ function SubscriptionStatus() {
 - When the current workspace changes (automatic).
 - When subscription is updated via SDK (e.g. `useUpdateSubscription`, cancel, resume) — refetch is triggered automatically.
 - When you call `refetch()` (e.g. after redirect from checkout).
+
+## ⏳ Trial Gates
+
+Control UI based on trial state. Works with Stripe-native trials (both card-required and no-card).
+
+### Trial Gate Components
+
+```tsx
+import { WhenTrialing, WhenNotTrialing, WhenTrialEnding } from '@buildbase/sdk';
+
+function TrialExample() {
+  return (
+    <div>
+      {/* Show only during active trial */}
+      <WhenTrialing>
+        <TrialBanner />
+      </WhenTrialing>
+
+      {/* Show when NOT trialing (active, canceled, or no subscription) */}
+      <WhenNotTrialing>
+        <RegularContent />
+      </WhenNotTrialing>
+
+      {/* Show when trial ends within N days (default: 3) */}
+      <WhenTrialEnding daysThreshold={7}>
+        <UpgradeUrgentBanner />
+      </WhenTrialEnding>
+    </div>
+  );
+}
+```
+
+| Component         | Renders when                                             |
+| ----------------- | -------------------------------------------------------- |
+| `WhenTrialing`    | Subscription status is `trialing`                        |
+| `WhenNotTrialing` | Subscription status is NOT `trialing`                    |
+| `WhenTrialEnding` | Trialing AND trial ends within `daysThreshold` days (default 3) |
+
+All trial gates support `loadingComponent` and `fallbackComponent` props.
+
+### useTrialStatus
+
+Hook that computes trial information from the subscription context:
+
+```tsx
+import { useTrialStatus } from '@buildbase/sdk';
+
+function TrialInfo() {
+  const { isTrialing, daysRemaining, trialEndsAt, isTrialEnding } = useTrialStatus();
+
+  if (!isTrialing) return null;
+
+  return (
+    <div>
+      <p>Trial ends in {daysRemaining} days</p>
+      {isTrialEnding && <p>Upgrade now to keep access!</p>}
+    </div>
+  );
+}
+```
+
+| Property        | Type           | Description                                      |
+| --------------- | -------------- | ------------------------------------------------ |
+| `isTrialing`    | `boolean`      | Whether subscription is in trial                 |
+| `daysRemaining` | `number`       | Days left in trial (0 if not trialing or expired) |
+| `trialEndsAt`   | `Date \| null` | Trial end date                                   |
+| `trialStartedAt`| `Date \| null` | Trial start date                                 |
+| `isTrialEnding` | `boolean`      | True when 3 or fewer days remaining              |
 
 ## 👤 User Management
 
@@ -1168,6 +1240,15 @@ All SDK API clients extend a shared base class and are exported from the package
 | `WorkspaceApi`   | Workspaces, subscription, invoices, quota usage, users                            |
 | `SettingsApi`    | Organization settings                                                           |
 
+### Components
+
+| Component | Purpose |
+| --- | --- |
+| `SubscriptionContextProvider` | Provides subscription data to children (included in SaaSOSProvider) |
+| `WhenSubscription`, `WhenNoSubscription`, `WhenSubscriptionToPlans` | Subscription gate components |
+| `WhenTrialing`, `WhenNotTrialing`, `WhenTrialEnding` | Trial gate components |
+| `WhenQuotaAvailable`, `WhenQuotaExhausted`, `WhenQuotaOverage` | Quota gate components |
+
 ### Currency, pricing variant & quota utilities
 
 | Category | Exports |
@@ -1203,6 +1284,7 @@ Prefer these SDK hooks for state and operations instead of `useAppSelector`:
 | `useUserAttributes()`      | User attributes and update/refresh                                                                      |
 | `useUserFeatures()`        | User feature flags                                                                                      |
 | `useSubscriptionContext()` | Subscription for current workspace (response, loading, refetch); use inside SubscriptionContextProvider |
+| `useTrialStatus()`         | Trial state: `isTrialing`, `daysRemaining`, `trialEndsAt`, `isTrialEnding`                              |
 | Subscription hooks         | `usePublicPlans`, `useSubscription`, `useSubscriptionManagement`, `usePlanGroup`, `usePlanGroupVersions`, `usePublicPlanGroupVersion`, `useCreateCheckoutSession`, `useUpdateSubscription`, `useCancelSubscription`, `useResumeSubscription`, `useInvoices`, `useInvoice` |
 | `useQuotaUsageContext()`   | Quota usage for current workspace (quotas, loading, refetch); use inside QuotaUsageContextProvider      |
 | Quota usage hooks          | `useRecordUsage`, `useQuotaUsageStatus`, `useAllQuotaUsage`, `useUsageLogs`                             |
