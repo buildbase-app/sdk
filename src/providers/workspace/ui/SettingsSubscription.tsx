@@ -1117,6 +1117,7 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
             currentPlanVersionId={currentPlanVersionId || null}
             currentStripePriceId={subscription?.subscription?.stripePriceId}
             billingCurrency={workspace.billingCurrency}
+            currentMemberCount={Array.isArray((workspace as any)?.users) ? (workspace as any).users.length : undefined}
             onSelectPlan={handlePlanChange}
             loading={updating || loading}
           />

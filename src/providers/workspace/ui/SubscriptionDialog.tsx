@@ -29,6 +29,8 @@ interface SubscriptionDialogProps {
    * When null/undefined, all plan currencies are available.
    */
   billingCurrency?: string | null;
+  /** Current workspace member count — used to show billable seats in the comparison table. */
+  currentMemberCount?: number;
   /** Called when user selects a plan. Currency is optional (for display/logging only; not sent to API). */
   onSelectPlan: (
     planVersionId: string,
@@ -105,6 +107,7 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
   currentPlanVersionId,
   currentStripePriceId,
   billingCurrency: workspaceBillingCurrency,
+  currentMemberCount,
   onSelectPlan,
   loading: isUpdating = false,
 }) => {
@@ -741,6 +744,36 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                             );
                           })}
                         </tr>
+                        {/* Billable seats row — only show when we know the member count */}
+                        {currentMemberCount != null && currentMemberCount > 0 && (
+                          <tr className="group hover:bg-slate-50/50">
+                            <td className="sticky left-0 z-10 border-t border-slate-100 bg-white p-4 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.06)] group-hover:bg-slate-50/80">
+                              <div className="font-medium text-sm text-slate-900">Your billable seats</div>
+                              <div className="text-xs text-slate-500 mt-0.5">{currentMemberCount} member{currentMemberCount !== 1 ? 's' : ''} in workspace</div>
+                            </td>
+                            {sortedPlans.map(planVersion => {
+                              const sp = getSeatPricing(planVersion, effectiveCurrency);
+                              if (!sp?.enabled) {
+                                return (
+                                  <td key={planVersion._id} className={`border-t border-slate-100 p-4 text-center align-middle ${planVersion._id === currentPlanVersionId ? 'bg-blue-50/50' : 'bg-white'}`}>
+                                    <span className="text-sm text-slate-400">—</span>
+                                  </td>
+                                );
+                              }
+                              const included = sp.includedSeats || 0;
+                              const billable = Math.max(0, currentMemberCount - included);
+                              return (
+                                <td key={planVersion._id} className={`border-t border-slate-100 p-4 text-center align-middle ${planVersion._id === currentPlanVersionId ? 'bg-blue-50/50' : 'bg-white'}`}>
+                                  {billable === 0 ? (
+                                    <span className="text-sm font-medium text-emerald-600">All included</span>
+                                  ) : (
+                                    <span className="text-sm font-medium text-amber-600">{billable} extra seat{billable !== 1 ? 's' : ''}</span>
+                                  )}
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        )}
                       </>
                     )}
                   </tbody>
