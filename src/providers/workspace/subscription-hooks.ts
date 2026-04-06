@@ -806,6 +806,54 @@ export const useInvoices = (
 };
 
 /**
+ * Hook to open the Stripe Customer Portal for managing payment methods, invoices, and subscription.
+ *
+ * @example
+ * ```tsx
+ * const { openBillingPortal, loading } = useBillingPortal(workspaceId);
+ * <Button onClick={() => openBillingPortal()} disabled={loading}>
+ *   Manage Payment Method
+ * </Button>
+ * ```
+ */
+export const useBillingPortal = (workspaceId: string | null | undefined) => {
+  const { api } = useWorkspaceApiWithOs();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const openBillingPortal = useCallback(
+    async (returnUrl?: string) => {
+      if (!workspaceId) throw new Error('Workspace ID is required');
+
+      setLoading(true);
+      setError(null);
+      try {
+        const finalReturnUrl = returnUrl || window.location.href;
+        const result = await api.createBillingPortalSession(workspaceId, finalReturnUrl);
+        if (result.url) {
+          window.open(result.url, '_blank', 'noopener,noreferrer');
+        }
+        return result;
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to open billing portal';
+        setError(errorMessage);
+        handleError(err, {
+          component: 'useBillingPortal',
+          action: 'openBillingPortal',
+          metadata: { workspaceId },
+        });
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [workspaceId, api]
+  );
+
+  return { openBillingPortal, loading, error };
+};
+
+/**
  * Hook to get a single invoice by ID.
  * Automatically fetches when workspaceId or invoiceId changes.
  *

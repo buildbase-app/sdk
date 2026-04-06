@@ -442,6 +442,23 @@ export class WorkspaceApi extends BaseApi {
   }
 
   /**
+   * Create a Stripe Customer Portal session for managing payment methods, invoices, etc.
+   * Returns the portal URL — redirect user to it.
+   */
+  async createBillingPortalSession(
+    workspaceId: string,
+    returnUrl?: string
+  ): Promise<{ url: string }> {
+    return this.fetchJson(
+      `workspaces/${workspaceId}/subscription/billing-portal`,
+      {
+        method: 'POST',
+        body: JSON.stringify(returnUrl ? { returnUrl } : {}),
+      }
+    );
+  }
+
+  /**
    * List invoices for a workspace subscription
    * @param workspaceId - The workspace ID
    * @param limit - Number of invoices to return (default: 10)

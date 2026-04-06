@@ -75,6 +75,7 @@ export {
   useCreateCheckoutSession,
   useInvoice,
   useInvoices,
+  useBillingPortal,
   usePlanGroup,
   usePlanGroupVersions,
   usePublicPlanGroupVersion,
