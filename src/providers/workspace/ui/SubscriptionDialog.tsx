@@ -306,16 +306,16 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="inset-0 w-screen h-screen max-w-none rounded-none translate-x-0 translate-y-0 p-0 flex flex-col">
-        <div className="flex-shrink-0 p-6 border-b space-y-4">
+        <div className="flex-shrink-0 px-4 py-4 sm:px-6 sm:py-6 border-b space-y-3 sm:space-y-4">
           <div>
-            <DialogTitle className="text-2xl font-bold">Choose Your Plan</DialogTitle>
-            <DialogDescription className="mt-1">
+            <DialogTitle className="text-xl sm:text-2xl font-bold">Choose Your Plan</DialogTitle>
+            <DialogDescription className="mt-1 text-sm">
               Compare plans and select the one that fits your needs
             </DialogDescription>
           </div>
-          {/* Row below title: currency on the left (only when workspace has no billingCurrency), interval on the right */}
-          <div className="flex items-center justify-between gap-4">
-            {/* Currency selector (left) – only show when workspace has no locked billing currency */}
+          {/* Controls: currency + interval — stack vertically on mobile */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+            {/* Currency selector – only show when workspace has no locked billing currency */}
             <div className="flex items-center gap-2">
               {!workspaceBillingCurrency?.trim() && availableCurrencies.length > 1 && (
                 <>
@@ -337,10 +337,15 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                   </select>
                 </>
               )}
+              {workspaceBillingCurrency?.trim() && (
+                <span className="text-xs text-slate-500">
+                  Billing in {workspaceBillingCurrency.toUpperCase()}
+                </span>
+              )}
             </div>
-            {/* Billing interval selector (right) */}
+            {/* Billing interval selector */}
             <div
-              className="flex items-center gap-1 p-1 bg-slate-100 rounded-lg"
+              className="flex items-center gap-0.5 sm:gap-1 p-1 bg-slate-100 rounded-lg w-full sm:w-auto"
               role="group"
               aria-label="Billing interval"
             >
@@ -350,23 +355,24 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                   <button
                     key={interval}
                     onClick={() => setSelectedInterval(interval)}
-                    className={`px-4 py-2 text-sm font-medium rounded-md transition-all relative ${
+                    aria-pressed={selectedInterval === interval}
+                    className={`flex-1 sm:flex-initial px-3 sm:px-4 py-2 text-sm font-medium rounded-md transition-all relative ${
                       selectedInterval === interval
                         ? 'bg-white text-slate-900 shadow-sm'
                         : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
-                    <span className="flex items-center gap-1.5">
+                    <span className="flex items-center justify-center gap-1 sm:gap-1.5">
                       {interval === 'monthly' && 'Monthly'}
                       {interval === 'quarterly' && 'Quarterly'}
                       {interval === 'yearly' && 'Yearly'}
                       {interval === 'yearly' && (
-                        <span className="text-xs px-1.5 py-0.5 bg-emerald-100 text-emerald-700 rounded-full font-semibold">
+                        <span className="text-[10px] sm:text-xs px-1 sm:px-1.5 py-0.5 bg-emerald-100 text-emerald-700 rounded-full font-semibold">
                           Save
                         </span>
                       )}
                       {isCurrentInterval && currentPlanVersionId && (
-                        <span className="text-xs px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded-full font-semibold">
+                        <span className="hidden sm:inline text-xs px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded-full font-semibold">
                           Current
                         </span>
                       )}
@@ -394,8 +400,147 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
             </div>
           ) : (
             <div className="flex-1 min-h-0 overflow-hidden bg-white">
-              {/* Single scroll container - required for sticky to work */}
-              <div className="overflow-auto h-full" style={{ maxHeight: 'calc(100vh - 12rem)' }}>
+
+              {/* ─── Mobile Layout: Stacked plan cards ─── */}
+              <div className="md:hidden overflow-auto h-full" style={{ maxHeight: 'calc(100vh - 13rem)' }}>
+                <div className="p-4 space-y-4">
+                  {sortedPlans.map(planVersion => {
+                    const isCurrent = planVersion._id === currentPlanVersionId;
+                    const buttonState = getPlanButtonState(planVersion);
+                    const isPlanLoading = isLoading && planVersion._id === processingPlanId;
+                    const price = getPriceForInterval(planVersion);
+                    const hasVariant = hasVariantForCurrency(planVersion);
+                    const displayCurrency = planVersion.pricingVariants?.length
+                      && planVersion.pricingVariants.some(v => v.currency?.toLowerCase() === effectiveCurrency.toLowerCase())
+                      ? effectiveCurrency : (planVersion.plan?.currency ?? effectiveCurrency ?? '');
+                    const monthlyPrice = getBasePriceCents(planVersion, effectiveCurrency, 'monthly') ?? 0;
+                    const savings = selectedInterval !== 'monthly' && price !== null
+                      ? calculateSavings(monthlyPrice, price, selectedInterval) : null;
+                    const sp = getSeatPricing(planVersion, effectiveCurrency);
+                    const perSeat = sp ? getPerSeatPriceCents(planVersion, effectiveCurrency, selectedInterval) : null;
+
+                    return (
+                      <div
+                        key={planVersion._id}
+                        className={`rounded-xl border-2 p-4 ${isCurrent ? 'border-blue-500 bg-blue-50/30' : 'border-slate-200 bg-white'}`}
+                      >
+                        {/* Plan header */}
+                        <div className="flex items-start justify-between mb-3">
+                          <div>
+                            <h3 className="text-lg font-bold text-slate-900">{planVersion.plan.name}</h3>
+                            {planVersion.plan.description && (
+                              <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">{planVersion.plan.description}</p>
+                            )}
+                          </div>
+                          {isCurrent && (
+                            <span className="shrink-0 rounded-md bg-blue-600 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white">
+                              Current
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Price */}
+                        <div className="mb-4">
+                          <div className="flex items-baseline gap-1">
+                            <span className="text-2xl font-bold text-slate-900">
+                              {hasVariant && price !== null ? formatPrice(price, displayCurrency) : !hasVariant ? '—' : formatPrice(price, displayCurrency)}
+                            </span>
+                            {price !== null && price > 0 && hasVariant && (
+                              <span className="text-sm text-slate-500">{getIntervalLabel(selectedInterval)}</span>
+                            )}
+                          </div>
+                          {savings !== null && savings > 0 && hasVariant && (
+                            <span className="text-xs text-emerald-600 font-medium">Save {savings}% vs monthly</span>
+                          )}
+                          {sp?.enabled && perSeat && perSeat > 0 && (
+                            <div className="text-xs text-slate-500 mt-1">
+                              + {formatCents(perSeat, displayCurrency)}/seat{getIntervalLabel(selectedInterval)}
+                              {sp.includedSeats > 0 && <span className="text-slate-400"> ({sp.includedSeats} included)</span>}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Features list */}
+                        {features.length > 0 && (
+                          <div className="mb-3">
+                            <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Features</div>
+                            <div className="space-y-1">
+                              {features.map(item => {
+                                const value = getValueForPlan(planVersion, item, selectedInterval);
+                                const isEnabled = item.type === 'feature' && value === true;
+                                return (
+                                  <div key={item._id} className="flex items-center gap-2 text-sm">
+                                    {item.type === 'feature' ? (
+                                      isEnabled
+                                        ? <span className="text-emerald-500 text-xs">&#10003;</span>
+                                        : <span className="text-slate-300 text-xs">&#10005;</span>
+                                    ) : null}
+                                    <span className={isEnabled ? 'text-slate-700' : 'text-slate-400'}>{item.name}</span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Limits */}
+                        {limits.length > 0 && (
+                          <div className="mb-3">
+                            <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Limits</div>
+                            <div className="space-y-1">
+                              {limits.map(item => {
+                                const value = getValueForPlan(planVersion, item, selectedInterval);
+                                return (
+                                  <div key={item._id} className="flex items-center justify-between text-sm">
+                                    <span className="text-slate-600">{item.name}</span>
+                                    <span className="font-medium text-slate-700">{typeof value === 'number' ? value.toLocaleString() : '—'}</span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Seats */}
+                        {sp?.enabled && (
+                          <div className="mb-3">
+                            <div className="text-xs font-semibold text-emerald-600 uppercase tracking-wider mb-1.5">Seats</div>
+                            <div className="space-y-1 text-sm">
+                              <div className="flex justify-between"><span className="text-slate-600">Included</span><span className="font-medium">{sp.includedSeats || 0}</span></div>
+                              <div className="flex justify-between"><span className="text-slate-600">Max</span><span className="font-medium">{(sp as any).maxSeats > 0 ? (sp as any).maxSeats : 'Unlimited'}</span></div>
+                              {currentMemberCount != null && currentMemberCount > 0 && (() => {
+                                const billable = Math.max(0, currentMemberCount - (sp.includedSeats || 0));
+                                return (
+                                  <div className="flex justify-between">
+                                    <span className="text-slate-600">Your billable</span>
+                                    <span className={`font-medium ${billable === 0 ? 'text-emerald-600' : 'text-amber-600'}`}>
+                                      {billable === 0 ? 'All included' : `${billable} extra`}
+                                    </span>
+                                  </div>
+                                );
+                              })()}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Action button */}
+                        <Button
+                          className="w-full mt-2"
+                          variant={buttonState.variant}
+                          disabled={buttonState.disabled || isLoading || !hasVariant}
+                          progress={isPlanLoading}
+                          onClick={() => handleSelectPlan(planVersion._id)}
+                        >
+                          {isPlanLoading ? 'Processing...' : !hasVariant ? 'Unavailable' : buttonState.label}
+                        </Button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* ─── Desktop Layout: Comparison table ─── */}
+              <div className="hidden md:block overflow-auto h-full" style={{ maxHeight: 'calc(100vh - 12rem)' }}>
                 <table
                   className="w-full border-separate border-spacing-0"
                   style={{
