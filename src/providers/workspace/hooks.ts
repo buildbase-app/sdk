@@ -1,10 +1,11 @@
 import React, { useCallback, useEffect, useMemo } from 'react';
 import { IUser } from '../../api/types';
+import { resolveMaxUsers, validateInvite } from '../../api/pricing-variant-utils';
 import { useAppDispatch, useAppSelector, workspaceActions } from '../../contexts';
 import { invalidateSubscription } from '../../contexts/SubscriptionContext/subscriptionInvalidation';
 import { handleError } from '../../lib/error-handler';
 import { eventEmitter } from '../events';
-import { useSaaSOs } from '../os/hooks';
+import { useSaaSOs, useSaaSSettings } from '../os/hooks';
 import type { IOsConfig, IOsState } from '../os/types';
 import { WorkspaceApi } from './api';
 import { IWorkspace, IWorkspaceUser } from './types';
@@ -131,6 +132,7 @@ export function useWorkspaceApiWithOs(): { os: IOsState; api: WorkspaceApi } {
 export const useSaaSWorkspaces = () => {
   const dispatch = useAppDispatch();
   const { os, api } = useWorkspaceApiWithOs();
+  const { settings } = useSaaSSettings();
 
   // Select all workspace state at once - only re-renders when any selected field changes
   const workspace = useAppSelector(state => state.workspaces);
@@ -402,9 +404,23 @@ export const useSaaSWorkspaces = () => {
 
   const addUser = useCallback(
     async (workspaceId: string, email: string, role: string) => {
+      // Pre-invite validation: check settings-based user limits before calling API.
+      // Note: seat-pricing plan limits are enforced by the UI layer (useSeatStatus)
+      // and the server. This hook doesn't have access to SubscriptionContext.
+      const targetWorkspace = workspace.workspaces.find(w => w._id === workspaceId);
+      if (targetWorkspace) {
+        const maxUsersConfig = resolveMaxUsers({
+          settingsMaxUsers: settings?.workspace?.maxWorkspaceUsers,
+        });
+        const memberCount = targetWorkspace.users?.length ?? 0;
+        const validation = validateInvite({ memberCount, maxUsersConfig });
+        if (!validation.canInvite) {
+          throw new Error(validation.blockMessage || 'Member limit reached');
+        }
+      }
+
       const data = await api.addUser(workspaceId, { email, role });
       // Find the workspace to trigger events
-      const targetWorkspace = workspace.workspaces.find(w => w._id === workspaceId);
       if (targetWorkspace) {
         // Trigger workspace user added event
         eventEmitter.emitWorkspaceUserAdded(data.userId, targetWorkspace, role).catch(error => {
@@ -420,7 +436,7 @@ export const useSaaSWorkspaces = () => {
       invalidateSubscription();
       return data;
     },
-    [api, workspace.workspaces, refreshWorkspaces]
+    [api, workspace.workspaces, refreshWorkspaces, settings]
   );
 
   const removeUser = useCallback(

@@ -158,8 +158,13 @@ export {
   getQuotaOverageCents,
   getSeatPricing,
   getStripePriceIdForInterval,
+  resolveMaxUsers,
+  validateInvite,
 } from './api/pricing-variant-utils';
 export type {
+  InviteBlockReason,
+  InviteValidation,
+  MaxUsersConfig,
   PlanVersionWithPricingVariants,
   QuotaDisplayWithOverage,
 } from './api/pricing-variant-utils';

@@ -220,3 +220,124 @@ export function calculateTotalSubscriptionCents(
   const seatOverage = calculateSeatOverageCents(planVersion, currency, interval, currentSeatCount);
   return basePrice + (seatOverage ?? 0);
 }
+
+// --- Max Users / Seat Limit Utilities ---
+
+export interface MaxUsersConfig {
+  /** The resolved maximum number of users allowed. 0 = unlimited. */
+  maxUsers: number;
+  /** Where the limit comes from. */
+  source: 'seat_pricing' | 'settings' | 'none';
+  /** Seats included in the base plan price (0 if no seat pricing). */
+  includedSeats: number;
+  /** Whether seat-based pricing is active. */
+  hasSeatPricing: boolean;
+}
+
+/**
+ * Resolve the effective max users limit from the plan's seat pricing config,
+ * falling back to settings when no seat pricing is configured.
+ *
+ * Priority:
+ * 1. Seat pricing `maxSeats` (from plan version's pricing variant) — the plan controls the limit
+ * 2. Settings fallback (`workspace.maxWorkspaceUsers`) — for workspaces without a subscription
+ *
+ * Returns 0 if no limit is set (unlimited).
+ */
+export function resolveMaxUsers(opts: {
+  planVersion?: IPlanVersion | null;
+  currency?: string;
+  settingsMaxUsers?: number | null;
+}): MaxUsersConfig {
+  const { planVersion, currency = 'usd', settingsMaxUsers } = opts;
+
+  // 1. Check seat pricing config on the plan
+  if (planVersion) {
+    const seatConfig = getSeatPricing(planVersion, currency);
+    if (seatConfig) {
+      return {
+        maxUsers: seatConfig.maxSeats ?? 0,
+        source: 'seat_pricing',
+        includedSeats: seatConfig.includedSeats ?? 0,
+        hasSeatPricing: true,
+      };
+    }
+  }
+
+  // 2. Settings fallback (no seat pricing on the plan)
+  if (settingsMaxUsers != null && settingsMaxUsers > 0) {
+    return {
+      maxUsers: settingsMaxUsers,
+      source: 'settings',
+      includedSeats: 0,
+      hasSeatPricing: false,
+    };
+  }
+
+  return {
+    maxUsers: 0,
+    source: 'none',
+    includedSeats: 0,
+    hasSeatPricing: false,
+  };
+}
+
+export type InviteBlockReason =
+  | 'seat_limit_reached'
+  | 'settings_user_limit_reached'
+  | 'no_subscription'
+  | null;
+
+export interface InviteValidation {
+  /** Whether a new user can be invited. */
+  canInvite: boolean;
+  /** Reason the invite is blocked, or null if allowed. */
+  blockReason: InviteBlockReason;
+  /** Human-readable message for the block reason. */
+  blockMessage: string | null;
+}
+
+/**
+ * Validate whether a new member can be invited given current seat/user limits.
+ */
+export function validateInvite(opts: {
+  memberCount: number;
+  maxUsersConfig: MaxUsersConfig;
+  hasSubscription?: boolean;
+  requireSubscription?: boolean;
+}): InviteValidation {
+  const { memberCount, maxUsersConfig, hasSubscription = true, requireSubscription = false } = opts;
+
+  if (requireSubscription && !hasSubscription) {
+    return {
+      canInvite: false,
+      blockReason: 'no_subscription',
+      blockMessage: 'A subscription is required to invite members.',
+    };
+  }
+
+  const { maxUsers, source } = maxUsersConfig;
+
+  // 0 = unlimited
+  if (maxUsers <= 0) {
+    return { canInvite: true, blockReason: null, blockMessage: null };
+  }
+
+  if (memberCount >= maxUsers) {
+    const reasonMap: Record<string, InviteBlockReason> = {
+      seat_pricing: 'seat_limit_reached',
+      settings: 'settings_user_limit_reached',
+    };
+    const messageMap: Record<string, string> = {
+      seat_pricing: `Your plan allows up to ${maxUsers} members. Upgrade for more seats.`,
+      settings: `This workspace allows up to ${maxUsers} members.`,
+    };
+    return {
+      canInvite: false,
+      blockReason: reasonMap[source] ?? 'seat_limit_reached',
+      blockMessage: messageMap[source] ?? `Member limit of ${maxUsers} reached.`,
+    };
+  }
+
+  return { canInvite: true, blockReason: null, blockMessage: null };
+}
