@@ -63,7 +63,6 @@ export const PushNotificationProvider: React.FC<PushNotificationProviderProps> =
           serverUrl: os.serverUrl,
           version: os.version,
           orgId: os.orgId,
-          requireOrgId: true,
         }),
       [os.serverUrl, os.version, os.orgId]
     );

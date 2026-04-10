@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from 'react';
+import { AuthApi } from '../../api/services/auth-api';
 import { authActions, useAppDispatch, useAppSelector } from '../../contexts';
-import { defaultApiClient } from '../../lib/api-client';
 import { handleError } from '../../lib/error-handler';
 import { useSaaSOs } from '../os/hooks';
 import { useSaaSWorkspaces } from '../workspace/hooks';
@@ -83,29 +83,25 @@ export function useSaaSAuth() {
   const { serverUrl, orgId, auth: authConfig } = os;
   const { resetCurrentWorkspace, currentWorkspace } = useSaaSWorkspaces();
 
+  const authApi = useMemo(() => new AuthApi({ serverUrl, version: os.version }), [serverUrl, os.version]);
+
   const signIn = useCallback(async () => {
     dispatch.auth(authActions.authenticationStarted());
     try {
-      const response = await defaultApiClient.post<{
-        success: boolean;
-        data: {
-          redirectUrl: string;
-        };
-        message: string;
-      }>(`${serverUrl}/api/v1/auth/request`, {
-        orgId: orgId,
-        clientId: authConfig?.clientId,
+      const response = await authApi.requestAuth({
+        orgId,
+        clientId: authConfig?.clientId ?? '',
         redirect: {
           success: authConfig?.redirectUrl || window.location.href,
           error: authConfig?.redirectUrl || window.location.href,
         },
       });
 
-      if (response.data.success) {
-        window.location.href = response.data.data.redirectUrl;
+      if (response.success) {
+        window.location.href = response.data.redirectUrl;
       } else {
         dispatch.auth(authActions.authenticationFailed());
-        throw new Error(response.data.message || 'Authentication failed');
+        throw new Error(response.message || 'Authentication failed');
       }
     } catch (error) {
       dispatch.auth(authActions.authenticationFailed());
@@ -115,7 +111,7 @@ export function useSaaSAuth() {
       });
       throw error;
     }
-  }, [serverUrl, orgId, authConfig, dispatch]);
+  }, [authApi, orgId, authConfig, dispatch]);
 
   const signOut = useCallback(async () => {
     try {

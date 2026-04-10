@@ -2,7 +2,7 @@
  * Helpers for multi-currency plan version pricing (pricingVariants).
  */
 
-import type { BillingInterval, IPlanVersion, IPlanVersionWithPlan, IPricingVariant } from './types';
+import type { BillingInterval, IPlanVersion, IPlanVersionWithPlan, IPricingVariant } from '../types';
 
 /** Get the pricing variant for a currency, or null if not available. */
 export function getPricingVariant(

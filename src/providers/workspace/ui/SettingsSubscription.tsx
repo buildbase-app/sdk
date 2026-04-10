@@ -1,6 +1,6 @@
 import { AlertTriangle, Calendar, CreditCard, Loader2 } from 'lucide-react';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { formatCents } from '../../../api/currency-utils';
+import { formatCents } from '../../../api/billing/currency-utils';
 import {
   getBasePriceCents,
   getBillingIntervalAndCurrencyFromPriceId,
@@ -8,9 +8,9 @@ import {
   getQuotaDisplayWithVariant,
   getSeatPricing,
   getStripePriceIdForInterval,
-} from '../../../api/pricing-variant-utils';
-import type { QuotaDisplayValue } from '../../../api/quota-utils';
-import { formatQuotaWithPrice, getQuotaDisplayValue } from '../../../api/quota-utils';
+} from '../../../api/billing/pricing-variant-utils';
+import type { QuotaDisplayValue } from '../../../api/billing/quota-utils';
+import { formatQuotaWithPrice, getQuotaDisplayValue } from '../../../api/billing/quota-utils';
 import {
   BillingInterval,
   CheckoutResult,

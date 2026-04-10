@@ -1,7 +1,6 @@
 'use client';
 
 import React, { ReactNode, useCallback, useEffect, useMemo } from 'react';
-import { IUser } from '../../api/types';
 import { authActions, useAppDispatch } from '../../contexts';
 import { handleError, handleErrorUnlessAborted } from '../../lib/error-handler';
 import { useAsyncEffect } from '../../lib/useAsyncEffect';
@@ -12,10 +11,8 @@ import { useAuthState } from './hooks';
 import { getAuthFlags, IAuthCallbacks } from './types';
 import {
   createSession,
-  getSessionId,
   getTokenFromUrl,
   mapIUserToAuthUser,
-  removeSession,
   removeTokenFromUrl,
   setSessionId,
 } from './utils';
@@ -25,9 +22,17 @@ interface IProps {
   callbacks?: IAuthCallbacks;
 }
 
+// Module-level guards — shared across all renders/remounts.
+// Prevents duplicate session hydration and profile fetches.
+let _sessionHydrationDone = false;
+let _sessionHydrationInFlight: Promise<void> | null = null;
+
 /**
- * AuthProvider wrapper that adds authentication logic
- * This wraps the AuthContextProvider and adds token handling, callbacks, etc.
+ * AuthProvider — next-auth style session management.
+ *
+ * Session token lives in an httpOnly cookie (set by your server).
+ * Session data lives in-memory (React context) only — no localStorage.
+ * On page refresh, the `getSession` callback fetches the sessionId from your server.
  */
 export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) => {
   const dispatch = useAppDispatch();
@@ -35,50 +40,35 @@ export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) 
   const osState = useSaaSOs();
   const isAuthenticated = getAuthFlags(authState.status).isAuthenticated;
 
-  // Track if we're processing an auth redirect to prevent duplicate processing
   const processingAuthRedirectRef = React.useRef(false);
   const processedCodeRef = React.useRef<string | null>(null);
-  // Track if profile fetch is in progress to prevent race conditions
-  const fetchingProfileRef = React.useRef(false);
 
-  // Memoize callbacks to prevent unnecessary re-renders
   const memoizedCallbacks = useMemo(() => callbacks, [callbacks]);
 
   const handleAuthRedirect = useCallback(
     async (code: string) => {
       try {
-        // Pass the code to the user's callback
-        // User will verify the code with their own API (using secret and code)
-        // and get user data, then store credentials however they want
         if (memoizedCallbacks?.handleAuthentication) {
           const { sessionId } = await memoizedCallbacks.handleAuthentication(code);
 
-          // Validate sessionId
           if (!sessionId || typeof sessionId !== 'string' || sessionId.trim() === '') {
             throw new Error('Invalid sessionId received from authentication callback');
           }
 
-          // Get OS config for API request (destructure inside to avoid stale values)
           const currentOsState = osState;
           if (!isOsConfigReady(currentOsState)) {
             throw new Error('OS configuration is not available');
           }
           const { serverUrl, version, orgId } = currentOsState;
 
-          // Make profile request to validate token and get user data (via centralized AuthApi)
           const authApi = new AuthApi({ serverUrl, version });
           const userData = await authApi.getProfile(sessionId);
-
           const authUser = mapIUserToAuthUser(userData, orgId, currentOsState.auth?.clientId || '');
-
-          // Create session with user and sessionId
           const session = createSession(authUser, sessionId);
 
-          // Save sessionId to localStorage, then update auth state
+          // Store in localStorage for client-side API calls (x-session-id header)
           setSessionId(session.sessionId);
           dispatch.auth(authActions.setSession(session));
-
-          // Remove token from URL
           removeTokenFromUrl();
         }
       } catch (error) {
@@ -95,144 +85,107 @@ export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) 
   );
 
   /**
-   * Session hydration: UX-friendly flow.
-   * 1. Initial state: status loading → app can show a loader (useSaaSAuth returns isLoading from status).
-   * 2. Check sessionId in localStorage.
-   * 3. No sessionId → dispatch authenticationFailed() → status unauthenticated.
-   * 4. Has sessionId → fetch profile (stay loading); then setSession (authenticated) or authenticationFailed() (unauthenticated).
-   * 5. If OS config isn't ready yet, stay in loading; effect re-runs when config is set.
-   * If there's a code in the URL (OAuth redirect), skip hydration and let code handling take priority.
+   * Session hydration on page refresh.
+   *
+   * Like next-auth's SessionProvider:
+   * 1. Call `getSession()` callback to get sessionId (reads httpOnly cookie via server endpoint).
+   * 2. Fetch user profile with that sessionId to verify + get user data.
+   * 3. If valid → set session in context. If invalid → unauthenticated.
+   *
+   * No localStorage read. The httpOnly cookie is the single source of truth.
    */
   useAsyncEffect(
     async signal => {
       if (typeof window === 'undefined') return;
       if (isAuthenticated) return;
-      if (fetchingProfileRef.current) return;
+      if (_sessionHydrationDone) return;
+      if (_sessionHydrationInFlight) return;
+      if (!isOsConfigReady(osState)) return;
 
       const code = getTokenFromUrl();
       if (code) return;
 
-      const sessionId = getSessionId();
-      if (!sessionId) {
+      if (!memoizedCallbacks?.getSession) {
+        _sessionHydrationDone = true;
         dispatch.auth(authActions.authenticationFailed());
         return;
       }
 
-      fetchingProfileRef.current = true;
-      try {
-        if (!isOsConfigReady(osState)) {
-          fetchingProfileRef.current = false;
-          handleError(new Error('OS configuration not available, cannot fetch user profile'), {
+      // Single in-flight promise — prevents concurrent calls from StrictMode/remounts
+      _sessionHydrationInFlight = (async () => {
+        let sessionId: string | null = null;
+        try {
+          sessionId = await memoizedCallbacks.getSession();
+        } catch (err) {
+          handleError(err, {
             component: 'AuthProviderWrapper',
-            action: 'fetchUserProfile',
+            action: 'getSession',
           });
+        }
+
+        if (!sessionId) {
+          _sessionHydrationDone = true;
+          dispatch.auth(authActions.authenticationFailed());
           return;
         }
-        const { orgId } = osState;
 
-        let userData: IUser;
         try {
+          const { orgId } = osState;
           const authApi = new AuthApi({ serverUrl: osState.serverUrl, version: osState.version });
-          userData = await authApi.getProfile(sessionId, signal);
+          const userData = await authApi.getProfile(sessionId, signal);
+          const authUser = mapIUserToAuthUser(userData, orgId, osState.auth?.clientId || '');
+          const session = createSession(authUser, sessionId);
+
+          setSessionId(session.sessionId);
+          _sessionHydrationDone = true;
+          dispatch.auth(authActions.setSession(session));
         } catch (error) {
           if (
             !handleErrorUnlessAborted(error, {
               component: 'AuthProviderWrapper',
               action: 'fetchUserProfile',
-              metadata: { step: 'fetchProfile' },
             })
           )
             return;
-          fetchingProfileRef.current = false;
-          removeSession();
+          _sessionHydrationDone = true;
           dispatch.auth(authActions.authenticationFailed());
-          return;
+        } finally {
+          _sessionHydrationInFlight = null;
         }
-
-        const authUser = mapIUserToAuthUser(userData, orgId, osState.auth?.clientId || '');
-
-        const session = createSession(authUser, sessionId);
-        setSessionId(session.sessionId);
-        dispatch.auth(authActions.setSession(session));
-      } catch (error) {
-        const isValidationError =
-          error instanceof Error &&
-          (error.message === 'User data missing required ID field' ||
-            error.message === 'User data missing required email field');
-        if (
-          !handleErrorUnlessAborted(error, {
-            component: 'AuthProviderWrapper',
-            action: 'fetchUserProfile',
-            metadata: { step: isValidationError ? 'validateUserData' : 'pageLoad' },
-          })
-        )
-          return;
-        removeSession();
-        dispatch.auth(authActions.authenticationFailed());
-      } finally {
-        fetchingProfileRef.current = false;
-      }
+      })();
     },
-    [isAuthenticated, dispatch, osState]
+    [dispatch, osState]
   );
 
   /**
-   * Handle OAuth redirect: when user returns with ?code=... in URL.
-   *
-   * Flow:
-   * 1. User clicks signIn() → redirects to OAuth provider.
-   * 2. OAuth provider redirects back with ?code=... in URL.
-   * 3. This effect detects the code and processes it:
-   *    - Calls handleAuthentication(code) callback (user exchanges code for sessionId).
-   *    - Fetches user profile with sessionId.
-   *    - Creates session and dispatches setSession() → status: authenticated.
-   *    - Removes code from URL.
-   *
-   * Note: This takes priority over localStorage hydration (hydration effect skips when code exists).
+   * Handle OAuth redirect: user returns with ?code=... in URL.
    */
   useEffect(() => {
     const code = getTokenFromUrl();
-    if (!code) {
-      return;
-    }
+    if (!code) return;
 
-    // Prevent duplicate processing of the same code
-    if (processingAuthRedirectRef.current || processedCodeRef.current === code) {
-      return;
-    }
+    if (processingAuthRedirectRef.current || processedCodeRef.current === code) return;
+    if (!isOsConfigReady(osState)) return;
 
-    // Check if OS configuration is available
-    if (!isOsConfigReady(osState)) {
-      // OS config not ready yet, wait for it to be available
-      // This effect will re-run when osState changes
-      return;
-    }
-
-    // Mark as processing and store the code
     processingAuthRedirectRef.current = true;
     processedCodeRef.current = code;
 
     let cancelled = false;
 
-    // Set status to authenticating (without redirecting flag) to show we're processing the OAuth callback
     dispatch.auth(authActions.authenticationProcessing());
 
-    // OS config is ready, process auth redirect
     handleAuthRedirect(code)
       .then(() => {
         if (cancelled) return;
-        // Success - code will be removed from URL in handleAuthRedirect
         processedCodeRef.current = null;
       })
       .catch(error => {
         if (cancelled) return;
-        // Error is already handled in handleAuthRedirect
         handleError(error, {
           component: 'AuthProviderWrapper',
           action: 'handleAuthRedirectEffect',
-          metadata: { hasCode: true }, // Never log auth codes, even partially
+          metadata: { hasCode: true },
         });
-        // Reset on error so it can be retried if needed
         processedCodeRef.current = null;
       })
       .finally(() => {
@@ -244,12 +197,8 @@ export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) 
     };
   }, [handleAuthRedirect, osState.serverUrl, osState.version, osState.orgId]);
 
-  // WorkspaceProvider is already in SDKContextProvider, so we don't need to wrap here
-  // Just return children - the context providers handle the state management
   return <>{children}</>;
 });
 
 AuthProviderWrapper.displayName = 'AuthProviderWrapper';
-
-// Export AuthProvider for backward compatibility
 export const AuthProvider = AuthProviderWrapper;

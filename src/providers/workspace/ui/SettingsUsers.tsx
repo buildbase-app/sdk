@@ -6,7 +6,7 @@ import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
 import { Label } from '../../../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '../../../components/ui/select';
-import { formatCents } from '../../../api/currency-utils';
+import { formatCents } from '../../../api/billing/currency-utils';
 import { useSubscriptionContext } from '../../../contexts/SubscriptionContext';
 import { useSeatStatus } from '../../../hooks/use-seat-status';
 import { handleError } from '../../../lib/error-handler';

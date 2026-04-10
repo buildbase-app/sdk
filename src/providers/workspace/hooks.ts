@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo } from 'react';
 import { IUser } from '../../api/types';
-import { resolveMaxUsers, validateInvite } from '../../api/pricing-variant-utils';
+import { resolveMaxUsers, validateInvite } from '../../api/billing/pricing-variant-utils';
 import { useAppDispatch, useAppSelector, workspaceActions } from '../../contexts';
 import { invalidateSubscription } from '../../contexts/SubscriptionContext/subscriptionInvalidation';
 import { handleError } from '../../lib/error-handler';

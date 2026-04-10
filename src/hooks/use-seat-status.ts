@@ -5,9 +5,9 @@ import {
   getPerSeatPriceCents,
   resolveMaxUsers,
   validateInvite,
-} from '../api/pricing-variant-utils';
+} from '../api/billing/pricing-variant-utils';
 import type { BillingInterval, IPlanVersion } from '../api/types';
-import type { InviteBlockReason, MaxUsersConfig } from '../api/pricing-variant-utils';
+import type { InviteBlockReason, MaxUsersConfig } from '../api/billing/pricing-variant-utils';
 
 export interface SeatStatus {
   /** Whether the current plan uses seat-based pricing. */

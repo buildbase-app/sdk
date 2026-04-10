@@ -56,6 +56,23 @@ export interface IAuthCallbacks {
   }>;
   onSignOut: () => Promise<void>;
   /**
+   * Called on page refresh to restore the session.
+   * Return the sessionId if the user is still authenticated, or null to log out.
+   *
+   * The SDK calls this instead of reading from localStorage.
+   * Implement this to read from an httpOnly cookie via a server endpoint.
+   *
+   * @example Next.js — read from httpOnly cookie via API route
+   * ```ts
+   * getSession: async () => {
+   *   const res = await fetch('/api/auth/session')
+   *   const data = await res.json()
+   *   return data.sessionId ?? null
+   * }
+   * ```
+   */
+  getSession: () => Promise<string | null>;
+  /**
    * Event handler for User and Workspace events
    * @param eventType - The type of event that occurred
    * @param data - The event data (type varies based on eventType)

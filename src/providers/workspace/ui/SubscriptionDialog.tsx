@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { formatCents, getCurrencyFlag } from '../../../api/currency-utils';
+import { formatCents, getCurrencyFlag } from '../../../api/billing/currency-utils';
 import {
   getAvailableCurrenciesFromPlans,
   getBasePriceCents,
@@ -7,8 +7,8 @@ import {
   getPerSeatPriceCents,
   getQuotaDisplayWithVariant,
   getSeatPricing,
-} from '../../../api/pricing-variant-utils';
-import { formatQuotaWithPrice, getQuotaDisplayValue } from '../../../api/quota-utils';
+} from '../../../api/billing/pricing-variant-utils';
+import { formatQuotaWithPrice, getQuotaDisplayValue } from '../../../api/billing/quota-utils';
 import { BillingInterval, IPlanVersionWithPlan, ISubscriptionItem } from '../../../api/types';
 import { Button } from '../../../components/ui/button';
 import {
