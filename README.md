@@ -1,12 +1,14 @@
 # @buildbase/sdk
 
-A React SDK for [BuildBase](https://www.buildbase.app/) that provides essential components to build SaaS applications faster. Skip the plumbing and focus on your core product with built-in authentication, workspace management, and user management.
+A React SDK for [BuildBase](https://www.buildbase.app/) that provides essential components to build SaaS applications faster. Skip the plumbing and focus on your core product with built-in authentication, workspace management, billing, and more.
+
+Also works server-side (Next.js API routes, Express, Hono) — see [Server-Side Usage](#server-side-usage) below.
 
 ## 📑 Table of Contents
 
 - [Features](#-features)
-- [Installation](#-installation)
-- [Quick Start](#-quick-start)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
 - [Authentication](#-authentication)
 - [Role-Based Access Control](#-role-based-access-control)
 - [Feature Flags](#️-feature-flags)
@@ -28,7 +30,7 @@ A React SDK for [BuildBase](https://www.buildbase.app/) that provides essential 
 - [Troubleshooting](#-troubleshooting)
 - [API Reference](#-api-reference)
 - [Best Practices](#-best-practices)
-- [Documentation](#further-documentation)
+- [Server-Side Usage](#server-side-usage)
 
 ## 🚀 Features
 
@@ -47,99 +49,103 @@ A React SDK for [BuildBase](https://www.buildbase.app/) that provides essential 
 - **📝 Beta Form** - Pre-built signup/waitlist form component
 - **📡 Event System** - Subscribe to user and workspace events
 - **🛡️ Error Handling** - Centralized error handling with error boundaries
+- **🖥️ Server-Side SDK** - `BuildBase()` factory for API routes, background jobs, Express, Hono — zero React dependency
 
-## 📦 Installation
-
-```bash
-npm install @buildbase/sdk
-```
-
-### Peer Dependencies
-
-This package requires React 19 and React DOM 19:
+## Installation
 
 ```bash
-npm install react@^19.0.0 react-dom@^19.0.0
+npm install @buildbase/sdk react@^19.0.0 react-dom@^19.0.0
 ```
 
-## 🏗️ Quick Start
+## Quick Start
 
 ### 1. Import CSS
 
-First, import the required CSS file in your app:
-
 ```tsx
-import '@buildbase/sdk/dist/saas-os.css';
+// app/layout.tsx (or your root layout)
+import '@buildbase/sdk/css'
 ```
 
-### 2. Create Client Provider
-
-Create a client-side provider component:
+### 2. Create Provider
 
 ```tsx
-'use client';
+// components/provider.tsx
+'use client'
 
-import { SaaSOSProvider } from '@buildbase/sdk';
-import React from 'react';
+import { SaaSOSProvider } from '@buildbase/sdk/react'
+import { ApiVersion } from '@buildbase/sdk'
 
-export default function SaaSProvider(props: { children: React.ReactNode }) {
+export default function SaaSProvider({ children }: { children: React.ReactNode }) {
   return (
     <SaaSOSProvider
       serverUrl="https://your-api-server.com"
-      version="v1"
+      version={ApiVersion.V1}
       orgId="your-org-id"
       auth={{
         clientId: 'your-client-id',
         redirectUrl: 'http://localhost:3000',
         callbacks: {
-          handleAuthentication: async (code: string) => {
-            // Exchange OAuth code for session ID
-            const response = await fetch('/api/auth/token', {
+          // Called on page refresh to restore session from httpOnly cookie
+          getSession: async () => {
+            const res = await fetch('/api/auth/session')
+            const data = await res.json()
+            return data.sessionId ?? null
+          },
+
+          // Called after OAuth redirect to exchange code for sessionId
+          handleAuthentication: async (code) => {
+            const res = await fetch('/api/auth/verify', {
               method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ code }),
-            });
-            const data = await response.json();
-            // Return sessionId - SDK will use this for authenticated requests
-            return { sessionId: data.sessionId };
+            })
+            const data = await res.json()
+            return { sessionId: data.sessionId }
           },
+
+          // Called on sign out to clear the httpOnly cookie
           onSignOut: async () => {
-            // Clean up any custom tokens/storage on sign out
-            localStorage.removeItem('custom_token');
+            await fetch('/api/auth/signout', { method: 'POST' })
+            window.location.reload()
           },
-          handleEvent: async (eventType, data) => {
-            // Handle SDK events (user created, workspace changed, etc.)
-            console.log('SDK Event:', eventType, data);
+
+          handleEvent: (eventType, data) => {
+            console.log('SDK Event:', eventType, data)
           },
           onWorkspaceChange: async ({ workspace, user, role }) => {
-            // Called before switching workspace (e.g. generate token). Used on "Switch to" and page refresh/restore.
-            // Switch proceeds only when this resolves; reject to abort.
-            console.log('Switching to workspace:', workspace.name, 'as', role);
+            console.log('Switching to:', workspace.name, 'as', role)
           },
         },
       }}
     >
-      {props.children}
+      {children}
     </SaaSOSProvider>
-  );
+  )
 }
 ```
 
+The SDK uses the same session pattern as next-auth: the session token lives in an httpOnly cookie (set by your server), and the SDK calls `getSession()` on page refresh to restore it. You need three server endpoints:
+
+- **`/api/auth/verify`** — exchanges OAuth code for sessionId, sets httpOnly cookie
+- **`/api/auth/session`** — reads httpOnly cookie, returns `{ sessionId }` (called on page refresh)
+- **`/api/auth/signout`** — clears the httpOnly cookie
+
 ### 3. Wrap Your App
 
-Use the provider in your app layout:
-
 ```tsx
-import SaaSProvider from './components/SaaSProvider';
+// app/layout.tsx
+import SaaSProvider from '@/components/provider'
+import '@buildbase/sdk/css'
 
-function App() {
+export default function RootLayout({ children }) {
   return (
-    <SaaSProvider>
-      <YourAppContent />
-    </SaaSProvider>
-  );
+    <html>
+      <body>
+        <SaaSProvider>{children}</SaaSProvider>
+      </body>
+    </html>
+  )
 }
-
-export default App;
 ```
 
 ### 4. Workspace Management
@@ -148,7 +154,7 @@ The WorkspaceSwitcher component uses a render prop pattern, giving you full cont
 
 ```tsx
 import React from 'react';
-import { WorkspaceSwitcher } from '@buildbase/sdk';
+import { WorkspaceSwitcher } from '@buildbase/sdk/react';
 
 function WorkspaceExample() {
   return (
@@ -192,7 +198,7 @@ function WorkspaceExample() {
 Use the `useSaaSAuth` hook to manage authentication state and actions:
 
 ```tsx
-import { useSaaSAuth } from '@buildbase/sdk';
+import { useSaaSAuth } from '@buildbase/sdk/react';
 
 function AuthExample() {
   const { user, isAuthenticated, signIn, signOut, status } = useSaaSAuth();
@@ -254,7 +260,7 @@ openWorkspaceSettings('danger');       // Delete workspace (owner only)
 For declarative rendering, use the conditional components:
 
 ```tsx
-import { WhenAuthenticated, WhenUnauthenticated } from '@buildbase/sdk';
+import { WhenAuthenticated, WhenUnauthenticated } from '@buildbase/sdk/react';
 
 function App() {
   return (
@@ -278,7 +284,7 @@ function App() {
 Control access based on user roles:
 
 ```tsx
-import { WhenRoles, WhenWorkspaceRoles } from '@buildbase/sdk';
+import { WhenRoles, WhenWorkspaceRoles } from '@buildbase/sdk/react';
 
 function AdminPanel() {
   return (
@@ -312,7 +318,7 @@ import {
   WhenWorkspaceFeatureDisabled,
   WhenUserFeatureEnabled,
   WhenUserFeatureDisabled,
-} from '@buildbase/sdk';
+} from '@buildbase/sdk/react';
 
 function FeatureExample() {
   return (
@@ -344,7 +350,7 @@ function FeatureExample() {
 Use the `useUserFeatures` hook to check feature flags programmatically:
 
 ```tsx
-import { useUserFeatures } from '@buildbase/sdk';
+import { useUserFeatures } from '@buildbase/sdk/react';
 
 function FeatureCheck() {
   const { features, isFeatureEnabled, refreshFeatures } = useUserFeatures();
@@ -364,7 +370,7 @@ Control UI visibility based on the current workspace’s subscription. Subscript
 ### Subscription Gate Components
 
 ```tsx
-import { WhenSubscription, WhenNoSubscription, WhenSubscriptionToPlans } from '@buildbase/sdk';
+import { WhenSubscription, WhenNoSubscription, WhenSubscriptionToPlans } from '@buildbase/sdk/react';
 
 function BillingExample() {
   return (
@@ -418,7 +424,7 @@ All gates must be used inside **SubscriptionContextProvider** (included in SaaSO
 Use the hook when you need subscription data or a manual refetch (e.g. after returning from Stripe checkout):
 
 ```tsx
-import { useSubscriptionContext } from '@buildbase/sdk';
+import { useSubscriptionContext } from '@buildbase/sdk/react';
 
 function SubscriptionStatus() {
   const { response, loading, refetch } = useSubscriptionContext();
@@ -455,7 +461,7 @@ Control UI based on trial state. Works with Stripe-native trials (both card-requ
 ### Trial Gate Components
 
 ```tsx
-import { WhenTrialing, WhenNotTrialing, WhenTrialEnding } from '@buildbase/sdk';
+import { WhenTrialing, WhenNotTrialing, WhenTrialEnding } from '@buildbase/sdk/react';
 
 function TrialExample() {
   return (
@@ -492,7 +498,7 @@ All trial gates support `loadingComponent` and `fallbackComponent` props.
 Hook that computes trial information from the subscription context:
 
 ```tsx
-import { useTrialStatus } from '@buildbase/sdk';
+import { useTrialStatus } from '@buildbase/sdk/react';
 
 function TrialInfo() {
   const { isTrialing, daysRemaining, trialEndsAt, isTrialEnding } = useTrialStatus();
@@ -557,7 +563,7 @@ Everything else is built-in — permission handling, subscribe/unsubscribe, sett
 Manage custom user attributes (key-value pairs):
 
 ```tsx
-import { useUserAttributes } from '@buildbase/sdk';
+import { useUserAttributes } from '@buildbase/sdk/react';
 
 function UserProfile() {
   const { attributes, isLoading, updateAttribute, updateAttributes, refreshAttributes } =
@@ -589,7 +595,7 @@ function UserProfile() {
 The `useSaaSWorkspaces` hook provides comprehensive workspace management:
 
 ```tsx
-import { useSaaSWorkspaces } from '@buildbase/sdk';
+import { useSaaSWorkspaces } from '@buildbase/sdk/react';
 
 function WorkspaceManager() {
   const {
@@ -640,7 +646,7 @@ Display subscription plans and pricing on public pages (e.g. marketing site, pri
 Fetches public plans by slug. Returns `items` (features, limits, quotas) and `plans` (with pricing). You construct the layout from this data:
 
 ```tsx
-import { usePublicPlans } from '@buildbase/sdk';
+import { usePublicPlans } from '@buildbase/sdk/react';
 
 function PublicPricingPage() {
   const { items, plans, loading, error } = usePublicPlans('main-pricing');
@@ -663,7 +669,7 @@ function PublicPricingPage() {
 Use the `PricingPage` component with a render-prop pattern:
 
 ```tsx
-import { PricingPage } from '@buildbase/sdk';
+import { PricingPage } from '@buildbase/sdk/react';
 
 function PublicPricingPage() {
   return (
@@ -748,7 +754,7 @@ import {
   getBasePriceCents,
   getQuotaDisplayValue,
   formatQuotaWithPrice,
-} from '@buildbase/sdk';
+} from '@buildbase/sdk/react';
 
 // Display price for a plan version in a currency
 const variant = getPricingVariant(planVersion, 'usd');
@@ -786,7 +792,7 @@ Use the SDK hooks inside your React app. Quota gate components (see [Quota Gates
 #### Record Usage
 
 ```tsx
-import { useRecordUsage, useSaaSWorkspaces } from '@buildbase/sdk';
+import { useRecordUsage, useSaaSWorkspaces } from '@buildbase/sdk/react';
 
 function SendEmailButton() {
   const { currentWorkspace } = useSaaSWorkspaces();
@@ -816,7 +822,7 @@ function SendEmailButton() {
 #### Check Single Quota Status
 
 ```tsx
-import { useQuotaUsageStatus, useSaaSWorkspaces } from '@buildbase/sdk';
+import { useQuotaUsageStatus, useSaaSWorkspaces } from '@buildbase/sdk/react';
 
 function QuotaStatusBar({ quotaSlug }: { quotaSlug: string }) {
   const { currentWorkspace } = useSaaSWorkspaces();
@@ -841,7 +847,7 @@ function QuotaStatusBar({ quotaSlug }: { quotaSlug: string }) {
 #### Check All Quotas
 
 ```tsx
-import { useAllQuotaUsage, useSaaSWorkspaces } from '@buildbase/sdk';
+import { useAllQuotaUsage, useSaaSWorkspaces } from '@buildbase/sdk/react';
 
 function QuotaDashboard() {
   const { currentWorkspace } = useSaaSWorkspaces();
@@ -866,7 +872,7 @@ function QuotaDashboard() {
 #### Usage Logs
 
 ```tsx
-import { useUsageLogs, useSaaSWorkspaces } from '@buildbase/sdk';
+import { useUsageLogs, useSaaSWorkspaces } from '@buildbase/sdk/react';
 
 function UsageLogsTable() {
   const { currentWorkspace } = useSaaSWorkspaces();
@@ -1077,7 +1083,7 @@ import {
   WhenQuotaExhausted,
   WhenQuotaOverage,
   WhenQuotaThreshold,
-} from '@buildbase/sdk';
+} from '@buildbase/sdk/react';
 
 function Dashboard() {
   return (
@@ -1145,7 +1151,7 @@ All gates must be used inside `QuotaUsageContextProvider` (included in `SaaSOSPr
 Use the hook when you need raw quota data or a manual refetch (e.g. after a bulk operation):
 
 ```tsx
-import { useQuotaUsageContext } from '@buildbase/sdk';
+import { useQuotaUsageContext } from '@buildbase/sdk/react';
 
 function QuotaDebug() {
   const { quotas, loading, refetch } = useQuotaUsageContext();
@@ -1180,7 +1186,7 @@ function QuotaDebug() {
 Use the pre-built `BetaForm` component for signup/waitlist forms:
 
 ```tsx
-import { BetaForm } from '@buildbase/sdk';
+import { BetaForm } from '@buildbase/sdk/react';
 
 function SignupPage() {
   return (
@@ -1201,7 +1207,8 @@ function SignupPage() {
 Subscribe to SDK events for user and workspace changes:
 
 ```tsx
-import { SaaSOSProvider, eventEmitter } from '@buildbase/sdk';
+import { SaaSOSProvider } from '@buildbase/sdk/react';
+import { eventEmitter } from '@buildbase/sdk';
 
 // In your provider configuration
 <SaaSOSProvider
@@ -1249,7 +1256,7 @@ The SDK handles errors internally: API failures, auth errors, and component erro
 Access OS-level settings:
 
 ```tsx
-import { useSaaSSettings } from '@buildbase/sdk';
+import { useSaaSSettings } from '@buildbase/sdk/react';
 
 function SettingsExample() {
   const { settings, getSettings } = useSaaSSettings();
@@ -1296,7 +1303,8 @@ All SDK API clients extend a shared base class and are exported from the package
 Get OS config from `useSaaSOs()` and instantiate API classes when you need low-level access; otherwise prefer the high-level hooks (`useSaaSWorkspaces`, `useUserAttributes`, `useSaaSSettings`, etc.):
 
 ```tsx
-import { UserApi, WorkspaceApi, SettingsApi, useSaaSOs } from '@buildbase/sdk';
+import { useSaaSOs } from '@buildbase/sdk/react';
+import { UserApi, WorkspaceApi, SettingsApi } from '@buildbase/sdk';
 
 const os = useSaaSOs();
 const workspaceApi = new WorkspaceApi({
@@ -1361,10 +1369,16 @@ All TypeScript types are exported for type safety. See the [TypeScript definitio
 interface IAuthConfig {
   clientId: string; // OAuth client ID
   redirectUrl: string; // OAuth redirect URL
-  callbacks?: {
+  callbacks: {
+    // Required: restore session on page refresh (reads httpOnly cookie via server endpoint)
+    getSession: () => Promise<string | null>;
+    // Required: exchange OAuth code for sessionId (sets httpOnly cookie on server)
     handleAuthentication: (code: string) => Promise<{ sessionId: string }>;
-    onSignOut?: () => Promise<void>;
+    // Required: clear session on sign out (clears httpOnly cookie on server)
+    onSignOut: () => Promise<void>;
+    // Optional: listen to SDK events
     handleEvent?: (eventType: EventType, data: EventData) => void | Promise<void>;
+    // Optional: called before workspace switch
     onWorkspaceChange?: (params: OnWorkspaceChangeParams) => Promise<void>;
   };
 }
@@ -1372,9 +1386,14 @@ interface IAuthConfig {
 interface OnWorkspaceChangeParams {
   workspace: IWorkspace;
   user: AuthUser | null;
-  role: string | null; // User's role in this workspace
+  role: string | null;
 }
 ```
+
+**Session flow** (same pattern as next-auth):
+- Session token is stored in an **httpOnly cookie** (set by your server, not readable by JS)
+- On page refresh, the SDK calls `getSession()` once to restore the session
+- Session data (user info) lives **in-memory only** (React context) — no localStorage
 
 ### Validation Requirements
 
@@ -1403,7 +1422,7 @@ interface OnWorkspaceChangeParams {
 ### Pattern 1: Protected Routes
 
 ```tsx
-import { WhenAuthenticated, WhenUnauthenticated } from '@buildbase/sdk';
+import { WhenAuthenticated, WhenUnauthenticated } from '@buildbase/sdk/react';
 
 function App() {
   return (
@@ -1430,7 +1449,7 @@ function ProtectedRoutes() {
 ### Pattern 2: Role-Based Navigation
 
 ```tsx
-import { WhenRoles } from '@buildbase/sdk';
+import { WhenRoles } from '@buildbase/sdk/react';
 
 function Navigation() {
   return (
@@ -1453,7 +1472,7 @@ function Navigation() {
 ### Pattern 3: Workspace Context Provider
 
 ```tsx
-import { useSaaSWorkspaces } from '@buildbase/sdk';
+import { useSaaSWorkspaces } from '@buildbase/sdk/react';
 import { createContext, useContext } from 'react';
 
 const WorkspaceContext = createContext(null);
@@ -1472,7 +1491,7 @@ export function useWorkspace() {
 ### Pattern 4: Feature Gated Components
 
 ```tsx
-import { WhenWorkspaceFeatureEnabled } from '@buildbase/sdk';
+import { WhenWorkspaceFeatureEnabled } from '@buildbase/sdk/react';
 
 function Dashboard() {
   return (
@@ -1494,7 +1513,7 @@ function Dashboard() {
 ### Pattern 4b: Subscription-Gated UI
 
 ```tsx
-import { WhenSubscription, WhenNoSubscription, WhenSubscriptionToPlans } from '@buildbase/sdk';
+import { WhenSubscription, WhenNoSubscription, WhenSubscriptionToPlans } from '@buildbase/sdk/react';
 
 function BillingPage() {
   return (
@@ -1520,7 +1539,7 @@ SubscriptionContextProvider is included in SaaSOSProvider by default, so no extr
 ### Pattern 4c: Quota-Gated UI
 
 ```tsx
-import { WhenQuotaAvailable, WhenQuotaExhausted, WhenQuotaThreshold } from '@buildbase/sdk';
+import { WhenQuotaAvailable, WhenQuotaExhausted, WhenQuotaThreshold } from '@buildbase/sdk/react';
 
 function FeatureWithQuota() {
   return (
@@ -1546,7 +1565,7 @@ QuotaUsageContextProvider is included in SaaSOSProvider by default, so no extra 
 ### Pattern 5: Handling Workspace Changes
 
 ```tsx
-import { useSaaSWorkspaces } from '@buildbase/sdk';
+import { useSaaSWorkspaces } from '@buildbase/sdk/react';
 import { useEffect } from 'react';
 
 function App() {
@@ -1692,7 +1711,7 @@ useEffect(() => {
 **Solution**: Ensure CSS is imported:
 
 ```tsx
-import '@buildbase/sdk/dist/saas-os.css';
+import '@buildbase/sdk/css';
 ```
 
 ### FAQ
@@ -1710,7 +1729,7 @@ A: Use the `trigger` render prop to fully customize the UI.
 A: No, the SDK manages one current workspace at a time. Use `switchToWorkspace()` (runs `onWorkspaceChange` first) or `setCurrentWorkspace()` (direct set, bypasses callback).
 
 **Q: How do I handle offline scenarios?**  
-A: The SDK stores session data in localStorage. Handle offline scenarios in your `handleAuthentication` callback.
+A: The session token is stored in an httpOnly cookie (set by your server). On page refresh, the SDK calls your `getSession` callback to restore it. Handle offline scenarios in your `handleAuthentication` and `getSession` callbacks.
 
 **Q: Can I use this without TypeScript?**  
 A: Yes, but TypeScript is recommended for better developer experience.
@@ -1879,6 +1898,133 @@ refreshWorkspaces();
 
 // Use fetchWorkspaces() only when you need to wait for the result
 await fetchWorkspaces();
+```
+
+## Server-Side Usage
+
+The SDK also works on the server — API routes, background jobs, webhooks, cron tasks. Zero React dependency.
+
+```
+@buildbase/sdk        Server: BuildBase() factory, API classes, types, utilities
+@buildbase/sdk/react  Client: React hooks, providers, gate components (documented above)
+```
+
+### Setup (Next.js)
+
+Configure once, use everywhere. Same pattern as Auth.js.
+
+```ts
+// lib/buildbase.ts
+import BuildBase from '@buildbase/sdk'
+import { cookies } from 'next/headers'
+
+export const { auth, workspace, subscription, usage, plans, invoices, users, features, settings, withSession, client } = BuildBase({
+  serverUrl: process.env.BUILDBASE_URL!,
+  orgId: process.env.BUILDBASE_ORG_ID!,
+  getSessionId: async () => {
+    const c = await cookies()
+    return c.get('bb-session-id')?.value ?? null
+  },
+})
+```
+
+Use in API routes — session is resolved automatically:
+
+```ts
+// app/api/workspace/route.ts
+import { auth, workspace, subscription } from '@/lib/buildbase'
+
+export async function GET() {
+  const session = await auth()
+  if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const workspaces = await workspace.list()
+  return Response.json({ workspaces })
+}
+```
+
+### Setup (Express)
+
+No `getSessionId` callback — use `withSession()` per-request instead.
+
+```ts
+// buildbase.ts
+import BuildBase from '@buildbase/sdk'
+
+const bb = BuildBase({
+  serverUrl: process.env.BUILDBASE_URL!,
+  orgId: process.env.BUILDBASE_ORG_ID!,
+})
+
+export const { withSession, plans } = bb
+```
+
+```ts
+// routes
+app.get('/workspaces', async (req, res) => {
+  const { workspace } = withSession(req.headers['x-session-id'])
+  res.json(await workspace.list())
+})
+
+app.post('/usage', async (req, res) => {
+  const { usage } = withSession(req.headers['x-session-id'])
+  const result = await usage.record(req.body.workspaceId, {
+    quotaSlug: 'api-calls',
+    quantity: 1,
+  })
+  res.json(result)
+})
+```
+
+### Background Jobs / Webhooks
+
+For service accounts (no user session), use `withSession()` with a service token:
+
+```ts
+import { withSession } from '@/lib/buildbase'
+
+const bb = withSession(process.env.SERVICE_SESSION_ID!)
+
+// Record usage from a webhook
+await bb.usage.record(workspaceId, {
+  quotaSlug: 'uploads',
+  quantity: 1,
+  source: 'webhook:file.processed',
+})
+
+// Check subscription
+const sub = await bb.subscription.get(workspaceId)
+```
+
+### Server-Side Actions Reference
+
+| Module | Methods |
+|--------|---------|
+| `workspace` | `list`, `get`, `create`, `update`, `delete` |
+| `users` | `list`, `invite`, `remove`, `updateRole`, `getProfile`, `updateProfile` |
+| `subscription` | `get`, `checkout`, `update`, `cancel`, `resume`, `getBillingPortalUrl` |
+| `plans` | `getGroup`, `getVersions`, `getPublic`, `getVersion` |
+| `invoices` | `list`, `get` |
+| `usage` | `record`, `getQuota`, `getAll`, `getLogs` |
+| `settings` | `get` |
+| `features` | `list`, `update` |
+
+### BuildBase Config Options
+
+```ts
+BuildBase({
+  serverUrl: '...',           // Required
+  orgId: '...',               // Required
+  getSessionId: async () => ..., // Session resolver (Next.js: read cookie)
+  timeout: 30_000,            // Request timeout in ms (default: 30s)
+  maxRetries: 2,              // Retry on network errors / 5xx
+  debug: true,                // Log all API calls to console
+  headers: { 'X-Source': 'cron' }, // Custom headers on every request
+  onError: (err, ctx) => {    // Centralized error callback
+    Sentry.captureException(err, { extra: ctx })
+  },
+  fetch: customFetch,         // Replace global fetch (testing, proxying)
+})
 ```
 
 ## 🤝 Contributing

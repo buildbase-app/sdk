@@ -1,7 +1,7 @@
 import { AlertTriangle, BarChart3, Calendar, RefreshCw } from 'lucide-react';
 import React, { useMemo, useState } from 'react';
-import { getCurrencySymbol } from '../../../api/currency-utils';
-import { getQuotaOverageCents } from '../../../api/pricing-variant-utils';
+import { getCurrencySymbol } from '../../../api/billing/currency-utils';
+import { getQuotaOverageCents } from '../../../api/billing/pricing-variant-utils';
 import type { IQuotaUsageStatus } from '../../../api/types';
 import { Button } from '../../../components/ui/button';
 import { useQuotaUsageContext } from '../../../contexts/QuotaUsageContext';

@@ -1,19 +1,25 @@
 {
   "name": "@buildbase/sdk",
-  "version": "0.0.28",
+  "version": "0.0.29",
   "type": "module",
   "description": "A SDK for Buildbase",
   "main": "dist/index.js",
-  "module": "dist/index.esm.js",
-  "browser": "dist/index.esm.js",
+  "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/index.esm.js",
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
       "require": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "default": "./dist/index.js"
     },
-    "./dist/saas-os.css": "./dist/saas-os.css"
+    "./react": {
+      "types": "./dist/react/index.d.ts",
+      "import": "./dist/react/index.mjs",
+      "require": "./dist/react/index.js",
+      "default": "./dist/react/index.js"
+    },
+    "./css": "./dist/css/styles.css"
   },
   "files": [
     "dist",
@@ -24,7 +30,7 @@
   ],
   "scripts": {
     "build": "rollup -c && npm run postbuild",
-    "postbuild": "rimraf dist/types dist/*.map",
+    "postbuild": "rimraf dist/types dist/react/types dist/*.map dist/react/*.map && mkdir -p dist/css && [ -f dist/react/styles.css ] && mv dist/react/styles.css dist/css/styles.css || true",
     "build:analyze": "rollup --config rollup.config.analyze.js",
     "dev": "rollup -c -w",
     "clean": "rimraf dist",
@@ -58,7 +64,6 @@
     "@radix-ui/react-separator": "^1.1.6",
     "@radix-ui/react-slot": "^1.2.2",
     "@radix-ui/react-switch": "^1.2.4",
-    "axios": "^1.6.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.0.0",
     "cmdk": "^1.1.1",

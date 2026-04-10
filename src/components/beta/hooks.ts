@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { IBetaConfig } from '../../api';
+import type { IBetaConfig } from '../../api/services/beta-api';
 import { useSaaSOs } from '../../providers/os/hooks';
 import { BetaForm } from './api';
 import { BetaFormData, BetaFormResponse } from './types';

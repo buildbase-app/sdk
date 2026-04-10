@@ -21,7 +21,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
           cache: 'npm'
 
       - name: Install dependencies
@@ -48,7 +48,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
           cache: 'npm'
 
       - name: Install dependencies
@@ -118,7 +118,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
           registry-url: https://registry.npmjs.org/
           cache: 'npm'
 
@@ -155,11 +155,32 @@ jobs:
 
       - name: Verify build output
         run: |
-          if [ ! -f "dist/index.js" ] || [ ! -f "dist/index.esm.js" ]; then
-            echo "Error: Build output files missing"
+          echo "Checking build output..."
+          MISSING=""
+          for f in dist/index.js dist/index.mjs dist/index.d.ts \
+                   dist/react/index.js dist/react/index.mjs dist/react/index.d.ts \
+                   dist/css/styles.css; do
+            if [ ! -f "$f" ]; then
+              MISSING="$MISSING $f"
+            fi
+          done
+          if [ -n "$MISSING" ]; then
+            echo "Error: Missing build output files:$MISSING"
             exit 1
           fi
-          echo "✓ Build output verified"
+          # Verify server bundle has no React
+          REACT_REFS=$(grep -c 'react' dist/index.mjs || true)
+          if [ "$REACT_REFS" -gt 0 ]; then
+            echo "Error: Server bundle contains React references ($REACT_REFS)"
+            exit 1
+          fi
+          # Verify react bundle has "use client" directive
+          HEAD=$(head -c 14 dist/react/index.mjs)
+          if [ "$HEAD" != '"use client";' ]; then
+            echo "Error: React bundle missing 'use client' directive"
+            exit 1
+          fi
+          echo "✓ Build output verified (server: no React, react: has 'use client')"
 
       - name: Publish to npm
         run: npm publish --access public

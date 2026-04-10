@@ -3,7 +3,7 @@ import { ImageIcon, Smile } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { getCurrencyFlag } from '../../../api/currency-utils';
+import { getCurrencyFlag } from '../../../api/billing/currency-utils';
 import { Button } from '../../../components/ui/button';
 import {
   Form,

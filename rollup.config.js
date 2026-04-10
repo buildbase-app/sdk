@@ -10,73 +10,87 @@ import postcss from 'rollup-plugin-postcss';
 const require = createRequire(import.meta.url);
 const packageJson = require('./package.json');
 
+const external = [
+  ...Object.keys(packageJson.peerDependencies || {}),
+  'react',
+  'react/jsx-runtime',
+  'react/jsx-dev-runtime',
+  'react-dom',
+];
+
+const createPlugins = ({ extractCss = false, cssPath = 'styles.css', declarationDir = 'dist/types' } = {}) => [
+  resolve({ browser: true, preferBuiltins: false }),
+  commonjs({ transformMixedEsModules: true }),
+  json(),
+  typescript({
+    tsconfig: './tsconfig.build.json',
+    declaration: true,
+    declarationDir,
+    rootDir: 'src',
+  }),
+  postcss({
+    config: { path: './postcss.config.cjs' },
+    extensions: ['.css'],
+    minimize: true,
+    inject: false,
+    extract: extractCss ? cssPath : false,
+    modules: {
+      scopeBehaviour: 'local',
+      generateScopedName: 'saas-os-[name]__[local]',
+    },
+  }),
+  terser(),
+];
+
+const treeshakeConfig = {
+  moduleSideEffects: id => id.endsWith('.css'),
+};
+
 export default [
+  // ─── @buildbase/sdk (server-safe, no React) ────────────────────────────────
   {
     input: 'src/index.ts',
     preserveEntrySignatures: 'exports-only',
-    treeshake: {
-      moduleSideEffects: id => {
-        // CSS files have side effects
-        if (id.endsWith('.css')) return true;
-        // Allow tree-shaking for other modules
-        return false;
-      },
-    },
+    treeshake: treeshakeConfig,
     output: [
-      {
-        file: packageJson.main,
-        format: 'cjs',
-        sourcemap: false,
-        inlineDynamicImports: true,
-      },
-      {
-        file: packageJson.module,
-        format: 'esm',
-        sourcemap: false,
-        inlineDynamicImports: true,
-      },
+      { file: 'dist/index.js', format: 'cjs', sourcemap: false, inlineDynamicImports: true },
+      { file: 'dist/index.mjs', format: 'esm', sourcemap: false, inlineDynamicImports: true },
+    ],
+    plugins: createPlugins({ declarationDir: 'dist/types' }),
+    external,
+  },
+
+  // ─── @buildbase/sdk/react (client, "use client") ──────────────────────────
+  {
+    input: 'src/react.ts',
+    preserveEntrySignatures: 'exports-only',
+    treeshake: treeshakeConfig,
+    output: [
+      { file: 'dist/react/index.js', format: 'cjs', sourcemap: false, inlineDynamicImports: true },
+      { file: 'dist/react/index.mjs', format: 'esm', sourcemap: false, inlineDynamicImports: true },
     ],
     plugins: [
-      resolve({
-        browser: true,
-        preferBuiltins: false,
-      }),
-      commonjs({
-        transformMixedEsModules: true,
-      }),
-      json(),
-      typescript({
-        tsconfig: './tsconfig.build.json',
-        declaration: true,
-        declarationDir: 'dist/types',
-        rootDir: 'src',
-      }),
-      postcss({
-        config: {
-          path: './postcss.config.cjs',
+      ...createPlugins({ extractCss: true, cssPath: 'styles.css', declarationDir: 'dist/react/types' }),
+      {
+        name: 'use-client-directive',
+        renderChunk(code) {
+          return `"use client";\n${code}`;
         },
-        extensions: ['.css'],
-        minimize: true,
-        inject: false,
-        extract: 'saas-os.css',
-        modules: {
-          scopeBehaviour: 'local',
-          generateScopedName: 'saas-os-[name]__[local]',
-        },
-      }),
-      terser(),
+      },
     ],
-    external: [
-      ...Object.keys(packageJson.peerDependencies || {}),
-      'react',
-      'react/jsx-runtime',
-      'react/jsx-dev-runtime',
-      'react-dom',
-    ],
+    external,
   },
+
+  // ─── Type declarations ─────────────────────────────────────────────────────
   {
     input: 'dist/types/index.d.ts',
     output: [{ file: 'dist/index.d.ts', format: 'esm' }],
+    plugins: [dts()],
+    external: [/\.css$/],
+  },
+  {
+    input: 'dist/react/types/react.d.ts',
+    output: [{ file: 'dist/react/index.d.ts', format: 'esm' }],
     plugins: [dts()],
     external: [/\.css$/],
   },

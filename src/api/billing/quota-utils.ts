@@ -1,5 +1,5 @@
 import { getCurrencySymbol } from './currency-utils';
-import type { BillingInterval, IQuotaByInterval } from './types';
+import type { BillingInterval, IQuotaByInterval } from '../types';
 
 export type QuotaDisplayValue = { included: number; overage?: number; unitSize?: number } | null;
 

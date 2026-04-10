@@ -1,10 +1,2 @@
-// Form Data Types
-export interface BetaFormData {
-  name?: string;
-  email: string;
-}
-
-export interface BetaFormResponse {
-  success: boolean;
-  message: string;
-}
+// Re-export from canonical location
+export type { BetaFormData, BetaFormResponse } from '../../api/beta/types';

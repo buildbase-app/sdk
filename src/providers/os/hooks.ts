@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef } from 'react';
+import { useCallback, useMemo } from 'react';
 import { osActions, useAppDispatch, useAppSelector } from '../../contexts';
 import { handleErrorUnlessAborted } from '../../lib/error-handler';
 import { useAsyncEffect } from '../../lib/useAsyncEffect';
@@ -14,50 +14,19 @@ export function useSaaSOs(): IOsState {
   return useAppSelector(state => state.os);
 }
 
+// Module-level guard shared across all useSaaSSettings() instances.
+// Prevents duplicate fetches when multiple components mount simultaneously.
+let _settingsFetchPromise: Promise<ISettings | null> | null = null;
+
 /**
  * Hook to access organization settings from the OS context.
- * Automatically fetches settings when OS config is ready.
- *
- * @returns An object containing:
- * - `settings`: Organization settings object (null if not loaded)
- * - `getSettings(signal?)`: Function to manually fetch settings (supports AbortSignal)
- *
- * @example
- * ```tsx
- * function SettingsDisplay() {
- *   const { settings } = useSaaSSettings();
- *
- *   if (!settings) return <Loading />;
- *
- *   return (
- *     <div>
- *       <p>Organization: {settings.name}</p>
- *       <p>Theme: {settings.theme}</p>
- *     </div>
- *   );
- * }
- * ```
- *
- * @example
- * ```tsx
- * // Manual fetch with abort signal
- * function SettingsLoader() {
- *   const { getSettings } = useSaaSSettings();
- *
- *   useEffect(() => {
- *     const controller = new AbortController();
- *     getSettings(controller.signal);
- *
- *     return () => controller.abort();
- *   }, [getSettings]);
- * }
- * ```
+ * Automatically fetches settings once when OS config is ready.
+ * Safe to call from multiple components — only one fetch is made.
  */
 export function useSaaSSettings() {
   const dispatch = useAppDispatch();
   const os = useSaaSOs();
   const { serverUrl, version, orgId, settings } = os;
-  const fetchingSettingsRef = useRef(false);
 
   const settingsApi = useMemo(
     () => (isOsConfigReady(os) ? new SettingsApi({ serverUrl, version, orgId }) : null),
@@ -66,42 +35,43 @@ export function useSaaSSettings() {
 
   const getSettings = useCallback(
     async (signal?: AbortSignal): Promise<ISettings | null> => {
-      if (fetchingSettingsRef.current) {
-        return settings || null;
-      }
-      if (settings) {
-        return settings;
-      }
-      if (!settingsApi) {
-        return null;
-      }
+      if (!settingsApi) return null;
 
-      fetchingSettingsRef.current = true;
-      try {
-        const data = await settingsApi.getSettings(signal);
-        dispatch.os(osActions.setSettings(data));
-        return data;
-      } catch (err) {
-        handleErrorUnlessAborted(err, {
-          component: 'useSaaSSettings',
-          action: 'getSettings',
-          metadata: { serverUrl, version, orgId },
-        });
-        return null;
-      } finally {
-        fetchingSettingsRef.current = false;
-      }
+      // If already fetching, reuse the in-flight promise
+      if (_settingsFetchPromise) return _settingsFetchPromise;
+
+      _settingsFetchPromise = (async () => {
+        try {
+          const data = await settingsApi.getSettings(signal);
+          dispatch.os(osActions.setSettings(data));
+          return data;
+        } catch (err) {
+          handleErrorUnlessAborted(err, {
+            component: 'useSaaSSettings',
+            action: 'getSettings',
+            metadata: { serverUrl, version, orgId },
+          });
+          return null;
+        } finally {
+          _settingsFetchPromise = null;
+        }
+      })();
+
+      return _settingsFetchPromise;
     },
-    [settingsApi, settings, dispatch]
+    [settingsApi, dispatch, serverUrl, version, orgId]
   );
 
-  // Automatically fetch settings when OS is loaded
+  // Automatically fetch settings once when OS config is ready
   useAsyncEffect(
     async signal => {
-      if (!isOsConfigReady(os) || settings || fetchingSettingsRef.current) return;
+      // Already in store — nothing to do
+      if (settings) return;
+      if (!isOsConfigReady(os)) return;
       await getSettings(signal);
     },
-    [serverUrl, version, orgId, getSettings],
+    // Only re-run when config changes, not when settings/getSettings change
+    [serverUrl, version, orgId],
     {
       onError: err =>
         handleErrorUnlessAborted(err, {
@@ -112,7 +82,6 @@ export function useSaaSSettings() {
     }
   );
 
-  // Memoize return value to prevent unnecessary re-renders
   return useMemo(
     () => ({
       settings,
