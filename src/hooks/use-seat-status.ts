@@ -1,7 +1,13 @@
 import { useMemo } from 'react';
 import { useSubscriptionContext } from '../contexts/SubscriptionContext';
-import { getSeatPricing, getPerSeatPriceCents } from '../api/pricing-variant-utils';
-import type { BillingInterval } from '../api/types';
+import {
+  getSeatPricing,
+  getPerSeatPriceCents,
+  resolveMaxUsers,
+  validateInvite,
+} from '../api/pricing-variant-utils';
+import type { BillingInterval, IPlanVersion } from '../api/types';
+import type { InviteBlockReason, MaxUsersConfig } from '../api/pricing-variant-utils';
 
 export interface SeatStatus {
   /** Whether the current plan uses seat-based pricing. */
@@ -10,13 +16,20 @@ export interface SeatStatus {
   memberCount: number;
   /** Seats included in the base price (free). */
   includedSeats: number;
-  /** Maximum seats allowed. 0 = unlimited. */
+  /** Maximum users allowed (resolved from seat pricing, plan limits, or settings). 0 = unlimited. */
+  maxUsers: number;
+  /**
+   * Maximum seats allowed from seat pricing config. 0 = unlimited.
+   * @deprecated Use `maxUsers` for the unified limit.
+   */
   maxSeats: number;
+  /** Where the max user limit comes from. */
+  limitSource: MaxUsersConfig['source'];
   /** Seats beyond included that are being billed. */
   billableSeats: number;
   /** Remaining seats before hitting max. Infinity if unlimited. */
   availableSeats: number;
-  /** Whether workspace is at max seat capacity. */
+  /** Whether workspace is at max seat/user capacity. */
   isAtMax: boolean;
   /** Whether workspace is near max (>= 80% used). */
   isNearMax: boolean;
@@ -24,25 +37,39 @@ export interface SeatStatus {
   perSeatPriceCents: number | null;
   /** Billing currency. */
   currency: string;
+  /** Whether a new member can be invited. */
+  canInvite: boolean;
+  /** Reason the invite is blocked, or null if allowed. */
+  inviteBlockReason: InviteBlockReason;
+  /** Human-readable message for why invite is blocked. */
+  inviteBlockMessage: string | null;
 }
 
 /**
  * Hook that computes seat status from subscription context and workspace data.
+ * Resolves max user limits from seat pricing, plan limits, and settings in priority order.
  * Must be used within SubscriptionContextProvider.
  *
- * @param workspace - The current workspace (needs users array)
- * @returns SeatStatus — computed seat information
+ * @param workspace - The current workspace (needs users array, limits, billingCurrency)
+ * @param options - Optional overrides (e.g. settingsMaxUsers fallback)
+ * @returns SeatStatus — computed seat and invite information
  *
  * @example
  * ```tsx
- * const { isAtMax, availableSeats, billableSeats } = useSeatStatus(workspace);
+ * const { isAtMax, canInvite, inviteBlockMessage, availableSeats } = useSeatStatus(workspace);
  *
- * if (isAtMax) {
- *   return <UpgradeBanner />;
+ * if (!canInvite) {
+ *   return <div>{inviteBlockMessage}</div>;
  * }
  * ```
  */
-export function useSeatStatus(workspace: { users?: any[]; billingCurrency?: string | null } | null): SeatStatus {
+export function useSeatStatus(
+  workspace: {
+    users?: any[];
+    billingCurrency?: string | null;
+  } | null,
+  options?: { settingsMaxUsers?: number | null }
+): SeatStatus {
   const { response } = useSubscriptionContext();
 
   return useMemo(() => {
@@ -50,49 +77,70 @@ export function useSeatStatus(workspace: { users?: any[]; billingCurrency?: stri
       hasSeatPricing: false,
       memberCount: 0,
       includedSeats: 0,
+      maxUsers: 0,
       maxSeats: 0,
+      limitSource: 'none',
       billableSeats: 0,
       availableSeats: Infinity,
       isAtMax: false,
       isNearMax: false,
       perSeatPriceCents: null,
       currency: '',
+      canInvite: true,
+      inviteBlockReason: null,
+      inviteBlockMessage: null,
     };
 
-    if (!response?.subscription || !workspace) return empty;
-
-    const sub = response.subscription;
-    if (!sub.seatPricingEnabled) return { ...empty, memberCount: workspace.users?.length ?? 0 };
-
-    const planVersion = response.planVersion;
-    const currency = workspace.billingCurrency || 'usd';
-    const seatConfig = planVersion ? getSeatPricing(planVersion as any, currency) : null;
-    if (!seatConfig) return { ...empty, hasSeatPricing: true, memberCount: workspace.users?.length ?? 0 };
+    if (!workspace) return empty;
 
     const memberCount = workspace.users?.length ?? 0;
-    const includedSeats = seatConfig.includedSeats ?? 0;
-    const maxSeats = (seatConfig as any).maxSeats ?? 0;
-    const billableSeats = Math.max(0, memberCount - includedSeats);
-    const availableSeats = maxSeats > 0 ? Math.max(0, maxSeats - memberCount) : Infinity;
-    const isAtMax = maxSeats > 0 && memberCount >= maxSeats;
-    const isNearMax = maxSeats > 0 && memberCount >= maxSeats * 0.8 && !isAtMax;
+    const planVersion = response?.planVersion as IPlanVersion | null;
+    const sub = response?.subscription;
+    const currency = workspace.billingCurrency || 'usd';
 
-    const billingInterval: BillingInterval = (sub.billingInterval as BillingInterval) ?? 'monthly';
-    const perSeatPriceCents = planVersion
-      ? getPerSeatPriceCents(planVersion as any, currency, billingInterval)
-      : null;
+    // Resolve the effective max users limit from seat pricing config on the plan
+    const maxUsersConfig = resolveMaxUsers({
+      planVersion,
+      currency,
+      settingsMaxUsers: options?.settingsMaxUsers,
+    });
+
+    const { maxUsers, hasSeatPricing, includedSeats } = maxUsersConfig;
+
+    // Compute seat pricing details
+    const billableSeats = hasSeatPricing ? Math.max(0, memberCount - includedSeats) : 0;
+    const availableSeats = maxUsers > 0 ? Math.max(0, maxUsers - memberCount) : Infinity;
+    const isAtMax = maxUsers > 0 && memberCount >= maxUsers;
+    const isNearMax = maxUsers > 0 && memberCount >= maxUsers * 0.8 && !isAtMax;
+
+    const billingInterval: BillingInterval = (sub?.billingInterval as BillingInterval) ?? 'monthly';
+    const perSeatPriceCents =
+      hasSeatPricing && planVersion
+        ? getPerSeatPriceCents(planVersion, currency, billingInterval)
+        : null;
+
+    // Validate invite
+    const inviteValidation = validateInvite({
+      memberCount,
+      maxUsersConfig,
+    });
 
     return {
-      hasSeatPricing: true,
+      hasSeatPricing,
       memberCount,
       includedSeats,
-      maxSeats,
+      maxUsers,
+      maxSeats: maxUsers, // backward compat
+      limitSource: maxUsersConfig.source,
       billableSeats,
       availableSeats,
       isAtMax,
       isNearMax,
       perSeatPriceCents,
       currency,
+      canInvite: inviteValidation.canInvite,
+      inviteBlockReason: inviteValidation.blockReason,
+      inviteBlockMessage: inviteValidation.blockMessage,
     };
-  }, [response, workspace]);
+  }, [response, workspace, options?.settingsMaxUsers]);
 }
