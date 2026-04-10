@@ -1,6 +1,6 @@
 {
   "name": "@buildbase/sdk",
-  "version": "0.0.30",
+  "version": "0.0.31",
   "type": "module",
   "description": "A SDK for Buildbase",
   "main": "dist/index.js",
@@ -19,7 +19,10 @@
       "require": "./dist/react/index.js",
       "default": "./dist/react/index.js"
     },
-    "./css": "./dist/css/styles.css"
+    "./css": {
+      "types": "./dist/css/styles.d.ts",
+      "default": "./dist/css/styles.css"
+    }
   },
   "files": [
     "dist",
@@ -30,7 +33,7 @@
   ],
   "scripts": {
     "build": "rollup -c && npm run postbuild",
-    "postbuild": "rimraf dist/types dist/react/types dist/*.map dist/react/*.map && mkdir -p dist/css && [ -f dist/react/styles.css ] && mv dist/react/styles.css dist/css/styles.css || true",
+    "postbuild": "rimraf dist/types dist/react/types dist/*.map dist/react/*.map && mkdir -p dist/css && [ -f dist/react/styles.css ] && mv dist/react/styles.css dist/css/styles.css || true && cp src/css.d.ts dist/css/styles.d.ts",
     "build:analyze": "rollup --config rollup.config.analyze.js",
     "dev": "rollup -c -w",
     "clean": "rimraf dist",
@@ -50,6 +53,14 @@
   "peerDependencies": {
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    },
+    "react-dom": {
+      "optional": true
+    }
   },
   "dependencies": {
     "@radix-ui/react-alert-dialog": "^1.1.13",
@@ -101,16 +112,27 @@
     "typescript": "^5.2.0"
   },
   "keywords": [
+    "saas",
+    "sdk",
+    "buildbase",
     "react",
-    "shadcn",
-    "tailwind",
-    "axios",
-    "ui-components"
+    "billing",
+    "stripe",
+    "subscription",
+    "workspace",
+    "authentication",
+    "multi-tenant",
+    "feature-flags",
+    "quota",
+    "usage-tracking",
+    "server-side",
+    "next-js",
+    "express"
   ],
   "author": "Buildbase",
   "license": "MIT",
   "engines": {
-    "node": ">=16.0.0"
+    "node": ">=18.0.0"
   },
   "publishConfig": {
     "access": "public",
