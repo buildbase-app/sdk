@@ -3,7 +3,6 @@
 import React, { ReactNode, useCallback, useEffect, useMemo } from 'react';
 import { authActions, useAppDispatch } from '../../contexts';
 import { handleError, handleErrorUnlessAborted } from '../../lib/error-handler';
-import { useAsyncEffect } from '../../lib/useAsyncEffect';
 import { useSaaSOs } from '../os/hooks';
 import { isOsConfigReady } from '../os/types';
 import { AuthApi } from './api';
@@ -42,6 +41,15 @@ export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) 
 
   const processingAuthRedirectRef = React.useRef(false);
   const processedCodeRef = React.useRef<string | null>(null);
+
+  // Reset module-level hydration guard when the provider mounts fresh
+  // (handles hot reload and navigation remounts)
+  React.useEffect(() => {
+    if (!isAuthenticated) {
+      _sessionHydrationDone = false;
+      _sessionHydrationInFlight = null;
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const memoizedCallbacks = useMemo(() => callbacks, [callbacks]);
 
@@ -94,68 +102,67 @@ export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) 
    *
    * No localStorage read. The httpOnly cookie is the single source of truth.
    */
-  useAsyncEffect(
-    async signal => {
-      if (typeof window === 'undefined') return;
-      if (isAuthenticated) return;
-      if (_sessionHydrationDone) return;
-      if (_sessionHydrationInFlight) return;
-      if (!isOsConfigReady(osState)) return;
+  // Session hydration — runs once on mount when OS config is ready.
+  // Does NOT use useAsyncEffect's signal because the hydration must survive
+  // StrictMode unmount/remount cycles (signal would be aborted).
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (isAuthenticated) return;
+    if (_sessionHydrationDone) return;
+    if (_sessionHydrationInFlight) return;
+    if (!isOsConfigReady(osState)) return;
 
-      const code = getTokenFromUrl();
-      if (code) return;
+    const code = getTokenFromUrl();
+    if (code) return;
 
-      if (!memoizedCallbacks?.getSession) {
+    if (!memoizedCallbacks?.getSession) {
+      _sessionHydrationDone = true;
+      dispatch.auth(authActions.authenticationFailed());
+      return;
+    }
+
+    const getSessionFn = memoizedCallbacks.getSession;
+    const { serverUrl, version, orgId } = osState;
+    const clientId = osState.auth?.clientId || '';
+
+    _sessionHydrationInFlight = (async () => {
+      let sessionId: string | null = null;
+      try {
+        sessionId = await getSessionFn();
+      } catch (err) {
+        handleError(err, {
+          component: 'AuthProviderWrapper',
+          action: 'getSession',
+        });
+      }
+
+      if (!sessionId) {
         _sessionHydrationDone = true;
         dispatch.auth(authActions.authenticationFailed());
         return;
       }
 
-      // Single in-flight promise — prevents concurrent calls from StrictMode/remounts
-      _sessionHydrationInFlight = (async () => {
-        let sessionId: string | null = null;
-        try {
-          sessionId = await memoizedCallbacks.getSession();
-        } catch (err) {
-          handleError(err, {
-            component: 'AuthProviderWrapper',
-            action: 'getSession',
-          });
-        }
+      try {
+        const authApi = new AuthApi({ serverUrl, version });
+        const userData = await authApi.getProfile(sessionId);
+        const authUser = mapIUserToAuthUser(userData, orgId, clientId);
+        const session = createSession(authUser, sessionId);
 
-        if (!sessionId) {
-          _sessionHydrationDone = true;
-          dispatch.auth(authActions.authenticationFailed());
-          return;
-        }
-
-        try {
-          const { orgId } = osState;
-          const authApi = new AuthApi({ serverUrl: osState.serverUrl, version: osState.version });
-          const userData = await authApi.getProfile(sessionId, signal);
-          const authUser = mapIUserToAuthUser(userData, orgId, osState.auth?.clientId || '');
-          const session = createSession(authUser, sessionId);
-
-          setSessionId(session.sessionId);
-          _sessionHydrationDone = true;
-          dispatch.auth(authActions.setSession(session));
-        } catch (error) {
-          if (
-            !handleErrorUnlessAborted(error, {
-              component: 'AuthProviderWrapper',
-              action: 'fetchUserProfile',
-            })
-          )
-            return;
-          _sessionHydrationDone = true;
-          dispatch.auth(authActions.authenticationFailed());
-        } finally {
-          _sessionHydrationInFlight = null;
-        }
-      })();
-    },
-    [dispatch, osState]
-  );
+        setSessionId(session.sessionId);
+        _sessionHydrationDone = true;
+        dispatch.auth(authActions.setSession(session));
+      } catch (error) {
+        handleError(error, {
+          component: 'AuthProviderWrapper',
+          action: 'fetchUserProfile',
+        });
+        _sessionHydrationDone = true;
+        dispatch.auth(authActions.authenticationFailed());
+      } finally {
+        _sessionHydrationInFlight = null;
+      }
+    })();
+  }, [isAuthenticated, dispatch, osState, memoizedCallbacks]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /**
    * Handle OAuth redirect: user returns with ?code=... in URL.
