@@ -202,8 +202,28 @@ export interface InvoiceActions {
   get(workspaceId: string, invoiceId: string): Promise<IInvoiceResponse>;
 }
 
+export interface UsageBatchRequest {
+  items: Array<{
+    quotaSlug: string;
+    quantity: number;
+    metadata?: Record<string, any>;
+    source?: string;
+    idempotencyKey?: string;
+  }>;
+}
+
+export interface UsageBatchResponse {
+  success: boolean;
+  total: number;
+  succeeded: number;
+  failed: number;
+  results: Array<{ success: boolean; quotaSlug: string; quantity: number; error?: string }>;
+}
+
 export interface UsageActions {
   record(workspaceId: string, request: IRecordUsageRequest): Promise<IRecordUsageResponse>;
+  /** Record multiple usage entries in one request. Max 100 items. For bulk/batch operations. */
+  recordBatch(workspaceId: string, request: UsageBatchRequest): Promise<UsageBatchResponse>;
   getQuota(workspaceId: string, quotaSlug: string): Promise<IQuotaUsageStatusResponse>;
   getAll(workspaceId: string): Promise<IAllQuotaUsageResponse>;
   getLogs(workspaceId: string, query?: IUsageLogsQuery): Promise<IUsageLogsResponse>;
@@ -367,6 +387,8 @@ export default function BuildBase(config: BuildBaseConfig): BuildBaseResult {
 
     usage: {
       record: async (wid, req) => (await getApi()).workspace.recordUsage(wid, req),
+      /** Record multiple usage entries in one request. Max 100 items. For bulk operations. */
+      recordBatch: async (wid, req) => (await getApi()).workspace.recordUsageBatch(wid, req),
       getQuota: async (wid, slug) => (await getApi()).workspace.getQuotaUsageStatus(wid, slug),
       getAll: async (wid) => (await getApi()).workspace.getAllQuotaUsage(wid),
       getLogs: async (wid, query?) => (await getApi()).workspace.getUsageLogs(wid, query),

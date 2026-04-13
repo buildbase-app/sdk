@@ -669,6 +669,59 @@ export class WorkspaceApi extends BaseApi {
   }
 
   /**
+   * Record multiple quota usage entries in a single request.
+   * Designed for backend-to-backend high-volume scenarios (bulk exports, batch jobs).
+   * Max 100 items per request.
+   *
+   * @example
+   * ```ts
+   * await api.recordUsageBatch(workspaceId, {
+   *   items: [
+   *     { quotaSlug: 'images', quantity: 500, source: 'batch-export' },
+   *     { quotaSlug: 'videos', quantity: 10, source: 'batch-export' },
+   *   ]
+   * });
+   * ```
+   */
+  async recordUsageBatch(
+    workspaceId: string,
+    request: {
+      items: Array<{
+        quotaSlug: string;
+        quantity: number;
+        metadata?: Record<string, any>;
+        source?: string;
+        idempotencyKey?: string;
+      }>;
+    }
+  ): Promise<{
+    success: boolean;
+    total: number;
+    succeeded: number;
+    failed: number;
+    results: Array<{ success: boolean; quotaSlug: string; quantity: number; error?: string }>;
+  }> {
+    const response = await this.fetchResponse(`workspaces/${workspaceId}/subscription/usage/batch`, {
+      method: 'POST',
+      body: JSON.stringify(request),
+    });
+
+    if (!response.ok) {
+      let errorMessage = 'Failed to record batch usage';
+      try {
+        const error = await response.json();
+        errorMessage = error.message || errorMessage;
+      } catch {
+        errorMessage = `Failed to record batch usage (${response.status}: ${response.statusText})`;
+      }
+      throw new Error(errorMessage);
+    }
+
+    const result = await response.json();
+    return result.data || result;
+  }
+
+  /**
    * Get usage status for a single quota
    * @param workspaceId - The workspace ID
    * @param quotaSlug - The quota slug to check
