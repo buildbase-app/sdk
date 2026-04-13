@@ -50,6 +50,8 @@ Also works server-side (Next.js API routes, Express, Hono) — see [Server-Side 
 - **📡 Event System** - Subscribe to user and workspace events
 - **🛡️ Error Handling** - Centralized error handling with error boundaries
 - **🖥️ Server-Side SDK** - `BuildBase()` factory for API routes, background jobs, Express, Hono — zero React dependency
+- **🌐 Internationalization (i18n)** - 8 locales (en, es, fr, de, ja, zh, hi, ar), ICU MessageFormat, RTL support, native numerals
+- **🏠 Workspace Modes** - Personal (solo B2C) or Platform (multi-user B2B), configured from admin dashboard
 
 ## Installation
 
@@ -556,6 +558,96 @@ self.addEventListener('notificationclick', function(event) {
 
 Everything else is built-in — permission handling, subscribe/unsubscribe, settings UI, billing auto-triggers, and browser-specific unblock instructions.
 
+## 🌐 Internationalization (i18n)
+
+The SDK supports 8 locales with ICU MessageFormat for plurals, selects, and number formatting.
+
+### Setup
+
+```tsx
+<SaaSOSProvider locale="hi">
+  {/* All SDK UI renders in Hindi */}
+</SaaSOSProvider>
+```
+
+### Supported Locales
+
+| Code | Language | Numerals | Direction |
+|---|---|---|---|
+| `en` | English | 1,234.56 | LTR |
+| `es` | Spanish | 1.234,56 | LTR |
+| `fr` | French | 1 234,56 | LTR |
+| `de` | German | 1.234,56 | LTR |
+| `ja` | Japanese | 1,234.56 | LTR |
+| `zh` | Chinese | 1,234.56 | LTR |
+| `hi` | Hindi | Devanagari (e.g. 1,234) | LTR |
+| `ar` | Arabic | Arabic-Indic (e.g. 1,234) | RTL |
+
+### useTranslation Hook
+
+```tsx
+import { useTranslation } from '@buildbase/sdk/react';
+
+function MyComponent() {
+  const { t, locale, dir, fmtNum, fmtCents } = useTranslation();
+
+  return (
+    <div dir={dir}>
+      <p>{t('subscription.currentPlan')}</p>          {/* Type-safe key lookup */}
+      <p>{t('users.memberCount', { count: 5 })}</p>   {/* ICU plural: "5 members" */}
+      <p>{fmtNum(1234)}</p>                            {/* Locale-aware: "1,234" or "1,234" */}
+      <p>{fmtCents(1999, 'usd')}</p>                   {/* "$19.99" or "19.99 US$" */}
+    </div>
+  );
+}
+```
+
+### Features
+
+- **ICU MessageFormat** — plurals (`{count, plural, one {# item} other {# items}}`), selects, number formatting
+- **Type-safe keys** — `TranslationKey` union type with autocomplete, catches typos at compile time
+- **Native numerals** — Hindi uses Devanagari digits, Arabic uses Arabic-Indic digits
+- **RTL support** — `dir` attribute on all dialogs, logical CSS properties (start/end instead of left/right)
+- **Locale-aware formatting** — dates, currencies, and numbers formatted per locale
+- **Memoized Intl formatters** — shared `Intl.NumberFormat`/`DateTimeFormat`/`PluralRules` instances for performance
+- **Lazy-loaded translations** — non-English locales loaded on demand, English always bundled
+
+## 🏠 Workspace Modes
+
+The SDK supports two workspace modes, configured from the admin dashboard (no code changes needed):
+
+### Personal Mode
+
+For B2C solo tools (Todoist, Grammarly, personal dashboards):
+
+- 1 user = 1 auto-created workspace
+- No team invites, no workspace switcher
+- Clicking workspace trigger opens Settings directly
+- Seats, members, roles sections hidden in UI
+- Enforced at API level — workspace creation and invites blocked
+
+### Platform Mode (Default)
+
+For full SaaS platforms (Slack, GitHub, Discord):
+
+- Multi-workspace, multi-user
+- Create workspaces, invite members, switch between them
+- Full settings UI with members, roles, billing, seats
+
+### Advanced Overrides
+
+Platform mode supports granular overrides from the admin dashboard:
+
+| Setting | Options | Default |
+|---|---|---|
+| Can Create Workspace | Everyone / Owner Only / Disabled | Everyone |
+| Can Invite Members | Everyone / Admin Only / Disabled | Everyone |
+| Show Workspace Switcher | On / Off | On |
+| Max Workspaces Per User | 0 (unlimited) or a number | 0 |
+| Auto-Create First Workspace | On / Off | On |
+
+These let you achieve team-like, managed, or enterprise-like behavior without a separate mode.
+
 ## 👤 User Management
 
 ### User Attributes
@@ -1037,6 +1129,48 @@ app.post('/api/send-email', async (req, res) => {
   // ... send the email ...
 });
 ```
+
+#### Batch Usage Recording (High-Volume)
+
+For bulk operations (batch exports, cron jobs, webhooks) that process hundreds or thousands of items, use the batch endpoint to record all usage in a single request instead of calling the API per-item.
+
+```ts
+// Using BuildBase SDK (recommended)
+import { BuildBase } from '@buildbase/sdk';
+
+const bb = BuildBase({ serverUrl: BASE_URL, version: 'v1', orgId: ORG_ID, token: TOKEN });
+
+await bb.usage.recordBatch(workspaceId, {
+  items: [
+    { quotaSlug: 'images', quantity: 500, source: 'batch-export-job' },
+    { quotaSlug: 'videos', quantity: 10, source: 'batch-export-job' },
+    { quotaSlug: 'images', quantity: 200, metadata: { jobId: 'abc123' } },
+  ]
+});
+// Returns: { success, total: 3, succeeded: 3, failed: 0, results: [...] }
+```
+
+```ts
+// Using REST API directly
+const response = await fetch(
+  `${BASE_URL}/workspaces/${workspaceId}/subscription/usage/batch`,
+  {
+    method: 'POST',
+    headers: { 'x-session-id': SESSION_ID, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      items: [
+        { quotaSlug: 'images', quantity: 500, source: 'batch-export' },
+        { quotaSlug: 'videos', quantity: 10 },
+      ]
+    }),
+  }
+);
+```
+
+- Max **100 items** per request
+- Each item is processed independently — a single failure doesn't fail the batch
+- Supports `metadata`, `source`, and `idempotencyKey` per item
+- Returns per-item results with `success` or `error` for each
 
 #### Server-Side API Reference
 
