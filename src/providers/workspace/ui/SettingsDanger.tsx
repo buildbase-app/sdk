@@ -15,6 +15,7 @@ import {
 import { Button } from '../../../components/ui/button';
 import { handleError } from '../../../lib/error-handler';
 import { useSaaSAuth } from '../../auth/hooks';
+import { useSaaSSettings } from '../../os/hooks';
 import { useSaaSWorkspaces } from '../hooks';
 import { IWorkspace } from '../types';
 import { getWorkspaceUserRole } from '../utils';
@@ -24,7 +25,14 @@ const WorkspaceSettingsDanger: React.FC<{ workspace: IWorkspace }> = ({ workspac
   const [isDeleting, setIsDeleting] = useState(false);
   const { deleteWorkspace } = useSaaSWorkspaces();
   const { user: currentUser } = useSaaSAuth();
+  const { settings } = useSaaSSettings();
   const { t } = useTranslation();
+
+  // In personal mode (maxWorkspacesPerUser: 1), don't allow deleting the only workspace
+  const maxPerUser = settings?.workspace?.maxWorkspacesPerUser ?? 0;
+  if (maxPerUser === 1) {
+    return null;
+  }
 
   if (!workspace) {
     return <SettingSkeleton />;

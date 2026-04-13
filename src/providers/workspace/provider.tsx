@@ -105,15 +105,44 @@ export function WorkspaceSwitcher(props: {
     .filter(workspace => workspace._id !== currentWorkspace?._id)
     .filter(workspace => workspace.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
-  const totalAllowedWorkspaces = settings?.workspace.maxWorkspaces ?? Number.MAX_VALUE;
+  // Workspace mode settings
+  const canCreate = settings?.workspace?.canCreateWorkspace ?? true;
+  const showSwitcher = settings?.workspace?.showSwitcher ?? true;
+  const maxPerUser = settings?.workspace?.maxWorkspacesPerUser ?? 0; // 0 = unlimited
+
   const myWorkspacesCount = workspacesToUse?.filter(workspace => {
     const createdBy =
       typeof workspace.createdBy === 'object'
         ? workspace.createdBy._id?.toString()
         : workspace.createdBy?.toString();
     return createdBy === user?.id?.toString();
-  }).length;
-  const allowedToCreateWorkspace = totalAllowedWorkspaces > (myWorkspacesCount ?? 0);
+  }).length ?? 0;
+
+  const allowedToCreateWorkspace =
+    canCreate !== false &&
+    (maxPerUser === 0 || myWorkspacesCount < maxPerUser);
+
+  // In single-workspace modes (showSwitcher: false), auto-select the only workspace
+  useEffect(() => {
+    if (!showSwitcher && workspaces.length > 0 && !currentWorkspace) {
+      switchToWorkspace(workspaces[0]).catch(() => {});
+    }
+  }, [showSwitcher, workspaces, currentWorkspace]);
+
+  // In personal mode (no switcher), clicking the trigger opens workspace settings directly
+  if (!showSwitcher && currentWorkspace) {
+    return (
+      <>
+        <div onClick={() => setOpen(true)}>{props.trigger?.(isLoading, currentWorkspace)}</div>
+        <WorkspaceSettingsDialog
+          workspace={currentWorkspace}
+          open={open}
+          onOpenChange={setOpen}
+          showTrigger={false}
+        />
+      </>
+    );
+  }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>

@@ -155,7 +155,7 @@ const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace
         <div className="text-red-500">{t('users.adminOnly')}</div>
       )}
 
-      {amIAdmin && (
+      {amIAdmin && settings?.workspace?.canInviteMembers !== false && (
         <div className="mb-4">
           {canInvite ? (
             <div>
