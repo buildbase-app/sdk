@@ -61,9 +61,54 @@ export interface IAsset extends IDocument {
 // Subscription Management Types
 export type BillingInterval = 'monthly' | 'yearly' | 'quarterly';
 
+/** Billing interval constants */
+export const BillingIntervals = {
+  Monthly: 'monthly',
+  Yearly: 'yearly',
+  Quarterly: 'quarterly',
+} as const;
+
+/** Subscription status constants */
+export const SubscriptionStatus = {
+  Active: 'active',
+  Trialing: 'trialing',
+  Canceled: 'canceled',
+  PastDue: 'past_due',
+  Paused: 'paused',
+  Incomplete: 'incomplete',
+  Unpaid: 'unpaid',
+} as const;
+
+export type SubscriptionStatusType = (typeof SubscriptionStatus)[keyof typeof SubscriptionStatus];
+
+/** Invoice status constants */
+export const InvoiceStatuses = {
+  Draft: 'draft',
+  Open: 'open',
+  Paid: 'paid',
+  Uncollectible: 'uncollectible',
+  Void: 'void',
+} as const;
+
+/** Subscription item type constants */
+export const SubscriptionItemType = {
+  Feature: 'feature',
+  Limit: 'limit',
+  Quota: 'quota',
+} as const;
+
+/** Dunning state constants */
+export const DunningState = {
+  None: 'none',
+  Notified: 'notified',
+  Warning: 'warning',
+  Final: 'final',
+  Suspended: 'suspended',
+} as const;
+
 export interface ISubscription {
   _id: string;
-  subscriptionStatus: 'active' | 'trialing' | 'canceled' | 'past_due' | 'paused' | 'incomplete' | 'unpaid';
+  subscriptionStatus: SubscriptionStatusType;
   stripePriceId?: string;
   stripeCurrentPeriodEnd?: string; // ISO date string for when current billing period ends
   cancelAtPeriodEnd: boolean;

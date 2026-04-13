@@ -2,6 +2,7 @@
  * Helpers for multi-currency plan version pricing (pricingVariants).
  */
 
+import { BillingIntervals } from '../types';
 import type { BillingInterval, IPlanVersion, IPlanVersionWithPlan, IPricingVariant } from '../types';
 
 /** Get the pricing variant for a currency, or null if not available. */
@@ -40,12 +41,12 @@ export function getStripePriceIdForInterval(
   const variant = getPricingVariant(planVersion, currency);
   if (!variant?.stripePrices) return null;
   const key =
-    interval === 'monthly'
+    interval === BillingIntervals.Monthly
       ? 'monthlyPriceId'
-      : interval === 'yearly'
+      : interval === BillingIntervals.Yearly
         ? 'yearlyPriceId'
         : 'quarterlyPriceId';
-  const altKey = interval === 'monthly' ? 'monthly' : interval === 'yearly' ? 'yearly' : undefined;
+  const altKey = interval === BillingIntervals.Monthly ? 'monthly' : interval === BillingIntervals.Yearly ? 'yearly' : undefined;
   const id =
     variant.stripePrices[key] ??
     (altKey ? variant.stripePrices[altKey as keyof typeof variant.stripePrices] : undefined);
@@ -293,8 +294,10 @@ export interface InviteValidation {
   canInvite: boolean;
   /** Reason the invite is blocked, or null if allowed. */
   blockReason: InviteBlockReason;
-  /** Human-readable message for the block reason. */
-  blockMessage: string | null;
+  /** i18n key for the block message. Resolve with t(blockMessageKey, blockMessageValues). */
+  blockMessageKey: string | null;
+  /** Values for ICU interpolation in the block message. */
+  blockMessageValues: Record<string, string | number> | null;
 }
 
 /**
@@ -312,7 +315,8 @@ export function validateInvite(opts: {
     return {
       canInvite: false,
       blockReason: 'no_subscription',
-      blockMessage: 'A subscription is required to invite members.',
+      blockMessageKey: 'users.subscriptionRequired' as const,
+      blockMessageValues: {},
     };
   }
 
@@ -320,7 +324,7 @@ export function validateInvite(opts: {
 
   // 0 = unlimited
   if (maxUsers <= 0) {
-    return { canInvite: true, blockReason: null, blockMessage: null };
+    return { canInvite: true, blockReason: null, blockMessageKey: null, blockMessageValues: null };
   }
 
   if (memberCount >= maxUsers) {
@@ -328,16 +332,17 @@ export function validateInvite(opts: {
       seat_pricing: 'seat_limit_reached',
       settings: 'settings_user_limit_reached',
     };
-    const messageMap: Record<string, string> = {
-      seat_pricing: `Your plan allows up to ${maxUsers} members. Upgrade for more seats.`,
-      settings: `This workspace allows up to ${maxUsers} members.`,
+    const keyMap: Record<string, string> = {
+      seat_pricing: 'users.seatLimitMessage',
+      settings: 'users.settingsLimitMessage',
     };
     return {
       canInvite: false,
       blockReason: reasonMap[source] ?? 'seat_limit_reached',
-      blockMessage: messageMap[source] ?? `Member limit of ${maxUsers} reached.`,
+      blockMessageKey: keyMap[source] ?? 'users.memberLimitMessage',
+      blockMessageValues: { maxUsers },
     };
   }
 
-  return { canInvite: true, blockReason: null, blockMessage: null };
+  return { canInvite: true, blockReason: null, blockMessageKey: null, blockMessageValues: null };
 }

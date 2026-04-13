@@ -1,43 +1,101 @@
 'use client';
 
-import React, { lazy, Suspense, useEffect, useState } from 'react';
+import React, { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { readBBParams, cleanBBParams } from '../../lib/url-params';
 import { useSaaSWorkspaces } from './hooks';
 import { workspaceSettingsManager } from './settings-manager';
-import type { WorkspaceSettingsSection } from './ui/SettingsDialog';
+import { SETTINGS_SCREENS, SettingsScreen, type WorkspaceSettingsSection } from './ui/SettingsDialog';
 
-// Lazy load SettingsDialog to reduce initial bundle size
-// This component is only rendered when settings are opened
 const WorkspaceSettingsDialog = lazy(() =>
   import('./ui/SettingsDialog').then(m => ({ default: m.default }))
 );
 
 /**
+ * Resolve which settings section to open from BB params.
+ * Priority: params.screen (explicit) → params.action (inferred) → null
+ */
+function resolveSection(params: Record<string, string>): WorkspaceSettingsSection | null {
+  if (params.screen && SETTINGS_SCREENS.has(params.screen as WorkspaceSettingsSection)) {
+    return params.screen as WorkspaceSettingsSection;
+  }
+  switch (params.action) {
+    case 'checkout':
+    case 'billing':
+      return SettingsScreen.Subscription;
+    default:
+      return null;
+  }
+}
+
+/**
  * WorkspaceSettingsProvider
- * Renders the settings dialog and manages its state internally
- * Users can call openWorkspaceSettings() from useWorkspaceSettings hook
+ *
+ * Manages the workspace settings dialog. Reads `?bb=` URL param
+ * on mount to auto-open the dialog.
+ *
+ * Format: ?bb=key:value,key:value
+ *
+ * Examples:
+ *   ?bb=screen:subscription
+ *   ?bb=screen:users,ws:65abc123
+ *   ?bb=action:checkout,status:success,ws:65abc123,screen:subscription
  */
 export const WorkspaceSettingsProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const { currentWorkspace } = useSaaSWorkspaces();
+  const { currentWorkspace, switchToWorkspace, workspaces } = useSaaSWorkspaces();
   const [open, setOpen] = useState(false);
-  const [section, setSection] = useState<WorkspaceSettingsSection>('profile');
+  const [section, setSection] = useState<WorkspaceSettingsSection>(SettingsScreen.Profile);
+  const urlHandledRef = useRef(false);
 
-  // Subscribe to settings manager changes
+  // Subscribe to settings manager (programmatic open/close)
   useEffect(() => {
-    // Sync initial state
     const initialState = workspaceSettingsManager.getState();
     setOpen(initialState.open);
     setSection(initialState.section);
-
-    // Subscribe to changes
     const unsubscribe = workspaceSettingsManager.subscribe((isOpen, newSection) => {
       setOpen(isOpen);
       setSection(newSection);
     });
-
     return unsubscribe;
   }, []);
+
+  // Auto-open from URL params when workspace is ready
+  useEffect(() => {
+    if (urlHandledRef.current) return;
+    if (!currentWorkspace) return;
+
+    const bbParams = readBBParams();
+    if (!bbParams) return;
+
+    const targetSection = resolveSection(bbParams);
+    if (!targetSection) {
+      urlHandledRef.current = true;
+      cleanBBParams();
+      return;
+    }
+
+    // Switch workspace if needed
+    const targetWs = bbParams.ws;
+    if (targetWs && targetWs !== currentWorkspace._id) {
+      const found = workspaces.find(ws => ws._id === targetWs);
+      if (found) {
+        switchToWorkspace(found).catch(() => {
+          urlHandledRef.current = true;
+          cleanBBParams();
+        });
+        return;
+      }
+      urlHandledRef.current = true;
+      cleanBBParams();
+      return;
+    }
+
+    // Open dialog
+    urlHandledRef.current = true;
+    workspaceSettingsManager.openWorkspaceSettings(targetSection);
+    cleanBBParams();
+  }, [currentWorkspace, workspaces, switchToWorkspace]);
 
   return (
     <>

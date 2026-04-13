@@ -1,3 +1,4 @@
+import { useTranslation } from '../../../i18n';
 import { CommandSelect } from '../../ui/command-select';
 import { countries } from './countries';
 
@@ -7,6 +8,7 @@ interface SelectCountryProps {
 }
 
 export function SelectCountry({ value, onChange }: SelectCountryProps) {
+  const { t } = useTranslation();
   const options = countries.map(c => ({
     value: c.value,
     label: c.text,
@@ -18,8 +20,8 @@ export function SelectCountry({ value, onChange }: SelectCountryProps) {
       options={options}
       value={value}
       onChange={onChange}
-      placeholder="Choose country..."
-      emptyLabel="Choose country"
+      placeholder={t('dropdowns.searchCountry')}
+      emptyLabel={t('dropdowns.chooseCountry')}
     />
   );
 }

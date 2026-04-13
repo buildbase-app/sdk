@@ -23,7 +23,13 @@ import {
 } from '../../api/types';
 import { invalidateQuotaUsage } from '../../contexts/QuotaUsageContext/quotaUsageInvalidation';
 import { invalidateSubscription } from '../../contexts/SubscriptionContext/subscriptionInvalidation';
+import { useTranslation, type TranslationKey } from '../../i18n';
 import { handleError } from '../../lib/error-handler';
+
+/** Extract error message from catch block, falling back to a translated key */
+function getErrorMessage(err: unknown, fallbackKey: string, t: (key: TranslationKey) => string): string {
+  return err instanceof Error ? err.message : t(fallbackKey as TranslationKey);
+}
 import { isOsConfigReady } from '../os/types';
 import { useWorkspaceApiWithOs } from './use-workspace-api';
 
@@ -36,6 +42,7 @@ import { useWorkspaceApiWithOs } from './use-workspace-api';
  * @returns { items, plans, loading, error, refetch }
  */
 export const usePublicPlans = (slug: string) => {
+  const { t } = useTranslation();
   const { os, api } = useWorkspaceApiWithOs();
   const isConfigReady = isOsConfigReady(os);
 
@@ -54,7 +61,7 @@ export const usePublicPlans = (slug: string) => {
       const result = await api.getPublicPlans(slug);
       setData(result);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch plans';
+      const errorMessage = getErrorMessage(err, 'errors.fetchPlans', t);
       setError(errorMessage);
       handleError(err, {
         component: 'usePublicPlans',
@@ -116,6 +123,7 @@ export const usePublicPlans = (slug: string) => {
  * ```
  */
 export const usePublicPlanGroupVersion = (groupVersionId: string | null | undefined) => {
+  const { t } = useTranslation();
   const { api } = useWorkspaceApiWithOs();
 
   const [planGroupVersion, setPlanGroupVersion] = useState<IPlanGroupVersion | null>(null);
@@ -134,8 +142,7 @@ export const usePublicPlanGroupVersion = (groupVersionId: string | null | undefi
       const data = await api.getPlanGroupVersion(groupVersionId);
       setPlanGroupVersion(data);
     } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : 'Failed to fetch plan group version';
+      const errorMessage = getErrorMessage(err, 'errors.fetchPlanGroupVersion', t);
       setError(errorMessage);
       handleError(err, {
         component: 'usePublicPlanGroupVersion',
@@ -197,6 +204,7 @@ export const usePublicPlanGroupVersion = (groupVersionId: string | null | undefi
  * ```
  */
 export const useSubscription = (workspaceId: string | null | undefined) => {
+  const { t } = useTranslation();
   const { api } = useWorkspaceApiWithOs();
 
   const [subscription, setSubscription] = useState<ISubscriptionResponse | null>(null);
@@ -215,7 +223,7 @@ export const useSubscription = (workspaceId: string | null | undefined) => {
       const data = await api.getCurrentSubscription(workspaceId);
       setSubscription(data);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch subscription';
+      const errorMessage = getErrorMessage(err, 'errors.fetchSubscription', t);
       setError(errorMessage);
       handleError(err, {
         component: 'useSubscription',
@@ -289,6 +297,7 @@ export const usePlanGroup = (
   workspaceId: string | null | undefined,
   groupVersionId?: string | null
 ) => {
+  const { t } = useTranslation();
   const { api } = useWorkspaceApiWithOs();
 
   const [planGroup, setPlanGroup] = useState<IPlanGroupResponse | null>(null);
@@ -309,7 +318,7 @@ export const usePlanGroup = (
         : await api.getPlanGroup(workspaceId);
       setPlanGroup(data);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch plan group';
+      const errorMessage = getErrorMessage(err, 'errors.fetchPlanGroup', t);
       setError(errorMessage);
       handleError(err, {
         component: 'usePlanGroup',
@@ -366,6 +375,7 @@ export const usePlanGroup = (
  * ```
  */
 export const usePlanGroupVersions = (workspaceId: string | null | undefined) => {
+  const { t } = useTranslation();
   const { api } = useWorkspaceApiWithOs();
 
   const [versions, setVersions] = useState<IPlanGroupVersionsResponse | null>(null);
@@ -384,8 +394,7 @@ export const usePlanGroupVersions = (workspaceId: string | null | undefined) => 
       const data = await api.getPlanGroupVersions(workspaceId);
       setVersions(data);
     } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : 'Failed to fetch plan group versions';
+      const errorMessage = getErrorMessage(err, 'errors.fetchPlanGroupVersions', t);
       setError(errorMessage);
       handleError(err, {
         component: 'usePlanGroupVersions',
@@ -468,6 +477,7 @@ export const usePlanGroupVersions = (workspaceId: string | null | undefined) => 
  * ```
  */
 export const useCreateCheckoutSession = (workspaceId: string | null | undefined) => {
+  const { t } = useTranslation();
   const { api } = useWorkspaceApiWithOs();
 
   const [loading, setLoading] = useState(false);
@@ -491,8 +501,7 @@ export const useCreateCheckoutSession = (workspaceId: string | null | undefined)
 
         return result;
       } catch (err) {
-        const errorMessage =
-          err instanceof Error ? err.message : 'Failed to create checkout session';
+        const errorMessage = getErrorMessage(err, 'errors.createCheckout', t);
         setError(errorMessage);
         handleError(err, {
           component: 'useCreateCheckoutSession',
@@ -582,6 +591,7 @@ export const useCreateCheckoutSession = (workspaceId: string | null | undefined)
  * ```
  */
 export const useUpdateSubscription = (workspaceId: string | null | undefined) => {
+  const { t } = useTranslation();
   const { api } = useWorkspaceApiWithOs();
 
   const [loading, setLoading] = useState(false);
@@ -611,7 +621,7 @@ export const useUpdateSubscription = (workspaceId: string | null | undefined) =>
         invalidateSubscription();
         return result;
       } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Failed to update subscription';
+        const errorMessage = getErrorMessage(err, 'errors.updateSubscription', t);
         setError(errorMessage);
         handleError(err, {
           component: 'useUpdateSubscription',
@@ -759,6 +769,7 @@ export const useInvoices = (
   limit: number = 10,
   startingAfter?: string
 ) => {
+  const { t } = useTranslation();
   const { api } = useWorkspaceApiWithOs();
 
   const [invoices, setInvoices] = useState<IInvoice[]>([]);
@@ -780,7 +791,7 @@ export const useInvoices = (
       setInvoices(data.invoices || []);
       setHasMore(data.has_more || false);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch invoices';
+      const errorMessage = getErrorMessage(err, 'errors.fetchInvoices', t);
       setError(errorMessage);
       handleError(err, {
         component: 'useInvoices',
@@ -817,6 +828,7 @@ export const useInvoices = (
  * ```
  */
 export const useBillingPortal = (workspaceId: string | null | undefined) => {
+  const { t } = useTranslation();
   const { api } = useWorkspaceApiWithOs();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -835,7 +847,7 @@ export const useBillingPortal = (workspaceId: string | null | undefined) => {
         }
         return result;
       } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Failed to open billing portal';
+        const errorMessage = getErrorMessage(err, 'errors.openBillingPortal', t);
         setError(errorMessage);
         handleError(err, {
           component: 'useBillingPortal',
@@ -889,6 +901,7 @@ export const useInvoice = (
   workspaceId: string | null | undefined,
   invoiceId: string | null | undefined
 ) => {
+  const { t } = useTranslation();
   const { api } = useWorkspaceApiWithOs();
 
   const [invoice, setInvoice] = useState<IInvoice | null>(null);
@@ -907,7 +920,7 @@ export const useInvoice = (
       const data = await api.getInvoice(workspaceId, invoiceId);
       setInvoice(data.invoice);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch invoice';
+      const errorMessage = getErrorMessage(err, 'errors.fetchInvoice', t);
       setError(errorMessage);
       handleError(err, {
         component: 'useInvoice',
@@ -967,6 +980,7 @@ export const useInvoice = (
  * ```
  */
 export const useCancelSubscription = (workspaceId: string | null | undefined) => {
+  const { t } = useTranslation();
   const { api } = useWorkspaceApiWithOs();
 
   const [loading, setLoading] = useState(false);
@@ -982,7 +996,7 @@ export const useCancelSubscription = (workspaceId: string | null | undefined) =>
       invalidateSubscription();
       return result;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to cancel subscription';
+      const errorMessage = getErrorMessage(err, 'errors.cancelSubscription', t);
       setError(errorMessage);
       handleError(err, {
         component: 'useCancelSubscription',
@@ -1038,6 +1052,7 @@ export const useCancelSubscription = (workspaceId: string | null | undefined) =>
  * ```
  */
 export const useResumeSubscription = (workspaceId: string | null | undefined) => {
+  const { t } = useTranslation();
   const { api } = useWorkspaceApiWithOs();
 
   const [loading, setLoading] = useState(false);
@@ -1053,7 +1068,7 @@ export const useResumeSubscription = (workspaceId: string | null | undefined) =>
       invalidateSubscription();
       return result;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to resume subscription';
+      const errorMessage = getErrorMessage(err, 'errors.resumeSubscription', t);
       setError(errorMessage);
       handleError(err, {
         component: 'useResumeSubscription',
@@ -1113,6 +1128,7 @@ export const useResumeSubscription = (workspaceId: string | null | undefined) =>
  * ```
  */
 export const useRecordUsage = (workspaceId: string | null | undefined) => {
+  const { t } = useTranslation();
   const { api } = useWorkspaceApiWithOs();
 
   const [loading, setLoading] = useState(false);
@@ -1129,7 +1145,7 @@ export const useRecordUsage = (workspaceId: string | null | undefined) => {
         invalidateQuotaUsage();
         return result;
       } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Failed to record usage';
+        const errorMessage = getErrorMessage(err, 'errors.recordUsage', t);
         setError(errorMessage);
         handleError(err, {
           component: 'useRecordUsage',
@@ -1186,6 +1202,7 @@ export const useQuotaUsageStatus = (
   workspaceId: string | null | undefined,
   quotaSlug: string | null | undefined
 ) => {
+  const { t } = useTranslation();
   const { api } = useWorkspaceApiWithOs();
 
   const [status, setStatus] = useState<IQuotaUsageStatusResponse | null>(null);
@@ -1204,7 +1221,7 @@ export const useQuotaUsageStatus = (
       const data = await api.getQuotaUsageStatus(workspaceId, quotaSlug);
       setStatus(data);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch quota usage status';
+      const errorMessage = getErrorMessage(err, 'errors.fetchQuotaUsage', t);
       setError(errorMessage);
       handleError(err, {
         component: 'useQuotaUsageStatus',
@@ -1262,6 +1279,7 @@ export const useQuotaUsageStatus = (
  * ```
  */
 export const useAllQuotaUsage = (workspaceId: string | null | undefined) => {
+  const { t } = useTranslation();
   const { api } = useWorkspaceApiWithOs();
 
   const [quotas, setQuotas] = useState<Record<string, IQuotaUsageStatus> | null>(null);
@@ -1280,7 +1298,7 @@ export const useAllQuotaUsage = (workspaceId: string | null | undefined) => {
       const data = await api.getAllQuotaUsage(workspaceId);
       setQuotas(data.quotas);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch all quota usage';
+      const errorMessage = getErrorMessage(err, 'errors.fetchAllQuotaUsage', t);
       setError(errorMessage);
       handleError(err, {
         component: 'useAllQuotaUsage',
@@ -1352,6 +1370,7 @@ export const useUsageLogs = (
   quotaSlug?: string,
   options?: { from?: string; to?: string; source?: string; page?: number; limit?: number }
 ) => {
+  const { t } = useTranslation();
   const { api } = useWorkspaceApiWithOs();
 
   const [logs, setLogs] = useState<IUsageLogEntry[]>([]);
@@ -1399,7 +1418,7 @@ export const useUsageLogs = (
       setHasNextPage(data.hasNextPage || false);
       setHasPrevPage(data.hasPrevPage || false);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch usage logs';
+      const errorMessage = getErrorMessage(err, 'errors.fetchUsageLogs', t);
       setError(errorMessage);
       handleError(err, {
         component: 'useUsageLogs',

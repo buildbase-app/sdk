@@ -58,13 +58,13 @@ export function CommandSelect({
             <div>
               {String(selected.label).trim()}
               {selected.icon && (
-                <span className="ml-2 text-xs text-muted-foreground">{selected.icon}</span>
+                <span className="ms-2 text-xs text-muted-foreground">{selected.icon}</span>
               )}
             </div>
           ) : (
             <span className="text-muted-foreground">{emptyLabel}</span>
           )}
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          <ChevronsUpDown className="ms-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="p-0 overflow-hidden text-ellipsis">
@@ -74,7 +74,7 @@ export function CommandSelect({
             <CommandGroup>
               {options.map(option => (
                 <CommandItem
-                  className={cn('whitespace-nowrap text-left', {
+                  className={cn('whitespace-nowrap text-start', {
                     'text-green-500': value === option.value,
                   })}
                   key={option.value}
@@ -85,14 +85,14 @@ export function CommandSelect({
                   {value === option.value && (
                     <CheckCheck
                       className={cn(
-                        'mr-2 h-4 w-4 text-green-400',
+                        'me-2 h-4 w-4 text-green-400',
                         value === option.value ? 'opacity-100' : 'opacity-0'
                       )}
                     />
                   )}
                   {String(option.label).trim()}
                   {option.icon && (
-                    <span className="ml-2 text-xs text-muted-foreground">{option.icon}</span>
+                    <span className="ms-2 text-xs text-muted-foreground">{option.icon}</span>
                   )}
                 </CommandItem>
               ))}

@@ -1,4 +1,5 @@
 import { Settings } from 'lucide-react';
+import { useTranslation, type TranslationKey } from '../../../i18n';
 import React, { useState } from 'react';
 import { Button } from '../../../components/ui/button';
 import {
@@ -19,15 +20,35 @@ import WorkspaceSettingsUsers from './SettingsUsers';
 import WorkspaceSettingsNotifications from './SettingsNotifications';
 import WorkspaceSettingsSidebar from './Sidebar';
 
-export type WorkspaceSettingsSection =
-  | 'profile'
-  | 'general'
-  | 'users'
-  | 'subscription'
-  | 'usage'
-  | 'features'
-  | 'notifications'
-  | 'danger';
+export const SettingsScreen = {
+  Profile: 'profile',
+  General: 'general',
+  Users: 'users',
+  Subscription: 'subscription',
+  Usage: 'usage',
+  Features: 'features',
+  Notifications: 'notifications',
+  Danger: 'danger',
+} as const;
+
+export type WorkspaceSettingsSection = (typeof SettingsScreen)[keyof typeof SettingsScreen];
+
+/** Set of all valid section values — used for runtime validation */
+export const SETTINGS_SCREENS = new Set<WorkspaceSettingsSection>(
+  Object.values(SettingsScreen)
+);
+
+/** Translation key for each screen title */
+const SCREEN_TITLE_KEYS: Record<WorkspaceSettingsSection, TranslationKey> = {
+  [SettingsScreen.Profile]: 'settings.titles.profile',
+  [SettingsScreen.General]: 'settings.titles.general',
+  [SettingsScreen.Users]: 'settings.titles.users',
+  [SettingsScreen.Subscription]: 'settings.titles.subscription',
+  [SettingsScreen.Usage]: 'settings.titles.usage',
+  [SettingsScreen.Features]: 'settings.titles.features',
+  [SettingsScreen.Notifications]: 'settings.titles.notifications',
+  [SettingsScreen.Danger]: 'settings.titles.danger',
+};
 
 export interface WorkspaceSettingsDialogProps {
   workspace: IWorkspace;
@@ -46,12 +67,13 @@ const WorkspaceSettingsDialog: React.FC<WorkspaceSettingsDialogProps> = ({
   onClose,
   open: controlledOpen,
   onOpenChange: controlledOnOpenChange,
-  defaultSection = 'profile',
+  defaultSection = SettingsScreen.Profile,
   section: controlledSection,
   onSectionChange,
   showTrigger = true,
   trigger,
 }) => {
+  const { t, dir } = useTranslation();
   const [internalOpen, setInternalOpen] = useState(false);
   const [internalSection, setInternalSection] = useState<WorkspaceSettingsSection>(defaultSection);
 
@@ -82,31 +104,24 @@ const WorkspaceSettingsDialog: React.FC<WorkspaceSettingsDialogProps> = ({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       {showTrigger && <DialogTrigger asChild>{trigger || defaultTrigger}</DialogTrigger>}
-      <DialogContent className="flex max-w-2xl min-w-full sm:min-w-[800px] p-0 m-0 bg-muted sm:min-h-[600px] min-h-full gap-x-0 space-x-0">
-        <DialogDescription className="sr-only">Workspace settings dialog</DialogDescription>
+      <DialogContent dir={dir} className="flex max-w-2xl min-w-full sm:min-w-[800px] p-0 m-0 bg-muted sm:min-h-[600px] min-h-full gap-x-0 space-x-0">
+        <DialogDescription className="sr-only">{t(SCREEN_TITLE_KEYS[section])}</DialogDescription>
         <WorkspaceSettingsSidebar workspace={workspace} section={section} setSection={setSection} />
         <div className="flex-1 p-6 overflow-auto flex flex-col bg-background">
-          <DialogTitle className="text-xl font-bold mb-4 capitalize">
-            {section === 'profile' && 'Account'}
-            {section === 'general' && 'Workspace Settings'}
-            {section === 'users' && 'Workspace Members'}
-            {section === 'subscription' && 'Plan & Billing'}
-            {section === 'usage' && 'Usage'}
-            {section === 'features' && 'Workspace Features'}
-            {section === 'notifications' && 'Notifications'}
-            {section === 'danger' && 'Danger Zone'}
+          <DialogTitle className="text-xl font-bold mb-4">
+            {t(SCREEN_TITLE_KEYS[section])}
           </DialogTitle>
           <div className="sm:max-h-[500px] overflow-y-auto">
-            {section === 'profile' && <WorkspaceSettingsProfile workspace={workspace} />}
-            {section === 'general' && <WorkspaceSettingsGeneral workspace={workspace} />}
-            {section === 'users' && <WorkspaceSettingsUsers workspace={workspace} />}
-            {section === 'subscription' && <WorkspaceSettingsSubscription workspace={workspace} />}
-            {section === 'usage' && <WorkspaceSettingsUsage />}
-            {section === 'features' && (
+            {section === SettingsScreen.Profile && <WorkspaceSettingsProfile workspace={workspace} />}
+            {section === SettingsScreen.General && <WorkspaceSettingsGeneral workspace={workspace} />}
+            {section === SettingsScreen.Users && <WorkspaceSettingsUsers workspace={workspace} />}
+            {section === SettingsScreen.Subscription && <WorkspaceSettingsSubscription workspace={workspace} />}
+            {section === SettingsScreen.Usage && <WorkspaceSettingsUsage />}
+            {section === SettingsScreen.Features && (
               <WorkspaceSettingsFeatures workspaceId={workspace._id?.toString()} />
             )}
-            {section === 'notifications' && <WorkspaceSettingsNotifications />}
-            {section === 'danger' && <WorkspaceSettingsDanger workspace={workspace} />}
+            {section === SettingsScreen.Notifications && <WorkspaceSettingsNotifications />}
+            {section === SettingsScreen.Danger && <WorkspaceSettingsDanger workspace={workspace} />}
           </div>
         </div>
       </DialogContent>

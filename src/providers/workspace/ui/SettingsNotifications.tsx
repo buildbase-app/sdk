@@ -1,69 +1,40 @@
 import { Bell, BellOff, ShieldAlert } from 'lucide-react';
+import { useTranslation, type TranslationKey } from '../../../i18n';
 import React, { useMemo } from 'react';
 import { Button } from '../../../components/ui/button';
 import { usePushNotifications } from '../../push/PushNotificationContext';
 
-function getBrowserUnblockInstructions(): { browser: string; steps: string[] } {
+type BrowserId = 'firefox' | 'safari' | 'edge' | 'chrome';
+
+/** Detect browser for notification unblock instructions */
+function detectBrowser(): BrowserId {
   const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
-
-  if (ua.includes('Firefox')) {
-    return {
-      browser: 'Firefox',
-      steps: [
-        'Click the lock icon (or shield icon) in the address bar',
-        'Find "Notifications" in the permissions list',
-        'Change from "Blocked" to "Allow"',
-        'Reload this page',
-      ],
-    };
-  }
-
-  if (ua.includes('Safari') && !ua.includes('Chrome')) {
-    return {
-      browser: 'Safari',
-      steps: [
-        'Open Safari → Settings → Websites → Notifications',
-        'Find this website in the list',
-        'Change from "Deny" to "Allow"',
-        'Reload this page',
-      ],
-    };
-  }
-
-  if (ua.includes('Edg')) {
-    return {
-      browser: 'Edge',
-      steps: [
-        'Click the lock icon in the address bar',
-        'Click "Permissions for this site"',
-        'Set "Notifications" to "Allow"',
-        'Reload this page',
-      ],
-    };
-  }
-
-  // Default: Chrome / Chromium
-  return {
-    browser: 'Chrome',
-    steps: [
-      'Click the lock icon (or tune icon) in the address bar',
-      'Click "Site settings"',
-      'Set "Notifications" to "Allow"',
-      'Reload this page',
-    ],
-  };
+  if (ua.includes('Firefox')) return 'firefox';
+  if (ua.includes('Safari') && !ua.includes('Chrome')) return 'safari';
+  if (ua.includes('Edg')) return 'edge';
+  return 'chrome';
 }
+
+/** Step count per browser — used to iterate t() keys */
+const BROWSER_STEP_COUNT: Record<BrowserId, number> = {
+  firefox: 4,
+  safari: 4,
+  edge: 4,
+  chrome: 4,
+};
 
 const WorkspaceSettingsNotifications: React.FC = () => {
   const { isSupported, permission, isSubscribed, loading, error, subscribe, unsubscribe } =
     usePushNotifications();
+  const { t } = useTranslation();
 
-  const unblockInfo = useMemo(() => getBrowserUnblockInstructions(), []);
+  const browser = useMemo(() => detectBrowser(), []);
+  const stepCount = BROWSER_STEP_COUNT[browser];
 
   if (!isSupported) {
     return (
       <div className="text-sm text-gray-500">
-        Push notifications are not supported in this browser.
+        {t('notifications.notSupported')}
       </div>
     );
   }
@@ -71,7 +42,7 @@ const WorkspaceSettingsNotifications: React.FC = () => {
   return (
     <div className="space-y-6">
       <p className="text-sm text-gray-600">
-        Manage how you receive notifications from this workspace.
+        {t('notifications.manageDescription')}
       </p>
 
       {error && permission !== 'denied' && (
@@ -86,13 +57,13 @@ const WorkspaceSettingsNotifications: React.FC = () => {
           <div className="flex items-start gap-3">
             <ShieldAlert className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
             <div>
-              <h4 className="text-sm font-medium text-amber-800">Notifications Blocked</h4>
+              <h4 className="text-sm font-medium text-amber-800">{t('notifications.blocked')}</h4>
               <p className="text-xs text-amber-700 mt-1">
-                You previously blocked notifications for this site. To enable them, update your {unblockInfo.browser} settings:
+                {t('notifications.blockedDescription')}
               </p>
               <ol className="text-xs text-amber-700 mt-2 space-y-1 list-decimal list-inside">
-                {unblockInfo.steps.map((step, i) => (
-                  <li key={i}>{step}</li>
+                {Array.from({ length: stepCount }, (_, i) => (
+                  <li key={i}>{t(`notifications.unblock.${browser}.step${i + 1}` as TranslationKey)}</li>
                 ))}
               </ol>
             </div>
@@ -113,11 +84,9 @@ const WorkspaceSettingsNotifications: React.FC = () => {
                 )}
               </div>
               <div>
-                <h4 className="text-sm font-medium text-gray-900">Push Notifications</h4>
+                <h4 className="text-sm font-medium text-gray-900">{t('notifications.pushTitle')}</h4>
                 <p className="text-xs text-gray-500 mt-0.5">
-                  {isSubscribed
-                    ? 'You will receive browser notifications for important updates.'
-                    : 'Get notified about payment issues, trial expiry, and other important updates.'}
+                  {t('notifications.pushDescription', { subscribed: String(isSubscribed) })}
                 </p>
               </div>
             </div>
@@ -130,15 +99,13 @@ const WorkspaceSettingsNotifications: React.FC = () => {
               disabled={loading}
               progress={loading}
             >
-              {loading
-                ? isSubscribed ? 'Disabling...' : 'Enabling...'
-                : isSubscribed ? 'Disable' : 'Enable'}
+              {t('notifications.toggleAction', { loading: String(loading), subscribed: String(isSubscribed) })}
             </Button>
           </div>
 
           {isSubscribed && (
             <div className="mt-3 pt-3 border-t border-gray-100 text-xs text-gray-500">
-              Notifications are sent to this device. Enable on other devices separately.
+              {t('notifications.deviceNote')}
             </div>
           )}
         </div>

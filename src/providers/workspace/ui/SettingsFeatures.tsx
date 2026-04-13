@@ -1,4 +1,5 @@
 import { Loader2 } from 'lucide-react';
+import { useTranslation } from '../../../i18n';
 import React, { useEffect, useRef, useState } from 'react';
 import { Switch } from '../../../components/ui/switch';
 import { handleError } from '../../../lib/error-handler';
@@ -9,16 +10,17 @@ import { isWorkspaceOwner } from '../utils';
 import SettingSkeleton from './Skeleton';
 
 const WorkspaceSettingsFeatures: React.FC<{ workspaceId: string }> = ({ workspaceId }) => {
+  const { t } = useTranslation();
+  const { allFeatures, updateFeature, getWorkspace } = useSaaSWorkspaces();
+  const { user: currentUser } = useSaaSAuth();
   const [updatingFeatures, setUpdatingFeatures] = useState<Record<string, boolean | null>>({});
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [workspace, setWorkspace] = useState<IWorkspace | null>(null);
   const successTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
-  const { allFeatures, updateFeature, getWorkspace } = useSaaSWorkspaces();
 
   useEffect(() => {
     return () => { if (successTimerRef.current) clearTimeout(successTimerRef.current); };
   }, []);
-  const [workspace, setWorkspace] = useState<IWorkspace | null>(null);
-  const { user: currentUser } = useSaaSAuth();
 
   useEffect(() => {
     getWorkspace(workspaceId).then(setWorkspace);
@@ -33,7 +35,7 @@ const WorkspaceSettingsFeatures: React.FC<{ workspaceId: string }> = ({ workspac
       setWorkspace(data);
       const feature = allFeatures.find(f => f.slug === key);
       const featureName = feature?.name || 'Feature';
-      setSuccessMessage(`${featureName} ${value ? 'enabled' : 'disabled'} successfully`);
+      setSuccessMessage(t('features.updateSuccess', { feature: featureName, enabled: String(value) }));
       if (successTimerRef.current) clearTimeout(successTimerRef.current);
       successTimerRef.current = setTimeout(() => {
         setSuccessMessage(null);
@@ -59,16 +61,16 @@ const WorkspaceSettingsFeatures: React.FC<{ workspaceId: string }> = ({ workspac
     <div>
       {successMessage && (
         <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded mb-4">
-          <p className="font-medium">Success!</p>
+          <p className="font-medium">{t('settings.common.success')}</p>
           <p className="text-sm">{successMessage}</p>
         </div>
       )}
-      <div className="flex flex-col gap-y-3.5 pr-4">
+      <div className="flex flex-col gap-y-3.5 pe-4">
         {!amIOwner && (
-          <div className="text-red-500">Only the workspace owner can change the features.</div>
+          <div className="text-red-500">{t('features.ownerOnly')}</div>
         )}
         {!allFeatures.length && (
-          <div className="text-muted-foreground">Workspace has no features to manage.</div>
+          <div className="text-muted-foreground">{t('features.noFeatures')}</div>
         )}
         {allFeatures.length > 0 && (
           <div className="flex flex-col gap-y-3.5">
@@ -78,8 +80,9 @@ const WorkspaceSettingsFeatures: React.FC<{ workspaceId: string }> = ({ workspac
                 updatingFeatures[feature.slug] !== null &&
                 updatingFeatures[feature.slug] !== undefined;
               const targetValue = updatingFeatures[feature.slug];
-              const actionText =
-                targetValue === true ? 'Enabling' : targetValue === false ? 'Disabling' : '';
+              const actionText = t('features.actionStatus', {
+                action: targetValue === true ? 'enabling' : targetValue === false ? 'disabling' : 'none',
+              });
 
               return (
                 <div key={feature._id} className="flex items-center gap-x-2 justify-between w-full">

@@ -1,4 +1,5 @@
 import { SelectValue } from '@radix-ui/react-select';
+import { useTranslation, type TranslationKey } from '../../../i18n';
 import { Loader2, TrashIcon } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
 import { IUser } from '../../../api/types';
@@ -6,7 +7,6 @@ import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
 import { Label } from '../../../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '../../../components/ui/select';
-import { formatCents } from '../../../api/billing/currency-utils';
 import { useSubscriptionContext } from '../../../contexts/SubscriptionContext';
 import { useSeatStatus } from '../../../hooks/use-seat-status';
 import { handleError } from '../../../lib/error-handler';
@@ -19,6 +19,7 @@ import SettingSkeleton from './Skeleton';
 
 const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace }) => {
   const { user: currentUser } = useSaaSAuth();
+  const { t, fmtNum, fmtCents } = useTranslation();
   const [refreshCounter, setRefreshCounter] = useState(0);
   const [loading, setLoading] = useState(false);
   const [workspaceUsers, setWorkspaceUsers] = useState<IWorkspaceUser[]>([]);
@@ -63,7 +64,7 @@ const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace
   // Helper function to get user display info
   const getUserDisplay = (user: string | IUser) => {
     if (typeof user === 'string') {
-      return { name: 'Unknown User', email: user, id: user, role: '-' };
+      return { name: t('users.unknownUser'), email: user, id: user, role: '-' };
     }
     return { name: user.name, email: user.email, id: user._id };
   };
@@ -134,16 +135,13 @@ const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace
 
   const {
     hasSeatPricing,
-    memberCount,
     includedSeats,
     maxUsers,
-    availableSeats,
-    isAtMax,
     canInvite,
     inviteBlockReason,
-    inviteBlockMessage,
+    inviteBlockMessageKey,
+    inviteBlockMessageValues,
     perSeatPriceCents,
-    billableSeats,
     currency,
   } = seatStatus;
 
@@ -154,7 +152,7 @@ const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace
   return (
     <div>
       {!amIAdmin && (
-        <div className="text-red-500">Only workspace admin can manage users and roles.</div>
+        <div className="text-red-500">{t('users.adminOnly')}</div>
       )}
 
       {amIAdmin && (
@@ -164,7 +162,7 @@ const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace
               <InviteMember onInvite={refresh} workspaceId={workspace._id} />
               {willBeBilled && perSeatPriceCents && perSeatPriceCents > 0 && (
                 <div className="flex items-center gap-1.5 mt-2 text-xs text-amber-600 bg-amber-50 px-3 py-1.5 rounded-md">
-                  <span>Each additional member adds <span className="font-medium">{formatCents(perSeatPriceCents, currency)}/{billingInterval === 'yearly' ? 'yr' : billingInterval === 'quarterly' ? 'qtr' : 'mo'}</span> to your subscription</span>
+                  <span>{t('users.extraSeatCost', { price: fmtCents(perSeatPriceCents, currency), interval: billingInterval })}</span>
                 </div>
               )}
             </div>
@@ -172,10 +170,10 @@ const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace
             <div className="flex items-center justify-between p-3 bg-red-50 border border-red-100 rounded-md">
               <div>
                 <p className="text-sm font-medium text-red-700">
-                  {inviteBlockReason === 'seat_limit_reached' ? 'Seat limit reached' : 'Member limit reached'}
+                  {t('users.limitReached', { reason: inviteBlockReason ?? 'member_limit_reached' })}
                 </p>
                 <p className="text-xs text-red-600 mt-0.5">
-                  {inviteBlockMessage}
+                  {inviteBlockMessageKey ? t(inviteBlockMessageKey as TranslationKey, inviteBlockMessageValues ?? undefined) : ''}
                 </p>
               </div>
             </div>
@@ -186,7 +184,7 @@ const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace
       {(hasSeatPricing || maxUsers > 0) && (
         <div className="mb-4 rounded-lg border bg-gray-50 p-4">
           <div className="flex items-center justify-between mb-2">
-            <h4 className="text-sm font-semibold text-gray-900">{hasSeatPricing ? 'Seats' : 'Members'}</h4>
+            <h4 className="text-sm font-semibold text-gray-900">{t('users.seatHeading', { hasSeatPricing: String(hasSeatPricing) })}</h4>
             {maxUsers > 0 && (
               <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
                 currentUsersCount >= maxUsers
@@ -195,7 +193,7 @@ const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace
                     ? 'bg-amber-100 text-amber-700'
                     : 'bg-emerald-100 text-emerald-700'
               }`}>
-                {currentUsersCount} / {maxUsers}
+                {fmtNum(currentUsersCount)} / {fmtNum(maxUsers)}
               </span>
             )}
           </div>
@@ -220,21 +218,21 @@ const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace
             <div>
               {hasSeatPricing ? (
                 <>
-                  <span className="text-gray-900 font-medium">{includedSeats}</span> included
+                  <span className="text-gray-900 font-medium">{fmtNum(includedSeats)}</span> {t('users.included')}
                   {perSeatPriceCents && perSeatPriceCents > 0 && (
-                    <span className="text-gray-400"> · {formatCents(perSeatPriceCents, currency)}/extra seat</span>
+                    <span className="text-gray-400"> · {fmtCents(perSeatPriceCents, currency)}{t('users.perExtraSeat')}</span>
                   )}
                 </>
               ) : (
                 <span>
-                  <span className="text-gray-900 font-medium">{maxUsers}</span> max members
+                  <span className="text-gray-900 font-medium">{fmtNum(maxUsers)}</span> {t('users.maxMembers')}
                 </span>
               )}
             </div>
             {maxUsers > 0 ? (
-              <span>{Math.max(0, maxUsers - currentUsersCount)} available</span>
+              <span>{fmtNum(Math.max(0, maxUsers - currentUsersCount))} {t('users.available')}</span>
             ) : (
-              <span className="text-gray-400">No member limit</span>
+              <span className="text-gray-400">{t('users.noMemberLimit')}</span>
             )}
           </div>
         </div>
@@ -243,12 +241,12 @@ const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace
       <div className="mb-4 flex items-center justify-between">
         <div>
           <div className="text-sm text-gray-600">
-            {currentUsersCount} member{currentUsersCount !== 1 ? 's' : ''}
+            {t('users.memberCount', { count: currentUsersCount })}
           </div>
         </div>
         <div>
           <Button variant="ghost" size="sm" onClick={refresh} progress={loading}>
-            {loading ? 'Refreshing...' : 'Refresh'}
+            {t('settings.common.refreshAction', { loading: String(loading) })}
           </Button>
         </div>
       </div>
@@ -277,10 +275,10 @@ const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace
                 {/* Badges — always visible */}
                 <div className="flex items-center gap-1 shrink-0">
                   {myself && (
-                    <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">You</span>
+                    <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">{t('users.you')}</span>
                   )}
                   {isOwner && (
-                    <span className="text-xs bg-purple-100 text-purple-800 px-2 py-0.5 rounded">Owner</span>
+                    <span className="text-xs bg-purple-100 text-purple-800 px-2 py-0.5 rounded">{t('users.owner')}</span>
                   )}
                 </div>
               </div>
@@ -295,7 +293,7 @@ const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace
                       onValueChange={value => handleUpdateRole(workspace._id, member.id, value)}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select a role" />
+                        <SelectValue placeholder={t('users.selectRole')} />
                       </SelectTrigger>
                       <SelectContent>
                         {workspace?.roles.map(role => (
@@ -306,7 +304,7 @@ const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace
                       </SelectContent>
                     </Select>
                     {updatingRoleUserId === member.id && (
-                      <div className="absolute right-8 top-1/2 -translate-y-1/2 pointer-events-none">
+                      <div className="absolute end-8 top-1/2 -translate-y-1/2 pointer-events-none">
                         <Loader2 className="h-4 w-4 animate-spin text-gray-500" />
                       </div>
                     )}
@@ -326,27 +324,28 @@ const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace
         })}
       </ul>
       {workspaceUsers.length === 0 && (
-        <div className="text-center py-8 text-gray-500">No members found in this workspace.</div>
+        <div className="text-center py-8 text-gray-500">{t('users.noMembers')}</div>
       )}
     </div>
   );
 };
 
 function InviteMember({ onInvite, workspaceId }: { onInvite: () => void; workspaceId: string }) {
+  const { t } = useTranslation();
+  const { addUser, getWorkspace } = useSaaSWorkspaces();
+  const { settings } = useSaaSSettings();
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<string>('admin');
   const [inviting, setInviting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [workspace, setWorkspace] = useState<IWorkspace | null>(null);
   const messageTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
-  const { addUser, getWorkspace } = useSaaSWorkspaces();
+  const roles = settings?.workspace.roles ?? workspace?.roles ?? [];
 
   useEffect(() => {
     return () => { if (messageTimerRef.current) clearTimeout(messageTimerRef.current); };
   }, []);
-  const [workspace, setWorkspace] = useState<IWorkspace | null>(null);
-  const { settings } = useSaaSSettings();
-  const roles = settings?.workspace.roles ?? workspace?.roles ?? [];
 
   useEffect(() => {
     if (!workspaceId) return;
@@ -356,14 +355,14 @@ function InviteMember({ onInvite, workspaceId }: { onInvite: () => void; workspa
   const handleInvite = async () => {
     const emailValue = email.trim();
     if (!emailValue) {
-      setError('Email is required');
+      setError(t('users.emailRequired'));
       return;
     }
 
     // check if email is valid
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; // simple email validation
     if (!emailRegex.test(emailValue)) {
-      setError('Invalid email address format');
+      setError(t('users.invalidEmail'));
       return;
     }
 
@@ -371,7 +370,7 @@ function InviteMember({ onInvite, workspaceId }: { onInvite: () => void; workspa
 
     await addUser(workspaceId, emailValue, role)
       .then(() => {
-        setSuccess('User invited successfully');
+        setSuccess(t('users.inviteSuccess'));
         onInvite?.();
       })
       .catch(error => {
@@ -380,7 +379,7 @@ function InviteMember({ onInvite, workspaceId }: { onInvite: () => void; workspa
           action: 'addUser',
           metadata: { workspaceId, email: emailValue, role },
         });
-        setError(error instanceof Error ? error.message : 'Failed to invite member');
+        setError(error instanceof Error ? error.message : t('users.inviteFailed'));
       })
       .finally(() => {
         setInviting(false);
@@ -401,10 +400,10 @@ function InviteMember({ onInvite, workspaceId }: { onInvite: () => void; workspa
 
   return (
     <div className="flex gap-2 flex-col gap-y-2">
-      {error && <div className="text-red-500 capitalize">{error}</div>}
-      {success && <div className="text-green-500 capitalize">{success}</div>}
+      {error && <div className="text-red-500">{error}</div>}
+      {success && <div className="text-green-500">{success}</div>}
       <div>
-        <Label>Invite member by email</Label>
+        <Label>{t('users.inviteByEmail')}</Label>
         <Input
           type="email"
           value={email}
@@ -413,10 +412,10 @@ function InviteMember({ onInvite, workspaceId }: { onInvite: () => void; workspa
         />
       </div>
       <div>
-        <Label>Role</Label>
+        <Label>{t('users.role')}</Label>
         <Select value={role} onValueChange={setRole}>
           <SelectTrigger>
-            <SelectValue placeholder="Select a role" />
+            <SelectValue placeholder={t('users.selectRole')} />
           </SelectTrigger>
           <SelectContent>
             {roles.map(role => (
@@ -429,7 +428,7 @@ function InviteMember({ onInvite, workspaceId }: { onInvite: () => void; workspa
       </div>
       <div>
         <Button progress={inviting} onClick={handleInvite} disabled={inviting || !email || !role}>
-          {inviting ? 'Inviting...' : `Invite as ${role}`}
+          {inviting ? t('users.inviting') : t('users.inviteAs', { role })}
         </Button>
       </div>
     </div>

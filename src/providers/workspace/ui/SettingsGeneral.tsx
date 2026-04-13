@@ -1,4 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useTranslation } from '../../../i18n';
 import { ImageIcon, Smile } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -27,21 +28,22 @@ import SettingSkeleton from './Skeleton';
 import { getSvgImage, workspaceEmojis } from './utils';
 
 const WorkspaceSettingsGeneral: React.FC<{ workspace: IWorkspace }> = ({ workspace }) => {
+  const { t } = useTranslation();
+  const { updateWorkspace } = useSaaSWorkspaces();
+  const { user: currentUser } = useSaaSAuth();
   const [isUpdating, setIsUpdating] = useState(false);
   const [imageType, setImageType] = useState<'emoji' | 'url'>('emoji');
   const [selectedEmoji, setSelectedEmoji] = useState<string>();
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const successTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
-  const { updateWorkspace } = useSaaSWorkspaces();
 
   useEffect(() => {
     return () => { if (successTimerRef.current) clearTimeout(successTimerRef.current); };
   }, []);
-  const { user: currentUser } = useSaaSAuth();
 
   const formSchema = z.object({
     name: z.string().min(2, {
-      message: 'Workspace name must be at least 2 characters.',
+      message: t('general.nameMinLength'),
     }),
     image: z.string().optional(),
   });
@@ -59,7 +61,7 @@ const WorkspaceSettingsGeneral: React.FC<{ workspace: IWorkspace }> = ({ workspa
     setSuccessMessage(null);
     try {
       await updateWorkspace(workspace, values);
-      setSuccessMessage('Workspace settings saved successfully');
+      setSuccessMessage(t('general.success'));
       if (successTimerRef.current) clearTimeout(successTimerRef.current);
       successTimerRef.current = setTimeout(() => {
         setSuccessMessage(null);
@@ -89,13 +91,13 @@ const WorkspaceSettingsGeneral: React.FC<{ workspace: IWorkspace }> = ({ workspa
     <div>
       {successMessage && (
         <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded mb-4">
-          <p className="font-medium">Success!</p>
+          <p className="font-medium">{t('settings.common.success')}</p>
           <p className="text-sm">{successMessage}</p>
         </div>
       )}
       {!amIOwner && (
         <div className="text-red-500">
-          Only the workspace owner can change the workspace settings.
+          {t('general.ownerOnly')}
         </div>
       )}
       <Form {...form}>
@@ -105,9 +107,9 @@ const WorkspaceSettingsGeneral: React.FC<{ workspace: IWorkspace }> = ({ workspa
             name="name"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Name</FormLabel>
+                <FormLabel>{t('general.name')}</FormLabel>
                 <FormControl>
-                  <Input placeholder="My Awesome Workspace" {...field} disabled={!amIOwner} />
+                  <Input placeholder={t('general.namePlaceholder')} {...field} disabled={!amIOwner} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -116,7 +118,7 @@ const WorkspaceSettingsGeneral: React.FC<{ workspace: IWorkspace }> = ({ workspa
 
           {workspace.billingCurrency?.trim() && (
             <div className="space-y-1.5">
-              <Label className="text-sm font-medium text-muted-foreground">Billing currency</Label>
+              <Label className="text-sm font-medium text-muted-foreground">{t('general.billingCurrency')}</Label>
               <div className="flex items-center gap-2 text-sm">
                 {getCurrencyFlag(workspace.billingCurrency) && (
                   <span className="text-base">{getCurrencyFlag(workspace.billingCurrency)}</span>
@@ -128,9 +130,9 @@ const WorkspaceSettingsGeneral: React.FC<{ workspace: IWorkspace }> = ({ workspa
 
           <div className="space-y-4">
             <div>
-              <Label className="text-sm font-medium">Icon</Label>
+              <Label className="text-sm font-medium">{t('general.icon')}</Label>
               <FormDescription>
-                Choose an emoji or upload a custom image for your workspace.
+                {t('general.iconDescription')}
               </FormDescription>
             </div>
 
@@ -144,14 +146,14 @@ const WorkspaceSettingsGeneral: React.FC<{ workspace: IWorkspace }> = ({ workspa
                 <RadioGroupItem value="emoji" id="emoji" />
                 <Label htmlFor="emoji" className="flex items-center gap-2">
                   <Smile className="h-4 w-4" />
-                  Choose Emoji
+                  {t('general.chooseEmoji')}
                 </Label>
               </div>
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="url" id="url" />
                 <Label htmlFor="url" className="flex items-center gap-2">
                   <ImageIcon className="h-4 w-4" />
-                  Custom Image URL
+                  {t('general.customImageUrl')}
                 </Label>
               </div>
             </RadioGroup>
@@ -159,7 +161,7 @@ const WorkspaceSettingsGeneral: React.FC<{ workspace: IWorkspace }> = ({ workspa
             {imageType === 'emoji' && (
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
-                  <span className="text-sm font-medium">Preview:</span>
+                  <span className="text-sm font-medium">{t('general.previewLabel')}</span>
                   <div className="w-12 h-12 rounded-lg border-2 border-border flex items-center justify-center text-2xl bg-muted">
                     {selectedEmoji && <span className="text-2xl">{selectedEmoji}</span>}
                     {!selectedEmoji && form.watch('image')?.trim() && (
@@ -196,17 +198,16 @@ const WorkspaceSettingsGeneral: React.FC<{ workspace: IWorkspace }> = ({ workspa
                   name="image"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Image URL</FormLabel>
+                      <FormLabel>{t('general.imageUrl')}</FormLabel>
                       <FormControl>
                         <Input
-                          placeholder="https://example.com/image.png"
+                          placeholder={t('general.imageUrlPlaceholder')}
                           {...field}
                           disabled={!amIOwner}
                         />
                       </FormControl>
                       <FormDescription>
-                        Enter a valid URL for your workspace image. Supports PNG, JPG, and SVG
-                        formats.
+                        {t('general.imageUrlDescription')}
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -214,7 +215,7 @@ const WorkspaceSettingsGeneral: React.FC<{ workspace: IWorkspace }> = ({ workspa
                 />
                 {form.watch('image') && form.watch('image')?.trim() && (
                   <div className="flex items-center gap-3">
-                    <span className="text-sm font-medium">Preview:</span>
+                    <span className="text-sm font-medium">{t('general.previewLabel')}</span>
                     <div className="w-12 h-12 rounded-lg border-2 border-border overflow-hidden bg-muted">
                       <img
                         src={form.watch('image') || undefined}
@@ -231,7 +232,7 @@ const WorkspaceSettingsGeneral: React.FC<{ workspace: IWorkspace }> = ({ workspa
           <div className="flex justify-end gap-3 pt-4">
             {amIOwner && (
               <Button type="submit" disabled={isUpdating} progress={isUpdating}>
-                Update Workspace
+                {t('general.updateWorkspace')}
               </Button>
             )}
           </div>

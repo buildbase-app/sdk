@@ -1,4 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useTranslation } from '../../../i18n';
 import React, { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -23,6 +24,7 @@ import { IWorkspace } from '../types';
 import SettingSkeleton from './Skeleton';
 
 const WorkspaceSettingsProfile: React.FC<{ workspace: IWorkspace }> = ({ workspace }) => {
+  const { t } = useTranslation();
   const { updateUserProfile, getProfile } = useSaaSWorkspaces();
   const [isSaving, setIsSaving] = useState(false);
   const [user, setUser] = useState<IUser>();
@@ -36,7 +38,7 @@ const WorkspaceSettingsProfile: React.FC<{ workspace: IWorkspace }> = ({ workspa
 
   const formSchema = z.object({
     name: z.string().min(2, {
-      message: 'Name must be at least 2 characters.',
+      message: t('profile.nameMinLength'),
     }),
     country: z.string().optional(),
     timezone: z.string().optional(),
@@ -81,7 +83,7 @@ const WorkspaceSettingsProfile: React.FC<{ workspace: IWorkspace }> = ({ workspa
         language: values.language,
         currency: values.currency,
       });
-      setSuccessMessage('Profile saved successfully');
+      setSuccessMessage(t('profile.success'));
       if (successTimerRef.current) clearTimeout(successTimerRef.current);
       successTimerRef.current = setTimeout(() => {
         setSuccessMessage(null);
@@ -105,7 +107,7 @@ const WorkspaceSettingsProfile: React.FC<{ workspace: IWorkspace }> = ({ workspa
     <div>
       {successMessage && (
         <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded mb-4">
-          <p className="font-medium">Success!</p>
+          <p className="font-medium">{t('settings.common.success')}</p>
           <p className="text-sm">{successMessage}</p>
         </div>
       )}
@@ -113,7 +115,7 @@ const WorkspaceSettingsProfile: React.FC<{ workspace: IWorkspace }> = ({ workspa
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-1">Email</label>
+              <label className="block text-sm font-medium mb-1">{t('profile.email')}</label>
               <Input
                 disabled
                 className="w-full border rounded px-3 py-2 bg-gray-100"
@@ -126,7 +128,7 @@ const WorkspaceSettingsProfile: React.FC<{ workspace: IWorkspace }> = ({ workspa
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Name</FormLabel>
+                  <FormLabel>{t('profile.name')}</FormLabel>
                   <FormControl>
                     <Input {...field} />
                   </FormControl>
@@ -136,7 +138,7 @@ const WorkspaceSettingsProfile: React.FC<{ workspace: IWorkspace }> = ({ workspa
             />
             <div className="flex gap-y-2 my-4 flex-col">
               <div className="flex flex-col gap-0.5">
-                <div className="text-sm font-medium">Language</div>
+                <div className="text-sm font-medium">{t('profile.language')}</div>
                 <SelectLanguage
                   value={form.watch('language')}
                   onChange={newValue => {
@@ -145,7 +147,7 @@ const WorkspaceSettingsProfile: React.FC<{ workspace: IWorkspace }> = ({ workspa
                 />
               </div>
               <div className="flex flex-col gap-0.5">
-                <div className="text-sm font-medium">Country</div>
+                <div className="text-sm font-medium">{t('profile.country')}</div>
                 <SelectCountry
                   value={form.watch('country')}
                   onChange={newValue => {
@@ -154,7 +156,7 @@ const WorkspaceSettingsProfile: React.FC<{ workspace: IWorkspace }> = ({ workspa
                 />
               </div>
               <div className="flex flex-col gap-0.5">
-                <div className="text-sm font-medium">Currency</div>
+                <div className="text-sm font-medium">{t('profile.currency')}</div>
                 <SelectCurrency
                   value={form.watch('currency')}
                   onChange={newValue => {
@@ -163,7 +165,7 @@ const WorkspaceSettingsProfile: React.FC<{ workspace: IWorkspace }> = ({ workspa
                 />
               </div>
               <div className="flex flex-col gap-0.5">
-                <div className="text-sm font-medium">Timezone</div>
+                <div className="text-sm font-medium">{t('profile.timezone')}</div>
                 <SelectTimeZone
                   value={form.watch('timezone')}
                   onChange={newValue => {
@@ -174,7 +176,7 @@ const WorkspaceSettingsProfile: React.FC<{ workspace: IWorkspace }> = ({ workspa
             </div>
             <div className="flex justify-end gap-x-2">
               <Button type="submit" progress={isSaving} disabled={isSaving}>
-                Save
+                {t('profile.save')}
               </Button>
               <Button
                 type="button"
@@ -184,7 +186,7 @@ const WorkspaceSettingsProfile: React.FC<{ workspace: IWorkspace }> = ({ workspa
                 }}
                 disabled={isSaving}
               >
-                Reset
+                {t('profile.reset')}
               </Button>
             </div>
           </form>
@@ -192,7 +194,7 @@ const WorkspaceSettingsProfile: React.FC<{ workspace: IWorkspace }> = ({ workspa
       </div>
       {user?.image && (
         <div>
-          <label className="block text-sm font-medium mb-1">Profile Image</label>
+          <label className="block text-sm font-medium mb-1">{t('profile.profileImage')}</label>
           <div className="w-16 h-16 rounded-full overflow-hidden">
             <img src={user.image} alt={user.name} className="w-full h-full object-cover" />
           </div>

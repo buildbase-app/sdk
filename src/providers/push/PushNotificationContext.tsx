@@ -1,4 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from '../../i18n';
 import { useSaaSAuth } from '../auth/hooks';
 import { useSaaSOs } from '../os/hooks';
 import type { IOsState } from '../os/types';
@@ -48,6 +49,7 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
 
 export const PushNotificationProvider: React.FC<PushNotificationProviderProps> = React.memo(
   function PushNotificationProvider({ children, serviceWorkerPath = '/push-sw.js', autoSubscribe = false }) {
+    const { t } = useTranslation();
     const os = useSaaSOs();
     const { isAuthenticated } = useSaaSAuth();
 
@@ -119,7 +121,7 @@ export const PushNotificationProvider: React.FC<PushNotificationProviderProps> =
         // 1. Request permission
         const granted = await requestPermission();
         if (!granted) {
-          setState((s) => ({ ...s, loading: false, error: 'Notification permission denied' }));
+          setState((s) => ({ ...s, loading: false, error: t('notifications.permissionDenied') }));
           return;
         }
 
@@ -149,7 +151,7 @@ export const PushNotificationProvider: React.FC<PushNotificationProviderProps> =
         setState((s) => ({ ...s, isSubscribed: true, loading: false }));
         // Server sends a welcome notification automatically on subscribe
       } catch (err: any) {
-        const msg = err instanceof Error ? err.message : 'Failed to subscribe to push notifications';
+        const msg = err instanceof Error ? err.message : t('push.failedToSubscribe');
         setState((s) => ({ ...s, loading: false, error: msg }));
         handleError(err, { component: 'PushNotificationProvider', action: 'subscribe' });
       }
@@ -171,7 +173,7 @@ export const PushNotificationProvider: React.FC<PushNotificationProviderProps> =
         }
         setState((s) => ({ ...s, isSubscribed: false, loading: false }));
       } catch (err: any) {
-        const msg = err instanceof Error ? err.message : 'Failed to unsubscribe';
+        const msg = err instanceof Error ? err.message : t('push.failedToUnsubscribe');
         setState((s) => ({ ...s, loading: false, error: msg }));
         handleError(err, { component: 'PushNotificationProvider', action: 'unsubscribe' });
       }

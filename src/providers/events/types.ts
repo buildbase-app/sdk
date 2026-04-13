@@ -1,19 +1,20 @@
 import type { IUser } from '../../api/types';
 import type { IWorkspace } from '../workspace/types';
 
-/**
- * Event types for all SDK events
- */
-export type EventType =
-  | 'user:created'
-  | 'user:updated'
-  | 'workspace:changed'
-  | 'workspace:updated'
-  | 'workspace:user-added'
-  | 'workspace:user-removed'
-  | 'workspace:user-role-changed'
-  | 'workspace:created'
-  | 'workspace:deleted';
+/** Event type constants */
+export const SDKEvent = {
+  UserCreated: 'user:created',
+  UserUpdated: 'user:updated',
+  WorkspaceChanged: 'workspace:changed',
+  WorkspaceUpdated: 'workspace:updated',
+  WorkspaceUserAdded: 'workspace:user-added',
+  WorkspaceUserRemoved: 'workspace:user-removed',
+  WorkspaceUserRoleChanged: 'workspace:user-role-changed',
+  WorkspaceCreated: 'workspace:created',
+  WorkspaceDeleted: 'workspace:deleted',
+} as const;
+
+export type EventType = (typeof SDKEvent)[keyof typeof SDKEvent];
 
 /**
  * Event data types for each event

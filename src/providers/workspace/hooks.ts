@@ -405,7 +405,7 @@ export const useSaaSWorkspaces = () => {
         const memberCount = targetWorkspace.users?.length ?? 0;
         const validation = validateInvite({ memberCount, maxUsersConfig });
         if (!validation.canInvite) {
-          throw new Error(validation.blockMessage || 'Member limit reached');
+          throw new Error(validation.blockMessageKey || 'users.memberLimitReached');
         }
       }
 

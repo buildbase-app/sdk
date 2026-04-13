@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslation } from '../../../i18n';
 import { CommandSelect } from '../../ui/command-select';
 import { timezones } from './timezones';
 
@@ -9,9 +10,10 @@ interface SelectTimeZoneProps {
 }
 
 export function SelectTimeZone({ value, onChange }: SelectTimeZoneProps) {
-  const options = timezones.map(t => ({
-    value: t.value,
-    label: t.text,
+  const { t } = useTranslation();
+  const options = timezones.map(tz => ({
+    value: tz.value,
+    label: tz.text,
   }));
 
   return (
@@ -19,8 +21,8 @@ export function SelectTimeZone({ value, onChange }: SelectTimeZoneProps) {
       options={options}
       value={value}
       onChange={onChange}
-      placeholder="Choose timezone..."
-      emptyLabel="Choose timezone"
+      placeholder={t('dropdowns.searchTimezone')}
+      emptyLabel={t('dropdowns.chooseTimezone')}
     />
   );
 }

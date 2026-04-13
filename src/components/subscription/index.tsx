@@ -1,4 +1,5 @@
 import { useSubscriptionContext } from '../../contexts/SubscriptionContext';
+import { SubscriptionStatus } from '../../api/types';
 
 interface IWhenSubscriptionProps {
   /** Content to render when the condition is met (workspace has an active subscription). */
@@ -187,7 +188,7 @@ export const WhenNotTrialing = (props: IWhenTrialingProps) => {
   const { response, loading } = useSubscriptionContext();
 
   if (loading) return loadingComponent ?? null;
-  if (response?.subscription?.subscriptionStatus === 'trialing') return fallbackComponent ?? null;
+  if (response?.subscription?.subscriptionStatus === SubscriptionStatus.Trialing) return fallbackComponent ?? null;
   return children;
 };
 
