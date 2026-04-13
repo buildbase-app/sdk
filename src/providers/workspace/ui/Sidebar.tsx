@@ -1,4 +1,5 @@
 import { useTranslation } from '../../../i18n';
+import { useSaaSSettings } from '../../os/hooks';
 import {
   AlertTriangle,
   BarChart3,
@@ -12,6 +13,7 @@ import {
 import React from 'react';
 import { cn } from '../../../lib/utils';
 import { useSaaSAuth } from '../../auth/hooks';
+import { WorkspaceModes } from '../../types';
 import { IWorkspace } from '../types';
 import { getWorkspaceUserRole } from '../utils';
 import { SettingsScreen } from './SettingsDialog';
@@ -26,6 +28,8 @@ interface Props {
 const Sidebar: React.FC<Props> = ({ workspace, section, setSection }) => {
   const { t } = useTranslation();
   const { user: currentUser } = useSaaSAuth();
+  const { settings } = useSaaSSettings();
+  const isPersonalMode = settings?.workspace?.mode === WorkspaceModes.Personal;
 
   const createdBy =
     typeof workspace.createdBy === 'object' && workspace.createdBy !== null
@@ -91,6 +95,7 @@ const Sidebar: React.FC<Props> = ({ workspace, section, setSection }) => {
           section={SettingsScreen.General}
           onClick={() => setSection(SettingsScreen.General)}
         />
+        {!isPersonalMode && (
         <SidebarItem
           activeSection={section}
           icon={<UsersIcon className="h-3.5 w-3.5" />}
@@ -98,6 +103,7 @@ const Sidebar: React.FC<Props> = ({ workspace, section, setSection }) => {
           section={SettingsScreen.Users}
           onClick={() => setSection(SettingsScreen.Users)}
         />
+        )}
         <SidebarItem
           activeSection={section}
           icon={<CreditCard className="h-3.5 w-3.5" />}
@@ -126,7 +132,7 @@ const Sidebar: React.FC<Props> = ({ workspace, section, setSection }) => {
           section={SettingsScreen.Notifications}
           onClick={() => setSection(SettingsScreen.Notifications)}
         />
-        {canAccessDangerZone && (
+        {canAccessDangerZone && !isPersonalMode && (
           <SidebarItem
             activeSection={section}
             icon={<AlertTriangle className="h-3.5 w-3.5" />}

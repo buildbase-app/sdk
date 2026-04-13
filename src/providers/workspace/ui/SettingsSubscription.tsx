@@ -42,6 +42,8 @@ import {
   useResumeSubscription,
   useSubscriptionManagement,
 } from '../subscription-hooks';
+import { useSaaSSettings } from '../../os/hooks';
+import { WorkspaceModes } from '../../types';
 import { IWorkspace } from '../types';
 import SettingsInvoices from './SettingsInvoices';
 import SettingSkeleton from './Skeleton';
@@ -109,6 +111,8 @@ const getPlanDetailsFromItems = (
 const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ workspace }) => {
   const workspaceId = workspace._id?.toString();
   const { t, formattingLocale, fmtNum, fmtCents } = useTranslation();
+  const { settings: orgSettings } = useSaaSSettings();
+  const isPersonalMode = orgSettings?.workspace?.mode === WorkspaceModes.Personal;
   const {
     subscription,
     loading: subscriptionLoading,
@@ -657,13 +661,14 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                               <span className="text-sm text-gray-500">{intervalLabel}</span>
                             )}
                           </div>
-                          {seatPricingConfig && perSeatPrice && perSeatPrice > 0 && (
+                          {seatPricingConfig && perSeatPrice && perSeatPrice > 0 && !isPersonalMode && (
                             <div className="text-xs text-gray-500 mt-1">
                               {t('subscription.perSeatDisplay', { price: fmtCents(perSeatPrice, planCurrency), interval: intervalLabel })}
                             </div>
                           )}
-                          {/* Estimated total with seats */}
-                          {seatPricingConfig &&
+                          {/* Estimated total with seats — hidden in personal mode */}
+                          {!isPersonalMode &&
+                            seatPricingConfig &&
                             perSeatPrice &&
                             perSeatPrice > 0 &&
                             billableSeats > 0 &&
@@ -943,8 +948,8 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                                 </div>
                               )}
 
-                              {/* Seats */}
-                              {seatPricingConfig && (
+                              {/* Seats — hidden in personal mode */}
+                              {seatPricingConfig && !isPersonalMode && (
                                 <div>
                                   <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
                                     {t('subscription.seats.title')}

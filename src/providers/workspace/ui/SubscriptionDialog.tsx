@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation, type TranslationKey } from '../../../i18n';
 import { BillingIntervals, SubscriptionItemType } from '../../../api/types';
 import { getCurrencyFlag } from '../../../api/billing/currency-utils';
+import { useSaaSSettings } from '../../os/hooks';
+import { WorkspaceModes } from '../../types';
 import {
   getAvailableCurrenciesFromPlans,
   getBasePriceCents,
@@ -103,6 +105,8 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
 }) => {
   const [localLoading, setLocalLoading] = useState(false);
   const { t, formattingLocale, dir, fmtNum, fmtCents } = useTranslation();
+  const { settings: orgSettings } = useSaaSSettings();
+  const isPersonalMode = orgSettings?.workspace?.mode === WorkspaceModes.Personal;
   /** Format price in cents for display. Returns '' for 0/null. */
   const formatPrice = (priceInCents: number | undefined | null, currency: string): string => {
     if (priceInCents === undefined || priceInCents === null || priceInCents === 0) return '';
@@ -455,7 +459,7 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                           {savings !== null && savings > 0 && hasVariant && (
                             <span className="text-xs text-emerald-600 font-medium">{t('subscription.savingsPercent', { percent: savings })}</span>
                           )}
-                          {sp?.enabled && perSeat && perSeat > 0 && (
+                          {sp?.enabled && perSeat && perSeat > 0 && !isPersonalMode && (
                             <div className="text-xs text-slate-500 mt-1">
                               {t('subscription.seatPriceDisplay', { price: fmtCents(perSeat, displayCurrency), interval: getIntervalLabel(selectedInterval), included: fmtNum(sp.includedSeats), includedLabel: t('pricing.included') })}
                             </div>
@@ -504,7 +508,7 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                         )}
 
                         {/* Seats */}
-                        {sp?.enabled && (
+                        {sp?.enabled && !isPersonalMode && (
                           <div className="mb-3">
                             <div className="text-xs font-semibold text-emerald-600 uppercase tracking-wider mb-1.5">{t('subscription.seats.title')}</div>
                             <div className="space-y-1 text-sm">
@@ -624,6 +628,7 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                                 )}
                                 {/* Seat pricing info */}
                                 {(() => {
+                                  if (isPersonalMode) return null;
                                   const seatConfig = getSeatPricing(planVersion, effectiveCurrency);
                                   if (!seatConfig) return null;
                                   const perSeat = getPerSeatPriceCents(planVersion, effectiveCurrency, selectedInterval);
@@ -823,7 +828,7 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                     )}
 
                     {/* Seats Section */}
-                    {sortedPlans.some(pv => {
+                    {!isPersonalMode && sortedPlans.some(pv => {
                       const sp = getSeatPricing(pv, effectiveCurrency);
                       return sp?.enabled;
                     }) && (
