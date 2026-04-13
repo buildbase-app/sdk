@@ -240,7 +240,11 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
 
       let result: CheckoutResult | ICheckoutSessionResponse | ISubscriptionUpdateResponse;
 
-      if (!subscription?.subscription) {
+      // Treat canceled subscriptions as "no subscription" — create new checkout instead of updating
+      const isCanceled = subscription?.subscription?.subscriptionStatus === SubscriptionStatus.Canceled;
+      const hasActiveSubscription = subscription?.subscription && !isCanceled;
+
+      if (!hasActiveSubscription) {
         result = await createCheckoutSession({
           planVersionId,
           billingInterval,
@@ -468,17 +472,43 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                 <p className="text-sm text-gray-600">{t('subscription.managePlan')}</p>
               </div>
               <div className="flex items-center gap-2">
-                {/* Hide Change Plan when canceling to prevent multiple overlapping subscriptions */}
-                {subscription?.subscription?.cancelAtPeriodEnd ||
-                cancelLoading ? null : subscription?.subscription ? (
-                  <Button variant="outline" size="sm" onClick={() => setDialogOpen(true)}>
-                    {t('subscription.changePlanButton')}
-                  </Button>
-                ) : !subscription?.subscription && plansToShow && plansToShow.length > 0 ? (
-                  <Button size="sm" onClick={() => setDialogOpen(true)}>
-                    {t('subscription.viewPricingPlans')}
-                  </Button>
-                ) : null}
+                {/* Show appropriate button based on subscription state */}
+                {(() => {
+                  const isCanceled = subscription?.subscription?.subscriptionStatus === SubscriptionStatus.Canceled;
+                  const isCanceling = subscription?.subscription?.cancelAtPeriodEnd;
+
+                  // Canceling (pending end of period) — hide to prevent overlapping subscriptions
+                  if (isCanceling || cancelLoading) return null;
+
+                  // Fully canceled — treat as no subscription, offer new plan
+                  if (isCanceled && plansToShow && plansToShow.length > 0) {
+                    return (
+                      <Button size="sm" onClick={() => setDialogOpen(true)}>
+                        {t('subscription.viewPricingPlans')}
+                      </Button>
+                    );
+                  }
+
+                  // Active subscription — allow changing plan
+                  if (subscription?.subscription && !isCanceled) {
+                    return (
+                      <Button variant="outline" size="sm" onClick={() => setDialogOpen(true)}>
+                        {t('subscription.changePlanButton')}
+                      </Button>
+                    );
+                  }
+
+                  // No subscription at all — offer pricing plans
+                  if (!subscription?.subscription && plansToShow && plansToShow.length > 0) {
+                    return (
+                      <Button size="sm" onClick={() => setDialogOpen(true)}>
+                        {t('subscription.viewPricingPlans')}
+                      </Button>
+                    );
+                  }
+
+                  return null;
+                })()}
                 <Button
                   variant="ghost"
                   size="sm"
