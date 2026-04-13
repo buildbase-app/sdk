@@ -138,6 +138,7 @@ export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) 
       if (!sessionId) {
         _sessionHydrationDone = true;
         dispatch.auth(authActions.authenticationFailed());
+        callbacks?.onSessionExpired?.('missing');
         return;
       }
 
@@ -157,6 +158,8 @@ export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) 
         });
         _sessionHydrationDone = true;
         dispatch.auth(authActions.authenticationFailed());
+        // Session exists but profile fetch failed — session is invalid/expired
+        callbacks?.onSessionExpired?.('expired');
       } finally {
         _sessionHydrationInFlight = null;
       }

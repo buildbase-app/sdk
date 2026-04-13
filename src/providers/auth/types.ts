@@ -73,6 +73,26 @@ export interface IAuthCallbacks {
    */
   getSession: () => Promise<string | null>;
   /**
+   * Called when a session is missing, expired, or invalid.
+   * Use this to redirect to login, show a re-auth modal, or refresh the token.
+   *
+   * Triggers:
+   * - `getSession()` returns null on page refresh (cookie missing/expired)
+   * - `getProfile()` fails with 401 (session revoked server-side)
+   * - API call returns 401 during usage (session expired mid-session)
+   *
+   * @param reason - Why the session expired
+   *
+   * @example
+   * ```ts
+   * onSessionExpired: (reason) => {
+   *   console.log('Session expired:', reason);
+   *   router.push('/login');
+   * }
+   * ```
+   */
+  onSessionExpired?: (reason: 'missing' | 'expired' | 'invalid') => void;
+  /**
    * Event handler for User and Workspace events
    * @param eventType - The type of event that occurred
    * @param data - The event data (type varies based on eventType)
