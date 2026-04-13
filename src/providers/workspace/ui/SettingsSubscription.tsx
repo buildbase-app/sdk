@@ -1,7 +1,9 @@
 import { safeRedirect } from '../../../lib/security';
+import { useTranslation } from '../../../i18n';
+import { SubscriptionStatus, BillingIntervals, SubscriptionItemType, DunningState } from '../../../api/types';
+import { createCheckoutRedirectUrls } from '../../../lib/url-params';
 import { AlertTriangle, Calendar, CreditCard, Loader2 } from 'lucide-react';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { formatCents } from '../../../api/billing/currency-utils';
 import {
   getBasePriceCents,
   getBillingIntervalAndCurrencyFromPriceId,
@@ -11,14 +13,13 @@ import {
   getStripePriceIdForInterval,
 } from '../../../api/billing/pricing-variant-utils';
 import type { QuotaDisplayValue } from '../../../api/billing/quota-utils';
-import { formatQuotaWithPrice, getQuotaDisplayValue } from '../../../api/billing/quota-utils';
+import { getQuotaDisplayParts, getQuotaDisplayValue } from '../../../api/billing/quota-utils';
 import {
   BillingInterval,
   CheckoutResult,
   ICheckoutSessionResponse,
   IPlanGroupVersionWithPlans,
   IPlanVersion,
-  IPlanVersionWithPlan,
   ISubscriptionItem,
   ISubscriptionUpdateResponse,
 } from '../../../api/types';
@@ -51,37 +52,14 @@ const SubscriptionDialog = lazy(() =>
   import('./SubscriptionDialog').then(m => ({ default: m.default }))
 );
 
-// Derive billing interval (and currency) from price ID by checking plan versions and their pricingVariants
-const getBillingIntervalFromPriceId = (
-  priceId: string | null | undefined,
-  planVersions: IPlanVersionWithPlan[] | undefined
-): BillingInterval | null => {
-  const resolved = getBillingIntervalAndCurrencyFromPriceId(priceId, planVersions ?? []);
-  return resolved?.interval ?? null;
-};
-
-// Get display label for billing interval
-const getBillingIntervalLabel = (interval: BillingInterval | null): string => {
-  switch (interval) {
-    case 'monthly':
-      return 'Monthly';
-    case 'quarterly':
-      return 'Quarterly';
-    case 'yearly':
-      return 'Yearly';
-    default:
-      return 'Unknown';
-  }
-};
 
 // Format ISO date string to readable date
-const formatPeriodEndDate = (isoDate: string | undefined | null): string => {
+const formatPeriodEndDate = (locale: string, isoDate: string | undefined | null): string => {
   if (!isoDate) return '';
   try {
     const date = new Date(isoDate);
-    // Check if the date is valid
     if (isNaN(date.getTime())) return '';
-    return new Intl.DateTimeFormat('en-US', {
+    return new Intl.DateTimeFormat(locale, {
       month: 'long',
       day: 'numeric',
       year: 'numeric',
@@ -95,7 +73,7 @@ const formatPeriodEndDate = (isoDate: string | undefined | null): string => {
 const getPlanDetailsFromItems = (
   planVersion: IPlanVersion | null | undefined,
   currency?: string,
-  interval: BillingInterval = 'monthly'
+  interval: BillingInterval = BillingIntervals.Monthly
 ) => {
   if (!planVersion?.subscriptionItems) {
     return { features: [], limits: [], quotas: [] };
@@ -108,13 +86,13 @@ const getPlanDetailsFromItems = (
   planVersion.subscriptionItems.forEach(item => {
     const slug = item.slug;
 
-    if (item.type === 'feature') {
+    if (item.type === SubscriptionItemType.Feature) {
       const enabled = planVersion.features?.[slug] ?? false;
       features.push({ item, enabled });
-    } else if (item.type === 'limit') {
+    } else if (item.type === SubscriptionItemType.Limit) {
       const value = planVersion.limits?.[slug] ?? 0;
       limits.push({ item, value });
-    } else if (item.type === 'quota') {
+    } else if (item.type === SubscriptionItemType.Quota) {
       const value =
         currency && planVersion.pricingVariants?.length
           ? getQuotaDisplayWithVariant(planVersion, currency, slug, interval)
@@ -130,6 +108,7 @@ const getPlanDetailsFromItems = (
 
 const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ workspace }) => {
   const workspaceId = workspace._id?.toString();
+  const { t, formattingLocale, fmtNum, fmtCents } = useTranslation();
   const {
     subscription,
     loading: subscriptionLoading,
@@ -157,7 +136,7 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
   // API behavior:
   // - With subscription: currentVersion = user's current, availableVersions = newer versions
   // - Without subscription: currentVersion = latest published, availableVersions = []
-  const { currentVersion, latestVersion, isDeprecated, whatsNew, plansToShow } = useMemo(() => {
+  const { currentVersion, latestVersion, isDeprecated, plansToShow } = useMemo(() => {
     const userCurrentVersion = planGroupVersions?.currentVersion;
     const availableVersions = planGroupVersions?.availableVersions || [];
     const hasActiveSubscription = subscription?.subscription != null;
@@ -193,7 +172,6 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
       hasNewerVersion: hasNewer,
       // Only show deprecation if user has subscription AND there's a newer version
       isDeprecated: hasNewer && hasActiveSubscription,
-      whatsNew: latest?.whatsNew,
       plansToShow: plans,
     };
   }, [planGroupVersions, subscription?.subscription]);
@@ -228,7 +206,7 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
 
   const handlePlanChange = async (
     planVersionId: string,
-    billingInterval: BillingInterval = 'monthly',
+    billingInterval: BillingInterval = BillingIntervals.Monthly,
     currency?: string
   ) => {
     if (!workspaceId) return;
@@ -254,21 +232,7 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
     setUpdateSuccess(null);
 
     try {
-      let successUrl: string;
-      let cancelUrl: string;
-
-      try {
-        const currentUrl = new URL(window.location.href);
-        successUrl = currentUrl.toString();
-        cancelUrl = currentUrl.toString();
-      } catch {
-        const protocol = window.location.protocol || 'https:';
-        const host = window.location.host || window.location.hostname || '';
-        const pathname = window.location.pathname || '/';
-        const baseUrl = `${protocol}//${host}${pathname}`;
-        successUrl = baseUrl;
-        cancelUrl = baseUrl;
-      }
+      const { successUrl, cancelUrl } = createCheckoutRedirectUrls(workspaceId);
 
       let result: CheckoutResult | ICheckoutSessionResponse | ISubscriptionUpdateResponse;
 
@@ -296,10 +260,10 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
       }
 
       // If no checkout URL, subscription was updated directly
-      setUpdateSuccess('Subscription updated successfully!');
+      setUpdateSuccess(t('subscription.updateSuccess'));
       await refetch();
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to process subscription';
+      const errorMessage = err instanceof Error ? err.message : t('subscription.errorProcessing');
       setUpdateError(errorMessage);
     } finally {
       setUpdating(false);
@@ -322,10 +286,10 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
 
     try {
       await cancelSubscription();
-      setUpdateSuccess('Subscription will be canceled at the end of the billing period.');
+      setUpdateSuccess(t('subscription.cancelSuccess'));
       await refetch();
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to cancel subscription';
+      const errorMessage = err instanceof Error ? err.message : t('subscription.errorCanceling');
       setUpdateError(errorMessage);
     } finally {
       setUpdating(false);
@@ -347,10 +311,10 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
 
     try {
       await resumeSubscription();
-      setUpdateSuccess('Subscription has been resumed.');
+      setUpdateSuccess(t('subscription.resumeSuccess'));
       await refetch();
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to resume subscription';
+      const errorMessage = err instanceof Error ? err.message : t('subscription.errorResuming');
       setUpdateError(errorMessage);
     } finally {
       setUpdating(false);
@@ -372,7 +336,7 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
   if (!workspaceId) {
     return (
       <div className="border rounded-lg p-4 text-center text-gray-500">
-        <p>Invalid workspace ID</p>
+        <p>{t('subscription.invalidWorkspace')}</p>
       </div>
     );
   }
@@ -382,9 +346,9 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-start justify-between gap-4">
           <div>
-            <p className="font-medium">Error loading subscription data</p>
+            <p className="font-medium">{t('subscription.errorLoading')}</p>
             <p className="text-sm mt-1">{error}</p>
-            <p className="text-xs mt-2 text-red-600">Please check your connection and try again.</p>
+            <p className="text-xs mt-2 text-red-600">{t('subscription.errorLoadingDescription')}</p>
           </div>
           <Button
             variant="outline"
@@ -393,7 +357,7 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
             disabled={loading}
             className="flex-shrink-0 border-red-200 text-red-700 hover:bg-red-100"
           >
-            {loading ? 'Retrying...' : 'Retry'}
+            {t('settings.common.retryAction', { loading: String(loading) })}
           </Button>
         </div>
       )}
@@ -401,7 +365,7 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
       {updateError && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-start justify-between gap-4">
           <div>
-            <p className="font-medium">Update failed</p>
+            <p className="font-medium">{t('subscription.updateFailed')}</p>
             <p className="text-sm mt-1">{updateError}</p>
           </div>
           <Button
@@ -410,7 +374,7 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
             onClick={() => setUpdateError(null)}
             className="flex-shrink-0 border-red-200 text-red-700 hover:bg-red-100"
           >
-            Dismiss
+            {t('settings.common.dismiss')}
           </Button>
         </div>
       )}
@@ -418,7 +382,7 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
       {updateSuccess && (
         <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg flex items-start justify-between gap-4">
           <div>
-            <p className="font-medium">Success!</p>
+            <p className="font-medium">{t('settings.common.success')}</p>
             <p className="text-sm mt-1">{updateSuccess}</p>
           </div>
           <Button
@@ -427,7 +391,7 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
             onClick={() => setUpdateSuccess(null)}
             className="flex-shrink-0 border-green-200 text-green-700 hover:bg-green-100"
           >
-            Dismiss
+            {t('settings.common.dismiss')}
           </Button>
         </div>
       )}
@@ -444,7 +408,7 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                 : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
             }`}
           >
-            Plan
+            {t('subscription.plan')}
           </button>
           <button
             type="button"
@@ -455,7 +419,7 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                 : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
             }`}
           >
-            Invoices
+            {t('subscription.invoicesTab')}
           </button>
         </nav>
       </div>
@@ -466,7 +430,7 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
           {loading && (
             <div className="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">
               <Loader2 className="h-4 w-4 animate-spin flex-shrink-0" />
-              <span>Loading subscription and pricing plans...</span>
+              <span>{t('settings.common.loading')}</span>
             </div>
           )}
           {/* Deprecation Notice - Show if user's plan is on an older version */}
@@ -475,7 +439,7 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
               <div className="flex items-center gap-2 min-w-0">
                 <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0" />
                 <span className="text-sm text-amber-800">
-                  <span className="font-medium">Plan update available</span>
+                  <span className="font-medium">{t('subscription.planUpdateAvailable')}</span>
                   <span className="text-amber-600">
                     {' '}
                     — v{currentVersion?.version || '?'} → v{latestVersion?.version || '?'}
@@ -488,7 +452,7 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                 className="shrink-0 border-amber-300 text-amber-700 hover:bg-amber-100"
                 onClick={() => setDialogOpen(true)}
               >
-                View Plans
+                {t('subscription.viewPlans')}
               </Button>
             </div>
           )}
@@ -497,18 +461,18 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Manage your plan and billing</p>
+                <p className="text-sm text-gray-600">{t('subscription.managePlan')}</p>
               </div>
               <div className="flex items-center gap-2">
                 {/* Hide Change Plan when canceling to prevent multiple overlapping subscriptions */}
                 {subscription?.subscription?.cancelAtPeriodEnd ||
                 cancelLoading ? null : subscription?.subscription ? (
                   <Button variant="outline" size="sm" onClick={() => setDialogOpen(true)}>
-                    Change Plan
+                    {t('subscription.changePlanButton')}
                   </Button>
                 ) : !subscription?.subscription && plansToShow && plansToShow.length > 0 ? (
                   <Button size="sm" onClick={() => setDialogOpen(true)}>
-                    View Pricing Plans
+                    {t('subscription.viewPricingPlans')}
                   </Button>
                 ) : null}
                 <Button
@@ -518,7 +482,7 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                   onClick={refetch}
                   disabled={loading || updating}
                 >
-                  {loading ? 'Refreshing...' : 'Refresh'}
+                  {t('settings.common.refreshAction', { loading: String(loading) })}
                 </Button>
               </div>
             </div>
@@ -562,22 +526,21 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                   : 1;
                 const includedSeats = seatPricingConfig?.includedSeats ?? 0;
                 const billableSeats = Math.max(0, memberCount - includedSeats);
-                const seatCount = memberCount;
 
                 // Show base price only — Stripe calculates the actual total with proration
                 const formattedPrice =
                   currentPrice !== null && currentPrice !== undefined
                     ? currentPrice === 0
-                      ? 'Free'
-                      : formatCents(currentPrice, planCurrency)
+                      ? t('subscription.free')
+                      : fmtCents(currentPrice, planCurrency)
                     : null;
                 const intervalLabel =
-                  billingInterval === 'monthly'
-                    ? '/month'
-                    : billingInterval === 'quarterly'
-                      ? '/quarter'
-                      : billingInterval === 'yearly'
-                        ? '/year'
+                  billingInterval === BillingIntervals.Monthly
+                    ? t('subscription.billingInterval.perMonth')
+                    : billingInterval === BillingIntervals.Quarterly
+                      ? t('subscription.billingInterval.perQuarter')
+                      : billingInterval === BillingIntervals.Yearly
+                        ? t('subscription.billingInterval.perYear')
                         : '';
 
                 return (
@@ -585,7 +548,7 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                     className={`border rounded-lg overflow-hidden ${isDeprecated ? 'border-amber-300' : 'border-gray-200'}`}
                   >
                     {/* Trial Banner */}
-                    {subscription.subscription.subscriptionStatus === 'trialing' &&
+                    {subscription.subscription.subscriptionStatus === SubscriptionStatus.Trialing &&
                       (() => {
                         const trialEndStr =
                           subscription.subscription.trialEnd ||
@@ -606,11 +569,11 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                           >
                             <span>
                               {daysRemaining !== null && daysRemaining <= 0
-                                ? 'Your trial has ended.'
+                                ? t('subscription.trialEnded')
                                 : daysRemaining !== null
-                                  ? `Your trial ends in ${daysRemaining} day${daysRemaining === 1 ? '' : 's'}.`
-                                  : 'You are on a trial.'}{' '}
-                              Upgrade to keep access.
+                                  ? t('subscription.trialEndsIn', { days: daysRemaining })
+                                  : t('subscription.onTrial')}{' '}
+                              {t('subscription.upgradeToKeepAccess')}
                             </span>
                             <Button
                               size="sm"
@@ -618,7 +581,7 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                               className={`shrink-0 ${isUrgent ? '' : 'border-blue-300 text-blue-700 hover:bg-blue-100'}`}
                               onClick={() => setDialogOpen(true)}
                             >
-                              Upgrade Now
+                              {t('subscription.upgradePlan')}
                             </Button>
                           </div>
                         );
@@ -631,38 +594,38 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                       {/* Plan name + badges — wrap on mobile */}
                       <div className="flex flex-wrap items-center gap-2 mb-2">
                         <h3 className="text-lg font-semibold text-gray-900">
-                          {subscription.plan?.name || 'No plan assigned'}
+                          {subscription.plan?.name || t('subscription.noPlanAssigned')}
                         </h3>
                         {/* Status Badge */}
                         <span
                           className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            subscription.subscription.subscriptionStatus === 'active'
+                            subscription.subscription.subscriptionStatus === SubscriptionStatus.Active
                               ? subscription.subscription.cancelAtPeriodEnd
                                 ? 'bg-amber-100 text-amber-800'
                                 : 'bg-green-100 text-green-800'
-                              : subscription.subscription.subscriptionStatus === 'trialing'
+                              : subscription.subscription.subscriptionStatus === SubscriptionStatus.Trialing
                                 ? 'bg-blue-100 text-blue-800'
-                                : subscription.subscription.subscriptionStatus === 'canceled'
+                                : subscription.subscription.subscriptionStatus === SubscriptionStatus.Canceled
                                   ? 'bg-gray-100 text-gray-800'
                                   : 'bg-red-100 text-red-800'
                           }`}
                         >
-                          {subscription.subscription.subscriptionStatus === 'active' &&
-                            (subscription.subscription.cancelAtPeriodEnd ? 'Canceling' : 'Active')}
-                          {subscription.subscription.subscriptionStatus === 'trialing' && 'Trial'}
-                          {subscription.subscription.subscriptionStatus === 'canceled' &&
-                            'Canceled'}
-                          {subscription.subscription.subscriptionStatus === 'past_due' &&
-                            'Past Due'}
+                          {subscription.subscription.subscriptionStatus === SubscriptionStatus.Active &&
+                            (subscription.subscription.cancelAtPeriodEnd ? t('subscription.status.canceling') : t('subscription.status.active'))}
+                          {subscription.subscription.subscriptionStatus === SubscriptionStatus.Trialing && t('subscription.status.trial')}
+                          {subscription.subscription.subscriptionStatus === SubscriptionStatus.Canceled &&
+                            t('subscription.status.canceled')}
+                          {subscription.subscription.subscriptionStatus === SubscriptionStatus.PastDue &&
+                            t('subscription.status.pastDue')}
                         </span>
-                        {subscription.subscription.subscriptionStatus === 'trialing' &&
-                          formatPeriodEndDate(
+                        {subscription.subscription.subscriptionStatus === SubscriptionStatus.Trialing &&
+                          formatPeriodEndDate(formattingLocale,
                             subscription.subscription.trialEnd ||
                               subscription.subscription.stripeCurrentPeriodEnd
                           ) && (
                             <span className="text-xs text-gray-500">
                               (ends{' '}
-                              {formatPeriodEndDate(
+                              {formatPeriodEndDate(formattingLocale,
                                 subscription.subscription.trialEnd ||
                                   subscription.subscription.stripeCurrentPeriodEnd
                               )}
@@ -672,7 +635,7 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                         {isDeprecated && (
                           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
                             <AlertTriangle className="h-3 w-3" />
-                            Deprecated
+                            {t('subscription.status.deprecated')}
                           </span>
                         )}
                       </div>
@@ -686,17 +649,17 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                       {/* Price + billing info — stack on mobile, side by side on desktop */}
                       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
                         <div>
-                          <div className="flex items-baseline gap-1">
+                          <div className="flex items-baseline gap-1 whitespace-nowrap">
                             <span className="text-2xl font-bold text-gray-900">
-                              {formattedPrice || 'N/A'}
+                              {formattedPrice || t('invoices.na')}
                             </span>
-                            {formattedPrice && formattedPrice !== 'Free' && intervalLabel && (
+                            {formattedPrice && formattedPrice !== t('subscription.free') && intervalLabel && (
                               <span className="text-sm text-gray-500">{intervalLabel}</span>
                             )}
                           </div>
                           {seatPricingConfig && perSeatPrice && perSeatPrice > 0 && (
                             <div className="text-xs text-gray-500 mt-1">
-                              + {formatCents(perSeatPrice, planCurrency)}/seat{intervalLabel}
+                              {t('subscription.perSeatDisplay', { price: fmtCents(perSeatPrice, planCurrency), interval: intervalLabel })}
                             </div>
                           )}
                           {/* Estimated total with seats */}
@@ -705,37 +668,27 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                             perSeatPrice > 0 &&
                             billableSeats > 0 &&
                             formattedPrice &&
-                            formattedPrice !== 'Free' &&
+                            formattedPrice !== t('subscription.free') &&
                             currentPrice != null && (
                               <div className="text-xs text-gray-500 mt-1 pt-1 border-t border-gray-200">
-                                Est. total:{' '}
-                                <span className="font-medium text-gray-700">
-                                  {formatCents(
-                                    currentPrice + perSeatPrice * billableSeats,
-                                    planCurrency
-                                  )}
-                                  {intervalLabel}
-                                </span>
-                                <span className="text-gray-400">
-                                  {' '}
-                                  ({billableSeats} extra seat{billableSeats !== 1 ? 's' : ''})
-                                </span>
+                                {t('subscription.estTotalDisplay', {
+                                  total: fmtCents(currentPrice + perSeatPrice * billableSeats, planCurrency),
+                                  interval: intervalLabel,
+                                  count: billableSeats,
+                                })}
                               </div>
                             )}
                         </div>
-                        {(subscription.subscription.subscriptionStatus === 'active' ||
-                          subscription.subscription.subscriptionStatus === 'trialing') &&
+                        {(subscription.subscription.subscriptionStatus === SubscriptionStatus.Active ||
+                          subscription.subscription.subscriptionStatus === SubscriptionStatus.Trialing) &&
                           !subscription.subscription.cancelAtPeriodEnd &&
-                          formatPeriodEndDate(subscription.subscription.stripeCurrentPeriodEnd) && (
+                          formatPeriodEndDate(formattingLocale,subscription.subscription.stripeCurrentPeriodEnd) && (
                             <div className="flex items-center gap-1.5 text-xs text-gray-500">
                               <Calendar className="h-3.5 w-3.5 flex-shrink-0" />
                               <span>
-                                Next billing:{' '}
-                                <span className="font-medium text-gray-700">
-                                  {formatPeriodEndDate(
-                                    subscription.subscription.stripeCurrentPeriodEnd
-                                  )}
-                                </span>
+                                {t('subscription.nextBillingDisplay', {
+                                  date: formatPeriodEndDate(formattingLocale,subscription.subscription.stripeCurrentPeriodEnd) ?? '',
+                                })}
                               </span>
                             </div>
                           )}
@@ -743,14 +696,14 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
 
                       {isDeprecated && (
                         <p className="text-xs text-amber-600 mt-2">
-                          Version {currentVersion?.version || 'N/A'} - A newer version is available
+                          Version {currentVersion?.version || t('invoices.na')}
                         </p>
                       )}
 
                       {/* Actions: Manage Payment, Cancel/Resume */}
-                      {(subscription.subscription.subscriptionStatus === 'active' ||
-                        subscription.subscription.subscriptionStatus === 'trialing' ||
-                        subscription.subscription.subscriptionStatus === 'past_due') && (
+                      {(subscription.subscription.subscriptionStatus === SubscriptionStatus.Active ||
+                        subscription.subscription.subscriptionStatus === SubscriptionStatus.Trialing ||
+                        subscription.subscription.subscriptionStatus === SubscriptionStatus.PastDue) && (
                         <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-4 pt-4 border-t border-gray-200">
                           {subscription.subscription && (
                             <Button
@@ -760,13 +713,13 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                               disabled={portalLoading}
                               progress={portalLoading}
                             >
-                              {portalLoading ? 'Opening...' : 'Manage Payment'}
+                              {portalLoading ? t('subscription.openingPortal') : t('subscription.managePayment')}
                             </Button>
                           )}
-                          {(subscription.subscription.subscriptionStatus === 'active' ||
-                            subscription.subscription.subscriptionStatus === 'trialing') && (
+                          {(subscription.subscription.subscriptionStatus === SubscriptionStatus.Active ||
+                            subscription.subscription.subscriptionStatus === SubscriptionStatus.Trialing) && (
                             <>
-                              {subscription.subscription.subscriptionStatus === 'active' &&
+                              {subscription.subscription.subscriptionStatus === SubscriptionStatus.Active &&
                               subscription.subscription.cancelAtPeriodEnd ? (
                                 <Button
                                   variant="outline"
@@ -775,7 +728,7 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                                   disabled={updating || cancelLoading || resumeLoading}
                                   progress={resumeLoading}
                                 >
-                                  Resume Subscription
+                                  {t('subscription.resumeTitle')}
                                 </Button>
                               ) : (
                                 <Button
@@ -787,10 +740,10 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                                   progress={cancelLoading || updating}
                                 >
                                   {cancelLoading || updating
-                                    ? 'Canceling...'
-                                    : subscription.subscription.subscriptionStatus === 'trialing'
-                                      ? 'Cancel Trial'
-                                      : 'Cancel Subscription'}
+                                    ? t('subscription.canceling')
+                                    : subscription.subscription.subscriptionStatus === SubscriptionStatus.Trialing
+                                      ? t('subscription.cancelTrial')
+                                      : t('subscription.cancelTitle')}
                                 </Button>
                               )}
                             </>
@@ -800,15 +753,14 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                     </div>
 
                     {/* Past Due Warning Banner */}
-                    {subscription.subscription.subscriptionStatus === 'past_due' && (
+                    {subscription.subscription.subscriptionStatus === SubscriptionStatus.PastDue && (
                       <div className="px-5 py-3 bg-red-50 border-t border-red-200">
                         <div className="flex items-start gap-3">
                           <AlertTriangle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
                           <div>
-                            <p className="text-sm font-medium text-red-800">Payment past due</p>
+                            <p className="text-sm font-medium text-red-800">{t('subscription.paymentPastDue')}</p>
                             <p className="text-sm text-red-700 mt-0.5">
-                              Please update your payment method to avoid service interruption. Check
-                              your invoices for details.
+                              {t('subscription.paymentPastDueDescription')}
                             </p>
                             <Button
                               variant="outline"
@@ -816,7 +768,7 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                               className="mt-2 border-red-200 text-red-700 hover:bg-red-100"
                               onClick={() => setActiveTab('invoices')}
                             >
-                              View Invoices
+                              {t('subscription.viewInvoices')}
                             </Button>
                           </div>
                         </div>
@@ -824,24 +776,24 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                     )}
 
                     {/* Dunning Banner (payment recovery in progress) */}
-                    {subscription.subscription.subscriptionStatus === 'past_due' &&
+                    {subscription.subscription.subscriptionStatus === SubscriptionStatus.PastDue &&
                       subscription.subscription.dunningState &&
-                      subscription.subscription.dunningState !== 'none' && (
+                      subscription.subscription.dunningState !== DunningState.None && (
                         <div className="px-5 py-3 bg-red-50 border-t border-red-200">
                           <div className="flex items-start gap-3">
                             <AlertTriangle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
                             <div>
                               <p className="text-sm font-medium text-red-800">
-                                {subscription.subscription.dunningState === 'final'
-                                  ? 'Final warning: Subscription will be suspended'
-                                  : subscription.subscription.dunningState === 'suspended'
-                                    ? 'Subscription suspended'
-                                    : 'Payment recovery in progress'}
+                                {subscription.subscription.dunningState === DunningState.Final
+                                  ? t('subscription.dunningFinal')
+                                  : subscription.subscription.dunningState === DunningState.Suspended
+                                    ? t('subscription.dunningSuspended')
+                                    : t('subscription.dunningRecovery')}
                               </p>
                               <p className="text-sm text-red-700 mt-0.5">
-                                {subscription.subscription.dunningState === 'suspended'
-                                  ? 'Your subscription has been suspended due to repeated payment failures. Update your payment method to restore access.'
-                                  : 'We were unable to process your payment. Please update your payment method to avoid losing access.'}
+                                {subscription.subscription.dunningState === DunningState.Suspended
+                                  ? t('subscription.dunningSuspendedDescription')
+                                  : t('subscription.dunningRecoveryDescription')}
                               </p>
                             </div>
                           </div>
@@ -849,14 +801,14 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                       )}
 
                     {/* Paused Banner */}
-                    {subscription.subscription.subscriptionStatus === 'paused' && (
+                    {subscription.subscription.subscriptionStatus === SubscriptionStatus.Paused && (
                       <div className="px-5 py-3 bg-blue-50 border-t border-blue-200">
                         <div className="flex items-start gap-3">
                           <Calendar className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
                           <div>
-                            <p className="text-sm font-medium text-blue-800">Subscription paused</p>
+                            <p className="text-sm font-medium text-blue-800">{t('subscription.subscriptionPaused')}</p>
                             <p className="text-sm text-blue-700 mt-0.5">
-                              Your subscription is currently paused. Resume to restore full access.
+                              {t('subscription.subscriptionPausedDescription')}
                             </p>
                           </div>
                         </div>
@@ -870,23 +822,23 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                           <Calendar className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
                           <div>
                             <p className="text-sm font-medium text-amber-800">
-                              Subscription scheduled for cancellation
+                              {t('subscription.scheduledCancellation')}
                             </p>
                             <p className="text-sm text-amber-700 mt-0.5">
-                              {formatPeriodEndDate(
+                              {formatPeriodEndDate(formattingLocale,
                                 subscription.subscription.stripeCurrentPeriodEnd
                               ) ? (
                                 <>
-                                  Your subscription will end on{' '}
+                                  {t('subscription.cancelEndDescription')}{' '}
                                   <span className="font-medium">
-                                    {formatPeriodEndDate(
+                                    {formatPeriodEndDate(formattingLocale,
                                       subscription.subscription.stripeCurrentPeriodEnd
                                     )}
                                   </span>
-                                  . You'll retain access until then and won't be charged again.
+                                  .
                                 </>
                               ) : (
-                                "Your subscription will be canceled at the end of the current billing period. You won't be charged again."
+                                t('subscription.cancelEndFallback')
                               )}
                             </p>
                           </div>
@@ -916,7 +868,7 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                               {planDetails.features.length > 0 && (
                                 <div>
                                   <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                                    Features
+                                    {t('subscription.items.features')}
                                   </h4>
                                   <ul className="space-y-1.5">
                                     {planDetails.features
@@ -946,7 +898,7 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                               {planDetails.limits.length > 0 && (
                                 <div>
                                   <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                                    Limits
+                                    {t('subscription.items.limits')}
                                   </h4>
                                   <ul className="space-y-1.5">
                                     {planDetails.limits.map(({ item, value }) => (
@@ -966,15 +918,16 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                               {planDetails.quotas.length > 0 && (
                                 <div>
                                   <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                                    Usage Quotas
+                                    {t('subscription.items.quotas')}
                                   </h4>
                                   <ul className="space-y-1.5">
                                     {planDetails.quotas.map(({ item, value }) => {
-                                      const quotaDisplay = formatQuotaWithPrice(
-                                        value,
-                                        item.name.toLowerCase(),
-                                        { currency: subscriptionCurrency }
-                                      );
+                                      const parts = getQuotaDisplayParts(value, item.name.toLowerCase(), { currency: subscriptionCurrency, locale: formattingLocale });
+                                      const quotaDisplay = parts
+                                        ? parts.hasOverage
+                                          ? t('quota.includedWithOverage', { count: parts.included, price: parts.price, unit: parts.unit })
+                                          : t('quota.includedOnly', { count: parts.included })
+                                        : '—';
                                       return (
                                         <li key={item._id} className="text-sm">
                                           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-0.5">
@@ -994,41 +947,41 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                               {seatPricingConfig && (
                                 <div>
                                   <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                                    Seats
+                                    {t('subscription.seats.title')}
                                   </h4>
                                   <div className="bg-gray-50 rounded-lg p-3 space-y-1.5">
                                     <div className="flex items-center justify-between text-sm">
-                                      <span className="text-gray-600">Members</span>
+                                      <span className="text-gray-600">{t('subscription.seats.members')}</span>
                                       <span className="font-semibold text-gray-900">
-                                        {memberCount}
+                                        {fmtNum(memberCount)}
                                       </span>
                                     </div>
                                     <div className="flex items-center justify-between text-sm">
-                                      <span className="text-gray-600">Included</span>
-                                      <span className="text-gray-900">{includedSeats}</span>
+                                      <span className="text-gray-600">{t('subscription.seats.included')}</span>
+                                      <span className="text-gray-900">{fmtNum(includedSeats)}</span>
                                     </div>
                                     {billableSeats > 0 && (
                                       <div className="flex items-center justify-between text-sm">
-                                        <span className="text-gray-600">Billable</span>
+                                        <span className="text-gray-600">{t('subscription.seats.billable')}</span>
                                         <span className="font-medium text-amber-600">
-                                          {billableSeats} extra
+                                          {fmtNum(billableSeats)} {t('subscription.seats.extra')}
                                         </span>
                                       </div>
                                     )}
                                     {perSeatPrice && perSeatPrice > 0 && (
                                       <div className="flex items-center justify-between text-sm">
-                                        <span className="text-gray-600">Per extra seat</span>
+                                        <span className="text-gray-600">{t('subscription.seats.perExtraSeat')}</span>
                                         <span className="text-gray-900">
-                                          {formatCents(perSeatPrice, subscriptionCurrency)}
+                                          {fmtCents(perSeatPrice, subscriptionCurrency)}
                                           {intervalLabel}
                                         </span>
                                       </div>
                                     )}
                                     {(seatPricingConfig as any).maxSeats > 0 && (
                                       <div className="flex items-center justify-between text-sm">
-                                        <span className="text-gray-600">Limit</span>
+                                        <span className="text-gray-600">{t('subscription.seats.limit')}</span>
                                         <span className="text-gray-900">
-                                          {(seatPricingConfig as any).maxSeats}
+                                          {fmtNum((seatPricingConfig as any).maxSeats)}
                                         </span>
                                       </div>
                                     )}
@@ -1047,9 +1000,9 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
               <div className="border rounded-lg p-6 text-center">
                 <div className="mb-4">
                   <CreditCard className="h-12 w-12 mx-auto mb-3 text-blue-400" />
-                  <p className="text-lg font-medium text-gray-700">Start your free trial</p>
+                  <p className="text-lg font-medium text-gray-700">{t('subscription.startFreeTrial')}</p>
                   <p className="text-sm text-gray-500 mt-1">
-                    Try the full plan with no commitment. You can upgrade or cancel anytime.
+                    {t('subscription.startTrialDescription')}
                   </p>
                 </div>
                 <Button
@@ -1071,16 +1024,16 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                     }
                   }}
                 >
-                  Start Free Trial
+                  {t('subscription.startFreeTrial')}
                 </Button>
                 {plansToShow && plansToShow.length > 0 && (
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="ml-2"
+                    className="ms-2"
                     onClick={() => setDialogOpen(true)}
                   >
-                    View All Plans
+                    {t('subscription.viewAllPlans')}
                   </Button>
                 )}
               </div>
@@ -1090,15 +1043,15 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                 <div className="mb-4">
                   <CreditCard className="h-12 w-12 mx-auto text-gray-400 mb-3" />
                   <p className="text-lg font-medium text-gray-700">
-                    You don't have an active subscription
+                    {t('subscription.noSubscription')}
                   </p>
                   <p className="text-sm text-gray-500 mt-1">
-                    Choose a plan to get started with your workspace
+                    {t('subscription.noSubscriptionDescription')}
                   </p>
                 </div>
                 {plansToShow && plansToShow.length > 0 && (
                   <Button size="sm" onClick={() => setDialogOpen(true)}>
-                    View Pricing Plans
+                    {t('subscription.viewPricingPlans')}
                   </Button>
                 )}
               </div>
@@ -1108,12 +1061,11 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
           {!planGroupVersions && !loading && (
             <div className="border rounded-lg p-4 text-center">
               <div className="text-gray-500 mb-2">
-                <p className="font-medium">Unable to load plan information</p>
+                <p className="font-medium">{t('subscription.errorLoading')}</p>
                 {error && <p className="text-sm mt-2 text-red-600">Error: {error}</p>}
                 {!error && (
                   <p className="text-sm mt-2">
-                    No plan groups are available for this workspace. Please contact support if you
-                    believe this is an error.
+                    {t('subscription.noPlansAvailable')}
                   </p>
                 )}
               </div>
@@ -1125,7 +1077,7 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                 disabled={loading}
                 className="mt-4"
               >
-                {loading ? 'Refreshing...' : 'Refresh'}
+                {t('settings.common.refreshAction', { loading: String(loading) })}
               </Button>
             </div>
           )}
@@ -1138,7 +1090,7 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
           {loading && (
             <div className="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">
               <Loader2 className="h-4 w-4 animate-spin flex-shrink-0" />
-              <span>Loading invoices...</span>
+              <span>{t('settings.common.loading')}</span>
             </div>
           )}
           <SettingsInvoices
@@ -1158,7 +1110,7 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
               <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Loader2 className="h-5 w-5 animate-spin" />
-                  <span>Loading plans...</span>
+                  <span>{t('settings.common.loading')}</span>
                 </div>
               </div>
             ) : null
@@ -1184,36 +1136,35 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
       <AlertDialog open={resumeDialogOpen} onOpenChange={setResumeDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Resume Subscription</AlertDialogTitle>
+            <AlertDialogTitle>{t('subscription.resumeTitle')}</AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="space-y-3">
-                <p>Are you sure you want to resume your subscription?</p>
+                <p>{t('subscription.resumeConfirm')}</p>
                 <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 space-y-2 text-sm">
                   <div className="flex items-start gap-2">
                     <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
                     <span>
-                      You will be charged again on{' '}
+                      {t('subscription.resumeChargeDate')}{' '}
                       {subscription?.subscription?.stripeCurrentPeriodEnd &&
-                      formatPeriodEndDate(subscription.subscription.stripeCurrentPeriodEnd) ? (
+                      formatPeriodEndDate(formattingLocale,subscription.subscription.stripeCurrentPeriodEnd) ? (
                         <span className="font-medium">
-                          {formatPeriodEndDate(subscription.subscription.stripeCurrentPeriodEnd)}
+                          {formatPeriodEndDate(formattingLocale,subscription.subscription.stripeCurrentPeriodEnd)}
                         </span>
                       ) : (
-                        'the next billing date'
+                        t('subscription.resumeChargeFallback')
                       )}
                     </span>
                   </div>
                   <div className="flex items-start gap-2">
                     <span className="text-amber-600 mt-0.5">•</span>
                     <span>
-                      Your subscription will continue automatically and you'll be billed according
-                      to your plan
+                      {t('subscription.resumeContinue')}
                     </span>
                   </div>
                   <div className="flex items-start gap-2">
                     <span className="text-blue-600 mt-0.5">ℹ</span>
                     <span>
-                      You can cancel anytime before the next billing date if you change your mind
+                      {t('subscription.resumeCancelAnytime')}
                     </span>
                   </div>
                 </div>
@@ -1221,9 +1172,9 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={resumeLoading}>Keep Canceled</AlertDialogCancel>
+            <AlertDialogCancel disabled={resumeLoading}>{t('subscription.resumeKeep')}</AlertDialogCancel>
             <AlertDialogAction onClick={handleResumeSubscription} disabled={resumeLoading}>
-              {resumeLoading ? 'Resuming...' : 'Yes, Resume Subscription'}
+              {resumeLoading ? t('subscription.resuming') : t('subscription.resumeButton')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -1233,45 +1184,45 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
       <AlertDialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Cancel Subscription</AlertDialogTitle>
+            <AlertDialogTitle>{t('subscription.cancelTitle')}</AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="space-y-3">
-                <p>Are you sure you want to cancel your subscription?</p>
+                <p>{t('subscription.cancelConfirm')}</p>
                 <div className="bg-gray-50 rounded-lg p-4 space-y-2 text-sm">
                   <div className="flex items-start gap-2">
                     <span className="text-green-600 mt-0.5">✓</span>
                     <span>
-                      You'll retain full access to this plan until{' '}
+                      {t('subscription.retainAccess')}{' '}
                       {subscription?.subscription?.stripeCurrentPeriodEnd &&
-                      formatPeriodEndDate(subscription.subscription.stripeCurrentPeriodEnd) ? (
+                      formatPeriodEndDate(formattingLocale,subscription.subscription.stripeCurrentPeriodEnd) ? (
                         <span className="font-medium">
-                          {formatPeriodEndDate(subscription.subscription.stripeCurrentPeriodEnd)}
+                          {formatPeriodEndDate(formattingLocale,subscription.subscription.stripeCurrentPeriodEnd)}
                         </span>
                       ) : (
-                        'the end of your current billing period'
+                        t('subscription.retainAccessFallback')
                       )}
                     </span>
                   </div>
                   <div className="flex items-start gap-2">
                     <span className="text-green-600 mt-0.5">✓</span>
-                    <span>You won't be charged again after cancellation</span>
+                    <span>{t('subscription.cancelNotCharged')}</span>
                   </div>
                   <div className="flex items-start gap-2">
                     <span className="text-blue-600 mt-0.5">ℹ</span>
-                    <span>You can resume your subscription anytime before it ends</span>
+                    <span>{t('subscription.cancelResumeAnytime')}</span>
                   </div>
                 </div>
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={cancelLoading}>Keep Subscription</AlertDialogCancel>
+            <AlertDialogCancel disabled={cancelLoading}>{t('subscription.cancelKeep')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleCancelSubscription}
               disabled={cancelLoading}
               className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
             >
-              {cancelLoading ? 'Canceling...' : 'Yes, Cancel Subscription'}
+              {cancelLoading ? t('subscription.canceling') : t('subscription.cancelButton')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

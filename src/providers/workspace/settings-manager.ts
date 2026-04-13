@@ -1,3 +1,4 @@
+import { SettingsScreen } from './ui/SettingsDialog';
 import type { WorkspaceSettingsSection } from './ui/SettingsDialog';
 
 /**
@@ -11,7 +12,7 @@ class WorkspaceSettingsManager {
     section: WorkspaceSettingsSection;
   } = {
     open: false,
-    section: 'profile',
+    section: SettingsScreen.Profile,
   };
 
   /**
@@ -39,7 +40,7 @@ class WorkspaceSettingsManager {
   openWorkspaceSettings(section?: WorkspaceSettingsSection): void {
     this.currentState = {
       open: true,
-      section: section || 'profile',
+      section: section || SettingsScreen.Profile,
     };
     this.notifyListeners();
   }

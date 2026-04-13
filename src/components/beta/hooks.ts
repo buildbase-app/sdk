@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { IBetaConfig } from '../../api/services/beta-api';
+import { useTranslation } from '../../i18n';
 import { useSaaSOs } from '../../providers/os/hooks';
 import { BetaForm } from './api';
 import { BetaFormData, BetaFormResponse } from './types';
 
 export const useBetaForm = () => {
+  const { t } = useTranslation();
   const osState = useSaaSOs();
 
   const [config, setConfig] = useState<IBetaConfig | null>(null);
@@ -27,7 +29,7 @@ export const useBetaForm = () => {
         }
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : 'Failed to load beta form config');
+          setError(err instanceof Error ? err.message : t('beta.errorMessage'));
         }
       } finally {
         if (!cancelled) {
@@ -44,7 +46,7 @@ export const useBetaForm = () => {
   const submitBetaForm = useCallback(
     async (data: BetaFormData): Promise<BetaFormResponse> => {
       if (!osState) {
-        const errorMessage = 'SaaS OS context is not initialized';
+        const errorMessage = t('errors.generic');
         setError(errorMessage);
         return {
           success: false,
@@ -73,7 +75,7 @@ export const useBetaForm = () => {
           message: response.message,
         };
       } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Failed to submit beta form';
+        const errorMessage = err instanceof Error ? err.message : t('beta.errorMessage');
         setError(errorMessage);
         setSuccess(false);
         setMessage(errorMessage);

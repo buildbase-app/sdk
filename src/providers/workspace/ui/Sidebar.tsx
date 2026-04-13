@@ -1,3 +1,4 @@
+import { useTranslation } from '../../../i18n';
 import {
   AlertTriangle,
   BarChart3,
@@ -13,6 +14,7 @@ import { cn } from '../../../lib/utils';
 import { useSaaSAuth } from '../../auth/hooks';
 import { IWorkspace } from '../types';
 import { getWorkspaceUserRole } from '../utils';
+import { SettingsScreen } from './SettingsDialog';
 import type { WorkspaceSettingsSection } from './SettingsDialog';
 
 interface Props {
@@ -22,6 +24,7 @@ interface Props {
 }
 
 const Sidebar: React.FC<Props> = ({ workspace, section, setSection }) => {
+  const { t } = useTranslation();
   const { user: currentUser } = useSaaSAuth();
 
   const createdBy =
@@ -61,7 +64,7 @@ const Sidebar: React.FC<Props> = ({ workspace, section, setSection }) => {
                 />
               </div>
             )}
-            <div className={cn('flex-1 min-w-0', !workspace.image ? 'pl-2' : '')}>
+            <div className={cn('flex-1 min-w-0', !workspace.image ? 'ps-2' : '')}>
               <div className="font-medium text-sm line-clamp-1 text-ellipsis overflow-hidden">
                 {workspace.name}
               </div>
@@ -71,65 +74,65 @@ const Sidebar: React.FC<Props> = ({ workspace, section, setSection }) => {
         </div>
       )}
 
-      <SidebarSection title="Account">
+      <SidebarSection title={t("settings.sidebar.account")}>
         <SidebarItem
           activeSection={section}
           icon={<UserIcon className="h-3.5 w-3.5" />}
-          label="Profile"
-          section="profile"
-          onClick={() => setSection('profile')}
+          label={t("settings.sidebar.profile")}
+          section={SettingsScreen.Profile}
+          onClick={() => setSection(SettingsScreen.Profile)}
         />
       </SidebarSection>
-      <SidebarSection title="Workspace">
+      <SidebarSection title={t("settings.sidebar.workspace")}>
         <SidebarItem
           activeSection={section}
           icon={<SettingsIcon className="h-3.5 w-3.5" />}
-          label="General"
-          section="general"
-          onClick={() => setSection('general')}
+          label={t("settings.sidebar.general")}
+          section={SettingsScreen.General}
+          onClick={() => setSection(SettingsScreen.General)}
         />
         <SidebarItem
           activeSection={section}
           icon={<UsersIcon className="h-3.5 w-3.5" />}
-          label="Users"
-          section="users"
-          onClick={() => setSection('users')}
+          label={t("settings.sidebar.users")}
+          section={SettingsScreen.Users}
+          onClick={() => setSection(SettingsScreen.Users)}
         />
         <SidebarItem
           activeSection={section}
           icon={<CreditCard className="h-3.5 w-3.5" />}
-          label="Plan & Billing"
-          section="subscription"
-          onClick={() => setSection('subscription')}
+          label={t("settings.sidebar.subscription")}
+          section={SettingsScreen.Subscription}
+          onClick={() => setSection(SettingsScreen.Subscription)}
         />
         <SidebarItem
           activeSection={section}
           icon={<BarChart3 className="h-3.5 w-3.5" />}
-          label="Usage"
-          section="usage"
-          onClick={() => setSection('usage')}
+          label={t("settings.sidebar.usage")}
+          section={SettingsScreen.Usage}
+          onClick={() => setSection(SettingsScreen.Usage)}
         />
         <SidebarItem
           activeSection={section}
           icon={<ToggleRight className="h-3.5 w-3.5" />}
-          label="Features"
-          section="features"
-          onClick={() => setSection('features')}
+          label={t("settings.sidebar.features")}
+          section={SettingsScreen.Features}
+          onClick={() => setSection(SettingsScreen.Features)}
         />
         <SidebarItem
           activeSection={section}
           icon={<Bell className="h-3.5 w-3.5" />}
-          label="Notifications"
-          section="notifications"
-          onClick={() => setSection('notifications')}
+          label={t("settings.sidebar.notifications")}
+          section={SettingsScreen.Notifications}
+          onClick={() => setSection(SettingsScreen.Notifications)}
         />
         {canAccessDangerZone && (
           <SidebarItem
             activeSection={section}
             icon={<AlertTriangle className="h-3.5 w-3.5" />}
-            label="Danger Zone"
-            section="danger"
-            onClick={() => setSection('danger')}
+            label={t("settings.sidebar.danger")}
+            section={SettingsScreen.Danger}
+            onClick={() => setSection(SettingsScreen.Danger)}
           />
         )}
       </SidebarSection>
@@ -164,7 +167,7 @@ function SidebarItem({
   return (
     <button
       className={cn(
-        'flex w-full text-left px-2 py-1 rounded text-sm items-center gap-x-1',
+        'flex w-full text-start px-2 py-1 rounded text-sm items-center gap-x-1',
         section === activeSection
           ? 'bg-blue-100 text-blue-700 font-medium'
           : 'hover:bg-gray-200 hover:text-gray-700'

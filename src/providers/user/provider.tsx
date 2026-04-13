@@ -3,6 +3,7 @@
 import React, { useCallback, useState } from 'react';
 import { IUser } from '../../api/types';
 import { isAbortError } from '../../lib/api-utils';
+import { useTranslation } from '../../i18n';
 import { handleError } from '../../lib/error-handler';
 import { useAsyncEffect } from '../../lib/useAsyncEffect';
 import { useSaaSAuth } from '../auth/hooks';
@@ -23,6 +24,7 @@ export interface UserContextValue {
 const UserContext = React.createContext<UserContextValue | undefined>(undefined);
 
 export const UserProvider: React.FC<{ children: React.ReactNode }> = React.memo(({ children }) => {
+  const { t } = useTranslation();
   const os = useSaaSOs();
   const api = useUserApi();
   const { isAuthenticated } = useSaaSAuth();
@@ -44,7 +46,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = React.memo(
         setAttributes(data);
       } catch (err) {
         if (isAbortError(err)) return;
-        const errObj = err instanceof Error ? err : new Error('Failed to fetch user attributes');
+        const errObj = err instanceof Error ? err : new Error(t('errors.generic'));
         setError(errObj);
         handleError(err, {
           component: 'UserProvider',
@@ -79,7 +81,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = React.memo(
         await fetchAttributes();
         return updatedUser;
       } catch (err) {
-        const errObj = err instanceof Error ? err : new Error('Failed to update user attributes');
+        const errObj = err instanceof Error ? err : new Error(t('errors.generic'));
         setError(errObj);
         handleError(err, {
           component: 'UserProvider',
@@ -103,7 +105,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = React.memo(
         await fetchAttributes();
         return updatedUser;
       } catch (err) {
-        const errObj = err instanceof Error ? err : new Error('Failed to update user attribute');
+        const errObj = err instanceof Error ? err : new Error(t('errors.generic'));
         setError(errObj);
         handleError(err, {
           component: 'UserProvider',
@@ -129,7 +131,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = React.memo(
         setFeatures(data);
       } catch (err) {
         if (isAbortError(err)) return;
-        const errObj = err instanceof Error ? err : new Error('Failed to fetch user features');
+        const errObj = err instanceof Error ? err : new Error(t('errors.generic'));
         setError(errObj);
         handleError(err, {
           component: 'UserProvider',

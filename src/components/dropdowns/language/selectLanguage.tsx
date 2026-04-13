@@ -1,3 +1,4 @@
+import { useTranslation } from '../../../i18n';
 import { CommandSelect } from '../../ui/command-select';
 import { languages } from './languages';
 
@@ -7,6 +8,7 @@ interface SelectLanguageProps {
 }
 
 export function SelectLanguage({ value, onChange }: SelectLanguageProps) {
+  const { t } = useTranslation();
   const options = languages.map(l => ({
     value: l.value,
     label: l.label,
@@ -18,8 +20,8 @@ export function SelectLanguage({ value, onChange }: SelectLanguageProps) {
       options={options}
       value={value}
       onChange={onChange}
-      placeholder="Choose language..."
-      emptyLabel="Choose language"
+      placeholder={t('dropdowns.searchLanguage')}
+      emptyLabel={t('dropdowns.chooseLanguage')}
     />
   );
 }

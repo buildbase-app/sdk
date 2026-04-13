@@ -2,6 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import React, { useEffect, useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 
+import { useTranslation } from '../../i18n';
 import { cn } from '../../lib/utils';
 import { Button } from '../ui/button';
 import {
@@ -18,85 +19,13 @@ import { IBetaConfig } from './api';
 import { useBetaForm } from './hooks';
 import { formSchema, formValuesType } from './schema';
 
-type Language = 'en' | 'es' | 'fr' | 'de' | 'zh' | 'ja' | 'ko';
-
-interface FormText {
-  nameLabel: string;
-  emailLabel: string;
-  submitText: string;
-  submittingText: string;
-  errorMessage: string;
-}
-
-const formTexts: Record<Language, FormText> = {
-  en: {
-    nameLabel: 'Name',
-    emailLabel: 'Email',
-    submitText: 'Submit',
-    submittingText: 'Submitting...',
-    errorMessage: 'An error occurred',
-  },
-  es: {
-    nameLabel: 'Nombre',
-    emailLabel: 'Correo electrónico',
-    submitText: 'Enviar',
-    submittingText: 'Enviando...',
-    errorMessage: 'Ocurrió un error',
-  },
-  fr: {
-    nameLabel: 'Nom',
-    emailLabel: 'Email',
-    submitText: 'Soumettre',
-    submittingText: 'Soumission...',
-    errorMessage: 'Une erreur est survenue',
-  },
-  de: {
-    nameLabel: 'Name',
-    emailLabel: 'E-Mail',
-    submitText: 'Absenden',
-    submittingText: 'Wird gesendet...',
-    errorMessage: 'Ein Fehler ist aufgetreten',
-  },
-  zh: {
-    nameLabel: '姓名',
-    emailLabel: '电子邮件',
-    submitText: '提交',
-    submittingText: '提交中...',
-    errorMessage: '发生错误',
-  },
-  ja: {
-    nameLabel: '名前',
-    emailLabel: 'メールアドレス',
-    submitText: '送信',
-    submittingText: '送信中...',
-    errorMessage: 'エラーが発生しました',
-  },
-  ko: {
-    nameLabel: '이름',
-    emailLabel: '이메일',
-    submitText: '제출',
-    submittingText: '제출 중...',
-    errorMessage: '오류가 발생했습니다',
-  },
-};
-
-const getBrowserLanguage = (): Language => {
-  if (typeof window === 'undefined') return 'en';
-
-  const browserLang = window.navigator.language.split('-')[0];
-  return Object.keys(formTexts).indexOf(browserLang) !== -1 ? (browserLang as Language) : 'en';
-};
-
 interface BetaFormProps {
   onSuccess?: () => void;
   onError?: (error: string) => void;
   className?: string;
   fieldClassName?: string;
-  language?: Language;
-  customTexts?: Partial<FormText>;
   autoFocus?: boolean;
   showSuccessMessage?: boolean;
-  successMessageDuration?: number;
   hideLogo?: boolean;
   hideTitles?: boolean;
 }
@@ -106,14 +35,12 @@ export const BetaForm: React.FC<BetaFormProps> = ({
   onError,
   className = 'w-full',
   fieldClassName = 'flex flex-col gap-1.5 w-full',
-  language: propLanguage,
-  customTexts = {},
   autoFocus = true,
   showSuccessMessage = true,
   hideLogo = false,
   hideTitles = false,
 }) => {
-  const [detectedLanguage, setDetectedLanguage] = useState<Language>('en');
+  const { t } = useTranslation();
   const [showSuccess, setShowSuccess] = useState(false);
   const [formHidden, setFormHidden] = useState(false);
   const {
@@ -127,10 +54,6 @@ export const BetaForm: React.FC<BetaFormProps> = ({
   } = useBetaForm();
 
   useEffect(() => {
-    setDetectedLanguage(getBrowserLanguage());
-  }, []);
-
-  useEffect(() => {
     if (success && showSuccessMessage) {
       setShowSuccess(true);
       setFormHidden(true);
@@ -138,14 +61,7 @@ export const BetaForm: React.FC<BetaFormProps> = ({
     if (error) {
       setFormHidden(true);
     }
-    return undefined;
   }, [success, showSuccessMessage, error]);
-
-  const language = propLanguage || detectedLanguage;
-  const texts = {
-    ...formTexts[language],
-    ...customTexts,
-  };
 
   const form = useForm<formValuesType>({
     resolver: zodResolver(formSchema),
@@ -154,12 +70,10 @@ export const BetaForm: React.FC<BetaFormProps> = ({
     reValidateMode: 'onChange',
   });
 
-  // Set focus on name field when component mounts
   useEffect(() => {
     if (autoFocus) {
       form.setFocus('name');
     }
-    return undefined;
   }, [autoFocus, form]);
 
   const onSubmit = async (data: formValuesType) => {
@@ -177,7 +91,7 @@ export const BetaForm: React.FC<BetaFormProps> = ({
         setFormHidden(true);
       }
     } catch (err) {
-      onError?.(err instanceof Error ? err.message : texts.errorMessage);
+      onError?.(err instanceof Error ? err.message : t('beta.errorMessage'));
       setFormHidden(true);
     }
   };
@@ -188,6 +102,7 @@ export const BetaForm: React.FC<BetaFormProps> = ({
   };
 
   const isFormValid = form.formState.isValid && !isSubmitting;
+
   return (
     <div
       className="saas-os-ui"
@@ -206,11 +121,8 @@ export const BetaForm: React.FC<BetaFormProps> = ({
             className
           )}
         >
-          {/* Logo skeleton */}
           <Skeleton className="h-24 w-24 rounded-lg" />
-          {/* Name skeleton */}
           <Skeleton className="h-6 w-32" />
-          {/* Form fields skeleton */}
           <div className="w-full space-y-4">
             <div className="space-y-2">
               <Skeleton className="h-4 w-16" />
@@ -248,7 +160,7 @@ export const BetaForm: React.FC<BetaFormProps> = ({
                     name="name"
                     render={({ field }: { field: any }) => (
                       <FormItem className={fieldClassName}>
-                        <FormLabel>{texts.nameLabel}</FormLabel>
+                        <FormLabel>{t('beta.nameLabel')}</FormLabel>
                         <FormControl>
                           <Input {...field} />
                         </FormControl>
@@ -263,7 +175,7 @@ export const BetaForm: React.FC<BetaFormProps> = ({
                     name="email"
                     render={({ field }: { field: any }) => (
                       <FormItem className={fieldClassName}>
-                        <FormLabel>{texts.emailLabel}</FormLabel>
+                        <FormLabel>{t('beta.emailLabel')}</FormLabel>
                         <FormControl>
                           <Input {...field} />
                         </FormControl>
@@ -274,7 +186,7 @@ export const BetaForm: React.FC<BetaFormProps> = ({
                   />
 
                   <Button type="submit" disabled={!isFormValid} className={fieldClassName}>
-                    {isSubmitting ? texts.submittingText : texts.submitText}
+                    {isSubmitting ? t('beta.submittingText') : t('beta.submitText')}
                   </Button>
                 </>
               )}
@@ -286,14 +198,14 @@ export const BetaForm: React.FC<BetaFormProps> = ({
                     aria-live="assertive"
                     aria-atomic={true}
                   >
-                    <span className="text-4xl mb-2" role="img" aria-label="Error">
+                    <span className="text-4xl mb-2" role="img" aria-label={t('settings.common.error')}>
                       ❗
                     </span>
                     {error}
                   </div>
                   <div className="mt-4 flex justify-center">
                     <Button type="button" onClick={handleRetry} className={fieldClassName}>
-                      Try Again
+                      {t('beta.tryAgain')}
                     </Button>
                   </div>
                 </div>
@@ -309,25 +221,24 @@ export const BetaForm: React.FC<BetaFormProps> = ({
           </FormProvider>
           {!formHidden && (
             <div>
-              {/* privacy notice*/}
               <div>
-                By submitting this form, you consent to our{' '}
+                {t('beta.privacyConsent')}{' '}
                 <a
                   href={betaFormConfig?.privacyPolicy}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-blue-600 hover:text-blue-700"
                 >
-                  Privacy Policy
+                  {t('beta.privacyPolicy')}
                 </a>{' '}
-                and{' '}
+                {t('beta.and')}{' '}
                 <a
                   href={betaFormConfig?.termsOfService}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-blue-600 hover:text-blue-700"
                 >
-                  Terms of Service
+                  {t('beta.termsOfService')}
                 </a>
                 .
               </div>

@@ -1,3 +1,4 @@
+import { SDKEvent } from "./types";
 import type { IUser } from '../../api/types';
 import { handleError } from '../../lib/error-handler';
 import type { IWorkspace } from '../workspace/types';
@@ -50,7 +51,7 @@ export class EventEmitter {
    * @param user - The newly created user
    */
   async emitUserCreated(user: IUser): Promise<void> {
-    await this.emit('user:created', { user });
+    await this.emit(SDKEvent.UserCreated, { user });
   }
 
   /**
@@ -59,7 +60,7 @@ export class EventEmitter {
    * @param previousUser - The user data before the update (optional)
    */
   async emitUserUpdated(user: IUser, previousUser?: IUser): Promise<void> {
-    await this.emit('user:updated', { user, previousUser });
+    await this.emit(SDKEvent.UserUpdated, { user, previousUser });
   }
 
   /**
@@ -71,7 +72,7 @@ export class EventEmitter {
     workspace: IWorkspace,
     previousWorkspace?: IWorkspace | null
   ): Promise<void> {
-    await this.emit('workspace:changed', { workspace, previousWorkspace });
+    await this.emit(SDKEvent.WorkspaceChanged, { workspace, previousWorkspace });
   }
 
   /**
@@ -79,7 +80,7 @@ export class EventEmitter {
    * @param workspace - The updated workspace
    */
   async emitWorkspaceUpdated(workspace: IWorkspace): Promise<void> {
-    await this.emit('workspace:updated', { workspace });
+    await this.emit(SDKEvent.WorkspaceUpdated, { workspace });
   }
 
   /**
@@ -89,7 +90,7 @@ export class EventEmitter {
    * @param role - The role assigned to the user
    */
   async emitWorkspaceUserAdded(userId: string, workspace: IWorkspace, role: string): Promise<void> {
-    await this.emit('workspace:user-added', { userId, workspace, role });
+    await this.emit(SDKEvent.WorkspaceUserAdded, { userId, workspace, role });
   }
 
   /**
@@ -103,7 +104,7 @@ export class EventEmitter {
     workspace: IWorkspace,
     role: string
   ): Promise<void> {
-    await this.emit('workspace:user-removed', { userId, workspace, role });
+    await this.emit(SDKEvent.WorkspaceUserRemoved, { userId, workspace, role });
   }
 
   /**
@@ -119,7 +120,7 @@ export class EventEmitter {
     previousRole: string,
     newRole: string
   ): Promise<void> {
-    await this.emit('workspace:user-role-changed', { userId, workspace, previousRole, newRole });
+    await this.emit(SDKEvent.WorkspaceUserRoleChanged, { userId, workspace, previousRole, newRole });
   }
 
   /**
@@ -127,7 +128,7 @@ export class EventEmitter {
    * @param workspace - The newly created workspace
    */
   async emitWorkspaceCreated(workspace: IWorkspace): Promise<void> {
-    await this.emit('workspace:created', { workspace });
+    await this.emit(SDKEvent.WorkspaceCreated, { workspace });
   }
 
   /**
@@ -135,7 +136,7 @@ export class EventEmitter {
    * @param workspace - The deleted workspace
    */
   async emitWorkspaceDeleted(workspace: IWorkspace): Promise<void> {
-    await this.emit('workspace:deleted', { workspace });
+    await this.emit(SDKEvent.WorkspaceDeleted, { workspace });
   }
 }
 

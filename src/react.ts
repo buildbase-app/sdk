@@ -109,3 +109,11 @@ export {
   PushNotificationProvider,
   usePushNotifications,
 } from './providers/push/PushNotificationContext';
+
+// ─── Translations ──────────────────────────────────────────────────────────────
+export { useTranslation, SUPPORTED_LOCALES } from './i18n';
+export type { SDKLocale, SDKMessages } from './i18n';
+
+// ─── Settings Screen Constants ─────────────────────────────────────────────────
+export { SettingsScreen, SETTINGS_SCREENS } from './providers/workspace/ui/SettingsDialog';
+export type { WorkspaceSettingsSection } from './providers/workspace/ui/SettingsDialog';

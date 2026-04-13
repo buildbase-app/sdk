@@ -57,8 +57,6 @@
     "watch:push:light": "chokidar \"src/**/*\" -c \"npm run push:sdk\" --initial --ignore dist"
   },
   "peerDependencies": {
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
     "@radix-ui/react-alert-dialog": "^1.1.13",
     "@radix-ui/react-avatar": "^1.1.9",
     "@radix-ui/react-dialog": "^1.1.13",
@@ -75,34 +73,81 @@
     "clsx": "^2.0.0",
     "cmdk": "^1.1.1",
     "lucide-react": "^0.544.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
     "react-hook-form": "^7.60.0",
     "tailwind-merge": "^3.3.1"
   },
   "peerDependenciesMeta": {
-    "react": { "optional": true },
-    "react-dom": { "optional": true },
-    "@radix-ui/react-alert-dialog": { "optional": true },
-    "@radix-ui/react-avatar": { "optional": true },
-    "@radix-ui/react-dialog": { "optional": true },
-    "@radix-ui/react-icons": { "optional": true },
-    "@radix-ui/react-label": { "optional": true },
-    "@radix-ui/react-popover": { "optional": true },
-    "@radix-ui/react-radio-group": { "optional": true },
-    "@radix-ui/react-scroll-area": { "optional": true },
-    "@radix-ui/react-select": { "optional": true },
-    "@radix-ui/react-separator": { "optional": true },
-    "@radix-ui/react-slot": { "optional": true },
-    "@radix-ui/react-switch": { "optional": true },
-    "class-variance-authority": { "optional": true },
-    "clsx": { "optional": true },
-    "cmdk": { "optional": true },
-    "lucide-react": { "optional": true },
-    "react-hook-form": { "optional": true },
-    "tailwind-merge": { "optional": true }
+    "react": {
+      "optional": true
+    },
+    "react-dom": {
+      "optional": true
+    },
+    "@radix-ui/react-alert-dialog": {
+      "optional": true
+    },
+    "@radix-ui/react-avatar": {
+      "optional": true
+    },
+    "@radix-ui/react-dialog": {
+      "optional": true
+    },
+    "@radix-ui/react-icons": {
+      "optional": true
+    },
+    "@radix-ui/react-label": {
+      "optional": true
+    },
+    "@radix-ui/react-popover": {
+      "optional": true
+    },
+    "@radix-ui/react-radio-group": {
+      "optional": true
+    },
+    "@radix-ui/react-scroll-area": {
+      "optional": true
+    },
+    "@radix-ui/react-select": {
+      "optional": true
+    },
+    "@radix-ui/react-separator": {
+      "optional": true
+    },
+    "@radix-ui/react-slot": {
+      "optional": true
+    },
+    "@radix-ui/react-switch": {
+      "optional": true
+    },
+    "class-variance-authority": {
+      "optional": true
+    },
+    "clsx": {
+      "optional": true
+    },
+    "cmdk": {
+      "optional": true
+    },
+    "lucide-react": {
+      "optional": true
+    },
+    "react-hook-form": {
+      "optional": true
+    },
+    "tailwind-merge": {
+      "optional": true
+    }
   },
-  "dependencies": {},
+  "dependencies": {
+    "intl-messageformat": "^11.2.0",
+    "zod": "^4.3.6"
+  },
   "devDependencies": {
+    "@formatjs/cli": "^6.14.1",
     "@hookform/resolvers": "^5.0.1",
+    "@rollup/plugin-alias": "^6.0.0",
     "@rollup/plugin-commonjs": "^28.0.6",
     "@rollup/plugin-json": "^6.1.0",
     "@rollup/plugin-node-resolve": "^16.0.1",

@@ -1,4 +1,5 @@
 import { Loader2, Trash2 } from 'lucide-react';
+import { useTranslation } from '../../../i18n';
 import React, { useState } from 'react';
 import {
   AlertDialog,
@@ -23,6 +24,7 @@ const WorkspaceSettingsDanger: React.FC<{ workspace: IWorkspace }> = ({ workspac
   const [isDeleting, setIsDeleting] = useState(false);
   const { deleteWorkspace } = useSaaSWorkspaces();
   const { user: currentUser } = useSaaSAuth();
+  const { t } = useTranslation();
 
   if (!workspace) {
     return <SettingSkeleton />;
@@ -42,7 +44,7 @@ const WorkspaceSettingsDanger: React.FC<{ workspace: IWorkspace }> = ({ workspac
         action: 'handleDeleteWorkspace',
         metadata: { workspaceId: workspace._id },
       });
-      alert(error instanceof Error ? error.message : 'Failed to delete workspace');
+      alert(error instanceof Error ? error.message : t('danger.failedToDelete'));
     } finally {
       setIsDeleting(false);
     }
@@ -51,7 +53,7 @@ const WorkspaceSettingsDanger: React.FC<{ workspace: IWorkspace }> = ({ workspac
   if (!amIAdmin) {
     return (
       <div className="space-y-4">
-        <div className="text-red-500">Only workspace admins can delete workspaces.</div>
+        <div className="text-red-500">{t('danger.adminOnly')}</div>
       </div>
     );
   }
@@ -59,30 +61,29 @@ const WorkspaceSettingsDanger: React.FC<{ workspace: IWorkspace }> = ({ workspac
   return (
     <div className="space-y-4">
       <div>
-        <h3 className="text-lg font-semibold text-destructive">Delete Workspace</h3>
+        <h3 className="text-lg font-semibold text-destructive">{t('danger.title')}</h3>
         <p className="text-sm text-muted-foreground mt-2">
-          Once you delete a workspace, there is no going back. This will permanently delete the
-          workspace <strong>{workspace.name}</strong> and all of its data, including members,
-          settings, and features.
+          {t('danger.deleteDescription')}
         </p>
       </div>
       <AlertDialog>
         <AlertDialogTrigger asChild>
           <Button variant="destructive" disabled={isDeleting} progress={isDeleting}>
-            <Trash2 className="h-4 w-4 mr-2" />
-            Delete Workspace
+            <Trash2 className="h-4 w-4 me-2" />
+            {t('danger.deleteWorkspace')}
           </Button>
         </AlertDialogTrigger>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogTitle>{t('danger.deleteConfirm')}</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the workspace{' '}
-              <strong>{workspace.name}</strong> and all of its data.
+              {t('danger.deleteConfirmDescription')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={isDeleting}>
+              {t('settings.common.cancel')}
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteWorkspace}
               disabled={isDeleting}
@@ -90,11 +91,11 @@ const WorkspaceSettingsDanger: React.FC<{ workspace: IWorkspace }> = ({ workspac
             >
               {isDeleting ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Deleting...
+                  <Loader2 className="me-2 h-4 w-4 animate-spin" />
+                  {t('danger.deleting')}
                 </>
               ) : (
-                'Delete Workspace'
+                t('danger.deleteWorkspace')
               )}
             </AlertDialogAction>
           </AlertDialogFooter>

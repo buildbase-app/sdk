@@ -15,8 +15,13 @@ import { ApiVersion, IOsState } from './os/types';
 import PortalProvider from './PortalContainer';
 import { UserProvider } from './user/provider';
 import { WorkspaceSettingsProvider } from './workspace/WorkspaceSettingsProvider';
+import { TranslationProvider } from '../i18n';
+import type { SDKLocale } from '../i18n';
+
 export interface SaaSOSProviderProps extends IOsState {
   children: React.ReactNode;
+  /** SDK UI language. Defaults to 'en'. Supported: en, es, fr, de, ja, zh, hi, ar */
+  locale?: SDKLocale;
 }
 
 /**
@@ -156,7 +161,7 @@ const validateProps = (serverUrl: string, version: ApiVersion, orgId: string): v
 };
 
 const SaaSOSProviderInner: React.FC<SaaSOSProviderProps> = React.memo(
-  ({ serverUrl, version, orgId, auth, children }) => {
+  ({ serverUrl, version, orgId, auth, locale, children }) => {
     // Validate props synchronously - throws are caught by the parent SDKErrorBoundary
     validateProps(serverUrl, version, orgId);
 
@@ -191,23 +196,25 @@ const SaaSOSProviderInner: React.FC<SaaSOSProviderProps> = React.memo(
     }, [memoizedHandleEvent]);
 
     return (
-      <SDKContextProvider>
-        <AuthProviderWrapper callbacks={memoizedCallbacks}>
-          <PortalProvider>
-            <ContextConfigProvider config={config} auth={auth}>
-              <UserProvider>
-                <SubscriptionContextProvider>
-                  <QuotaUsageContextProvider>
-                    <PushNotificationProvider>
-                      <WorkspaceSettingsProvider>{children}</WorkspaceSettingsProvider>
-                    </PushNotificationProvider>
-                  </QuotaUsageContextProvider>
-                </SubscriptionContextProvider>
-              </UserProvider>
-            </ContextConfigProvider>
-          </PortalProvider>
-        </AuthProviderWrapper>
-      </SDKContextProvider>
+      <TranslationProvider locale={locale}>
+        <SDKContextProvider>
+          <AuthProviderWrapper callbacks={memoizedCallbacks}>
+            <PortalProvider>
+              <ContextConfigProvider config={config} auth={auth}>
+                <UserProvider>
+                  <SubscriptionContextProvider>
+                    <QuotaUsageContextProvider>
+                      <PushNotificationProvider>
+                        <WorkspaceSettingsProvider>{children}</WorkspaceSettingsProvider>
+                      </PushNotificationProvider>
+                    </QuotaUsageContextProvider>
+                  </SubscriptionContextProvider>
+                </UserProvider>
+              </ContextConfigProvider>
+            </PortalProvider>
+          </AuthProviderWrapper>
+        </SDKContextProvider>
+      </TranslationProvider>
     );
   }
 );

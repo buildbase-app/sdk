@@ -29,11 +29,36 @@ export interface FormatQuotaWithPriceOptions {
   currencySymbol?: string;
   /** Stripe currency code (e.g. 'usd', 'inr'). Used to resolve symbol when currencySymbol is not set. */
   currency?: string;
+  /**
+   * i18n labels for quota display. When provided, used instead of hardcoded English.
+   * Callers in React components should pass translated strings from `t()`.
+   */
+  labels?: QuotaLabels;
 }
 
+/** Translatable labels for quota formatting */
+export interface QuotaLabels {
+  /** e.g. "included" — appended after count */
+  included: string;
+  /** e.g. "then" — separator between included and price */
+  then: string;
+}
+
+const DEFAULT_LABELS: QuotaLabels = {
+  included: 'included',
+  then: 'then',
+};
+
 /**
- * Format a quota display value as "X included, then $Y.YY / unit" (e.g. "10 included, then $10.00 / video").
- * Assumes overage is the per-unit price (in cents when overageInCents is true).
+ * Format a quota display value as "X included, then $Y.YY / unit".
+ * Pass `labels` for i18n support.
+ *
+ * @example
+ * formatQuotaWithPrice(value, 'videos', { currency: 'inr' })
+ * // → "1 included, then ₹1.00 / 1,000 videos"
+ *
+ * formatQuotaWithPrice(value, 'वीडियो', { currency: 'inr', labels: { included: 'शामिल', then: 'फिर' } })
+ * // → "1 शामिल, फिर ₹1.00 / 1,000 वीडियो"
  */
 export function formatQuotaWithPrice(
   value: QuotaDisplayValue,
@@ -41,10 +66,11 @@ export function formatQuotaWithPrice(
   options: FormatQuotaWithPriceOptions = {}
 ): string {
   const { overageInCents = true, currency } = options;
+  const labels = options.labels ?? DEFAULT_LABELS;
   const currencySymbol = options.currencySymbol ?? getCurrencySymbol(currency ?? '');
   if (value === null || value === undefined) return '—';
   const { included, overage } = value;
-  const includedStr = `${included} included`;
+  const includedStr = `${included} ${labels.included}`;
   if (overage === undefined || overage === null) return includedStr;
   const priceNum = overageInCents ? overage / 100 : overage;
   const price =
@@ -57,5 +83,61 @@ export function formatQuotaWithPrice(
       : unitName
         ? ` / ${unitName}`
         : '';
-  return `${includedStr}, then ${currencySymbol}${price}${unit}`;
+  return `${includedStr}, ${labels.then} ${currencySymbol}${price}${unit}`;
+}
+
+/** Structured quota data for i18n-aware formatting in components */
+export interface QuotaDisplayParts {
+  included: number;
+  hasOverage: boolean;
+  price: string;
+  unit: string;
+}
+
+/**
+ * Extract structured parts from a quota value for i18n formatting.
+ * Components use these parts with `t('quota.includedWithOverage', { count, price, unit })`.
+ *
+ * @param locale - BCP 47 locale for number formatting (e.g. 'hi' → ₹१.००, 'en' → ₹1.00)
+ */
+export function getQuotaDisplayParts(
+  value: QuotaDisplayValue,
+  unitName: string,
+  options: { overageInCents?: boolean; currency?: string; currencySymbol?: string; locale?: string } = {}
+): QuotaDisplayParts | null {
+  if (value === null || value === undefined) return null;
+  const { overageInCents = true, currency, locale = 'en' } = options;
+  const { included, overage } = value;
+
+  if (overage === undefined || overage === null) {
+    return { included, hasOverage: false, price: '', unit: '' };
+  }
+
+  // Format price with locale-aware currency formatting
+  const priceNum = overageInCents ? overage / 100 : overage;
+  const currencyCode = (currency ?? '').trim().toUpperCase();
+  let price: string;
+  if (currencyCode && typeof priceNum === 'number' && Number.isFinite(priceNum)) {
+    try {
+      price = new Intl.NumberFormat(locale, {
+        style: 'currency',
+        currency: currencyCode,
+        minimumFractionDigits: 2,
+      }).format(priceNum);
+    } catch {
+      const symbol = options.currencySymbol ?? getCurrencySymbol(currency ?? '');
+      price = `${symbol}${priceNum.toFixed(2)}`;
+    }
+  } else {
+    const symbol = options.currencySymbol ?? getCurrencySymbol(currency ?? '');
+    price = `${symbol}${typeof priceNum === 'number' ? priceNum.toFixed(2) : String(overage)}`;
+  }
+
+  // Format unit size with locale-aware number formatting
+  const unit =
+    unitName && 'unitSize' in value && value.unitSize != null && value.unitSize > 0
+      ? `${value.unitSize.toLocaleString(locale)} ${unitName}`
+      : unitName || '';
+
+  return { included, hasOverage: true, price, unit };
 }

@@ -48,6 +48,20 @@ export type {
 export { invalidateSubscription } from './lib/subscription-invalidation';
 export { invalidateQuotaUsage } from './lib/quota-usage-invalidation';
 
+// ─── URL Params ────────────────────────────────────────────────────────────────
+
+export {
+  createBBUrl,
+  createCheckoutRedirectUrls,
+  readBBParams,
+  cleanBBParams,
+  BB_PARAM,
+} from './lib/url-params';
+
+// ─── Security ──────────────────────────────────────────────────────────────────
+
+export { validateRedirectUrl, safeRedirect } from './lib/security';
+
 // ─── Billing Utilities (currency, pricing, quotas) ─────────────────────────────
 
 export {
@@ -151,3 +165,16 @@ export type {
   IUsageLogsResponse,
   InvoiceStatus,
 } from './api/types';
+
+// ─── Constants ─────────────────────────────────────────────────────────────────
+
+export {
+  BillingIntervals,
+  SubscriptionStatus,
+  InvoiceStatuses,
+  SubscriptionItemType,
+  DunningState,
+} from './api/types';
+export type { SubscriptionStatusType } from './api/types';
+
+export { SDKEvent } from './providers/events/types';

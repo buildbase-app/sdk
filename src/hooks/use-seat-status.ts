@@ -41,8 +41,10 @@ export interface SeatStatus {
   canInvite: boolean;
   /** Reason the invite is blocked, or null if allowed. */
   inviteBlockReason: InviteBlockReason;
-  /** Human-readable message for why invite is blocked. */
-  inviteBlockMessage: string | null;
+  /** i18n key for the block message. Resolve with t(key, values). */
+  inviteBlockMessageKey: string | null;
+  /** Values for ICU interpolation in the block message. */
+  inviteBlockMessageValues: Record<string, string | number> | null;
 }
 
 /**
@@ -88,7 +90,8 @@ export function useSeatStatus(
       currency: '',
       canInvite: true,
       inviteBlockReason: null,
-      inviteBlockMessage: null,
+      inviteBlockMessageKey: null,
+      inviteBlockMessageValues: null,
     };
 
     if (!workspace) return empty;
@@ -140,7 +143,8 @@ export function useSeatStatus(
       currency,
       canInvite: inviteValidation.canInvite,
       inviteBlockReason: inviteValidation.blockReason,
-      inviteBlockMessage: inviteValidation.blockMessage,
+      inviteBlockMessageKey: inviteValidation.blockMessageKey,
+      inviteBlockMessageValues: inviteValidation.blockMessageValues,
     };
   }, [response, workspace, options?.settingsMaxUsers]);
 }

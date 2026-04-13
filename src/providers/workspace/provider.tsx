@@ -27,6 +27,7 @@ import { Label } from '../../components/ui/label';
 import { RadioGroup, RadioGroupItem } from '../../components/ui/radio-group';
 import { ScrollArea } from '../../components/ui/scroll-area';
 import { Separator } from '../../components/ui/separator';
+import { useTranslation } from '../../i18n';
 import { handleError } from '../../lib/error-handler';
 import { cn } from '../../lib/utils';
 import { useSaaSAuth } from '../auth/hooks';
@@ -44,6 +45,7 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
 export function WorkspaceSwitcher(props: {
   trigger: (isLoading: boolean, currentWorkspace: IWorkspace | null) => ReactNode;
 }) {
+  const { t, dir } = useTranslation();
   const { isAuthenticated, user } = useSaaSAuth();
   const os = useSaaSOs();
   const isConfigReady = isOsConfigReady(os);
@@ -117,25 +119,25 @@ export function WorkspaceSwitcher(props: {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger>{props.trigger?.(isLoading, currentWorkspace)}</DialogTrigger>
       {/* Dialog Content */}
-      <DialogContent className="max-w-2xl min-w-full sm:min-w-[800px]">
-        <DialogHeader>
+      <DialogContent dir={dir} className="max-w-2xl min-w-full sm:min-w-[800px]">
+        <DialogHeader dir={dir}>
           <DialogTitle className="flex items-center gap-2">
             <Building2 className="h-5 w-5" />
-            Switch Workspace
+            {t('workspace.switchTitle')}
           </DialogTitle>
           <DialogDescription>
-            Select a workspace to switch to or create a new one.
+            {t('workspace.switchDescription')}
           </DialogDescription>
         </DialogHeader>
         {!user && (
           <div className="flex flex-col items-center justify-center h-full py-4 sm:py-8">
             <div className="text-sm font-medium text-muted-foreground">
-              Looks like you are not logged in. Please login to continue.
+              {t('workspace.notLoggedIn')}
             </div>
           </div>
         )}
         {user && (
-          <div className="flex flex-col gap-4">
+          <div dir={dir} className="flex flex-col gap-4">
             {/* Current Workspace */}
             {currentWorkspace && (
               <WorkspaceItem
@@ -156,7 +158,7 @@ export function WorkspaceSwitcher(props: {
             <div>
               <div className="flex items-center justify-between">
                 <div className="text-sm font-medium text-muted-foreground">
-                  Available Workspaces ({filteredWorkspaces.length})
+                  {t('workspace.availableWorkspaces', { count: filteredWorkspaces.length })}
                 </div>
                 <div>
                   <Button
@@ -166,35 +168,35 @@ export function WorkspaceSwitcher(props: {
                     onClick={reloadWorkspaces}
                     startIcon={<RefreshCcw />}
                   >
-                    {refreshing ? 'Refreshing...' : 'Refresh'}
+                    {t('settings.common.refreshAction', { loading: String(refreshing) })}
                   </Button>
                 </div>
               </div>
               {/* Search */}
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                 <Input
-                  placeholder="Search workspaces..."
+                  placeholder={t('workspace.searchPlaceholder')}
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
-                  className="pl-10"
+                  className="ps-10"
                 />
               </div>
               {loading ? (
                 <div className="flex items-center justify-center py-8">
                   <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                  <span className="ml-2 text-sm text-muted-foreground">Loading workspaces...</span>
+                  <span className="ms-2 text-sm text-muted-foreground">{t('workspace.loadingWorkspaces')}</span>
                 </div>
               ) : filteredWorkspaces.length === 0 ? (
                 <div className="text-center py-8">
                   <Building2 className="mx-auto h-12 w-12 text-muted-foreground" />
                   <p className="mt-2 text-sm text-muted-foreground">
-                    {searchQuery ? 'No workspaces found' : 'No workspaces available'}
+                    {searchQuery ? t('workspace.noWorkspacesFound') : t('workspace.noWorkspacesAvailable')}
                   </p>
                 </div>
               ) : (
-                <ScrollArea className="h-64">
-                  <div className="flex flex-col gap-2 my-2.5">
+                <ScrollArea className="h-64" dir={dir}>
+                  <div dir={dir} className="flex flex-col gap-2 my-2.5">
                     {filteredWorkspaces.map(workspace => {
                       const isCurrentWorkspace = workspace._id === currentWorkspace?._id;
                       return (
@@ -245,6 +247,7 @@ interface WorkspaceItemProps {
 }
 
 function WorkspaceItem(props: WorkspaceItemProps) {
+  const { t } = useTranslation();
   const { workspace, setCurrentWorkspace, setOpen, workspacesToUse, switchingToId } = props;
   const isCurrentWorkspace = props.isCurrentWorkspace ?? false;
   const isSwitchingThis = switchingToId === workspace._id;
@@ -283,7 +286,7 @@ function WorkspaceItem(props: WorkspaceItemProps) {
         </div>
         <div className="flex items-center gap-1 text-sm text-muted-foreground">
           <Users className="h-3 w-3" />
-          <span>{workspace.users?.length || 0} members</span>
+          <span>{t('workspace.membersCount', { count: workspace.users?.length || 0 })}</span>
         </div>
         {planName && (
           <div className="max-w-fit">
@@ -312,7 +315,7 @@ function WorkspaceItem(props: WorkspaceItemProps) {
                 });
             }}
           >
-            Switch to
+            {t('workspace.switchTo')}
           </Button>
         )}
         <WorkspaceSettingsDialog
@@ -334,6 +337,7 @@ function WorkspaceItem(props: WorkspaceItemProps) {
 }
 
 function CreateWorkspaceDialog(props: { onCreated: () => void }) {
+  const { t, dir } = useTranslation();
   const { switching } = useSaaSWorkspaces();
   const [open, setOpen] = useState(false);
   const [imageType, setImageType] = useState<'emoji' | 'url'>('emoji');
@@ -343,7 +347,7 @@ function CreateWorkspaceDialog(props: { onCreated: () => void }) {
 
   const formSchema = z.object({
     name: z.string().min(2, {
-      message: 'Workspace name must be at least 2 characters.',
+      message: t('workspace.workspaceNameMinLength'),
     }),
     image: z.string().optional(),
   });
@@ -367,7 +371,7 @@ function CreateWorkspaceDialog(props: { onCreated: () => void }) {
         new URL(values.image);
         imageUrl = values.image;
       } catch {
-        form.setError('image', { message: 'Please enter a valid URL' });
+        form.setError('image', { message: t('workspace.invalidUrl') });
         return;
       }
     }
@@ -400,14 +404,14 @@ function CreateWorkspaceDialog(props: { onCreated: () => void }) {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button className="w-full rounded-none" disabled={switching}>
-          <Plus className="h-4 w-4 mr-2" />
-          Create New Workspace
+          <Plus className="h-4 w-4 me-2" />
+          {t('workspace.createNew')}
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-xl min-w-full sm:min-w-[600px]">
+      <DialogContent dir={dir} className="max-w-xl min-w-full sm:min-w-[600px]">
         <DialogHeader>
-          <DialogTitle>Create New Workspace</DialogTitle>
-          <DialogDescription>Create a new workspace to get started.</DialogDescription>
+          <DialogTitle>{t('workspace.createTitle')}</DialogTitle>
+          <DialogDescription>{t('workspace.createDescription')}</DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
@@ -417,9 +421,9 @@ function CreateWorkspaceDialog(props: { onCreated: () => void }) {
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Workspace Name</FormLabel>
+                  <FormLabel>{t('workspace.workspaceName')}</FormLabel>
                   <FormControl>
-                    <Input placeholder="My Awesome Workspace" {...field} />
+                    <Input placeholder={t('workspace.workspaceNamePlaceholder')} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -428,9 +432,9 @@ function CreateWorkspaceDialog(props: { onCreated: () => void }) {
 
             <div className="flex flex-col gap-y-2 my-2">
               <div>
-                <Label className="text-sm font-medium">Workspace Icon</Label>
+                <Label className="text-sm font-medium">{t('workspace.workspaceIcon')}</Label>
                 <FormDescription>
-                  Choose an emoji or upload a custom image for your workspace.
+                  {t('workspace.iconDescription')}
                 </FormDescription>
               </div>
 
@@ -443,14 +447,14 @@ function CreateWorkspaceDialog(props: { onCreated: () => void }) {
                   <RadioGroupItem value="emoji" id="emoji" />
                   <Label htmlFor="emoji" className="flex items-center gap-2">
                     <Smile className="h-4 w-4" />
-                    Choose Emoji
+                    {t('workspace.chooseEmoji')}
                   </Label>
                 </div>
                 <div className="flex items-center gap-x-2 my-1">
                   <RadioGroupItem value="url" id="url" />
                   <Label htmlFor="url" className="flex items-center gap-2">
                     <Image className="h-4 w-4" />
-                    Custom Image URL
+                    {t('workspace.customImageUrl')}
                   </Label>
                 </div>
               </RadioGroup>
@@ -458,7 +462,7 @@ function CreateWorkspaceDialog(props: { onCreated: () => void }) {
               {imageType === 'emoji' && (
                 <div className="flex flex-col gap-y-2">
                   <div className="flex items-center gap-3">
-                    <span className="text-sm font-medium">Preview:</span>
+                    <span className="text-sm font-medium">{t('general.previewLabel')}</span>
                     <div className="w-12 h-12 rounded-lg border-2 border-border flex items-center justify-center text-2xl bg-muted">
                       {selectedEmoji}
                     </div>
@@ -489,13 +493,12 @@ function CreateWorkspaceDialog(props: { onCreated: () => void }) {
                     name="image"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Image URL</FormLabel>
+                        <FormLabel>{t('workspace.imageUrl')}</FormLabel>
                         <FormControl>
-                          <Input placeholder="https://example.com/image.png" {...field} />
+                          <Input placeholder={t('workspace.imageUrlPlaceholder')} {...field} />
                         </FormControl>
                         <FormDescription>
-                          Enter a valid URL for your workspace image. Supports PNG, JPG, and SVG
-                          formats.
+                          {t('workspace.imageUrlDescription')}
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -503,7 +506,7 @@ function CreateWorkspaceDialog(props: { onCreated: () => void }) {
                   />
                   {form.watch('image') && form.watch('image')?.trim() && (
                     <div className="flex items-center gap-3">
-                      <span className="text-sm font-medium">Preview:</span>
+                      <span className="text-sm font-medium">{t('general.previewLabel')}</span>
                       <div className="w-12 h-12 rounded-lg border-2 border-border overflow-hidden bg-muted">
                         <img
                           src={form.watch('image') || undefined}
@@ -532,16 +535,16 @@ function CreateWorkspaceDialog(props: { onCreated: () => void }) {
                 }}
                 disabled={isCreating}
               >
-                Cancel
+                {t('settings.common.cancel')}
               </Button>
               <Button type="submit" disabled={isCreating}>
                 {isCreating ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Creating...
+                    <Loader2 className="me-2 h-4 w-4 animate-spin" />
+                    {t('workspace.creating')}
                   </>
                 ) : (
-                  'Create Workspace'
+                  t('workspace.createWorkspace')
                 )}
               </Button>
             </div>
