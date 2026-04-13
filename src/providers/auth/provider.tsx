@@ -1,6 +1,6 @@
 'use client';
 
-import React, { ReactNode, useCallback, useEffect, useMemo } from 'react';
+import React, { ReactNode, useCallback, useEffect } from 'react';
 import { authActions, useAppDispatch } from '../../contexts';
 import { handleError, handleErrorUnlessAborted } from '../../lib/error-handler';
 import { useSaaSOs } from '../os/hooks';
@@ -51,13 +51,12 @@ export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) 
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const memoizedCallbacks = useMemo(() => callbacks, [callbacks]);
 
   const handleAuthRedirect = useCallback(
     async (code: string) => {
       try {
-        if (memoizedCallbacks?.handleAuthentication) {
-          const { sessionId } = await memoizedCallbacks.handleAuthentication(code);
+        if (callbacks?.handleAuthentication) {
+          const { sessionId } = await callbacks.handleAuthentication(code);
 
           if (!sessionId || typeof sessionId !== 'string' || sessionId.trim() === '') {
             throw new Error('Invalid sessionId received from authentication callback');
@@ -89,7 +88,7 @@ export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) 
         throw error;
       }
     },
-    [dispatch, memoizedCallbacks, osState]
+    [dispatch, callbacks, osState]
   );
 
   /**
@@ -115,13 +114,13 @@ export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) 
     const code = getTokenFromUrl();
     if (code) return;
 
-    if (!memoizedCallbacks?.getSession) {
+    if (!callbacks?.getSession) {
       _sessionHydrationDone = true;
       dispatch.auth(authActions.authenticationFailed());
       return;
     }
 
-    const getSessionFn = memoizedCallbacks.getSession;
+    const getSessionFn = callbacks.getSession;
     const { serverUrl, version, orgId } = osState;
     const clientId = osState.auth?.clientId || '';
 
@@ -162,7 +161,7 @@ export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) 
         _sessionHydrationInFlight = null;
       }
     })();
-  }, [isAuthenticated, dispatch, osState, memoizedCallbacks]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, dispatch, osState, callbacks]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /**
    * Handle OAuth redirect: user returns with ?code=... in URL.

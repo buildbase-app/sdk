@@ -51,11 +51,12 @@ export const PushNotificationProvider: React.FC<PushNotificationProviderProps> =
     const os = useSaaSOs();
     const { isAuthenticated } = useSaaSAuth();
 
-    const isSupported =
+    const isSupported = useMemo(() =>
       typeof window !== 'undefined' &&
       'serviceWorker' in navigator &&
       'PushManager' in window &&
-      'Notification' in window;
+      'Notification' in window,
+    []);
 
     const api = useMemo(
       () =>
@@ -78,26 +79,30 @@ export const PushNotificationProvider: React.FC<PushNotificationProviderProps> =
     // Check existing subscription on mount when authenticated
     useEffect(() => {
       if (!isAuthenticated || !isSupported) return;
-      checkExistingSubscription();
-    }, [isAuthenticated, isSupported]);
+      let cancelled = false;
 
-    async function checkExistingSubscription() {
-      try {
-        const registration = await navigator.serviceWorker.getRegistration(serviceWorkerPath);
-        if (!registration) {
-          setState((s) => ({ ...s, isSubscribed: false }));
-          return;
+      (async () => {
+        try {
+          const registration = await navigator.serviceWorker.getRegistration(serviceWorkerPath);
+          if (cancelled) return;
+          if (!registration) {
+            setState((s) => ({ ...s, isSubscribed: false }));
+            return;
+          }
+          const sub = await registration.pushManager.getSubscription();
+          if (cancelled) return;
+          setState((s) => ({
+            ...s,
+            isSubscribed: !!sub,
+            permission: Notification.permission,
+          }));
+        } catch {
+          if (!cancelled) setState((s) => ({ ...s, isSubscribed: false }));
         }
-        const sub = await registration.pushManager.getSubscription();
-        setState((s) => ({
-          ...s,
-          isSubscribed: !!sub,
-          permission: Notification.permission,
-        }));
-      } catch {
-        setState((s) => ({ ...s, isSubscribed: false }));
-      }
-    }
+      })();
+
+      return () => { cancelled = true; };
+    }, [isAuthenticated, isSupported, serviceWorkerPath]);
 
     const requestPermission = useCallback(async (): Promise<boolean> => {
       if (!isSupported) return false;
