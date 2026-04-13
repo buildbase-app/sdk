@@ -217,7 +217,7 @@ export class WorkspaceApi extends BaseApi {
     groupVersionId: string
   ): Promise<IPlanGroupResponse> {
     const response = await this.fetchResponse(
-      `workspaces/${workspaceId}/subscription/plan-group?groupVersionId=${groupVersionId}`
+      `workspaces/${workspaceId}/subscription/plan-group?groupVersionId=${encodeURIComponent(groupVersionId)}`
     );
     if (!response.ok) {
       let errorMessage = 'Failed to fetch plan group version';

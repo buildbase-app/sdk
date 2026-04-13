@@ -5,9 +5,8 @@ import { useAppDispatch, useAppSelector, workspaceActions } from '../../contexts
 import { invalidateSubscription } from '../../contexts/SubscriptionContext/subscriptionInvalidation';
 import { handleError } from '../../lib/error-handler';
 import { eventEmitter } from '../events';
-import { useSaaSOs, useSaaSSettings } from '../os/hooks';
-import type { IOsConfig, IOsState } from '../os/types';
-import { WorkspaceApi } from './api';
+import { useSaaSSettings } from '../os/hooks';
+import { useWorkspaceApiWithOs } from './use-workspace-api';
 import { IWorkspace, IWorkspaceUser } from './types';
 import { getWorkspaceUserRole, isWorkspaceOwner, workspaceStorage } from './utils';
 
@@ -117,17 +116,8 @@ import { getWorkspaceUserRole, isWorkspaceOwner, workspaceStorage } from './util
  * ```
  */
 
-/** Memoized WorkspaceApi instance. Recreates only when serverUrl, version, or orgId change. */
-export function useWorkspaceApi(os: IOsConfig) {
-  return useMemo(() => new WorkspaceApi(os), [os.serverUrl, os.version, os.orgId]);
-}
-
-/** OS state + memoized WorkspaceApi. BaseApi.ensureReady() throws if config is not set. Use when a hook needs both (e.g. subscription hooks, useSaaSWorkspaces). */
-export function useWorkspaceApiWithOs(): { os: IOsState; api: WorkspaceApi } {
-  const os = useSaaSOs();
-  const api = useWorkspaceApi(os);
-  return useMemo(() => ({ os, api }), [os, api]);
-}
+// Re-export for backward compat
+export { useWorkspaceApi, useWorkspaceApiWithOs } from './use-workspace-api';
 
 export const useSaaSWorkspaces = () => {
   const dispatch = useAppDispatch();

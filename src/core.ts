@@ -96,17 +96,7 @@ export type {
 
 export { PUSH_SERVICE_WORKER_SCRIPT } from './providers/push/service-worker-template';
 
-// ─── Reference Data (countries, currencies, languages, timezones) ──────────────
-
-export { countries } from './api/data/countries';
-export { currencies } from './api/data/currencies';
-export { languages } from './api/data/languages';
-export { timezones } from './api/data/timezones';
-
-// ─── Beta (schema, types) ──────────────────────────────────────────────────────
-
-export { formSchema as betaFormSchema } from './api/beta/schema';
-export type { formValuesType as BetaFormValues } from './api/beta/schema';
+// ─── Beta types (schema moved to @buildbase/sdk/data to avoid Zod in server bundle) ──
 export type { BetaFormData, BetaFormResponse } from './api/beta/types';
 
 // ─── Auth Types ────────────────────────────────────────────────────────────────

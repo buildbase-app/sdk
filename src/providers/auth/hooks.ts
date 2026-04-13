@@ -2,6 +2,7 @@ import { useCallback, useMemo } from 'react';
 import { AuthApi } from '../../api/services/auth-api';
 import { authActions, useAppDispatch, useAppSelector } from '../../contexts';
 import { handleError } from '../../lib/error-handler';
+import { safeRedirect } from '../../lib/security';
 import { useSaaSOs } from '../os/hooks';
 import { useSaaSWorkspaces } from '../workspace/hooks';
 import { workspaceSettingsManager } from '../workspace/settings-manager';
@@ -98,7 +99,7 @@ export function useSaaSAuth() {
       });
 
       if (response.success) {
-        window.location.href = response.data.redirectUrl;
+        safeRedirect(response.data.redirectUrl);
       } else {
         dispatch.auth(authActions.authenticationFailed());
         throw new Error(response.message || 'Authentication failed');
