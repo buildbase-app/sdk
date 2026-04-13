@@ -25,7 +25,7 @@ import { invalidateQuotaUsage } from '../../contexts/QuotaUsageContext/quotaUsag
 import { invalidateSubscription } from '../../contexts/SubscriptionContext/subscriptionInvalidation';
 import { handleError } from '../../lib/error-handler';
 import { isOsConfigReady } from '../os/types';
-import { useWorkspaceApiWithOs } from './hooks';
+import { useWorkspaceApiWithOs } from './use-workspace-api';
 
 /**
  * Hook to get public plans by slug (no auth required).

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useMemo, type ReactNode } from 'react';
-import { useSaaSWorkspaces } from '../../providers/workspace/hooks';
+import { useAppSelector } from '../shared/useAppSelector';
 import { useSubscription } from '../../providers/workspace/subscription-hooks';
 import { subscribeSubscriptionInvalidate } from './subscriptionInvalidation';
 import type { SubscriptionContextValue } from './types';
@@ -24,7 +24,8 @@ const CONTEXT_ERROR =
  */
 export const SubscriptionContextProvider: React.FC<{ children: ReactNode }> = React.memo(
   function SubscriptionContextProvider({ children }) {
-    const { currentWorkspace } = useSaaSWorkspaces();
+    // Read workspace directly from context (not from useSaaSWorkspaces) to avoid circular dependency
+    const currentWorkspace = useAppSelector(state => state.workspaces.currentWorkspace);
     const { subscription: response, loading, error, refetch } = useSubscription(currentWorkspace?._id);
 
     useEffect(() => {

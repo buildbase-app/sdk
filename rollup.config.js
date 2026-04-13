@@ -10,13 +10,16 @@ import postcss from 'rollup-plugin-postcss';
 const require = createRequire(import.meta.url);
 const packageJson = require('./package.json');
 
-const external = [
-  ...Object.keys(packageJson.peerDependencies || {}),
-  'react',
-  'react/jsx-runtime',
-  'react/jsx-dev-runtime',
-  'react-dom',
-];
+const peerDeps = Object.keys(packageJson.peerDependencies || {});
+const external = id => {
+  // Exact matches
+  if (peerDeps.includes(id)) return true;
+  // Sub-path matches (e.g. @radix-ui/react-dialog/dist/index.mjs)
+  if (peerDeps.some(dep => id.startsWith(dep + '/'))) return true;
+  // React internals
+  if (id === 'react/jsx-runtime' || id === 'react/jsx-dev-runtime') return true;
+  return false;
+};
 
 const createPlugins = ({ extractCss = false, cssPath = 'styles.css', declarationDir = 'dist/types' } = {}) => [
   resolve({ browser: true, preferBuiltins: false }),
@@ -81,6 +84,19 @@ export default [
     external,
   },
 
+  // ─── @buildbase/sdk/data (reference data, Zod schema) ─────────────────────
+  {
+    input: 'src/data.ts',
+    preserveEntrySignatures: 'exports-only',
+    treeshake: treeshakeConfig,
+    output: [
+      { file: 'dist/data/index.js', format: 'cjs', sourcemap: false, inlineDynamicImports: true },
+      { file: 'dist/data/index.mjs', format: 'esm', sourcemap: false, inlineDynamicImports: true },
+    ],
+    plugins: createPlugins({ declarationDir: 'dist/data/types' }),
+    external,
+  },
+
   // ─── Type declarations ─────────────────────────────────────────────────────
   {
     input: 'dist/types/index.d.ts',
@@ -91,6 +107,12 @@ export default [
   {
     input: 'dist/react/types/react.d.ts',
     output: [{ file: 'dist/react/index.d.ts', format: 'esm' }],
+    plugins: [dts()],
+    external: [/\.css$/],
+  },
+  {
+    input: 'dist/data/types/data.d.ts',
+    output: [{ file: 'dist/data/index.d.ts', format: 'esm' }],
     plugins: [dts()],
     external: [/\.css$/],
   },

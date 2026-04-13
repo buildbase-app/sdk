@@ -19,6 +19,12 @@
       "require": "./dist/react/index.js",
       "default": "./dist/react/index.js"
     },
+    "./data": {
+      "types": "./dist/data/index.d.ts",
+      "import": "./dist/data/index.mjs",
+      "require": "./dist/data/index.js",
+      "default": "./dist/data/index.js"
+    },
     "./css": {
       "types": "./dist/css/styles.d.ts",
       "default": "./dist/css/styles.css"
@@ -33,7 +39,7 @@
   ],
   "scripts": {
     "build": "rollup -c && npm run postbuild",
-    "postbuild": "rimraf dist/types dist/react/types dist/*.map dist/react/*.map && mkdir -p dist/css && [ -f dist/react/styles.css ] && mv dist/react/styles.css dist/css/styles.css || true && cp src/css.d.ts dist/css/styles.d.ts",
+    "postbuild": "rimraf dist/types dist/react/types dist/data/types dist/*.map dist/react/*.map dist/data/*.map && mkdir -p dist/css && [ -f dist/react/styles.css ] && mv dist/react/styles.css dist/css/styles.css || true && cp src/css.d.ts dist/css/styles.d.ts",
     "build:analyze": "rollup --config rollup.config.analyze.js",
     "dev": "rollup -c -w",
     "clean": "rimraf dist",
@@ -52,17 +58,7 @@
   },
   "peerDependencies": {
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
-  },
-  "peerDependenciesMeta": {
-    "react": {
-      "optional": true
-    },
-    "react-dom": {
-      "optional": true
-    }
-  },
-  "dependencies": {
+    "react-dom": "^19.0.0",
     "@radix-ui/react-alert-dialog": "^1.1.13",
     "@radix-ui/react-avatar": "^1.1.9",
     "@radix-ui/react-dialog": "^1.1.13",
@@ -78,12 +74,33 @@
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.0.0",
     "cmdk": "^1.1.1",
-    "javascript-time-ago": "^2.5.11",
     "lucide-react": "^0.544.0",
     "react-hook-form": "^7.60.0",
-    "tailwind-merge": "^3.3.1",
-    "zod": "^4.1.8"
+    "tailwind-merge": "^3.3.1"
   },
+  "peerDependenciesMeta": {
+    "react": { "optional": true },
+    "react-dom": { "optional": true },
+    "@radix-ui/react-alert-dialog": { "optional": true },
+    "@radix-ui/react-avatar": { "optional": true },
+    "@radix-ui/react-dialog": { "optional": true },
+    "@radix-ui/react-icons": { "optional": true },
+    "@radix-ui/react-label": { "optional": true },
+    "@radix-ui/react-popover": { "optional": true },
+    "@radix-ui/react-radio-group": { "optional": true },
+    "@radix-ui/react-scroll-area": { "optional": true },
+    "@radix-ui/react-select": { "optional": true },
+    "@radix-ui/react-separator": { "optional": true },
+    "@radix-ui/react-slot": { "optional": true },
+    "@radix-ui/react-switch": { "optional": true },
+    "class-variance-authority": { "optional": true },
+    "clsx": { "optional": true },
+    "cmdk": { "optional": true },
+    "lucide-react": { "optional": true },
+    "react-hook-form": { "optional": true },
+    "tailwind-merge": { "optional": true }
+  },
+  "dependencies": {},
   "devDependencies": {
     "@hookform/resolvers": "^5.0.1",
     "@rollup/plugin-commonjs": "^28.0.6",

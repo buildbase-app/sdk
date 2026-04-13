@@ -1,3 +1,4 @@
+import { safeRedirect } from '../../../lib/security';
 import { AlertTriangle, Calendar, CreditCard, Loader2 } from 'lucide-react';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { formatCents } from '../../../api/billing/currency-utils';
@@ -290,7 +291,7 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
       // Check if result is a checkout session response
       if (result && 'checkoutUrl' in result && result.checkoutUrl) {
         // Redirect to checkout URL
-        window.location.href = result.checkoutUrl;
+        safeRedirect(result.checkoutUrl);
         return;
       }
 
@@ -1061,7 +1062,7 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                         planVersionId: workspace.pendingOnboarding?.planVersionId ?? '',
                       });
                       if (result && 'checkoutUrl' in result && result.checkoutUrl) {
-                        window.location.href = result.checkoutUrl;
+                        safeRedirect(result.checkoutUrl);
                       }
                     } catch (err: any) {
                       // Show error or fallback
