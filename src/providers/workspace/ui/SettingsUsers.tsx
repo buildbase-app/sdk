@@ -10,8 +10,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger } from '../../../compo
 import { useSubscriptionContext } from '../../../contexts/SubscriptionContext';
 import { useSeatStatus } from '../../../hooks/use-seat-status';
 import { handleError } from '../../../lib/error-handler';
+import { usePermissions } from '../../../hooks/usePermissions';
+import { Permission } from '../../../lib/permissions';
 import { useSaaSAuth } from '../../auth/hooks';
 import { useSaaSSettings } from '../../os/hooks';
+import { WorkspaceModes } from '../../types';
 import { useSaaSWorkspaces } from '../hooks';
 import { IWorkspace, IWorkspaceUser } from '../types';
 import { isWorkspaceOwner } from '../utils';
@@ -26,6 +29,7 @@ const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace
   const [updatingRoleUserId, setUpdatingRoleUserId] = useState<string | null>(null);
   const { getUsers, removeUser, updateUser } = useSaaSWorkspaces();
   const { settings } = useSaaSSettings();
+  const { can } = usePermissions();
 
   const { response: subscriptionResponse } = useSubscriptionContext();
 
@@ -57,9 +61,13 @@ const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace
     setRefreshCounter(prev => prev + 1);
   };
 
+  const isPersonalMode = settings?.workspace?.mode === WorkspaceModes.Personal;
+
   if (loading || !workspace) {
     return <SettingSkeleton />;
   }
+
+  if (isPersonalMode) return null;
 
   // Helper function to get user display info
   const getUserDisplay = (user: string | IUser) => {
@@ -126,12 +134,9 @@ const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace
       });
   };
 
-  const myRole = workspaceUsers.find(user => {
-    const id = typeof user.user === 'string' ? user.user : user.user._id;
-    return id === currentUser?.id;
-  })?.role;
-
-  const amIAdmin = myRole === 'admin';
+  const canInviteMembers = can(Permission.WORKSPACE_MEMBERS_INVITE);
+  const canRemoveMembers = can(Permission.WORKSPACE_MEMBERS_REMOVE);
+  const canChangeRoles = can(Permission.WORKSPACE_MEMBERS_ROLE_CHANGE);
 
   const {
     hasSeatPricing,
@@ -151,11 +156,11 @@ const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace
 
   return (
     <div>
-      {!amIAdmin && (
+      {!canInviteMembers && !canRemoveMembers && !canChangeRoles && (
         <div className="text-red-500">{t('users.adminOnly')}</div>
       )}
 
-      {amIAdmin && settings?.workspace?.canInviteMembers !== false && (
+      {canInviteMembers && (
         <div className="mb-4">
           {canInvite ? (
             <div>
@@ -284,11 +289,11 @@ const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace
               </div>
 
               {/* Role + actions — second row on mobile, inline on desktop */}
-              {amIAdmin && (
+              {canChangeRoles && (
                 <div className="flex items-center gap-2 mt-2 pt-2 border-t border-gray-100 sm:mt-0 sm:pt-0 sm:border-0">
                   <div className="relative flex-1 sm:flex-initial">
                     <Select
-                      disabled={myself || !amIAdmin || isOwner || updatingRoleUserId === member.id}
+                      disabled={myself || !canChangeRoles || isOwner || updatingRoleUserId === member.id}
                       value={member.role}
                       onValueChange={value => handleUpdateRole(workspace._id, member.id, value)}
                     >
@@ -309,7 +314,7 @@ const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace
                       </div>
                     )}
                   </div>
-                  {!myself && !isOwner && (
+                  {!myself && !isOwner && canRemoveMembers && (
                     <Button
                       variant="destructive"
                       size="sm"

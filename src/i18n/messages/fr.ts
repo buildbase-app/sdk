@@ -10,6 +10,7 @@ export const fr: SDKMessages = {
       usage: 'Utilisation',
       features: "Fonctionnalités de l'espace de travail",
       notifications: 'Notifications',
+      permissions: 'Permissions',
       danger: 'Zone de danger',
     },
     sidebar: {
@@ -22,6 +23,7 @@ export const fr: SDKMessages = {
       usage: 'Utilisation',
       features: 'Fonctionnalités',
       notifications: 'Notifications',
+      permissions: 'Permissions',
       danger: 'Zone de danger',
     },
     common: {
@@ -429,6 +431,14 @@ export const fr: SDKMessages = {
   push: {
     failedToSubscribe: "Échec de l'abonnement aux notifications push",
     failedToUnsubscribe: 'Échec de la désinscription des notifications push',
+  },
+  permissions: {
+    title: 'Permissions',
+    description: 'Configurez ce que chaque rôle peut faire dans cet espace de travail.',
+    ownerOnly: "Seul le propriétaire de l'espace de travail peut gérer les permissions.",
+    save: 'Enregistrer les permissions',
+    saving: 'Enregistrement...',
+    saveSuccess: 'Permissions enregistrées avec succès',
   },
   errors: {
     networkError: 'Erreur réseau : Veuillez vérifier votre connexion Internet',

@@ -32,4 +32,5 @@ export type {
   UsageActions,
   SettingsActions,
   FeatureActions,
+  PermissionActions,
 } from './lib/server-client';

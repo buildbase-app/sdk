@@ -42,6 +42,8 @@ import {
   useResumeSubscription,
   useSubscriptionManagement,
 } from '../subscription-hooks';
+import { usePermissions } from '../../../hooks/usePermissions';
+import { Permission } from '../../../lib/permissions';
 import { useSaaSSettings } from '../../os/hooks';
 import { WorkspaceModes } from '../../types';
 import { IWorkspace } from '../types';
@@ -111,7 +113,10 @@ const getPlanDetailsFromItems = (
 const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ workspace }) => {
   const workspaceId = workspace._id?.toString();
   const { t, formattingLocale, fmtNum, fmtCents } = useTranslation();
+  const { can } = usePermissions();
   const { settings: orgSettings } = useSaaSSettings();
+  const canViewBilling = can(Permission.WORKSPACE_BILLING_VIEW);
+  const canManageBilling = can(Permission.WORKSPACE_BILLING_MANAGE);
   const isPersonalMode = orgSettings?.workspace?.mode === WorkspaceModes.Personal;
   const {
     subscription,
@@ -338,6 +343,8 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
     return <SettingSkeleton />;
   }
 
+  if (!canViewBilling) return null;
+
   const currentPlanVersionId = subscription?.planVersion?._id || null;
 
   // Show error if workspaceId is missing
@@ -489,8 +496,8 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                     );
                   }
 
-                  // Active subscription — allow changing plan
-                  if (subscription?.subscription && !isCanceled) {
+                  // Active subscription — allow changing plan (only if user can manage billing)
+                  if (subscription?.subscription && !isCanceled && canManageBilling) {
                     return (
                       <Button variant="outline" size="sm" onClick={() => setDialogOpen(true)}>
                         {t('subscription.changePlanButton')}
@@ -740,7 +747,7 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                         subscription.subscription.subscriptionStatus === SubscriptionStatus.Trialing ||
                         subscription.subscription.subscriptionStatus === SubscriptionStatus.PastDue) && (
                         <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-4 pt-4 border-t border-gray-200">
-                          {subscription.subscription && (
+                          {subscription.subscription && canManageBilling && (
                             <Button
                               variant="outline"
                               size="sm"
@@ -751,7 +758,7 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                               {portalLoading ? t('subscription.openingPortal') : t('subscription.managePayment')}
                             </Button>
                           )}
-                          {(subscription.subscription.subscriptionStatus === SubscriptionStatus.Active ||
+                          {canManageBilling && (subscription.subscription.subscriptionStatus === SubscriptionStatus.Active ||
                             subscription.subscription.subscriptionStatus === SubscriptionStatus.Trialing) && (
                             <>
                               {subscription.subscription.subscriptionStatus === SubscriptionStatus.Active &&

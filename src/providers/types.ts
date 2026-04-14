@@ -17,6 +17,8 @@ export interface ISettings {
     canCreateWorkspace: boolean | 'owner-only';
     /** Whether members can invite others. false = disabled, 'admin-only' = restricted */
     canInviteMembers: boolean | 'admin-only';
+    /** Custom role→permission mapping. Overrides SDK defaults when provided by backend. */
+    permissions?: Record<string, string[]>;
     /** Show workspace switcher in the UI */
     showSwitcher: boolean;
     /** Max workspaces a user can own. 0 = unlimited */

@@ -17,11 +17,29 @@ import { UserProvider } from './user/provider';
 import { WorkspaceSettingsProvider } from './workspace/WorkspaceSettingsProvider';
 import { TranslationProvider } from '../i18n';
 import type { SDKLocale } from '../i18n';
+import { PermissionConfigProvider } from '../contexts/PermissionContext';
 
 export interface SaaSOSProviderProps extends IOsState {
   children: React.ReactNode;
   /** SDK UI language. Defaults to 'en'. Supported: en, es, fr, de, ja, zh, hi, ar */
   locale?: SDKLocale;
+  /**
+   * Default app permissions per role.
+   * Defines what permissions exist in your app and which roles get them by default.
+   * Workspace owners can customize per-workspace via the Settings → Permissions screen.
+   *
+   * @example
+   * ```tsx
+   * <SaaSOSProvider
+   *   defaultPermissions={{
+   *     admin: ['projects:create', 'projects:delete', 'reports:export'],
+   *     editor: ['projects:create', 'reports:export'],
+   *     member: ['projects:view'],
+   *   }}
+   * >
+   * ```
+   */
+  defaultPermissions?: Record<string, string[]>;
 }
 
 /**
@@ -161,7 +179,7 @@ const validateProps = (serverUrl: string, version: ApiVersion, orgId: string): v
 };
 
 const SaaSOSProviderInner: React.FC<SaaSOSProviderProps> = React.memo(
-  ({ serverUrl, version, orgId, auth, locale, children }) => {
+  ({ serverUrl, version, orgId, auth, locale, defaultPermissions, children }) => {
     // Validate props synchronously - throws are caught by the parent SDKErrorBoundary
     validateProps(serverUrl, version, orgId);
 
@@ -201,15 +219,17 @@ const SaaSOSProviderInner: React.FC<SaaSOSProviderProps> = React.memo(
           <AuthProviderWrapper callbacks={memoizedCallbacks}>
             <PortalProvider>
               <ContextConfigProvider config={config} auth={auth}>
-                <UserProvider>
-                  <SubscriptionContextProvider>
-                    <QuotaUsageContextProvider>
-                      <PushNotificationProvider>
-                        <WorkspaceSettingsProvider>{children}</WorkspaceSettingsProvider>
-                      </PushNotificationProvider>
-                    </QuotaUsageContextProvider>
-                  </SubscriptionContextProvider>
-                </UserProvider>
+                <PermissionConfigProvider appPermissions={defaultPermissions}>
+                  <UserProvider>
+                    <SubscriptionContextProvider>
+                      <QuotaUsageContextProvider>
+                        <PushNotificationProvider>
+                          <WorkspaceSettingsProvider>{children}</WorkspaceSettingsProvider>
+                        </PushNotificationProvider>
+                      </QuotaUsageContextProvider>
+                    </SubscriptionContextProvider>
+                  </UserProvider>
+                </PermissionConfigProvider>
               </ContextConfigProvider>
             </PortalProvider>
           </AuthProviderWrapper>

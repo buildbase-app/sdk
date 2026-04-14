@@ -10,6 +10,7 @@ export const ja: SDKMessages = {
       usage: '使用状況',
       features: 'ワークスペース機能',
       notifications: '通知',
+      permissions: '権限',
       danger: '危険ゾーン',
     },
     sidebar: {
@@ -22,6 +23,7 @@ export const ja: SDKMessages = {
       usage: '使用状況',
       features: '機能',
       notifications: '通知',
+      permissions: '権限',
       danger: '危険ゾーン',
     },
     common: {
@@ -429,6 +431,14 @@ export const ja: SDKMessages = {
   push: {
     failedToSubscribe: 'プッシュ通知の登録に失敗しました',
     failedToUnsubscribe: 'プッシュ通知の解除に失敗しました',
+  },
+  permissions: {
+    title: '権限',
+    description: 'このワークスペースで各ロールができることを設定します。',
+    ownerOnly: 'ワークスペースのオーナーのみが権限を管理できます。',
+    save: '権限を保存',
+    saving: '保存中...',
+    saveSuccess: '権限が正常に保存されました',
   },
   errors: {
     networkError: 'ネットワークエラー：インターネット接続を確認してください',

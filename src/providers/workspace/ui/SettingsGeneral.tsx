@@ -20,17 +20,17 @@ import { Label } from '../../../components/ui/label';
 import { RadioGroup, RadioGroupItem } from '../../../components/ui/radio-group';
 import { ScrollArea } from '../../../components/ui/scroll-area';
 import { handleError } from '../../../lib/error-handler';
-import { useSaaSAuth } from '../../auth/hooks';
+import { usePermissions } from '../../../hooks/usePermissions';
+import { Permission } from '../../../lib/permissions';
 import { useSaaSWorkspaces } from '../hooks';
 import { IWorkspace } from '../types';
-import { isWorkspaceOwner } from '../utils';
 import SettingSkeleton from './Skeleton';
 import { getSvgImage, workspaceEmojis } from './utils';
 
 const WorkspaceSettingsGeneral: React.FC<{ workspace: IWorkspace }> = ({ workspace }) => {
   const { t } = useTranslation();
   const { updateWorkspace } = useSaaSWorkspaces();
-  const { user: currentUser } = useSaaSAuth();
+  const { can } = usePermissions();
   const [isUpdating, setIsUpdating] = useState(false);
   const [imageType, setImageType] = useState<'emoji' | 'url'>('emoji');
   const [selectedEmoji, setSelectedEmoji] = useState<string>();
@@ -85,7 +85,7 @@ const WorkspaceSettingsGeneral: React.FC<{ workspace: IWorkspace }> = ({ workspa
     return <SettingSkeleton />;
   }
 
-  const amIOwner = isWorkspaceOwner(workspace, currentUser?.id ?? null);
+  const canEdit = can(Permission.WORKSPACE_SETTINGS_EDIT);
 
   return (
     <div>
@@ -95,7 +95,7 @@ const WorkspaceSettingsGeneral: React.FC<{ workspace: IWorkspace }> = ({ workspa
           <p className="text-sm">{successMessage}</p>
         </div>
       )}
-      {!amIOwner && (
+      {!canEdit && (
         <div className="text-red-500">
           {t('general.ownerOnly')}
         </div>
@@ -109,7 +109,7 @@ const WorkspaceSettingsGeneral: React.FC<{ workspace: IWorkspace }> = ({ workspa
               <FormItem>
                 <FormLabel>{t('general.name')}</FormLabel>
                 <FormControl>
-                  <Input placeholder={t('general.namePlaceholder')} {...field} disabled={!amIOwner} />
+                  <Input placeholder={t('general.namePlaceholder')} {...field} disabled={!canEdit} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -138,7 +138,7 @@ const WorkspaceSettingsGeneral: React.FC<{ workspace: IWorkspace }> = ({ workspa
 
             <RadioGroup
               value={imageType}
-              disabled={!amIOwner}
+              disabled={!canEdit}
               onValueChange={value => setImageType(value as 'emoji' | 'url')}
               className="flex flex-col space-y-3"
             >
@@ -169,7 +169,7 @@ const WorkspaceSettingsGeneral: React.FC<{ workspace: IWorkspace }> = ({ workspa
                     )}
                   </div>
                 </div>
-                {amIOwner && (
+                {canEdit && (
                   <ScrollArea className="h-32 w-full rounded-md border">
                     <div className="p-4 grid grid-cols-8 gap-2">
                       {workspaceEmojis.map((emoji, index) => (
@@ -177,7 +177,7 @@ const WorkspaceSettingsGeneral: React.FC<{ workspace: IWorkspace }> = ({ workspa
                           key={index}
                           type="button"
                           onClick={() => handleEmojiSelect(emoji)}
-                          disabled={!amIOwner}
+                          disabled={!canEdit}
                           className={`w-8 h-8 rounded flex items-center justify-center text-lg hover:bg-muted transition-colors ${
                             selectedEmoji === emoji ? 'bg-primary text-primary-foreground' : ''
                           }`}
@@ -203,7 +203,7 @@ const WorkspaceSettingsGeneral: React.FC<{ workspace: IWorkspace }> = ({ workspa
                         <Input
                           placeholder={t('general.imageUrlPlaceholder')}
                           {...field}
-                          disabled={!amIOwner}
+                          disabled={!canEdit}
                         />
                       </FormControl>
                       <FormDescription>
@@ -230,7 +230,7 @@ const WorkspaceSettingsGeneral: React.FC<{ workspace: IWorkspace }> = ({ workspa
           </div>
 
           <div className="flex justify-end gap-3 pt-4">
-            {amIOwner && (
+            {canEdit && (
               <Button type="submit" disabled={isUpdating} progress={isUpdating}>
                 {t('general.updateWorkspace')}
               </Button>

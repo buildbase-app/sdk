@@ -10,6 +10,7 @@ export const zh: SDKMessages = {
       usage: '用量',
       features: '工作区功能',
       notifications: '通知',
+      permissions: '权限',
       danger: '危险区域',
     },
     sidebar: {
@@ -22,6 +23,7 @@ export const zh: SDKMessages = {
       usage: '用量',
       features: '功能',
       notifications: '通知',
+      permissions: '权限',
       danger: '危险区域',
     },
     common: {
@@ -429,6 +431,14 @@ export const zh: SDKMessages = {
   push: {
     failedToSubscribe: '订阅推送通知失败',
     failedToUnsubscribe: '取消订阅推送通知失败',
+  },
+  permissions: {
+    title: '权限',
+    description: '配置每个角色在此工作区中的操作权限。',
+    ownerOnly: '只有工作区拥有者才能管理权限。',
+    save: '保存权限',
+    saving: '正在保存...',
+    saveSuccess: '权限保存成功',
   },
   errors: {
     networkError: '网络错误：请检查您的网络连接',

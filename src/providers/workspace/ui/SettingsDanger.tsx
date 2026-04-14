@@ -14,17 +14,17 @@ import {
 } from '../../../components/ui/alert-dialog';
 import { Button } from '../../../components/ui/button';
 import { handleError } from '../../../lib/error-handler';
-import { useSaaSAuth } from '../../auth/hooks';
+import { usePermissions } from '../../../hooks/usePermissions';
+import { Permission } from '../../../lib/permissions';
 import { useSaaSSettings } from '../../os/hooks';
 import { useSaaSWorkspaces } from '../hooks';
 import { IWorkspace } from '../types';
-import { getWorkspaceUserRole } from '../utils';
 import SettingSkeleton from './Skeleton';
 
 const WorkspaceSettingsDanger: React.FC<{ workspace: IWorkspace }> = ({ workspace }) => {
   const [isDeleting, setIsDeleting] = useState(false);
   const { deleteWorkspace } = useSaaSWorkspaces();
-  const { user: currentUser } = useSaaSAuth();
+  const { can } = usePermissions();
   const { settings } = useSaaSSettings();
   const { t } = useTranslation();
 
@@ -38,8 +38,7 @@ const WorkspaceSettingsDanger: React.FC<{ workspace: IWorkspace }> = ({ workspac
     return <SettingSkeleton />;
   }
 
-  const myRole = getWorkspaceUserRole(workspace, currentUser?.id ?? null);
-  const amIAdmin = myRole?.toLowerCase() === 'admin';
+  const canDelete = can(Permission.WORKSPACE_DELETE);
 
   const handleDeleteWorkspace = async () => {
     setIsDeleting(true);
@@ -58,7 +57,7 @@ const WorkspaceSettingsDanger: React.FC<{ workspace: IWorkspace }> = ({ workspac
     }
   };
 
-  if (!amIAdmin) {
+  if (!canDelete) {
     return (
       <div className="space-y-4">
         <div className="text-red-500">{t('danger.adminOnly')}</div>

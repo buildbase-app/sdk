@@ -10,6 +10,7 @@ export const hi: SDKMessages = {
       usage: 'उपयोग',
       features: 'वर्कस्पेस फ़ीचर्स',
       notifications: 'सूचनाएँ',
+      permissions: 'अनुमतियाँ',
       danger: 'खतरनाक ज़ोन',
     },
     sidebar: {
@@ -22,6 +23,7 @@ export const hi: SDKMessages = {
       usage: 'उपयोग',
       features: 'फ़ीचर्स',
       notifications: 'सूचनाएँ',
+      permissions: 'अनुमतियाँ',
       danger: 'खतरनाक ज़ोन',
     },
     common: {
@@ -429,6 +431,14 @@ export const hi: SDKMessages = {
   push: {
     failedToSubscribe: 'पुश सूचनाओं की सदस्यता लेने में विफल',
     failedToUnsubscribe: 'पुश सूचनाओं की सदस्यता रद्द करने में विफल',
+  },
+  permissions: {
+    title: 'अनुमतियाँ',
+    description: 'इस कार्यक्षेत्र में प्रत्येक भूमिका क्या कर सकती है, यह कॉन्फ़िगर करें।',
+    ownerOnly: 'केवल कार्यक्षेत्र का स्वामी ही अनुमतियाँ प्रबंधित कर सकता है।',
+    save: 'अनुमतियाँ सहेजें',
+    saving: 'सहेजा जा रहा है...',
+    saveSuccess: 'अनुमतियाँ सफलतापूर्वक सहेजी गईं',
   },
   errors: {
     networkError: 'नेटवर्क त्रुटि: कृपया अपना इंटरनेट कनेक्शन जाँचें',

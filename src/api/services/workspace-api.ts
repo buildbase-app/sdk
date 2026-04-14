@@ -98,6 +98,22 @@ export class WorkspaceApi extends BaseApi {
     );
   }
 
+  async updateSettings(data: { permissions: Record<string, string[]> }): Promise<any> {
+    return this.fetchJson(
+      'workspaces/settings',
+      { method: 'PATCH', body: JSON.stringify(data) },
+      'Failed to update workspace settings'
+    );
+  }
+
+  async updateWorkspacePermissions(workspaceId: string, permissions: Record<string, string[]>): Promise<any> {
+    return this.fetchJson(
+      `workspaces/${workspaceId}/permissions`,
+      { method: 'PATCH', body: JSON.stringify({ permissions }) },
+      'Failed to update workspace permissions'
+    );
+  }
+
   async getFeatures(): Promise<IWorkspaceFeature[]> {
     return this.fetchJson<IWorkspaceFeature[]>(
       'workspaces/features',
