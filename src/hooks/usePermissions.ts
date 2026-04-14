@@ -6,7 +6,7 @@ import { useSaaSSettings } from '../providers/os/hooks';
 import { useSaaSWorkspaces } from '../providers/workspace/hooks';
 import { usePermissionConfig } from '../contexts/PermissionContext';
 import { isWorkspaceOwner, getWorkspaceUserRole } from '../lib/workspace-utils';
-import { resolvePermissions } from '../lib/permissions';
+import { resolvePermissions, type WorkspaceLike } from '../lib/permissions';
 
 /**
  * Resolve the current user's permissions in the current (or specified) workspace.
@@ -38,22 +38,22 @@ import { resolvePermissions } from '../lib/permissions';
  * }
  * ```
  */
-export function usePermissions(workspace?: { _id: string; createdBy: string | { _id: string } | null | undefined; users?: Array<string | { _id: string; role?: string }>; permissions?: Record<string, string[]> } | null) {
+export function usePermissions(workspace?: WorkspaceLike | null) {
   const { user } = useSaaSAuth();
   const { currentWorkspace } = useSaaSWorkspaces();
   const { settings } = useSaaSSettings();
   const { appPermissions } = usePermissionConfig();
 
-  const effectiveWorkspace = workspace ?? currentWorkspace;
+  const effectiveWorkspace: WorkspaceLike | null = workspace ?? currentWorkspace ?? null;
   const userId = user?.id ?? null;
 
   const workspaceRole = useMemo(
-    () => getWorkspaceUserRole(effectiveWorkspace as any, userId),
+    () => effectiveWorkspace ? getWorkspaceUserRole(effectiveWorkspace, userId) : null,
     [effectiveWorkspace, userId],
   );
 
   const isOwner = useMemo(
-    () => isWorkspaceOwner(effectiveWorkspace as any, userId),
+    () => effectiveWorkspace ? isWorkspaceOwner(effectiveWorkspace, userId) : false,
     [effectiveWorkspace, userId],
   );
 
@@ -62,7 +62,7 @@ export function usePermissions(workspace?: { _id: string; createdBy: string | { 
       resolvePermissions({
         userId,
         workspaceRole,
-        workspace: effectiveWorkspace as any,
+        workspace: effectiveWorkspace,
         settings,
         appPermissions,
       }),
