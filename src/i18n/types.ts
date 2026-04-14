@@ -13,6 +13,7 @@ export interface SDKMessages {
       usage: string;
       features: string;
       notifications: string;
+      permissions: string;
       danger: string;
     };
     sidebar: {
@@ -25,6 +26,7 @@ export interface SDKMessages {
       usage: string;
       features: string;
       notifications: string;
+      permissions: string;
       danger: string;
     };
     common: {
@@ -412,6 +414,14 @@ export interface SDKMessages {
   push: {
     failedToSubscribe: string;
     failedToUnsubscribe: string;
+  };
+  permissions: {
+    title: string;
+    description: string;
+    ownerOnly: string;
+    save: string;
+    saving: string;
+    saveSuccess: string;
   };
   errors: {
     networkError: string;

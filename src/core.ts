@@ -106,6 +106,20 @@ export type {
   QuotaDisplayWithOverage,
 } from './api/billing/pricing-variant-utils';
 
+// ─── Permissions ──────────────────────────────────────────────────────────────
+
+export {
+  Permission,
+  DEFAULT_ROLE_PERMISSIONS,
+  resolvePermissions,
+  hasPermission,
+} from './lib/permissions';
+export type {
+  PermissionKey,
+  PermissionContext,
+  RolePermissionMap,
+} from './lib/permissions';
+
 // ─── Push Notification (service worker template) ───────────────────────────────
 
 export { PUSH_SERVICE_WORKER_SCRIPT } from './providers/push/service-worker-template';

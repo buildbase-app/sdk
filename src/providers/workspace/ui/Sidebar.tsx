@@ -5,6 +5,7 @@ import {
   BarChart3,
   Bell,
   CreditCard,
+  Shield,
   SettingsIcon,
   ToggleRight,
   UserIcon,
@@ -12,10 +13,11 @@ import {
 } from 'lucide-react';
 import React from 'react';
 import { cn } from '../../../lib/utils';
-import { useSaaSAuth } from '../../auth/hooks';
+import { usePermissions } from '../../../hooks/usePermissions';
+import { usePermissionConfig } from '../../../contexts/PermissionContext';
+import { Permission } from '../../../lib/permissions';
 import { WorkspaceModes } from '../../types';
 import { IWorkspace } from '../types';
-import { getWorkspaceUserRole } from '../utils';
 import { SettingsScreen } from './SettingsDialog';
 import type { WorkspaceSettingsSection } from './SettingsDialog';
 
@@ -27,17 +29,12 @@ interface Props {
 
 const Sidebar: React.FC<Props> = ({ workspace, section, setSection }) => {
   const { t } = useTranslation();
-  const { user: currentUser } = useSaaSAuth();
   const { settings } = useSaaSSettings();
+  const { can } = usePermissions();
+  const { appPermissions } = usePermissionConfig();
   const isPersonalMode = settings?.workspace?.mode === WorkspaceModes.Personal;
-
-  const createdBy =
-    typeof workspace.createdBy === 'object' && workspace.createdBy !== null
-      ? workspace.createdBy._id
-      : workspace.createdBy;
-  const isCreatedByMe = createdBy === currentUser?.id;
-  const myRole = getWorkspaceUserRole(workspace, currentUser?.id ?? null);
-  const canAccessDangerZone = isCreatedByMe || myRole?.toLowerCase() === 'admin';
+  const canAccessDangerZone = can(Permission.WORKSPACE_DELETE);
+  const hasAppPermissions = appPermissions && Object.keys(appPermissions).length > 0;
 
   return (
     <div className="w-44 sm:w-56 h-full flex flex-col space-y-4 sm:space-y-6 shrink-0">
@@ -88,6 +85,7 @@ const Sidebar: React.FC<Props> = ({ workspace, section, setSection }) => {
         />
       </SidebarSection>
       <SidebarSection title={t("settings.sidebar.workspace")}>
+        {can(Permission.WORKSPACE_SETTINGS_VIEW) && (
         <SidebarItem
           activeSection={section}
           icon={<SettingsIcon className="h-3.5 w-3.5" />}
@@ -95,7 +93,8 @@ const Sidebar: React.FC<Props> = ({ workspace, section, setSection }) => {
           section={SettingsScreen.General}
           onClick={() => setSection(SettingsScreen.General)}
         />
-        {!isPersonalMode && (
+        )}
+        {!isPersonalMode && can(Permission.WORKSPACE_MEMBERS_VIEW) && (
         <SidebarItem
           activeSection={section}
           icon={<UsersIcon className="h-3.5 w-3.5" />}
@@ -104,6 +103,7 @@ const Sidebar: React.FC<Props> = ({ workspace, section, setSection }) => {
           onClick={() => setSection(SettingsScreen.Users)}
         />
         )}
+        {can(Permission.WORKSPACE_BILLING_VIEW) && (
         <SidebarItem
           activeSection={section}
           icon={<CreditCard className="h-3.5 w-3.5" />}
@@ -111,6 +111,8 @@ const Sidebar: React.FC<Props> = ({ workspace, section, setSection }) => {
           section={SettingsScreen.Subscription}
           onClick={() => setSection(SettingsScreen.Subscription)}
         />
+        )}
+        {can(Permission.WORKSPACE_USAGE_VIEW) && (
         <SidebarItem
           activeSection={section}
           icon={<BarChart3 className="h-3.5 w-3.5" />}
@@ -118,6 +120,8 @@ const Sidebar: React.FC<Props> = ({ workspace, section, setSection }) => {
           section={SettingsScreen.Usage}
           onClick={() => setSection(SettingsScreen.Usage)}
         />
+        )}
+        {can(Permission.WORKSPACE_FEATURES_VIEW) && (
         <SidebarItem
           activeSection={section}
           icon={<ToggleRight className="h-3.5 w-3.5" />}
@@ -125,6 +129,7 @@ const Sidebar: React.FC<Props> = ({ workspace, section, setSection }) => {
           section={SettingsScreen.Features}
           onClick={() => setSection(SettingsScreen.Features)}
         />
+        )}
         <SidebarItem
           activeSection={section}
           icon={<Bell className="h-3.5 w-3.5" />}
@@ -132,6 +137,15 @@ const Sidebar: React.FC<Props> = ({ workspace, section, setSection }) => {
           section={SettingsScreen.Notifications}
           onClick={() => setSection(SettingsScreen.Notifications)}
         />
+        {hasAppPermissions && !isPersonalMode && (
+          <SidebarItem
+            activeSection={section}
+            icon={<Shield className="h-3.5 w-3.5" />}
+            label={t("settings.sidebar.permissions")}
+            section={SettingsScreen.Permissions}
+            onClick={() => setSection(SettingsScreen.Permissions)}
+          />
+        )}
         {canAccessDangerZone && !isPersonalMode && (
           <SidebarItem
             activeSection={section}

@@ -65,6 +65,7 @@ import type {
 import type { IWorkspace, IWorkspaceUser, IWorkspaceFeature, IOsConfig, ISettings } from '../api/services/shared-types';
 import type { ApiVersion } from '../api/services/shared-types';
 import { WorkspaceApi, UserApi, SettingsApi, PushApi } from '../api/services';
+import { hasPermission, resolvePermissions } from './permissions';
 
 // ─── Config ────────────────────────────────────────────────────────────────────
 
@@ -238,6 +239,13 @@ export interface FeatureActions {
   update(workspaceId: string, key: string, value: boolean): Promise<IWorkspace>;
 }
 
+export interface PermissionActions {
+  /** Check if a user has a permission (or all of an array) in a workspace. Works with both platform permissions (Permission.*) and app permissions (custom strings). */
+  check(workspaceId: string, userId: string, permission: string | string[]): Promise<boolean>;
+  /** Resolve all permissions for a user in a workspace. Returns both platform and app permissions. */
+  resolve(workspaceId: string, userId: string): Promise<Set<string>>;
+}
+
 // ─── Scoped actions (bound to a session) ───────────────────────────────────────
 
 /** All action modules bound to a specific session. Returned by `withSession()`. */
@@ -250,6 +258,7 @@ export interface ScopedActions {
   usage: UsageActions;
   settings: SettingsActions;
   features: FeatureActions;
+  permissions: PermissionActions;
 }
 
 // ─── BuildBase Result ──────────────────────────────────────────────────────────
@@ -401,6 +410,45 @@ export default function BuildBase(config: BuildBaseConfig): BuildBaseResult {
     features: {
       list: async () => (await getApi()).workspace.getFeatures(),
       update: async (wid, key, value) => (await getApi()).workspace.updateFeature(wid, key, value),
+    },
+
+    permissions: {
+      check: async (wid, uid, permission) => {
+        const api = await getApi();
+        const [workspace, settings, workspaceUsers] = await Promise.all([
+          api.workspace.getWorkspace(wid),
+          api.settings.getSettings(),
+          api.workspace.getWorkspaceUsers(wid),
+        ]);
+        const wu = workspaceUsers.find(u => {
+          const id = typeof u.user === 'string' ? u.user : u.user._id;
+          return id === uid;
+        });
+        return hasPermission(permission, {
+          userId: uid,
+          workspaceRole: wu?.role ?? null,
+          workspace,
+          settings,
+        });
+      },
+      resolve: async (wid, uid) => {
+        const api = await getApi();
+        const [workspace, settings, workspaceUsers] = await Promise.all([
+          api.workspace.getWorkspace(wid),
+          api.settings.getSettings(),
+          api.workspace.getWorkspaceUsers(wid),
+        ]);
+        const wu = workspaceUsers.find(u => {
+          const id = typeof u.user === 'string' ? u.user : u.user._id;
+          return id === uid;
+        });
+        return resolvePermissions({
+          userId: uid,
+          workspaceRole: wu?.role ?? null,
+          workspace,
+          settings,
+        });
+      },
     },
   });
 

@@ -1,0 +1,83 @@
+'use client';
+
+import { useCallback, useMemo } from 'react';
+import { useSaaSAuth } from '../providers/auth/hooks';
+import { useSaaSSettings } from '../providers/os/hooks';
+import { useSaaSWorkspaces } from '../providers/workspace/hooks';
+import { usePermissionConfig } from '../contexts/PermissionContext';
+import { isWorkspaceOwner, getWorkspaceUserRole } from '../lib/workspace-utils';
+import { resolvePermissions } from '../lib/permissions';
+
+/**
+ * Resolve the current user's permissions in the current (or specified) workspace.
+ *
+ * Returns both platform permissions (workspace:*, billing:*) managed by BuildBase
+ * and app permissions (custom strings) defined by the developer.
+ *
+ * @example Platform permissions (automatic)
+ * ```tsx
+ * import { usePermissions, Permission } from '@buildbase/sdk/react';
+ *
+ * function InviteSection() {
+ *   const { can } = usePermissions();
+ *   if (!can(Permission.WORKSPACE_MEMBERS_INVITE)) return null;
+ *   return <InviteForm />;
+ * }
+ * ```
+ *
+ * @example App permissions (developer-defined)
+ * ```tsx
+ * function ProjectActions() {
+ *   const { can } = usePermissions();
+ *   return (
+ *     <>
+ *       {can('projects:create') && <CreateButton />}
+ *       {can('reports:export') && <ExportButton />}
+ *     </>
+ *   );
+ * }
+ * ```
+ */
+export function usePermissions(workspace?: { _id: string; createdBy: string | { _id: string } | null | undefined; users?: Array<string | { _id: string; role?: string }>; permissions?: Record<string, string[]> } | null) {
+  const { user } = useSaaSAuth();
+  const { currentWorkspace } = useSaaSWorkspaces();
+  const { settings } = useSaaSSettings();
+  const { appPermissions } = usePermissionConfig();
+
+  const effectiveWorkspace = workspace ?? currentWorkspace;
+  const userId = user?.id ?? null;
+
+  const workspaceRole = useMemo(
+    () => getWorkspaceUserRole(effectiveWorkspace as any, userId),
+    [effectiveWorkspace, userId],
+  );
+
+  const isOwner = useMemo(
+    () => isWorkspaceOwner(effectiveWorkspace as any, userId),
+    [effectiveWorkspace, userId],
+  );
+
+  const permissions = useMemo(
+    () =>
+      resolvePermissions({
+        userId,
+        workspaceRole,
+        workspace: effectiveWorkspace as any,
+        settings,
+        appPermissions,
+      }),
+    [userId, workspaceRole, effectiveWorkspace, settings, appPermissions],
+  );
+
+  const can = useCallback(
+    (permission: string | string[]): boolean => {
+      if (Array.isArray(permission)) {
+        return permission.every(p => permissions.has(p));
+      }
+      return permissions.has(permission);
+    },
+    [permissions],
+  );
+
+  return { can, permissions, isOwner, role: workspaceRole };
+}

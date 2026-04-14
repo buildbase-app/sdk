@@ -3,16 +3,16 @@ import { useTranslation } from '../../../i18n';
 import React, { useEffect, useRef, useState } from 'react';
 import { Switch } from '../../../components/ui/switch';
 import { handleError } from '../../../lib/error-handler';
-import { useSaaSAuth } from '../../auth/hooks';
+import { usePermissions } from '../../../hooks/usePermissions';
+import { Permission } from '../../../lib/permissions';
 import { useSaaSWorkspaces } from '../hooks';
 import { IWorkspace } from '../types';
-import { isWorkspaceOwner } from '../utils';
 import SettingSkeleton from './Skeleton';
 
 const WorkspaceSettingsFeatures: React.FC<{ workspaceId: string }> = ({ workspaceId }) => {
   const { t } = useTranslation();
   const { allFeatures, updateFeature, getWorkspace } = useSaaSWorkspaces();
-  const { user: currentUser } = useSaaSAuth();
+  const { can } = usePermissions();
   const [updatingFeatures, setUpdatingFeatures] = useState<Record<string, boolean | null>>({});
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [workspace, setWorkspace] = useState<IWorkspace | null>(null);
@@ -55,7 +55,7 @@ const WorkspaceSettingsFeatures: React.FC<{ workspaceId: string }> = ({ workspac
     return <SettingSkeleton />;
   }
 
-  const amIOwner = isWorkspaceOwner(workspace, currentUser?.id ?? null);
+  const canEditFeatures = can(Permission.WORKSPACE_FEATURES_EDIT);
 
   return (
     <div>
@@ -66,7 +66,7 @@ const WorkspaceSettingsFeatures: React.FC<{ workspaceId: string }> = ({ workspac
         </div>
       )}
       <div className="flex flex-col gap-y-3.5 pe-4">
-        {!amIOwner && (
+        {!canEditFeatures && (
           <div className="text-red-500">{t('features.ownerOnly')}</div>
         )}
         {!allFeatures.length && (
@@ -92,7 +92,7 @@ const WorkspaceSettingsFeatures: React.FC<{ workspaceId: string }> = ({ workspac
                   </div>
                   {!isUpdating ? (
                     <Switch
-                      disabled={!amIOwner}
+                      disabled={!canEditFeatures}
                       checked={state ?? feature.defaultValue}
                       onCheckedChange={value => _updateFeature(feature.slug, value)}
                     />

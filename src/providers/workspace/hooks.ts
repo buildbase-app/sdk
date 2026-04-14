@@ -352,6 +352,22 @@ export const useSaaSWorkspaces = () => {
     [api]
   );
 
+  const updateWorkspaceSettings = useCallback(
+    async (data: { permissions: Record<string, string[]> }) => {
+      return api.updateSettings(data);
+    },
+    [api]
+  );
+
+  const updateWorkspacePermissions = useCallback(
+    async (workspaceId: string, permissions: Record<string, string[]>) => {
+      const result = await api.updateWorkspacePermissions(workspaceId, permissions);
+      await refreshWorkspaces();
+      return result;
+    },
+    [api, refreshWorkspaces]
+  );
+
   // Sync current workspace when workspaces array is updated
   // This ensures the currentWorkspace reference stays in sync with the workspaces array
   useEffect(() => {
@@ -594,6 +610,8 @@ export const useSaaSWorkspaces = () => {
     allFeatures: workspace.allFeatures,
     getFeatures,
     updateFeature,
+    updateWorkspaceSettings,
+    updateWorkspacePermissions,
     getWorkspace,
     updateWorkspace,
     getUsers,

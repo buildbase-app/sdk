@@ -7,6 +7,8 @@ import type { IQuotaUsageStatus } from '../../../api/types';
 import { Button } from '../../../components/ui/button';
 import { useQuotaUsageContext } from '../../../contexts/QuotaUsageContext';
 import { useSubscriptionContext } from '../../../contexts/SubscriptionContext';
+import { usePermissions } from '../../../hooks/usePermissions';
+import { Permission } from '../../../lib/permissions';
 import { cn } from '../../../lib/utils';
 import SettingSkeleton from './Skeleton';
 
@@ -94,6 +96,7 @@ function sortByUrgency(entries: [string, IQuotaUsageStatus][]): [string, IQuotaU
 const WorkspaceSettingsUsage: React.FC = () => {
   const { quotas, loading, error, refetch } = useQuotaUsageContext();
   const { t, formattingLocale, fmtNum } = useTranslation();
+  const { can } = usePermissions();
   const fmtN = (n: number) => formatNumber(n, formattingLocale);
   const fmtCost = (amount: number, symbol: string) => formatCost(amount, symbol, formattingLocale);
   const { response: subResponse } = useSubscriptionContext();
@@ -153,6 +156,8 @@ const WorkspaceSettingsUsage: React.FC = () => {
   if (loading && !quotas) {
     return <SettingSkeleton />;
   }
+
+  if (!can(Permission.WORKSPACE_USAGE_VIEW)) return null;
 
   if (error) {
     return (

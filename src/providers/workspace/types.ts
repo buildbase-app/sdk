@@ -27,6 +27,8 @@ export interface IWorkspace {
    * When set, subscription UI only shows/uses this currency.
    */
   billingCurrency?: string | null;
+  /** Per-workspace permission overrides. Takes priority over org-level settings.permissions. */
+  permissions?: Record<string, string[]>;
   /** Workspace onboarding config. Set on creation based on org settings. SDK shows trial CTA. */
   pendingOnboarding?: {
     mode: 'trial';

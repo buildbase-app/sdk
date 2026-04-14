@@ -10,6 +10,7 @@ export const en: SDKMessages = {
       usage: 'Usage',
       features: 'Workspace Features',
       notifications: 'Notifications',
+      permissions: 'Permissions',
       danger: 'Danger Zone',
     },
     sidebar: {
@@ -22,6 +23,7 @@ export const en: SDKMessages = {
       usage: 'Usage',
       features: 'Features',
       notifications: 'Notifications',
+      permissions: 'Permissions',
       danger: 'Danger Zone',
     },
     common: {
@@ -431,6 +433,14 @@ export const en: SDKMessages = {
   push: {
     failedToSubscribe: 'Failed to subscribe to push notifications',
     failedToUnsubscribe: 'Failed to unsubscribe from push notifications',
+  },
+  permissions: {
+    title: 'Permissions',
+    description: 'Permissions assigned to each role in this workspace.',
+    ownerOnly: 'Only the workspace owner can manage permissions.',
+    save: 'Save Permissions',
+    saving: 'Saving...',
+    saveSuccess: 'Permissions saved successfully',
   },
   errors: {
     networkError: 'Network error: Please check your internet connection',

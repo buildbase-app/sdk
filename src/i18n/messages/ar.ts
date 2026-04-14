@@ -10,6 +10,7 @@ export const ar: SDKMessages = {
       usage: 'الاستخدام',
       features: 'ميزات مساحة العمل',
       notifications: 'الإشعارات',
+      permissions: 'الصلاحيات',
       danger: 'منطقة الخطر',
     },
     sidebar: {
@@ -22,6 +23,7 @@ export const ar: SDKMessages = {
       usage: 'الاستخدام',
       features: 'الميزات',
       notifications: 'الإشعارات',
+      permissions: 'الصلاحيات',
       danger: 'منطقة الخطر',
     },
     common: {
@@ -429,6 +431,14 @@ export const ar: SDKMessages = {
   push: {
     failedToSubscribe: 'فشل في الاشتراك في الإشعارات الفورية',
     failedToUnsubscribe: 'فشل في إلغاء الاشتراك من الإشعارات الفورية',
+  },
+  permissions: {
+    title: 'الصلاحيات',
+    description: 'قم بتكوين ما يمكن لكل دور القيام به في مساحة العمل هذه.',
+    ownerOnly: 'يمكن لمالك مساحة العمل فقط إدارة الصلاحيات.',
+    save: 'حفظ الصلاحيات',
+    saving: 'جارٍ الحفظ...',
+    saveSuccess: 'تم حفظ الصلاحيات بنجاح',
   },
   errors: {
     networkError: 'خطأ في الشبكة: يرجى التحقق من اتصالك بالإنترنت',

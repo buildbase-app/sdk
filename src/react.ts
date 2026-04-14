@@ -29,6 +29,10 @@ export { WhenAuthenticated, WhenUnauthenticated } from './components/user/auth';
 // ─── Role Gate Components ──────────────────────────────────────────────────────
 export { WhenRoles, WhenWorkspaceRoles } from './components/user/role';
 
+// ─── Permission Gate Components & Hook ────────────────────────────────────────
+export { WhenPermission } from './components/permission';
+export { usePermissions } from './hooks/usePermissions';
+
 // ─── Feature Gate Components ───────────────────────────────────────────────────
 export {
   WhenUserFeatureDisabled,

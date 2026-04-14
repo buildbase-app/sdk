@@ -10,6 +10,7 @@ export const de: SDKMessages = {
       usage: 'Nutzung',
       features: 'Arbeitsbereich-Funktionen',
       notifications: 'Benachrichtigungen',
+      permissions: 'Berechtigungen',
       danger: 'Gefahrenzone',
     },
     sidebar: {
@@ -22,6 +23,7 @@ export const de: SDKMessages = {
       usage: 'Nutzung',
       features: 'Funktionen',
       notifications: 'Benachrichtigungen',
+      permissions: 'Berechtigungen',
       danger: 'Gefahrenzone',
     },
     common: {
@@ -429,6 +431,14 @@ export const de: SDKMessages = {
   push: {
     failedToSubscribe: 'Push-Benachrichtigungen konnten nicht abonniert werden',
     failedToUnsubscribe: 'Push-Benachrichtigungen konnten nicht abbestellt werden',
+  },
+  permissions: {
+    title: 'Berechtigungen',
+    description: 'Konfiguriere, was jede Rolle in diesem Arbeitsbereich tun kann.',
+    ownerOnly: 'Nur der Eigentümer des Arbeitsbereichs kann Berechtigungen verwalten.',
+    save: 'Berechtigungen speichern',
+    saving: 'Wird gespeichert...',
+    saveSuccess: 'Berechtigungen erfolgreich gespeichert',
   },
   errors: {
     networkError: 'Netzwerkfehler: Bitte überprüfe deine Internetverbindung',
