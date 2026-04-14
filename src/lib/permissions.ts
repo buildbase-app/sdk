@@ -70,7 +70,7 @@ export const DEFAULT_ROLE_PERMISSIONS: RolePermissionMap = {
 
 // ─── Permission Context ───────────────────────────────────────────────────────
 
-interface WorkspaceLike {
+export interface WorkspaceLike {
   _id: string;
   createdBy: string | { _id: string } | null | undefined;
   users?: Array<string | { _id: string; role?: string }>;
