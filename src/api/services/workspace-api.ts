@@ -862,4 +862,46 @@ export class WorkspaceApi extends BaseApi {
     return result;
   }
 
+  // Notification Preferences
+
+  // Notification Events & Preferences
+
+  async getNotificationEvents(workspaceId: string): Promise<Array<{
+    slug: string;
+    name: string;
+    description: string;
+    category: string;
+    channels: { email: boolean; push: boolean };
+  }>> {
+    return this.fetchJson(
+      `workspaces/${workspaceId}/notification-events`,
+      {},
+      'Failed to fetch notification events'
+    );
+  }
+
+  async getNotificationPreferences(workspaceId: string): Promise<Record<string, { email?: boolean; push?: boolean }>> {
+    const result = await this.fetchJson<{ notificationPreferences: Record<string, { email?: boolean; push?: boolean }> }>(
+      `workspaces/${workspaceId}/notification-preferences`,
+      {},
+      'Failed to fetch notification preferences'
+    );
+    return result.notificationPreferences ?? {};
+  }
+
+  async updateNotificationPreferences(
+    workspaceId: string,
+    preferences: Record<string, { email?: boolean; push?: boolean }>
+  ): Promise<Record<string, { email?: boolean; push?: boolean }>> {
+    const result = await this.fetchJson<{ notificationPreferences: Record<string, { email?: boolean; push?: boolean }> }>(
+      `workspaces/${workspaceId}/notification-preferences`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify({ notificationPreferences: preferences }),
+      },
+      'Failed to update notification preferences'
+    );
+    return result.notificationPreferences ?? {};
+  }
+
 }

@@ -123,7 +123,7 @@ const WorkspaceSettingsDialog: React.FC<WorkspaceSettingsDialogProps> = ({
             {section === SettingsScreen.Features && (
               <WorkspaceSettingsFeatures workspaceId={workspace._id?.toString()} />
             )}
-            {section === SettingsScreen.Notifications && <WorkspaceSettingsNotifications />}
+            {section === SettingsScreen.Notifications && <WorkspaceSettingsNotifications workspace={workspace} />}
             {section === SettingsScreen.Permissions && <WorkspaceSettingsPermissions workspace={workspace} />}
             {section === SettingsScreen.Danger && <WorkspaceSettingsDanger workspace={workspace} />}
           </div>

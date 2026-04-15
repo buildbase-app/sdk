@@ -330,6 +330,38 @@ export interface SDKMessages {
     toggleAction: string;
     pushDescription: string;
     deviceNote: string;
+    prefsSaved: string;
+    loadingPrefs: string;
+    categories: {
+      workspace: string;
+      billing: string;
+    };
+    events: {
+      workspace_invite: string;
+      workspace_invite_desc: string;
+      workspace_removed: string;
+      workspace_removed_desc: string;
+      workspace_role_changed: string;
+      workspace_role_changed_desc: string;
+      subscription_created: string;
+      subscription_created_desc: string;
+      subscription_upgraded: string;
+      subscription_upgraded_desc: string;
+      subscription_canceled: string;
+      subscription_canceled_desc: string;
+      subscription_suspended: string;
+      subscription_suspended_desc: string;
+      trial_ending: string;
+      trial_ending_desc: string;
+      trial_expired: string;
+      trial_expired_desc: string;
+      payment_failed: string;
+      payment_failed_desc: string;
+      payment_action_required: string;
+      payment_action_required_desc: string;
+      payment_succeeded: string;
+      payment_succeeded_desc: string;
+    };
     unblock: {
       firefox: { step1: string; step2: string; step3: string; step4: string };
       safari: { step1: string; step2: string; step3: string; step4: string };
