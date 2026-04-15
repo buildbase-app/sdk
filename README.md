@@ -537,12 +537,21 @@ self.addEventListener('push', function(event) {
   if (!event.data) return;
   try {
     var payload = event.data.json();
-    event.waitUntil(self.registration.showNotification(payload.title || 'Notification', {
+    var options = {
       body: payload.body || '',
       icon: payload.icon || undefined,
-      badge: payload.icon || undefined,
+      badge: payload.badge || payload.icon || undefined,
+      image: payload.image || undefined,
+      tag: payload.tag || undefined,
+      actions: payload.actions || undefined,
+      silent: payload.silent || false,
+      requireInteraction: payload.requireInteraction || false,
+      renotify: payload.renotify || false,
+      timestamp: payload.timestamp || undefined,
+      dir: payload.dir || 'auto',
       data: { url: payload.url, ...(payload.data || {}) },
-    }));
+    };
+    event.waitUntil(self.registration.showNotification(payload.title || 'Notification', options));
   } catch (e) { console.error('[PushSW]', e); }
 });
 
@@ -562,10 +571,11 @@ Everything else is built-in — permission handling, subscribe/unsubscribe, sett
 
 ## 📬 Notifications
 
-Send email and push notifications to workspace members. The system has two layers:
+Send email and push notifications to workspace members. The system has three layers:
 
 - **System notifications** — Automatically triggered by platform events (workspace invite, payment failed, trial ending, etc.). Managed by the developer in the admin dashboard.
 - **Custom notifications** — Defined by the developer, triggered from app code via SDK. Can be made user-configurable.
+- **Ad-hoc notifications** — Send push notifications with any event slug without pre-registering it. No event setup needed — just pass `title`, `message`, and optionally `icon`, `image`, `url`. Email requires a registered event with a linked template.
 
 ### Sending Notifications (Server-Side)
 
@@ -576,6 +586,8 @@ import { notification } from '@/lib/buildbase'
 await notification.send(workspaceId, 'comment_added', userId, {
   title: 'New Comment',                       // Push title (falls back to event name)
   message: 'Alice commented on your project', // Push body + email {{message}}
+  icon: 'https://example.com/comment-icon.png', // Custom push icon (falls back to org icon)
+  image: 'https://example.com/screenshot.jpg',  // Large image in push notification body
   url: 'https://app.example.com/projects/123#comments', // Opens on push click + {{url}} in email
 })
 
@@ -583,9 +595,106 @@ await notification.send(workspaceId, 'comment_added', userId, {
 await notification.send(workspaceId, 'new_release', undefined, {
   title: 'New Release',
   message: 'Version 2.0 is now available with dark mode and API v2!',
+  image: 'https://example.com/release-banner.jpg',
   url: 'https://app.example.com/changelog',
 })
 ```
+
+### Ad-hoc Notifications
+
+Send push notifications without creating a custom event first — any event slug works:
+
+```ts
+// No need to register 'deployment_success' as a custom event
+await notification.send(workspaceId, 'deployment_success', userId, {
+  title: 'Deployment Complete',
+  message: 'v2.1.0 deployed to production',
+  icon: 'https://example.com/deploy-icon.png',
+  url: '/deployments/latest',
+  channels: { push: true },
+})
+```
+
+> **Note:** Ad-hoc events support push only. Email requires a registered event with a linked email template.
+
+### Push Options
+
+Fine-grained control over push notification behavior:
+
+```ts
+// Action buttons — user can tap "Reply" or "Dismiss" directly on the notification
+await notification.send(workspaceId, 'new_message', userId, {
+  title: 'New message from Alice',
+  message: 'Hey, are you free for a call?',
+  actions: [
+    { action: 'reply', title: 'Reply', icon: 'https://example.com/reply.png' },
+    { action: 'dismiss', title: 'Dismiss' },
+  ],
+  tag: 'chat-alice',         // Replaces previous "chat-alice" notification instead of stacking
+  renotify: true,            // Still vibrate/sound when replacing
+  channels: { push: true },
+})
+
+// Critical alert — stays visible until user interacts
+await notification.send(workspaceId, 'payment_failed', userId, {
+  title: 'Payment Failed',
+  message: 'Your subscription will be suspended in 3 days',
+  badge: 'https://example.com/alert-badge.png',
+  requireInteraction: true,  // No auto-dismiss
+  urgency: 'high',           // Prioritized delivery on mobile
+  channels: { push: true },
+})
+
+// Silent notification — no sound or vibration
+await notification.send(workspaceId, 'sync_complete', userId, {
+  title: 'Sync Complete',
+  message: '1,234 records synced',
+  silent: true,
+  urgency: 'low',
+  channels: { push: true },
+})
+```
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `badge` | `string` | Small monochrome icon for status bar (Android/ChromeOS) |
+| `tag` | `string` | Replaces existing notification with same tag instead of stacking |
+| `actions` | `Array<{action, title, icon?}>` | Up to 2 action buttons on the notification |
+| `silent` | `boolean` | No sound or vibration |
+| `requireInteraction` | `boolean` | Stays visible until user interacts |
+| `renotify` | `boolean` | Sound/vibrate again when replacing via `tag` |
+| `timestamp` | `number` | Custom timestamp (ms since epoch) shown on notification |
+| `dir` | `'ltr' \| 'rtl' \| 'auto'` | Text direction for title/body |
+
+### Delivery Options
+
+Control how and when the push service delivers the notification:
+
+```ts
+// Schedule for later
+await notification.send(workspaceId, 'daily_digest', undefined, {
+  title: 'Your Daily Digest',
+  message: '12 new updates in your workspace',
+  scheduledAt: '2026-04-16T09:00:00Z',  // Deliver at 9am UTC tomorrow
+  channels: { push: true },
+})
+
+// Short-lived notification — discard if not delivered in 1 hour
+await notification.send(workspaceId, 'flash_sale', undefined, {
+  title: 'Flash Sale — 50% off!',
+  message: 'Ends in 1 hour',
+  image: 'https://example.com/sale-banner.jpg',
+  ttl: 3600,                // Expires after 1 hour (seconds)
+  urgency: 'high',          // Deliver ASAP
+  channels: { push: true },
+})
+```
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `scheduledAt` | `string` | ISO 8601 date. Delays delivery until the specified time |
+| `ttl` | `number` | Time-to-live in seconds. Push service discards if not delivered in time. Default: 86400 (24h) |
+| `urgency` | `'very-low' \| 'low' \| 'normal' \| 'high'` | Delivery priority hint. Affects battery usage on mobile |
 
 ### Channel Control
 
@@ -686,7 +795,20 @@ import type { NotificationData, NotificationResult, NotificationEvent } from '@b
 interface NotificationData {
   title?: string;                           // Push title (falls back to event name)
   message?: string;                         // Push body + email {{message}}
+  icon?: string;                            // Custom push icon URL (falls back to org icon)
+  image?: string;                           // Large image in push notification body
+  badge?: string;                           // Small monochrome status bar icon
   url?: string;                             // Opens on push click + {{url}} in email
+  tag?: string;                             // Replace instead of stack notifications
+  actions?: Array<{action, title, icon?}>;  // Action buttons (max 2)
+  silent?: boolean;                         // No sound/vibration
+  requireInteraction?: boolean;             // No auto-dismiss
+  renotify?: boolean;                       // Re-alert on tag replace
+  timestamp?: number;                       // Custom timestamp (ms)
+  dir?: 'ltr' | 'rtl' | 'auto';            // Text direction
+  ttl?: number;                             // Time-to-live (seconds)
+  urgency?: 'very-low'|'low'|'normal'|'high'; // Delivery priority
+  scheduledAt?: string;                     // ISO 8601 delayed delivery
   channels?: { email?: boolean; push?: boolean }; // Override which channels to use
   [key: string]: any;                       // Custom merge tags for email + push
 }
