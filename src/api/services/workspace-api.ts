@@ -31,8 +31,34 @@ export interface NotificationData {
   title?: string;
   /** Primary message — used in email body and as push notification body. */
   message?: string;
+  /** Custom icon URL for the push notification. Falls back to the org icon. */
+  icon?: string;
+  /** Large image URL displayed in the push notification body. */
+  image?: string;
+  /** Small monochrome icon for the status bar (Android/ChromeOS). */
+  badge?: string;
   /** URL to open when the user clicks the push notification. Also available as {{url}} in email template. */
   url?: string;
+  /** Tag to group/replace notifications. New notification with same tag replaces the previous one instead of stacking. */
+  tag?: string;
+  /** Action buttons displayed on the notification (max 2). */
+  actions?: Array<{ action: string; title: string; icon?: string }>;
+  /** Show notification without sound or vibration. */
+  silent?: boolean;
+  /** Keep notification visible until user interacts (no auto-dismiss). Useful for critical alerts. */
+  requireInteraction?: boolean;
+  /** Vibrate/sound again when replacing a notification with the same tag. Only works with `tag`. */
+  renotify?: boolean;
+  /** Custom timestamp (ms since epoch) displayed on the notification. */
+  timestamp?: number;
+  /** Text direction for title/body. */
+  dir?: 'ltr' | 'rtl' | 'auto';
+  /** Time-to-live in seconds. Push service discards the message if not delivered within this time. Default: 86400 (24h). */
+  ttl?: number;
+  /** Delivery urgency hint. Affects battery/delivery priority on mobile. */
+  urgency?: 'very-low' | 'low' | 'normal' | 'high';
+  /** ISO 8601 date string. Delays delivery until the specified time. */
+  scheduledAt?: string;
   /**
    * Which channels to send on. Overrides the event's default channel config.
    * Omit to use the event's configured channels.
