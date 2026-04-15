@@ -1,12 +1,17 @@
-import { Bell, BellOff, ShieldAlert } from 'lucide-react';
+import { Bell, BellOff, Mail, Smartphone, ShieldAlert } from 'lucide-react';
 import { useTranslation, type TranslationKey } from '../../../i18n';
-import React, { useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '../../../components/ui/button';
+import { Switch } from '../../../components/ui/switch';
 import { usePushNotifications } from '../../push/PushNotificationContext';
+import { useWorkspaceApiWithOs } from '../use-workspace-api';
+import { usePermissions } from '../../../hooks/usePermissions';
+import { Permission } from '../../../lib/permissions';
+import { handleError } from '../../../lib/error-handler';
+import { IWorkspace } from '../types';
 
 type BrowserId = 'firefox' | 'safari' | 'edge' | 'chrome';
 
-/** Detect browser for notification unblock instructions */
 function detectBrowser(): BrowserId {
   const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
   if (ua.includes('Firefox')) return 'firefox';
@@ -15,29 +20,120 @@ function detectBrowser(): BrowserId {
   return 'chrome';
 }
 
-/** Step count per browser — used to iterate t() keys */
 const BROWSER_STEP_COUNT: Record<BrowserId, number> = {
-  firefox: 4,
-  safari: 4,
-  edge: 4,
-  chrome: 4,
+  firefox: 4, safari: 4, edge: 4, chrome: 4,
 };
 
-const WorkspaceSettingsNotifications: React.FC = () => {
-  const { isSupported, permission, isSubscribed, loading, error, subscribe, unsubscribe } =
+// ─── Types ───────────────────────────────────────────────────────
+
+interface NotificationEvent {
+  slug: string;
+  name: string;
+  description: string;
+  category: string;
+  channels: { email: boolean; push: boolean };
+}
+
+type ChannelPref = { email?: boolean; push?: boolean };
+type Preferences = Record<string, ChannelPref>;
+
+// ─── Component ───────────────────────────────────────────────────
+
+const WorkspaceSettingsNotifications: React.FC<{ workspace: IWorkspace }> = ({ workspace }) => {
+  const { isSupported, permission, isSubscribed, loading: pushLoading, error: pushError, subscribe, unsubscribe } =
     usePushNotifications();
   const { t } = useTranslation();
+  const { api } = useWorkspaceApiWithOs();
+  const { can } = usePermissions();
+  const canEdit = can(Permission.WORKSPACE_SETTINGS_EDIT);
 
   const browser = useMemo(() => detectBrowser(), []);
   const stepCount = BROWSER_STEP_COUNT[browser];
 
-  if (!isSupported) {
-    return (
-      <div className="text-sm text-gray-500">
-        {t('notifications.notSupported')}
-      </div>
-    );
-  }
+  // Dynamic events from server (only userManaged + enabled)
+  const [events, setEvents] = useState<NotificationEvent[]>([]);
+  const [loadingEvents, setLoadingEvents] = useState(true);
+  const [preferences, setPreferences] = useState<Preferences>({});
+  const [loadingPrefs, setLoadingPrefs] = useState(true);
+  const [updating, setUpdating] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout>>(null);
+
+  useEffect(() => {
+    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
+  }, []);
+
+  // Fetch user-manageable events + current preferences
+  useEffect(() => {
+    if (!workspace?._id) return;
+    const wsId = workspace._id.toString();
+
+    setLoadingEvents(true);
+    setLoadingPrefs(true);
+
+    Promise.all([
+      api.getNotificationEvents(wsId).catch(() => [] as NotificationEvent[]),
+      api.getNotificationPreferences(wsId).catch(() => ({} as Preferences)),
+    ]).then(([evts, prefs]) => {
+      setEvents(evts);
+      setPreferences(prefs);
+    }).finally(() => {
+      setLoadingEvents(false);
+      setLoadingPrefs(false);
+    });
+  }, [workspace?._id]);
+
+  const toggleChannel = useCallback(async (eventSlug: string, channel: 'email' | 'push', currentValue: boolean) => {
+    if (!workspace?._id || !canEdit) return;
+    const newValue = !currentValue;
+    const updateKey = `${eventSlug}.${channel}`;
+    setUpdating(updateKey);
+    setSuccessMsg(null);
+
+    // Optimistic update
+    setPreferences(prev => ({
+      ...prev,
+      [eventSlug]: { ...prev[eventSlug], [channel]: newValue },
+    }));
+
+    try {
+      const updated = await api.updateNotificationPreferences(
+        workspace._id.toString(),
+        { [eventSlug]: { [channel]: newValue } }
+      );
+      setPreferences(updated);
+      setSuccessMsg(t('notifications.prefsSaved'));
+      if (timerRef.current) clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(() => setSuccessMsg(null), 3000);
+    } catch (error) {
+      // Revert
+      setPreferences(prev => ({
+        ...prev,
+        [eventSlug]: { ...prev[eventSlug], [channel]: currentValue },
+      }));
+      handleError(error, { component: 'SettingsNotifications', action: 'toggleChannel' });
+    } finally {
+      setUpdating(null);
+    }
+  }, [workspace?._id, canEdit, api, t]);
+
+  const getChannelValue = (eventSlug: string, channel: 'email' | 'push'): boolean => {
+    return preferences[eventSlug]?.[channel] !== false;
+  };
+
+  // Group events by category
+  const grouped = useMemo(() => {
+    const map = new Map<string, NotificationEvent[]>();
+    for (const evt of events) {
+      const cat = evt.category || 'general';
+      if (!map.has(cat)) map.set(cat, []);
+      map.get(cat)!.push(evt);
+    }
+    return Array.from(map.entries());
+  }, [events]);
+
+  const loading = loadingEvents || loadingPrefs;
+  const hasEvents = events.length > 0;
 
   return (
     <div className="space-y-6">
@@ -45,70 +141,145 @@ const WorkspaceSettingsNotifications: React.FC = () => {
         {t('notifications.manageDescription')}
       </p>
 
-      {error && permission !== 'denied' && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-          {error}
-        </div>
-      )}
-
-      {/* Permission Denied — show browser-specific unblock instructions */}
-      {permission === 'denied' && (
-        <div className="border border-amber-200 bg-amber-50 rounded-lg p-4">
-          <div className="flex items-start gap-3">
-            <ShieldAlert className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
-            <div>
-              <h4 className="text-sm font-medium text-amber-800">{t('notifications.blocked')}</h4>
-              <p className="text-xs text-amber-700 mt-1">
-                {t('notifications.blockedDescription')}
-              </p>
-              <ol className="text-xs text-amber-700 mt-2 space-y-1 list-decimal list-inside">
-                {Array.from({ length: stepCount }, (_, i) => (
-                  <li key={i}>{t(`notifications.unblock.${browser}.step${i + 1}` as TranslationKey)}</li>
-                ))}
-              </ol>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Push Notifications Toggle */}
-      {permission !== 'denied' && (
-        <div className="border rounded-lg p-4">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex items-start gap-3">
-              <div className={`mt-0.5 p-2 rounded-lg ${isSubscribed ? 'bg-green-100' : 'bg-gray-100'}`}>
-                {isSubscribed ? (
-                  <Bell className="h-4 w-4 text-green-600" />
-                ) : (
-                  <BellOff className="h-4 w-4 text-gray-400" />
-                )}
-              </div>
-              <div>
-                <h4 className="text-sm font-medium text-gray-900">{t('notifications.pushTitle')}</h4>
-                <p className="text-xs text-gray-500 mt-0.5">
-                  {t('notifications.pushDescription', { subscribed: String(isSubscribed) })}
-                </p>
-              </div>
-            </div>
-
-            <Button
-              variant={isSubscribed ? 'outline' : 'default'}
-              size="sm"
-              className="shrink-0"
-              onClick={isSubscribed ? unsubscribe : subscribe}
-              disabled={loading}
-              progress={loading}
-            >
-              {t('notifications.toggleAction', { loading: String(loading), subscribed: String(isSubscribed) })}
-            </Button>
-          </div>
-
-          {isSubscribed && (
-            <div className="mt-3 pt-3 border-t border-gray-100 text-xs text-gray-500">
-              {t('notifications.deviceNote')}
+      {/* ─── Push Notifications (browser-level) ─── */}
+      {isSupported && (
+        <>
+          {pushError && permission !== 'denied' && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+              {pushError}
             </div>
           )}
+
+          {permission === 'denied' && (
+            <div className="border border-amber-200 bg-amber-50 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <ShieldAlert className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+                <div>
+                  <h4 className="text-sm font-medium text-amber-800">{t('notifications.blocked')}</h4>
+                  <p className="text-xs text-amber-700 mt-1">{t('notifications.blockedDescription')}</p>
+                  <ol className="text-xs text-amber-700 mt-2 space-y-1 list-decimal list-inside">
+                    {Array.from({ length: stepCount }, (_, i) => (
+                      <li key={i}>{t(`notifications.unblock.${browser}.step${i + 1}` as TranslationKey)}</li>
+                    ))}
+                  </ol>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {permission !== 'denied' && (
+            <div className="border rounded-lg p-4">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-start gap-3">
+                  <div className={`mt-0.5 p-2 rounded-lg ${isSubscribed ? 'bg-green-100' : 'bg-gray-100'}`}>
+                    {isSubscribed ? <Bell className="h-4 w-4 text-green-600" /> : <BellOff className="h-4 w-4 text-gray-400" />}
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-900">{t('notifications.pushTitle')}</h4>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      {t('notifications.pushDescription', { subscribed: String(isSubscribed) })}
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  variant={isSubscribed ? 'outline' : 'default'}
+                  size="sm"
+                  className="shrink-0"
+                  onClick={isSubscribed ? unsubscribe : subscribe}
+                  disabled={pushLoading}
+                  progress={pushLoading}
+                >
+                  {t('notifications.toggleAction', { loading: String(pushLoading), subscribed: String(isSubscribed) })}
+                </Button>
+              </div>
+              {isSubscribed && (
+                <div className="mt-3 pt-3 border-t border-gray-100 text-xs text-gray-500">
+                  {t('notifications.deviceNote')}
+                </div>
+              )}
+            </div>
+          )}
+        </>
+      )}
+
+      {/* ─── Per-event notification preferences (only user-manageable custom events) ─── */}
+      {loading && (
+        <div className="text-center text-sm text-gray-400 py-4">
+          {t('notifications.loadingPrefs')}
         </div>
+      )}
+
+      {!loading && hasEvents && canEdit && (
+        <>
+          {successMsg && (
+            <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm">
+              {successMsg}
+            </div>
+          )}
+
+          {grouped.map(([category, categoryEvents]) => (
+            <div key={category} className="border rounded-lg overflow-hidden">
+              <div className="bg-gray-50 px-4 py-2.5 border-b">
+                <h4 className="text-sm font-medium text-gray-700 capitalize">{category}</h4>
+              </div>
+              <div className="divide-y">
+                {/* Header row */}
+                <div className="flex items-center px-4 py-2 bg-gray-50/50">
+                  <div className="flex-1" />
+                  <div className="flex items-center gap-6">
+                    <div className="w-12 flex justify-center">
+                      <Mail className="h-3.5 w-3.5 text-gray-400" />
+                    </div>
+                    <div className="w-12 flex justify-center">
+                      <Smartphone className="h-3.5 w-3.5 text-gray-400" />
+                    </div>
+                  </div>
+                </div>
+                {categoryEvents.map(event => {
+                  const emailOn = getChannelValue(event.slug, 'email');
+                  const pushOn = getChannelValue(event.slug, 'push');
+                  const emailUpdating = updating === `${event.slug}.email`;
+                  const pushUpdating = updating === `${event.slug}.push`;
+
+                  return (
+                    <div key={event.slug} className="flex items-center px-4 py-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium text-gray-900">{event.name}</div>
+                        {event.description && (
+                          <div className="text-xs text-gray-500 mt-0.5">{event.description}</div>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-6 shrink-0">
+                        <div className="w-12 flex justify-center">
+                          {event.channels.email ? (
+                            <Switch
+                              checked={emailOn}
+                              onCheckedChange={() => toggleChannel(event.slug, 'email', emailOn)}
+                              disabled={emailUpdating}
+                            />
+                          ) : (
+                            <span className="text-xs text-gray-300">—</span>
+                          )}
+                        </div>
+                        <div className="w-12 flex justify-center">
+                          {event.channels.push ? (
+                            <Switch
+                              checked={pushOn}
+                              onCheckedChange={() => toggleChannel(event.slug, 'push', pushOn)}
+                              disabled={pushUpdating}
+                            />
+                          ) : (
+                            <span className="text-xs text-gray-300">—</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </>
       )}
     </div>
   );
