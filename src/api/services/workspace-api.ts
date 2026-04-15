@@ -23,6 +23,60 @@ import { BaseApi } from '../../lib/api-base';
 import type { IOsConfig } from './shared-types';
 import type { IWorkspace, IWorkspaceFeature, IWorkspaceUser } from './shared-types';
 
+// ─── Notification Types ──────────────────────────────────────────
+
+/** Data passed to a notification template for merge tag replacement. */
+export interface NotificationData {
+  /** Push notification title. Falls back to the event name if not provided. */
+  title?: string;
+  /** Primary message — used in email body and as push notification body. */
+  message?: string;
+  /** URL to open when the user clicks the push notification. Also available as {{url}} in email template. */
+  url?: string;
+  /**
+   * Which channels to send on. Overrides the event's default channel config.
+   * Omit to use the event's configured channels.
+   *
+   * @example
+   * ```ts
+   * // Only push, no email
+   * { channels: { push: true } }
+   *
+   * // Only email, no push
+   * { channels: { email: true } }
+   * ```
+   */
+  channels?: {
+    email?: boolean;
+    push?: boolean;
+  };
+  /** Any additional merge tags available as {{key}} in the email template. */
+  [key: string]: any;
+}
+
+/** Result of sending a notification. */
+export interface NotificationResult {
+  sent: boolean;
+  /** Which channels were actually used. false = blocked by settings or missing template. */
+  channels: {
+    email: boolean;
+    push: boolean;
+  };
+  /** Number of users notified. 1 for single user, N for whole workspace. */
+  notifiedCount?: number;
+  /** Reason if not sent (e.g., 'event_disabled'). Only present when sent=false. */
+  reason?: string;
+}
+
+/** A notification event that end-users can manage in their workspace settings. */
+export interface NotificationEvent {
+  slug: string;
+  name: string;
+  description: string;
+  category: string;
+  channels: { email: boolean; push: boolean };
+}
+
 export class WorkspaceApi extends BaseApi {
   constructor(config: IOsConfig & { sessionId?: string }) {
     super({ ...config, requireOrgId: true });
@@ -864,15 +918,50 @@ export class WorkspaceApi extends BaseApi {
 
   // Notification Preferences
 
+  // Notification Actions
+
+  /**
+   * Trigger a notification event for a workspace.
+   * Respects all notification gates (org settings, event config, workspace preferences).
+   *
+   * @param workspaceId - The workspace context
+   * @param event - The event slug (e.g., 'comment_added')
+   * @param userId - The user to notify. Omit to notify all workspace members.
+   * @param data - Template merge data. `message` is used as push body.
+   *
+   * @example
+   * ```ts
+   * // Notify a specific user
+   * await api.sendNotification(workspaceId, 'comment_added', userId, {
+   *   message: 'Alice commented on your project',
+   * });
+   *
+   * // Notify all workspace members
+   * await api.sendNotification(workspaceId, 'new_release', undefined, {
+   *   message: 'Version 2.0 is now available!',
+   * });
+   * ```
+   */
+  async sendNotification(
+    workspaceId: string,
+    event: string,
+    userId?: string,
+    data?: NotificationData
+  ): Promise<NotificationResult> {
+    const body: Record<string, any> = { event };
+    if (userId) body.userId = userId;
+    if (data) body.data = data;
+
+    return this.fetchJson(
+      `workspaces/${workspaceId}/notifications/send`,
+      { method: 'POST', body: JSON.stringify(body) },
+      'Failed to send notification'
+    );
+  }
+
   // Notification Events & Preferences
 
-  async getNotificationEvents(workspaceId: string): Promise<Array<{
-    slug: string;
-    name: string;
-    description: string;
-    category: string;
-    channels: { email: boolean; push: boolean };
-  }>> {
+  async getNotificationEvents(workspaceId: string): Promise<NotificationEvent[]> {
     return this.fetchJson(
       `workspaces/${workspaceId}/notification-events`,
       {},

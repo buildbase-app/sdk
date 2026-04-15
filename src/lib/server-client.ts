@@ -246,6 +246,37 @@ export interface PermissionActions {
   resolve(workspaceId: string, userId: string): Promise<Set<string>>;
 }
 
+export interface NotificationActions {
+  /**
+   * Send a notification to a user or all workspace members.
+   * Respects all notification gates (org settings, event config, workspace preferences).
+   *
+   * @param workspaceId - The workspace context
+   * @param event - The event slug (e.g., 'comment_added')
+   * @param userId - The user to notify. Omit to notify all workspace members.
+   * @param data - Template merge data. `message` is used as push body.
+   *
+   * @example
+   * ```ts
+   * // Notify one user
+   * await notification.send(workspaceId, 'comment_added', userId, {
+   *   message: 'Alice commented on your project',
+   * })
+   *
+   * // Notify all workspace members
+   * await notification.send(workspaceId, 'new_release', undefined, {
+   *   message: 'Version 2.0 is now available!',
+   * })
+   * ```
+   */
+  send(
+    workspaceId: string,
+    event: string,
+    userId?: string,
+    data?: import('../api/services/workspace-api').NotificationData
+  ): Promise<import('../api/services/workspace-api').NotificationResult>;
+}
+
 // ─── Scoped actions (bound to a session) ───────────────────────────────────────
 
 /** All action modules bound to a specific session. Returned by `withSession()`. */
@@ -259,6 +290,7 @@ export interface ScopedActions {
   settings: SettingsActions;
   features: FeatureActions;
   permissions: PermissionActions;
+  notification: NotificationActions;
 }
 
 // ─── BuildBase Result ──────────────────────────────────────────────────────────
@@ -410,6 +442,10 @@ export default function BuildBase(config: BuildBaseConfig): BuildBaseResult {
     features: {
       list: async () => (await getApi()).workspace.getFeatures(),
       update: async (wid, key, value) => (await getApi()).workspace.updateFeature(wid, key, value),
+    },
+
+    notification: {
+      send: async (wid, event, uid, data?) => (await getApi()).workspace.sendNotification(wid, event, uid, data),
     },
 
     permissions: {

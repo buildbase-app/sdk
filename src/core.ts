@@ -19,6 +19,7 @@ export { BaseApi } from './lib/api-base';
 export type { IBaseApiConfig } from './lib/api-base';
 export { AuthApi, BetaForm, PushApi, SettingsApi, UserApi, WorkspaceApi } from './api/services';
 export type { IBetaConfig } from './api/services';
+export type { NotificationData, NotificationResult, NotificationEvent } from './api/services/workspace-api';
 
 // ─── API Version & Config ──────────────────────────────────────────────────────
 

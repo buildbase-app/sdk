@@ -15,6 +15,7 @@ Also works server-side (Next.js API routes, Express, Hono) — see [Server-Side 
 - [Subscription Gates](#-subscription-gates)
 - [Trial Gates](#-trial-gates)
 - [Push Notifications](#-push-notifications)
+- [Notifications](#-notifications)
 - [User Management](#-user-management)
 - [Workspace Management](#-complete-workspace-management)
 - [Public Pricing (No Login)](#-public-pricing-no-login)
@@ -41,6 +42,7 @@ Also works server-side (Next.js API routes, Express, Hono) — see [Server-Side 
 - **📋 Subscription Gates** - Show or hide UI based on current workspace subscription (plan)
 - **⏳ Trial Gates** - `WhenTrialing`, `WhenNotTrialing`, `WhenTrialEnding` components + `useTrialStatus` hook
 - **🔔 Push Notifications** - Browser push notifications with `usePushNotifications` hook, auto-triggers for billing events, and campaign management
+- **📬 Notifications** - Email + push notification system with per-event channel control, workspace preferences, and server-side `notification.send()` API
 - **💺 Seat-Based Pricing** - Per-seat billing with included seats, billable seat tracking, and seat limit enforcement
 - **💱 Multi-Currency** - Per-currency pricing variants with workspace billing currency lock
 - **📊 Quota Usage Tracking** - Record and monitor metered usage (API calls, storage, etc.) with real-time status
@@ -557,6 +559,153 @@ self.addEventListener('notificationclick', function(event) {
 ```
 
 Everything else is built-in — permission handling, subscribe/unsubscribe, settings UI, billing auto-triggers, and browser-specific unblock instructions.
+
+## 📬 Notifications
+
+Send email and push notifications to workspace members. The system has two layers:
+
+- **System notifications** — Automatically triggered by platform events (workspace invite, payment failed, trial ending, etc.). Managed by the developer in the admin dashboard.
+- **Custom notifications** — Defined by the developer, triggered from app code via SDK. Can be made user-configurable.
+
+### Sending Notifications (Server-Side)
+
+```ts
+import { notification } from '@/lib/buildbase'
+
+// Notify a specific user
+await notification.send(workspaceId, 'comment_added', userId, {
+  title: 'New Comment',                       // Push title (falls back to event name)
+  message: 'Alice commented on your project', // Push body + email {{message}}
+  url: 'https://app.example.com/projects/123#comments', // Opens on push click + {{url}} in email
+})
+
+// Notify all workspace members (omit userId)
+await notification.send(workspaceId, 'new_release', undefined, {
+  title: 'New Release',
+  message: 'Version 2.0 is now available with dark mode and API v2!',
+  url: 'https://app.example.com/changelog',
+})
+```
+
+### Channel Control
+
+By default, both email and push are sent (based on event config). Override per-send with `channels`:
+
+```ts
+// Only push — real-time alert, no email
+await notification.send(workspaceId, 'typing_indicator', userId, {
+  message: 'Alice is typing...',
+  channels: { push: true },
+})
+
+// Only email — digest or report, no push
+await notification.send(workspaceId, 'weekly_report', undefined, {
+  message: 'Your weekly activity report is ready',
+  channels: { email: true },
+})
+
+// Both channels explicitly
+await notification.send(workspaceId, 'comment_added', userId, {
+  message: 'New comment on your project',
+  channels: { email: true, push: true },
+})
+```
+
+> **Note:** Even with `channels` override, the 4-layer gate still applies. If the admin disabled push globally, `channels: { push: true }` won't send push.
+
+### Merge Tags
+
+Both email and push support merge tags with `{{tag}}` syntax:
+
+```ts
+await notification.send(workspaceId, 'export_ready', userId, {
+  title: '{{workspaceName}} — Export Ready',    // → "Acme Corp — Export Ready"
+  message: 'Hi {{name}}, your export is ready', // → "Hi Alice, your export is ready"
+  downloadUrl: 'https://example.com/exports/123',
+  fileName: 'report.csv',
+})
+```
+
+| Tag | Resolves to | Available in |
+|-----|-------------|--------------|
+| `{{name}}` | Recipient's name | Email + Push |
+| `{{email}}` | Recipient's email | Email + Push |
+| `{{workspaceName}}` | Workspace name | Email + Push |
+| `{{message}}` | The `message` field | Email template |
+| `{{url}}` | The `url` field | Email template + Push click target |
+| `{{anyKey}}` | Value from `data` object | Email + Push |
+
+### Response
+
+```ts
+{
+  sent: true,
+  channels: { email: true, push: true },
+  notifiedCount: 5  // Number of users notified (1 for single user, N for workspace)
+}
+```
+
+### How It Works
+
+When `notification.send()` is called, the system checks 4 layers before delivering:
+
+1. **Org global settings** — Developer can disable all email or all push notifications globally
+2. **Event config** — Per-event enabled/disabled and per-channel (email/push) toggles
+3. **Workspace preferences** — End-user overrides (only for events marked `userManaged`)
+4. **User unsubscribe** — Per-user email unsubscribe preferences (checked at delivery time)
+
+### Creating Custom Events
+
+Custom notification events are created in the admin dashboard under **Notifications > Custom**:
+
+- **Name** — Display name (e.g., "Comment Added")
+- **Slug** — Used in code (e.g., `comment_added`)
+- **Category** — Grouping in settings UI (e.g., "Activity")
+- **Channels** — Enable/disable email and push per event
+- **User Control** — If enabled, workspace members can toggle this notification in their settings
+
+An email template is auto-created for each custom event. Edit it in **Email Templates** to customize the content and add merge tags like `{{downloadUrl}}`, `{{commentText}}`, etc.
+
+### Notification Settings (End-User UI)
+
+The workspace settings panel shows notification preferences automatically — **only for events where the developer enabled "User Control"**. System notifications are never shown to end users.
+
+```tsx
+import { SaaSOSProvider } from '@buildbase/sdk/react'
+
+// The Notifications tab in workspace settings shows:
+// - Browser push toggle (subscribe/unsubscribe)
+// - Per-event email/push toggles (only user-manageable custom events)
+```
+
+### Types
+
+```ts
+import type { NotificationData, NotificationResult, NotificationEvent } from '@buildbase/sdk'
+
+interface NotificationData {
+  title?: string;                           // Push title (falls back to event name)
+  message?: string;                         // Push body + email {{message}}
+  url?: string;                             // Opens on push click + {{url}} in email
+  channels?: { email?: boolean; push?: boolean }; // Override which channels to use
+  [key: string]: any;                       // Custom merge tags for email + push
+}
+
+interface NotificationResult {
+  sent: boolean;
+  channels: { email: boolean; push: boolean };
+  notifiedCount?: number;
+  reason?: string;                          // Only when sent=false
+}
+
+interface NotificationEvent {
+  slug: string;
+  name: string;
+  description: string;
+  category: string;
+  channels: { email: boolean; push: boolean };
+}
+```
 
 ## 🌐 Internationalization (i18n)
 
@@ -2052,7 +2201,7 @@ Configure once, use everywhere. Same pattern as Auth.js.
 import BuildBase from '@buildbase/sdk'
 import { cookies } from 'next/headers'
 
-export const { auth, workspace, subscription, usage, plans, invoices, users, features, settings, withSession, client } = BuildBase({
+export const { auth, workspace, subscription, usage, plans, invoices, users, features, settings, notification, permissions, withSession, client } = BuildBase({
   serverUrl: process.env.BUILDBASE_URL!,
   orgId: process.env.BUILDBASE_ORG_ID!,
   getSessionId: async () => {
@@ -2139,9 +2288,11 @@ const sub = await bb.subscription.get(workspaceId)
 | `subscription` | `get`, `checkout`, `update`, `cancel`, `resume`, `getBillingPortalUrl` |
 | `plans` | `getGroup`, `getVersions`, `getPublic`, `getVersion` |
 | `invoices` | `list`, `get` |
-| `usage` | `record`, `getQuota`, `getAll`, `getLogs` |
+| `usage` | `record`, `recordBatch`, `getQuota`, `getAll`, `getLogs` |
 | `settings` | `get` |
 | `features` | `list`, `update` |
+| `notification` | `send(workspaceId, event, userId?, data?)` |
+| `permissions` | `check(workspaceId, userId, permission)`, `resolve(workspaceId, userId)` |
 
 ### BuildBase Config Options
 
