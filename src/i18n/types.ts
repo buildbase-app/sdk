@@ -68,7 +68,15 @@ export interface SDKMessages {
     cancelSuccess: string;
     cancelNotCharged: string;
     cancelResumeAnytime: string;
+    cancelTrialTitle: string;
+    cancelTrialConfirm: string;
+    cancelTrialAccess: string;
+    cancelTrialNoCharge: string;
+    cancelTrialResume: string;
+    cancelTrialKeep: string;
+    cancelTrialButton: string;
     resumeTitle: string;
+    resumeTrial: string;
     resumeConfirm: string;
     resumeKeep: string;
     resumeButton: string;
@@ -78,6 +86,7 @@ export interface SDKMessages {
     openingPortal: string;
     viewAllPlans: string;
     scheduledCancellation: string;
+    scheduledTrialCancellation: string;
     paymentPastDue: string;
     paymentPastDueDescription: string;
     subscriptionPaused: string;
@@ -156,6 +165,7 @@ export interface SDKMessages {
     dunningSuspendedDescription: string;
     dunningRecoveryDescription: string;
     cancelEndDescription: string;
+    trialEndDescription: string;
     cancelEndFallback: string;
     resumeChargeDate: string;
     resumeChargeFallback: string;
@@ -168,6 +178,8 @@ export interface SDKMessages {
     startTrialDescription: string;
     noSubscriptionDescription: string;
     startFreeTrial: string;
+    startTrialDays: string;
+    trialBadge: string;
   };
   users: {
     title: string;

@@ -492,6 +492,30 @@ export class WorkspaceApi extends BaseApi {
     return result;
   }
 
+  async selectFreePlan(
+    workspaceId: string,
+    planVersionId: string
+  ): Promise<{ success: boolean; message: string }> {
+    const response = await this.fetchResponse(`workspaces/${workspaceId}/subscription/select-free-plan`, {
+      method: 'POST',
+      body: JSON.stringify({ planVersionId }),
+    });
+
+    if (!response.ok) {
+      let errorMessage = 'Failed to select free plan';
+      try {
+        const error = await response.json();
+        errorMessage = error.message || errorMessage;
+      } catch {
+        errorMessage = `Failed to select free plan (${response.status}: ${response.statusText})`;
+      }
+      throw new Error(errorMessage);
+    }
+
+    const result = await response.json();
+    return result.data || result;
+  }
+
   /**
    * Update subscription (upgrade/downgrade)
    * Only allows plan changes within the same plan group

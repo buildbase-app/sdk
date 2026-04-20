@@ -35,6 +35,8 @@ interface SubscriptionDialogProps {
   billingCurrency?: string | null;
   /** Current workspace member count — used to show billable seats in the comparison table. */
   currentMemberCount?: number;
+  /** When set, workspace has used a trial — hide trial badges/buttons. */
+  trialUsedAt?: string | null;
   /** Called when user selects a plan. Currency is optional (for display/logging only; not sent to API). */
   onSelectPlan: (
     planVersionId: string,
@@ -100,6 +102,7 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
   currentStripePriceId,
   billingCurrency: workspaceBillingCurrency,
   currentMemberCount,
+  trialUsedAt,
   onSelectPlan,
   loading: isUpdating = false,
 }) => {
@@ -161,8 +164,10 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
         availableCurrencies.length > 0 &&
         !availableCurrencies.includes(selectedCurrency)
       ) {
+        // Only reset if current selection is invalid — preserve user's previous choice
         setSelectedCurrency(availableCurrencies[0]!);
       }
+      // If selectedCurrency is already valid, keep it (e.g. free plan with no stripePriceId)
     }
   }, [open, currentBillingInterval, currentCurrency, availableCurrencies]);
 
@@ -248,8 +253,23 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
       };
     }
 
+    // Trial is only available when: plan has trial, workspace hasn't trialed before, AND no existing Stripe subscription
+    const trialAvailable =
+      planVersion.trial?.enabled &&
+      planVersion.trial.durationDays > 0 &&
+      !trialUsedAt &&
+      !currentStripePriceId;
+
     // No current subscription
     if (!currentPlanVersionId) {
+      if (trialAvailable) {
+        return {
+          labelKey: '_dynamic',
+          dynamicLabel: t('subscription.startTrialDays', { days: planVersion.trial!.durationDays }),
+          variant: 'default' as const,
+          disabled: false,
+        };
+      }
       return { labelKey: 'subscription.subscribe' as TranslationKey, variant: 'default' as const, disabled: false };
     }
 
@@ -258,12 +278,28 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
     const planIndex = sortedPlans.findIndex(pv => pv._id === planVersion._id);
 
     if (currentIndex === -1 || planIndex === -1) {
+      if (trialAvailable) {
+        return {
+          labelKey: '_dynamic',
+          dynamicLabel: t('subscription.startTrialDays', { days: planVersion.trial!.durationDays }),
+          variant: 'default' as const,
+          disabled: false,
+        };
+      }
       return { labelKey: 'subscription.checkout.select' as TranslationKey, variant: 'default' as const, disabled: false };
     }
 
     if (planIndex < currentIndex) {
       return { labelKey: 'subscription.checkout.downgrade' as TranslationKey, variant: 'outline' as const, disabled: false };
     } else if (planIndex > currentIndex) {
+      if (trialAvailable) {
+        return {
+          labelKey: '_dynamic',
+          dynamicLabel: t('subscription.startTrialDays', { days: planVersion.trial!.durationDays }),
+          variant: 'default' as const,
+          disabled: false,
+        };
+      }
       return { labelKey: 'subscription.checkout.upgrade' as TranslationKey, variant: 'default' as const, disabled: false };
     }
 
@@ -440,7 +476,14 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                         {/* Plan header */}
                         <div className="flex items-start justify-between mb-3">
                           <div>
-                            <h3 className="text-lg font-bold text-slate-900">{planVersion.plan.name}</h3>
+                            <div className="flex items-center gap-2">
+                              <h3 className="text-lg font-bold text-slate-900">{planVersion.plan.name}</h3>
+                              {planVersion.trial?.enabled && planVersion.trial.durationDays > 0 && !isCurrent && !trialUsedAt && !currentStripePriceId && (
+                                <span className="shrink-0 rounded-md bg-emerald-100 text-emerald-700 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider">
+                                  {t('subscription.trialBadge', { days: planVersion.trial.durationDays })}
+                                </span>
+                              )}
+                            </div>
                             {planVersion.plan.description && (
                               <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">{planVersion.plan.description}</p>
                             )}
@@ -601,9 +644,16 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                           >
                             <div className="flex h-full flex-col gap-2">
                               <div className="flex items-center justify-between gap-2">
-                                <h3 className="text-base font-bold text-slate-900 truncate">
-                                  {planVersion.plan.name}
-                                </h3>
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <h3 className="text-base font-bold text-slate-900 truncate">
+                                    {planVersion.plan.name}
+                                  </h3>
+                                  {planVersion.trial?.enabled && planVersion.trial.durationDays > 0 && !isCurrent && !trialUsedAt && !currentStripePriceId && (
+                                    <span className="shrink-0 rounded-md bg-emerald-100 text-emerald-700 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider">
+                                      {t('subscription.trialBadge', { days: planVersion.trial.durationDays })}
+                                    </span>
+                                  )}
+                                </div>
                                 {isCurrent && (
                                   <span className="shrink-0 rounded-md bg-blue-600 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white">
                                     {t('pricing.current')}
