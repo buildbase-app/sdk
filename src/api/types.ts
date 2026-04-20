@@ -159,6 +159,8 @@ export interface IQuotaIntervalValue {
 
 /** Quota defined per billing interval (new plan-group/versions schema) */
 export interface IQuotaByInterval {
+  /** Whether over-usage beyond included is allowed (billed as overage). When false, usage is hard-capped at included amount. Default true. */
+  allowOverage?: boolean;
   monthly?: IQuotaIntervalValue;
   yearly?: IQuotaIntervalValue;
   quarterly?: IQuotaIntervalValue;
@@ -547,6 +549,8 @@ export interface IQuotaUsageStatus {
   available: number;
   overage: number;
   hasOverage: boolean;
+  /** Whether over-usage is allowed (billed as overage). When false, usage is hard-capped. Default true. */
+  allowOverage?: boolean;
 }
 
 /** Response from GET .../workspaces/:id/subscription/usage/status?quotaSlug=X */

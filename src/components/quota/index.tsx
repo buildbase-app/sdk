@@ -111,7 +111,7 @@ export const WhenQuotaOverage = (props: IWhenQuotaProps) => {
   if (loading) return loadingComponent ?? null;
   const quota = quotas?.[slug];
   if (!quota) return fallbackComponent ?? null;
-  if (!quota.hasOverage) return fallbackComponent ?? null;
+  if (!quota.hasOverage || quota.allowOverage === false) return fallbackComponent ?? null;
   return children;
 };
 
