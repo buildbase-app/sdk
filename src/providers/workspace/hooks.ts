@@ -9,6 +9,8 @@ import { useSaaSSettings } from '../os/hooks';
 import { useWorkspaceApiWithOs } from './use-workspace-api';
 import { IWorkspace, IWorkspaceUser } from './types';
 import { getWorkspaceUserRole, isWorkspaceOwner, workspaceStorage } from './utils';
+import { workspaceSettingsManager } from './settings-manager';
+import { SettingsScreen } from './ui/SettingsDialog';
 
 /**
  * Main workspace management hook for the SDK.
@@ -288,6 +290,8 @@ export const useSaaSWorkspaces = () => {
     async (name: string, image?: string) => {
       const data = await api.createWorkspace({ name, image });
       dispatch.workspaces(workspaceActions.addWorkspace(data));
+      // Switch to the newly created workspace before opening plan picker
+      await switchToWorkspace(data);
       // Trigger workspace created event
       eventEmitter.emitWorkspaceCreated(data).catch(error => {
         handleError(error, {
@@ -296,8 +300,12 @@ export const useSaaSWorkspaces = () => {
           metadata: { workspaceId: data._id },
         });
       });
+      // Auto-open plan picker after workspace switch
+      setTimeout(() => {
+        workspaceSettingsManager.openWorkspaceSettings(SettingsScreen.Subscription);
+      }, 300);
     },
-    [api, dispatch]
+    [api, dispatch, switchToWorkspace]
   );
 
   const updateWorkspace = useCallback(

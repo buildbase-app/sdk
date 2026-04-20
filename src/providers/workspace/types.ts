@@ -29,11 +29,8 @@ export interface IWorkspace {
   billingCurrency?: string | null;
   /** Per-workspace permission overrides. Takes priority over org-level settings.permissions. */
   permissions?: Record<string, string[]>;
-  /** Workspace onboarding config. Set on creation based on org settings. SDK shows trial CTA. */
-  pendingOnboarding?: {
-    mode: 'trial';
-    planVersionId: string;
-  } | null;
+  /** Set when workspace first uses a trial. Blocks trial from being used again on the same workspace. */
+  trialUsedAt?: string | null;
 }
 export interface IWorkspaceFeature {
   _id: string;

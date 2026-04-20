@@ -231,6 +231,12 @@ export interface IPlanVersion {
   /** Multi-currency pricing. Each variant has currency, basePricing, stripePrices, quotaOverages. */
   pricingVariants?: IPricingVariant[];
   subscriptionItems?: ISubscriptionItem[];
+  /** Trial configuration. When enabled, users can start a free trial of this plan. */
+  trial?: {
+    enabled: boolean;
+    durationDays: number;
+    requireCard: boolean;
+  };
   isCurrent?: boolean;
   isLegacy?: boolean;
   archived?: boolean;
