@@ -1,7 +1,7 @@
 import { getCurrencySymbol } from './currency-utils';
 import type { BillingInterval, IQuotaByInterval } from '../types';
 
-export type QuotaDisplayValue = { included: number; overage?: number; unitSize?: number } | null;
+export type QuotaDisplayValue = { included: number; overage?: number; unitSize?: number; allowOverage?: boolean } | null;
 
 /**
  * Normalize a per-interval quota value to a display shape for the given billing interval.
@@ -18,6 +18,7 @@ export function getQuotaDisplayValue(
     included: slice.included,
     ...(slice.overage !== undefined && { overage: slice.overage }),
     ...(slice.unitSize !== undefined && { unitSize: slice.unitSize }),
+    allowOverage: value.allowOverage !== false,
   };
 }
 
@@ -71,6 +72,7 @@ export function formatQuotaWithPrice(
   if (value === null || value === undefined) return '—';
   const { included, overage } = value;
   const includedStr = `${included} ${labels.included}`;
+  if (value.allowOverage === false) return `${includedStr} (hard limit)`;
   if (overage === undefined || overage === null) return includedStr;
   const priceNum = overageInCents ? overage / 100 : overage;
   const price =
@@ -90,6 +92,8 @@ export function formatQuotaWithPrice(
 export interface QuotaDisplayParts {
   included: number;
   hasOverage: boolean;
+  /** Whether over-usage is allowed. When false, quota is hard-capped. */
+  allowOverage: boolean;
   price: string;
   unit: string;
 }
@@ -109,8 +113,12 @@ export function getQuotaDisplayParts(
   const { overageInCents = true, currency, locale = 'en' } = options;
   const { included, overage } = value;
 
+  const allowOverage = value.allowOverage !== false;
+  if (!allowOverage) {
+    return { included, hasOverage: false, allowOverage: false, price: '', unit: '' };
+  }
   if (overage === undefined || overage === null) {
-    return { included, hasOverage: false, price: '', unit: '' };
+    return { included, hasOverage: false, allowOverage: true, price: '', unit: '' };
   }
 
   // Format price with locale-aware currency formatting
@@ -139,5 +147,5 @@ export function getQuotaDisplayParts(
       ? `${value.unitSize.toLocaleString(locale)} ${unitName}`
       : unitName || '';
 
-  return { included, hasOverage: true, price, unit };
+  return { included, hasOverage: true, allowOverage: true, price, unit };
 }

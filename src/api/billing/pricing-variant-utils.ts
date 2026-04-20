@@ -107,6 +107,7 @@ export type QuotaDisplayWithOverage = {
   included: number;
   overage?: number;
   unitSize?: number;
+  allowOverage?: boolean;
 } | null;
 
 /**
@@ -129,6 +130,7 @@ export function getQuotaDisplayWithVariant(
     included: slice.included,
     ...(slice.unitSize !== undefined && { unitSize: slice.unitSize }),
     ...(overage !== undefined && { overage }),
+    allowOverage: quotaVal.allowOverage !== false,
   };
 }
 

@@ -108,6 +108,8 @@ export interface OverageLabels {
   afterThat: string;
   /** "After included:" prefix when no included count */
   afterIncluded: string;
+  /** "Hard limit" label for quotas where over-usage is not allowed */
+  hardLimit?: string;
 }
 
 const DEFAULT_OVERAGE_LABELS: OverageLabels = {
@@ -197,9 +199,14 @@ export function formatQuotaIncludedOverage(
   currency: string,
   unitSize?: number,
   pluralUnitLabel?: string,
-  labels?: Partial<OverageLabels>
+  labels?: Partial<OverageLabels>,
+  allowOverage?: boolean
 ): string {
   const l = { ...DEFAULT_OVERAGE_LABELS, ...labels };
+  if (allowOverage === false) {
+    if (included != null) return `${l.included}: ${included.toLocaleString()} (${l.hardLimit ?? 'hard limit'})`;
+    return l.hardLimit ?? 'Hard limit';
+  }
   const plural = pluralUnitLabel ?? (unitLabel.endsWith('s') ? unitLabel : `${unitLabel}s`);
   const perUnit =
     unitSize != null && unitSize >= 2 ? `${unitSize.toLocaleString()} ${plural}` : unitLabel;
