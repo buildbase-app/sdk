@@ -166,9 +166,9 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
     }
   }, [open, currentBillingInterval, currentCurrency, availableCurrencies]);
 
-  // Sort plans by version number
+  // Preserve plan order from planVersionIds (admin-configured display order)
   const sortedPlans = useMemo(() => {
-    return [...propPlanVersions].sort((a, b) => a.version - b.version);
+    return [...propPlanVersions];
   }, [propPlanVersions]);
 
   const allItems = getAllSubscriptionItems(sortedPlans);
