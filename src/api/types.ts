@@ -253,6 +253,8 @@ export interface IPlan {
   description?: string;
   /** Stripe currency code (e.g. 'usd', 'inr', 'eur'). Used for pricing display. */
   currency?: string;
+  /** Freemium plan: $0 base pricing, no seat billing, no trial. */
+  isFreemium?: boolean;
   latestVersion?: IPlanVersionSummary;
   archived?: boolean;
   deleted?: boolean;

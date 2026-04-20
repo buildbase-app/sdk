@@ -389,6 +389,7 @@ export const ja: SDKMessages = {
   quota: {
     includedOnly: '{count, number}件含まれる',
     includedWithOverage: '{count, number}件含まれる、以降{price} / {unit}',
+    includedHardLimit: '{count, number}件含まれる（上限）',
     unitFallback: 'ユニット',
   },
   pricing: {

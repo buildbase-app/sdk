@@ -389,6 +389,7 @@ export const fr: SDKMessages = {
   quota: {
     includedOnly: '{count, number} inclus',
     includedWithOverage: '{count, number} inclus, puis {price} / {unit}',
+    includedHardLimit: '{count, number} inclus (limite stricte)',
     unitFallback: 'unité',
   },
   pricing: {
