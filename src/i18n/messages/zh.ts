@@ -389,6 +389,7 @@ export const zh: SDKMessages = {
   quota: {
     includedOnly: '包含 {count, number} 个',
     includedWithOverage: '包含 {count, number} 个，之后 {price} / {unit}',
+    includedHardLimit: '包含 {count, number} 个（硬性限制）',
     unitFallback: '单位',
   },
   pricing: {

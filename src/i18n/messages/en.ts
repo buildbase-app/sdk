@@ -391,6 +391,8 @@ export const en: SDKMessages = {
     includedOnly: '{count, number} included',
     /** "1 included, then ₹1.00 / 1,000 videos" — full display with overage */
     includedWithOverage: '{count, number} included, then {price} / {unit}',
+    /** "10 included (hard limit)" — no overage allowed */
+    includedHardLimit: '{count, number} included (hard limit)',
     unitFallback: 'unit',
   },
   pricing: {

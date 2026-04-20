@@ -235,8 +235,11 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
       return { labelKey: 'subscription.currentPlan' as TranslationKey, variant: 'outline' as const, disabled: true };
     }
 
-    // Same plan + different interval = Allow switching interval
+    // Same plan + different interval = Allow switching interval (skip for freemium — $0 at any interval)
     if (isSamePlan && !isSameInterval) {
+      if (planVersion.plan?.isFreemium) {
+        return { labelKey: 'subscription.currentPlan' as TranslationKey, variant: 'outline' as const, disabled: true };
+      }
       return {
         labelKey: '_dynamic',
         dynamicLabel: t('subscription.switchToInterval', { interval: getIntervalDisplayName(selectedInterval) }),
@@ -303,6 +306,9 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
         typeof value === 'object' && value !== null && 'included' in value ? value : null;
       const parts = getQuotaDisplayParts(quotaValue, item.name.toLowerCase(), { currency, locale: formattingLocale });
       if (!parts) return '—';
+      if (!parts.allowOverage) {
+        return t('quota.includedHardLimit', { count: parts.included });
+      }
       return parts.hasOverage
         ? t('quota.includedWithOverage', { count: parts.included, price: parts.price, unit: parts.unit })
         : t('quota.includedOnly', { count: parts.included });
@@ -550,14 +556,14 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                 <table
                   className="w-full border-separate border-spacing-0"
                   style={{
-                    minWidth: `${280 + sortedPlans.length * 200}px`,
+                    minWidth: `${260 + sortedPlans.length * 220}px`,
                     borderCollapse: 'separate',
                   }}
                 >
                   <colgroup>
-                    <col style={{ width: 280, minWidth: 280 }} />
+                    <col style={{ width: 260, minWidth: 260 }} />
                     {sortedPlans.map(planVersion => (
-                      <col key={planVersion._id} style={{ width: 200, minWidth: 200 }} />
+                      <col key={planVersion._id} style={{ width: 220, minWidth: 220 }} />
                     ))}
                   </colgroup>
                   <thead>
@@ -593,9 +599,9 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                                 : 'bg-white'
                             }`}
                           >
-                            <div className="flex h-full flex-col gap-3">
-                              <div className="flex items-start justify-between gap-2">
-                                <h3 className="text-lg font-bold text-slate-900 truncate">
+                            <div className="flex h-full flex-col gap-2">
+                              <div className="flex items-center justify-between gap-2">
+                                <h3 className="text-base font-bold text-slate-900 truncate">
                                   {planVersion.plan.name}
                                 </h3>
                                 {isCurrent && (
@@ -606,8 +612,8 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                               </div>
 
                               {/* Pricing Display */}
-                              <div className="flex flex-col items-start">
-                                <div className="flex items-baseline gap-1 whitespace-nowrap">
+                              <div className="flex flex-col items-start min-h-[3rem]">
+                                <div className="flex items-baseline gap-1 flex-wrap">
                                   <span className="text-2xl font-bold text-slate-900">
                                     {hasVariant && price !== null
                                       ? (formatPrice(price, displayCurrency) || t('pricing.free'))
@@ -620,12 +626,12 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                                       {getIntervalLabel(selectedInterval)}
                                     </span>
                                   )}
+                                  {savings !== null && savings > 0 && hasVariant && (
+                                    <span className="text-[10px] px-1.5 py-0.5 bg-emerald-100 text-emerald-700 rounded-full font-semibold whitespace-nowrap">
+                                      {t('subscription.savingsPercent', { percent: savings })}
+                                    </span>
+                                  )}
                                 </div>
-                                {savings !== null && savings > 0 && hasVariant && (
-                                  <span className="text-xs text-emerald-600 font-medium mt-0.5">
-                                    {t('subscription.savingsPercent', { percent: savings })}
-                                  </span>
-                                )}
                                 {/* Seat pricing info */}
                                 {(() => {
                                   if (isPersonalMode) return null;
@@ -634,8 +640,8 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                                   const perSeat = getPerSeatPriceCents(planVersion, effectiveCurrency, selectedInterval);
                                   if (!perSeat || perSeat <= 0) return null;
                                   return (
-                                    <div className="text-xs text-slate-500 mt-1 border-t border-slate-100 pt-1">
-                                      <span>{t('subscription.seatPriceDisplay', { price: fmtCents(perSeat, displayCurrency), interval: getIntervalLabel(selectedInterval), included: fmtNum(seatConfig.includedSeats), includedLabel: t('pricing.included') })}</span>
+                                    <div className="text-[11px] text-slate-500 mt-1.5 border-t border-slate-100 pt-1 leading-tight">
+                                      <div>{t('subscription.seatPriceDisplay', { price: fmtCents(perSeat, displayCurrency), interval: getIntervalLabel(selectedInterval), included: fmtNum(seatConfig.includedSeats), includedLabel: t('pricing.included') })}</div>
                                     </div>
                                   );
                                 })()}

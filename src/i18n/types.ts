@@ -372,6 +372,7 @@ export interface SDKMessages {
   quota: {
     includedOnly: string;
     includedWithOverage: string;
+    includedHardLimit: string;
     unitFallback: string;
   };
   pricing: {

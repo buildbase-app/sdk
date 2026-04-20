@@ -389,6 +389,7 @@ export const ar: SDKMessages = {
   quota: {
     includedOnly: '{count, number} مشمول',
     includedWithOverage: '{count, number} مشمول، ثم {price} / {unit}',
+    includedHardLimit: '{count, number} مشمول (حد أقصى)',
     unitFallback: 'وحدة',
   },
   pricing: {
