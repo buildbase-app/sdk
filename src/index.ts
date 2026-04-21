@@ -17,6 +17,9 @@
 // ─── Core (API classes, types, utils — shared with react entry) ────────────────
 export * from './core';
 
+// ─── Webhook Verification (server-only — uses Node.js crypto) ─────────────────
+export { verifyWebhookSignature, parseWebhookEvent } from './lib/webhook-verification';
+
 // ─── BuildBase Factory (server-side) ───────────────────────────────────────────
 export { default, default as BuildBase } from './lib/server-client';
 export type {
