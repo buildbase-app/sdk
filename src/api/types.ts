@@ -483,6 +483,8 @@ export interface IPublicPlanVersion {
   _id: string;
   /** Plan display name (e.g. "Pro", "Base Plan"). */
   name: string;
+  /** Whether this is a free ($0) plan with no seat billing or trial. */
+  isFreemium: boolean;
   version: number;
   status: 'draft' | 'published';
   /** Multi-currency pricing. Use getBasePriceCents(plan, currency, interval) and getQuotaDisplayWithVariant for display. */
@@ -491,6 +493,12 @@ export interface IPublicPlanVersion {
   quotas: Record<string, IQuotaByInterval>;
   features: Record<string, boolean>;
   limits: Record<string, number>;
+  /** Trial config. Only present when the plan has trials enabled. */
+  trial?: {
+    enabled: boolean;
+    durationDays: number;
+    requireCard: boolean;
+  };
 }
 
 export interface IPublicPlansResponse {
