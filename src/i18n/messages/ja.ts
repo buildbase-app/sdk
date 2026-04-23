@@ -54,6 +54,7 @@ export const ja: SDKMessages = {
     noSubscription: '有効なサブスクリプションがありません',
     choosePlan: 'プランを選択',
     choosePlanDescription: 'プランを比較して、ニーズに合ったものを選択してください',
+    forWorkspace: '{name} 向け',
     planUpdateAvailable: 'プランの更新が利用可能です',
     updateSuccess: 'サブスクリプションが正常に更新されました！',
     updateFailed: '更新に失敗しました',

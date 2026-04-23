@@ -1,8 +1,11 @@
 'use client';
 
-import { ReactNode } from 'react';
-import type { IPublicPlanItem, IPublicPlanVersion } from '../../api/types';
+import { ReactNode, useCallback } from 'react';
+import type { BillingInterval, IPublicPlanItem, IPublicPlanVersion } from '../../api/types';
+import { createBBUrl } from '../../lib/url-params';
+import { useSaaSAuth } from '../../providers/auth/hooks';
 import { usePublicPlans } from '../../providers/workspace/subscription-hooks';
+import { workspaceSettingsManager } from '../../providers/workspace/settings-manager';
 import { Skeleton } from '../ui/skeleton';
 
 export interface PricingPageDetails {
@@ -18,6 +21,22 @@ export interface PricingPageDetails {
   notes?: string;
   /** Refetch plan data */
   refetch: () => Promise<void>;
+  /**
+   * Select a plan. Handles everything automatically:
+   * - If authenticated → opens the "Choose Your Plan" dialog
+   * - If not authenticated → saves a redirect URL and triggers sign-in
+   *
+   * Requires `redirectBaseUrl` to be set on `<PricingPage>` for the
+   * unauthenticated flow.
+   *
+   * @example
+   * ```tsx
+   * <button onClick={() => selectPlan(plan._id, 'monthly', 'usd')}>
+   *   Select Plan
+   * </button>
+   * ```
+   */
+  selectPlan: (planVersionId: string, interval: BillingInterval, currency: string) => void;
 }
 
 export interface PricingPageProps {
@@ -29,6 +48,12 @@ export interface PricingPageProps {
   loadingFallback?: ReactNode;
   /** Custom error UI. Receives error message. */
   errorFallback?: (error: string) => ReactNode;
+  /**
+   * Base URL for post-login redirects (e.g. `"https://app.com/dashboard"`).
+   * When set, `selectPlan()` can redirect unauthenticated users through login
+   * and back to the dashboard with the plan selection pre-filled.
+   */
+  redirectBaseUrl?: string;
 }
 
 /**
@@ -53,8 +78,37 @@ export interface PricingPageProps {
  * </PricingPage>
  * ```
  */
-export function PricingPage({ slug, children, loadingFallback, errorFallback }: PricingPageProps) {
+export function PricingPage({ slug, children, loadingFallback, errorFallback, redirectBaseUrl }: PricingPageProps) {
   const { items, plans, notes, loading, error, refetch } = usePublicPlans(slug);
+  const { isAuthenticated, signIn } = useSaaSAuth();
+
+  const getCheckoutUrl = useCallback(
+    (planVersionId: string, interval: BillingInterval, currency: string): string | null => {
+      if (!redirectBaseUrl) return null;
+      return createBBUrl(
+        { action: 'selectPlan', plan: planVersionId, interval, currency },
+        redirectBaseUrl,
+      );
+    },
+    [redirectBaseUrl],
+  );
+
+  const selectPlan = useCallback(
+    (planVersionId: string, interval: BillingInterval, currency: string) => {
+      if (isAuthenticated) {
+        workspaceSettingsManager.openWorkspaceSettings('subscription', {
+          action: 'selectPlan',
+          plan: planVersionId,
+          interval,
+          currency,
+        });
+        return;
+      }
+      const checkoutUrl = getCheckoutUrl(planVersionId, interval, currency);
+      signIn(checkoutUrl ?? undefined);
+    },
+    [isAuthenticated, signIn, getCheckoutUrl],
+  );
 
   if (loading) {
     if (loadingFallback !== undefined) {
@@ -83,5 +137,5 @@ export function PricingPage({ slug, children, loadingFallback, errorFallback }: 
     );
   }
 
-  return <>{children({ loading, error, items, plans, notes, refetch })}</>;
+  return <>{children({ loading, error, items, plans, notes, refetch, selectPlan })}</>;
 }

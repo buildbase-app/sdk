@@ -54,6 +54,7 @@ export const hi: SDKMessages = {
     noSubscription: 'आपके पास कोई सक्रिय सदस्यता नहीं है',
     choosePlan: 'अपना प्लान चुनें',
     choosePlanDescription: 'प्लान की तुलना करें और अपनी ज़रूरत के अनुसार चुनें',
+    forWorkspace: '{name} के लिए',
     planUpdateAvailable: 'प्लान अपडेट उपलब्ध है',
     updateSuccess: 'सदस्यता सफलतापूर्वक अपडेट हो गई!',
     updateFailed: 'अपडेट विफल',

@@ -63,6 +63,10 @@ export {
 
 export { validateRedirectUrl, safeRedirect } from './lib/security';
 
+// ─── Auth Intent (redirect preservation) ────────────────────────────────────────
+
+export { saveAuthIntent, consumeAuthIntent, clearAuthIntent } from './lib/auth-intent';
+
 // ─── Billing Utilities (currency, pricing, quotas) ─────────────────────────────
 
 export {

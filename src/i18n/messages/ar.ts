@@ -54,6 +54,7 @@ export const ar: SDKMessages = {
     noSubscription: 'ليس لديك اشتراك نشط',
     choosePlan: 'اختر خطتك',
     choosePlanDescription: 'قارن بين الخطط واختر ما يناسب احتياجاتك',
+    forWorkspace: 'لـ {name}',
     planUpdateAvailable: 'تحديث الخطة متوفر',
     updateSuccess: 'تم تحديث الاشتراك بنجاح!',
     updateFailed: 'فشل التحديث',

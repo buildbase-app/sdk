@@ -54,6 +54,7 @@ export const zh: SDKMessages = {
     noSubscription: '您没有有效的订阅',
     choosePlan: '选择您的套餐',
     choosePlanDescription: '比较各套餐，选择最适合您需求的方案',
+    forWorkspace: '适用于 {name}',
     planUpdateAvailable: '套餐更新可用',
     updateSuccess: '订阅已成功更新！',
     updateFailed: '更新失败',
