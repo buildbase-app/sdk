@@ -37,6 +37,8 @@ interface SubscriptionDialogProps {
   currentMemberCount?: number;
   /** When set, workspace has used a trial — hide trial badges/buttons. */
   trialUsedAt?: string | null;
+  /** Workspace name — displayed in the dialog header so users know which workspace they're subscribing for. */
+  workspaceName?: string;
   /** Called when user selects a plan. Currency is optional (for display/logging only; not sent to API). */
   onSelectPlan: (
     planVersionId: string,
@@ -103,6 +105,7 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
   billingCurrency: workspaceBillingCurrency,
   currentMemberCount,
   trialUsedAt,
+  workspaceName,
   onSelectPlan,
   loading: isUpdating = false,
 }) => {
@@ -360,6 +363,11 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
             <DialogTitle className="text-xl sm:text-2xl font-bold">{t('pricing.title')}</DialogTitle>
             <DialogDescription className="mt-1 text-sm">
               {t('subscription.choosePlanDescription')}
+              {workspaceName && (
+                <span className="ml-1 font-medium text-foreground">
+                  {t('subscription.forWorkspace', { name: workspaceName })}
+                </span>
+              )}
             </DialogDescription>
           </div>
           {/* Controls: currency + interval — stack vertically on mobile */}

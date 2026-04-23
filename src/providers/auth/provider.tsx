@@ -2,7 +2,9 @@
 
 import React, { ReactNode, useCallback, useEffect } from 'react';
 import { authActions, useAppDispatch } from '../../contexts';
+import { consumeAuthIntent } from '../../lib/auth-intent';
 import { handleError, handleErrorUnlessAborted } from '../../lib/error-handler';
+import { safeRedirect } from '../../lib/security';
 import { useSaaSOs } from '../os/hooks';
 import { isOsConfigReady } from '../os/types';
 import { AuthApi } from './api';
@@ -77,6 +79,12 @@ export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) 
           setSessionId(session.sessionId);
           dispatch.auth(authActions.setSession(session));
           removeTokenFromUrl();
+
+          // Redirect to the URL the user was on before login (if saved)
+          const returnUrl = consumeAuthIntent();
+          if (returnUrl && returnUrl !== window.location.href) {
+            safeRedirect(returnUrl);
+          }
         }
       } catch (error) {
         handleError(error, {
@@ -151,6 +159,12 @@ export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) 
         setSessionId(session.sessionId);
         _sessionHydrationDone = true;
         dispatch.auth(authActions.setSession(session));
+
+        // Redirect to the URL the user was on before login (if saved)
+        const returnUrl = consumeAuthIntent();
+        if (returnUrl && returnUrl !== window.location.href) {
+          safeRedirect(returnUrl);
+        }
       } catch (error) {
         handleError(error, {
           component: 'AuthProviderWrapper',

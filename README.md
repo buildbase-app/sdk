@@ -10,6 +10,8 @@ Also works server-side (Next.js API routes, Express, Hono) — see [Server-Side 
 - [Installation](#installation)
 - [Quick Start](#quick-start)
 - [Authentication](#-authentication)
+- [Redirect Preservation](#redirect-preservation)
+- [Affiliate / Referral Tracking](#affiliate--referral-tracking)
 - [Role-Based Access Control](#-role-based-access-control)
 - [Feature Flags](#️-feature-flags)
 - [Subscription Gates](#-subscription-gates)
@@ -35,7 +37,7 @@ Also works server-side (Next.js API routes, Express, Hono) — see [Server-Side 
 
 ## 🚀 Features
 
-- **🔐 Authentication System** - Complete auth flow with sign-in/sign-out
+- **🔐 Authentication System** - Complete auth flow with sign-in/sign-out and redirect preservation
 - **🏢 Workspace Management** - Multi-workspace support with switching capabilities
 - **👥 Role-Based Access Control** - User roles and workspace-specific permissions
 - **🎯 Feature Flags** - Workspace-level and user-level feature toggles
@@ -45,6 +47,7 @@ Also works server-side (Next.js API routes, Express, Hono) — see [Server-Side 
 - **📬 Notifications** - Email + push notification system with per-event channel control, workspace preferences, and server-side `notification.send()` API
 - **💺 Seat-Based Pricing** - Per-seat billing with included seats, billable seat tracking, and seat limit enforcement
 - **💱 Multi-Currency** - Per-currency pricing variants with workspace billing currency lock
+- **🤝 Affiliate Tracking** - Pass referral data to Stripe checkout via `stripeOptions` (Rewardful, Endorsely, FirstPromoter, etc.)
 - **📊 Quota Usage Tracking** - Record and monitor metered usage (API calls, storage, etc.) with real-time status
 - **📈 Usage Dashboard** - Built-in workspace settings page showing quota consumption, overage billing breakdowns, and billing period info
 - **👤 User Management** - User attributes and feature flags management
@@ -212,7 +215,7 @@ function AuthExample() {
       {!isAuthenticated ? (
         <div>
           <h1>Welcome! Please sign in</h1>
-          <button onClick={signIn} disabled={status === 'loading'}>
+          <button onClick={() => signIn()} disabled={status === 'loading'}>
             {status === 'loading' ? 'Signing in...' : 'Sign In'}
           </button>
         </div>
@@ -239,7 +242,7 @@ const {
   isLoading, // Boolean: true when checking authentication status
   isRedirecting, // Boolean: true when redirecting for OAuth
   status, // AuthStatus: 'loading' | 'redirecting' | 'authenticating' | 'authenticated' | 'unauthenticated' (use AuthStatus enum for type-safe checks)
-  signIn, // Function: initiates sign-in flow
+  signIn, // Function: initiates sign-in flow. Accepts optional returnUrl to redirect back after login.
   signOut, // Function: signs out the user
   openWorkspaceSettings, // Function: opens workspace settings dialog to a specific section
 } = useSaaSAuth();
@@ -280,6 +283,52 @@ function App() {
   );
 }
 ```
+
+### Redirect Preservation
+
+The SDK automatically preserves the URL when `signIn()` is called. After login, the user is redirected back to the page they were on.
+
+```tsx
+// Automatic — just call signIn(), the current URL is saved
+signIn();
+
+// Custom — pass a specific URL to redirect to after login
+signIn('https://app.com/dashboard?bb=action:selectPlan,plan:abc');
+```
+
+This works across the full OAuth round-trip via localStorage (10-minute TTL, validated with `validateRedirectUrl()`).
+
+For advanced use cases, the low-level helpers are also exported:
+
+```tsx
+import { saveAuthIntent, consumeAuthIntent, clearAuthIntent } from '@buildbase/sdk';
+```
+
+### Affiliate / Referral Tracking
+
+Pass affiliate data to Stripe checkout sessions via `stripeOptions` on the checkout request:
+
+```tsx
+createCheckoutSession({
+  planVersionId: '...',
+  stripeOptions: {
+    // Rewardful, FirstPromoter, PartnerStack — read client_reference_id
+    clientReferenceId: Rewardful.referral,
+
+    // Endorsely — reads subscription metadata
+    subscriptionMetadata: { endorsely_referral: window.endorsely_referral },
+
+    // Custom tracking on the checkout session
+    metadata: { campaign: 'summer-sale' },
+  },
+});
+```
+
+| Field                  | Stripe mapping                    | Use case                        |
+| ---------------------- | --------------------------------- | ------------------------------- |
+| `clientReferenceId`    | `client_reference_id`             | Rewardful, FirstPromoter, etc.  |
+| `metadata`             | `metadata` (checkout session)     | Custom tracking, Endorsely      |
+| `subscriptionMetadata` | `subscription_data.metadata`      | Data that persists on the subscription |
 
 ## 👥 Role-Based Access Control
 
@@ -984,6 +1033,8 @@ function WorkspaceManager() {
     updateFeature, // Toggle workspace feature
     getProfile, // Get current user profile
     updateUserProfile, // Update user profile
+    updateWorkspaceSettings, // Update workspace settings
+    updateWorkspacePermissions, // Update workspace permissions
   } = useSaaSWorkspaces();
 
   // Example: Create a workspace
@@ -1036,15 +1087,22 @@ import { PricingPage } from '@buildbase/sdk/react';
 
 function PublicPricingPage() {
   return (
-    <PricingPage slug="main-pricing">
-      {({ loading, error, items, plans, refetch }) => {
+    <PricingPage slug="main-pricing" redirectBaseUrl="https://app.com/dashboard">
+      {({ loading, error, items, plans, selectPlan, refetch }) => {
         if (loading) return <Loading />;
         if (error) return <Error message={error} />;
 
         return (
           <div>
             {plans.map(plan => (
-              <PlanCard key={plan._id} plan={plan} items={items} />
+              <div key={plan._id}>
+                <PlanCard plan={plan} items={items} />
+                <button onClick={() => selectPlan(plan._id, 'monthly', 'usd')}>
+                  {plan.trial?.enabled
+                    ? `Start ${plan.trial.durationDays}-Day Trial`
+                    : 'Select Plan'}
+                </button>
+              </div>
             ))}
           </div>
         );
@@ -1054,12 +1112,21 @@ function PublicPricingPage() {
 }
 ```
 
+`selectPlan()` handles everything automatically:
+- **Authenticated** → opens the "Choose Your Plan" dialog
+- **Not authenticated** → saves a redirect URL, triggers sign-in, and after login the user lands on the dashboard with the plan picker dialog open
+
 | Prop              | Type                           | Description                                                       |
 | ----------------- | ------------------------------ | ----------------------------------------------------------------- |
 | `slug`            | `string`                       | Plan group slug (e.g. 'main-pricing', 'enterprise')               |
-| `children`        | `(details) => ReactNode`       | Render prop receiving `{ loading, error, items, plans, refetch }` |
+| `children`        | `(details) => ReactNode`       | Render prop receiving plan details (see below)                    |
+| `redirectBaseUrl` | `string`                       | Base URL for post-login redirects (e.g. `"https://app.com/dashboard"`). Enables `selectPlan()` for unauthenticated users. |
 | `loadingFallback` | `ReactNode`                    | Custom loading UI (defaults to skeleton)                          |
 | `errorFallback`   | `(error: string) => ReactNode` | Custom error UI                                                   |
+
+**Render prop details**: `{ loading, error, items, plans, notes, refetch, selectPlan }`
+
+- `selectPlan(planVersionId, interval, currency)` — One-call plan selection (handles auth + dialog automatically)
 
 **Response shape**: `items` = subscription item definitions (features, limits, quotas with category); `plans` = plan versions with `pricing`, `quotas`, `features`, `limits`.
 
@@ -1598,7 +1665,6 @@ function SignupPage() {
     <BetaForm
       onSuccess={() => console.log('Form submitted!')}
       onError={error => console.error(error)}
-      language="en" // Optional: 'en' | 'es' | 'fr' | 'de' | 'zh' | 'ja' | 'ko'
       showSuccessMessage={true}
       hideLogo={false}
       hideTitles={false}
@@ -1726,7 +1792,7 @@ Prefer these SDK hooks for state and operations instead of `useAppSelector`:
 
 | Hook                       | Purpose                                                                                                 |
 | -------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `useSaaSAuth()`            | Auth state (user, session, status), signIn, signOut, openWorkspaceSettings                              |
+| `useSaaSAuth()`            | Auth state (user, session, status), signIn(returnUrl?), signOut, openWorkspaceSettings                  |
 | `useSaaSWorkspaces()`      | Workspaces, currentWorkspace, loading, switching/switchingToId, CRUD and switch actions                 |
 | `useSaaSOs()`              | OS config (serverUrl, version, orgId, auth, settings) when you need the full config object              |
 | `useSaaSSettings()`        | Organization settings and getSettings (prefer this when you only need settings)                         |
@@ -1814,13 +1880,12 @@ interface OnWorkspaceChangeParams {
 | `onError`                | `(error: string) => void`                              | -                                | Callback when form submission fails     |
 | `className`              | `string`                                               | `'w-full'`                       | CSS class for form container            |
 | `fieldClassName`         | `string`                                               | `'flex flex-col gap-1.5 w-full'` | CSS class for form fields               |
-| `language`               | `'en' \| 'es' \| 'fr' \| 'de' \| 'zh' \| 'ja' \| 'ko'` | Auto-detect                      | Form language                           |
-| `customTexts`            | `Partial<FormText>`                                    | `{}`                             | Custom text overrides                   |
 | `autoFocus`              | `boolean`                                              | `true`                           | Auto-focus name field                   |
 | `showSuccessMessage`     | `boolean`                                              | `true`                           | Show success message after submit       |
-| `successMessageDuration` | `number`                                               | -                                | Duration to show success message (ms)   |
 | `hideLogo`               | `boolean`                                              | `false`                          | Hide logo                               |
 | `hideTitles`             | `boolean`                                              | `false`                          | Hide titles                             |
+
+> **Note:** The form language is inherited from the `SaaSOSProvider` locale setting. Supported locales: en, es, fr, de, ja, zh, hi, ar.
 
 ## 🎯 Common Patterns
 
@@ -2246,7 +2311,7 @@ if (isFeatureEnabled('premium')) {
 ```tsx
 // ✅ Good
 const { signIn, status } = useSaaSAuth();
-<button onClick={signIn} disabled={status === 'loading'}>
+<button onClick={() => signIn()} disabled={status === 'loading'}>
   {status === 'loading' ? 'Signing in...' : 'Sign In'}
 </button>;
 ```

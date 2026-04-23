@@ -54,6 +54,7 @@ export const fr: SDKMessages = {
     noSubscription: "Vous n'avez pas d'abonnement actif",
     choosePlan: 'Choisissez votre plan',
     choosePlanDescription: 'Comparez les plans et sélectionnez celui qui correspond à vos besoins',
+    forWorkspace: 'pour {name}',
     planUpdateAvailable: 'Mise à jour du plan disponible',
     updateSuccess: 'Abonnement mis à jour avec succès !',
     updateFailed: 'Échec de la mise à jour',

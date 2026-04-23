@@ -57,6 +57,7 @@ export interface SDKMessages {
     noSubscription: string;
     choosePlan: string;
     choosePlanDescription: string;
+    forWorkspace: string;
     planUpdateAvailable: string;
     updateSuccess: string;
     updateFailed: string;

@@ -21,6 +21,7 @@ function resolveSection(params: Record<string, string>): WorkspaceSettingsSectio
   switch (params.action) {
     case 'checkout':
     case 'billing':
+    case 'selectPlan':
       return SettingsScreen.Subscription;
     default:
       return null;
@@ -53,9 +54,9 @@ export const WorkspaceSettingsProvider: React.FC<{ children: React.ReactNode }> 
     const initialState = workspaceSettingsManager.getState();
     setOpen(initialState.open);
     setSection(initialState.section);
-    const unsubscribe = workspaceSettingsManager.subscribe((isOpen, newSection) => {
-      setOpen(isOpen);
-      setSection(newSection);
+    const unsubscribe = workspaceSettingsManager.subscribe((state) => {
+      setOpen(state.open);
+      setSection(state.section);
     });
     return unsubscribe;
   }, []);
@@ -91,9 +92,9 @@ export const WorkspaceSettingsProvider: React.FC<{ children: React.ReactNode }> 
       return;
     }
 
-    // Open dialog
+    // Open dialog — pass BB params so sections can read them (e.g. selectPlan)
     urlHandledRef.current = true;
-    workspaceSettingsManager.openWorkspaceSettings(targetSection);
+    workspaceSettingsManager.openWorkspaceSettings(targetSection, bbParams);
     cleanBBParams();
   }, [currentWorkspace, workspaces, switchToWorkspace]);
 

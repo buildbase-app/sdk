@@ -7,6 +7,7 @@ import {
   DunningState,
 } from '../../../api/types';
 import { createCheckoutRedirectUrls } from '../../../lib/url-params';
+import { workspaceSettingsManager } from '../settings-manager';
 import { AlertTriangle, Calendar, CreditCard, Loader2 } from 'lucide-react';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -200,16 +201,20 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
 
   // Auto-open plan picker when there's no subscription (e.g. right after workspace creation)
+  // or when navigated via selectPlan BB params (e.g. from pricing page after login)
   const autoOpenedRef = useRef(false);
   useEffect(() => {
-    if (
-      !subscriptionLoading &&
-      !subscription?.subscription &&
-      plansToShow &&
-      plansToShow.length > 0 &&
-      !autoOpenedRef.current
-    ) {
+    if (autoOpenedRef.current) return;
+    if (subscriptionLoading || !plansToShow || plansToShow.length === 0) return;
+
+    const settingsState = workspaceSettingsManager.getState();
+    const isSelectPlan = settingsState.params?.action === 'selectPlan';
+
+    if (!subscription?.subscription || isSelectPlan) {
       autoOpenedRef.current = true;
+      if (isSelectPlan) {
+        workspaceSettingsManager.clearParams();
+      }
       setDialogOpen(true);
     }
   }, [subscriptionLoading, subscription?.subscription, plansToShow]);
@@ -1247,6 +1252,7 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
             currentStripePriceId={subscription?.subscription?.stripePriceId}
             billingCurrency={workspace.billingCurrency}
             trialUsedAt={workspace.trialUsedAt}
+            workspaceName={workspace.name}
             currentMemberCount={
               Array.isArray((workspace as any)?.users) ? (workspace as any).users.length : undefined
             }

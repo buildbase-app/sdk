@@ -3,6 +3,7 @@ import { AuthApi } from '../../api/services/auth-api';
 import { authActions, useAppDispatch, useAppSelector } from '../../contexts';
 import { handleError } from '../../lib/error-handler';
 import { useTranslation } from '../../i18n';
+import { saveAuthIntent } from '../../lib/auth-intent';
 import { safeRedirect } from '../../lib/security';
 import { useSaaSOs } from '../os/hooks';
 import { useSaaSWorkspaces } from '../workspace/hooks';
@@ -88,7 +89,8 @@ export function useSaaSAuth() {
 
   const authApi = useMemo(() => new AuthApi({ serverUrl, version: os.version }), [serverUrl, os.version]);
 
-  const signIn = useCallback(async () => {
+  const signIn = useCallback(async (returnUrl?: string) => {
+    saveAuthIntent(returnUrl || window.location.href);
     dispatch.auth(authActions.authenticationStarted());
     try {
       const response = await authApi.requestAuth({
