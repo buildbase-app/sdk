@@ -142,6 +142,7 @@ export type {
   IBasePricing,
   ICheckoutSessionRequest,
   ICheckoutSessionResponse,
+  ICheckoutStripeOptions,
   IInvoice,
   IInvoiceListResponse,
   IInvoiceResponse,
