@@ -34,7 +34,10 @@ export const workspaceStorage = {
     removeStorageItem(WORKSPACE_STORAGE_KEY);
   },
 
-  isWorkspaceValid: (workspaceId: string | null, availableWorkspaces: { _id: string }[]): boolean => {
+  isWorkspaceValid: (
+    workspaceId: string | null,
+    availableWorkspaces: { _id: string }[]
+  ): boolean => {
     if (!workspaceId) return false;
     return availableWorkspaces.some(ws => ws._id === workspaceId);
   },
@@ -53,7 +56,10 @@ function resolveOwnerId(createdBy: string | { _id: string } | null | undefined):
   return null;
 }
 
-export function isWorkspaceOwner(workspace: WorkspaceLike, userId: string | null | undefined): boolean {
+export function isWorkspaceOwner(
+  workspace: WorkspaceLike,
+  userId: string | null | undefined
+): boolean {
   if (!userId) return false;
   const ownerId = resolveOwnerId(workspace.createdBy);
   return ownerId !== null && ownerId === userId;
@@ -65,7 +71,10 @@ export function getWorkspaceOwnerId(workspace: WorkspaceLike): string | null {
 
 // ─── Roles ─────────────────────────────────────────────────────────────────────
 
-export function getWorkspaceUserRole(workspace: WorkspaceLike, userId: string | null | undefined): string | null {
+export function getWorkspaceUserRole(
+  workspace: WorkspaceLike,
+  userId: string | null | undefined
+): string | null {
   if (!userId || !workspace.users || !Array.isArray(workspace.users)) return null;
 
   const workspaceUser = workspace.users.find(user => {

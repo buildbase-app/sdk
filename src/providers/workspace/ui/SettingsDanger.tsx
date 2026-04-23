@@ -1,5 +1,4 @@
 import { Loader2, Trash2 } from 'lucide-react';
-import { useTranslation } from '../../../i18n';
 import React, { useState } from 'react';
 import {
   AlertDialog,
@@ -13,8 +12,9 @@ import {
   AlertDialogTrigger,
 } from '../../../components/ui/alert-dialog';
 import { Button } from '../../../components/ui/button';
-import { handleError } from '../../../lib/error-handler';
 import { usePermissions } from '../../../hooks/usePermissions';
+import { useTranslation } from '../../../i18n';
+import { handleError } from '../../../lib/error-handler';
 import { Permission } from '../../../lib/permissions';
 import { useSaaSSettings } from '../../os/hooks';
 import { useSaaSWorkspaces } from '../hooks';
@@ -69,9 +69,7 @@ const WorkspaceSettingsDanger: React.FC<{ workspace: IWorkspace }> = ({ workspac
     <div className="space-y-4">
       <div>
         <h3 className="text-lg font-semibold text-destructive">{t('danger.title')}</h3>
-        <p className="text-sm text-muted-foreground mt-2">
-          {t('danger.deleteDescription')}
-        </p>
+        <p className="text-sm text-muted-foreground mt-2">{t('danger.deleteDescription')}</p>
       </div>
       <AlertDialog>
         <AlertDialogTrigger asChild>
@@ -83,9 +81,7 @@ const WorkspaceSettingsDanger: React.FC<{ workspace: IWorkspace }> = ({ workspac
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>{t('danger.deleteConfirm')}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {t('danger.deleteConfirmDescription')}
-            </AlertDialogDescription>
+            <AlertDialogDescription>{t('danger.deleteConfirmDescription')}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isDeleting}>

@@ -2,8 +2,8 @@
 
 import React, { ReactNode, useCallback, useEffect } from 'react';
 import { authActions, useAppDispatch } from '../../contexts';
-import { consumeAuthIntent } from '../../lib/auth-intent';
-import { handleError, handleErrorUnlessAborted } from '../../lib/error-handler';
+import { consumeAuthIntent, saveAuthIntent } from '../../lib/auth-intent';
+import { handleError } from '../../lib/error-handler';
 import { safeRedirect } from '../../lib/security';
 import { useSaaSOs } from '../os/hooks';
 import { isOsConfigReady } from '../os/types';
@@ -53,7 +53,6 @@ export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) 
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-
   const handleAuthRedirect = useCallback(
     async (code: string) => {
       try {
@@ -87,6 +86,8 @@ export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) 
           }
         }
       } catch (error) {
+        // Clear stale auth intent so next login doesn't redirect to wrong page
+        consumeAuthIntent();
         handleError(error, {
           component: 'AuthProviderWrapper',
           action: 'handleAuthRedirect',
@@ -146,6 +147,8 @@ export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) 
       if (!sessionId) {
         _sessionHydrationDone = true;
         dispatch.auth(authActions.authenticationFailed());
+        // Save current URL so user returns here after re-login
+        if (typeof window !== 'undefined') saveAuthIntent(window.location.href);
         callbacks?.onSessionExpired?.('missing');
         return;
       }
@@ -173,6 +176,8 @@ export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) 
         _sessionHydrationDone = true;
         dispatch.auth(authActions.authenticationFailed());
         // Session exists but profile fetch failed — session is invalid/expired
+        // Save current URL so user returns here after re-login
+        if (typeof window !== 'undefined') saveAuthIntent(window.location.href);
         callbacks?.onSessionExpired?.('expired');
       } finally {
         _sessionHydrationInFlight = null;

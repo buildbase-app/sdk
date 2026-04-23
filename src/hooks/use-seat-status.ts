@@ -1,13 +1,12 @@
 import { useMemo } from 'react';
-import { useSubscriptionContext } from '../contexts/SubscriptionContext';
+import type { InviteBlockReason, MaxUsersConfig } from '../api/billing/pricing-variant-utils';
 import {
-  getSeatPricing,
   getPerSeatPriceCents,
   resolveMaxUsers,
   validateInvite,
 } from '../api/billing/pricing-variant-utils';
 import type { BillingInterval, IPlanVersion } from '../api/types';
-import type { InviteBlockReason, MaxUsersConfig } from '../api/billing/pricing-variant-utils';
+import { useSubscriptionContext } from '../contexts/SubscriptionContext';
 
 export interface SeatStatus {
   /** Whether the current plan uses seat-based pricing. */

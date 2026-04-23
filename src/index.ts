@@ -18,22 +18,22 @@
 export * from './core';
 
 // ─── Webhook Verification (server-only — uses Node.js crypto) ─────────────────
-export { verifyWebhookSignature, parseWebhookEvent } from './lib/webhook-verification';
+export { parseWebhookEvent, verifyWebhookSignature } from './lib/webhook-verification';
 
 // ─── BuildBase Factory (server-side) ───────────────────────────────────────────
-export { default, default as BuildBase } from './lib/server-client';
+export { default as BuildBase, default } from './lib/server-client';
 export type {
   BuildBaseConfig,
   BuildBaseResult,
   BuildBaseSession,
-  ScopedActions,
-  WorkspaceActions,
-  UserActions,
-  SubscriptionActions,
-  PlanActions,
-  InvoiceActions,
-  UsageActions,
-  SettingsActions,
   FeatureActions,
+  InvoiceActions,
   PermissionActions,
+  PlanActions,
+  ScopedActions,
+  SettingsActions,
+  SubscriptionActions,
+  UsageActions,
+  UserActions,
+  WorkspaceActions,
 } from './lib/server-client';

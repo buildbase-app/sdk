@@ -527,7 +527,10 @@ type Level4 = {
     ? {
         [K2 in keyof SDKMessages[K1] & string]: SDKMessages[K1][K2] extends Record<string, unknown>
           ? {
-              [K3 in keyof SDKMessages[K1][K2] & string]: SDKMessages[K1][K2][K3] extends Record<string, unknown>
+              [K3 in keyof SDKMessages[K1][K2] & string]: SDKMessages[K1][K2][K3] extends Record<
+                string,
+                unknown
+              >
                 ? `${K1}.${K2}.${K3}.${keyof SDKMessages[K1][K2][K3] & string}`
                 : never;
             }[keyof SDKMessages[K1][K2] & string]

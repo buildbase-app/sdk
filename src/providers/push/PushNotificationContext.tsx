@@ -1,10 +1,9 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from '../../i18n';
+import { handleError } from '../../lib/error-handler';
 import { useSaaSAuth } from '../auth/hooks';
 import { useSaaSOs } from '../os/hooks';
-import type { IOsState } from '../os/types';
 import { PushApi } from './push-api';
-import { handleError } from '../../lib/error-handler';
 
 interface PushNotificationState {
   /** Browser's Notification.permission: 'default' | 'granted' | 'denied' */
@@ -48,17 +47,23 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
 }
 
 export const PushNotificationProvider: React.FC<PushNotificationProviderProps> = React.memo(
-  function PushNotificationProvider({ children, serviceWorkerPath = '/push-sw.js', autoSubscribe = false }) {
+  function PushNotificationProvider({
+    children,
+    serviceWorkerPath = '/push-sw.js',
+    autoSubscribe = false,
+  }) {
     const { t } = useTranslation();
     const os = useSaaSOs();
     const { isAuthenticated } = useSaaSAuth();
 
-    const isSupported = useMemo(() =>
-      typeof window !== 'undefined' &&
-      'serviceWorker' in navigator &&
-      'PushManager' in window &&
-      'Notification' in window,
-    []);
+    const isSupported = useMemo(
+      () =>
+        typeof window !== 'undefined' &&
+        'serviceWorker' in navigator &&
+        'PushManager' in window &&
+        'Notification' in window,
+      []
+    );
 
     const api = useMemo(
       () =>
@@ -88,40 +93,42 @@ export const PushNotificationProvider: React.FC<PushNotificationProviderProps> =
           const registration = await navigator.serviceWorker.getRegistration(serviceWorkerPath);
           if (cancelled) return;
           if (!registration) {
-            setState((s) => ({ ...s, isSubscribed: false }));
+            setState(s => ({ ...s, isSubscribed: false }));
             return;
           }
           const sub = await registration.pushManager.getSubscription();
           if (cancelled) return;
-          setState((s) => ({
+          setState(s => ({
             ...s,
             isSubscribed: !!sub,
             permission: Notification.permission,
           }));
         } catch {
-          if (!cancelled) setState((s) => ({ ...s, isSubscribed: false }));
+          if (!cancelled) setState(s => ({ ...s, isSubscribed: false }));
         }
       })();
 
-      return () => { cancelled = true; };
+      return () => {
+        cancelled = true;
+      };
     }, [isAuthenticated, isSupported, serviceWorkerPath]);
 
     const requestPermission = useCallback(async (): Promise<boolean> => {
       if (!isSupported) return false;
       const result = await Notification.requestPermission();
-      setState((s) => ({ ...s, permission: result }));
+      setState(s => ({ ...s, permission: result }));
       return result === 'granted';
     }, [isSupported]);
 
     const subscribe = useCallback(async () => {
       if (!isSupported || !isAuthenticated) return;
 
-      setState((s) => ({ ...s, loading: true, error: null }));
+      setState(s => ({ ...s, loading: true, error: null }));
       try {
         // 1. Request permission
         const granted = await requestPermission();
         if (!granted) {
-          setState((s) => ({ ...s, loading: false, error: t('notifications.permissionDenied') }));
+          setState(s => ({ ...s, loading: false, error: t('notifications.permissionDenied') }));
           return;
         }
 
@@ -148,11 +155,11 @@ export const PushNotificationProvider: React.FC<PushNotificationProviderProps> =
           navigator.userAgent
         );
 
-        setState((s) => ({ ...s, isSubscribed: true, loading: false }));
+        setState(s => ({ ...s, isSubscribed: true, loading: false }));
         // Server sends a welcome notification automatically on subscribe
       } catch (err: any) {
         const msg = err instanceof Error ? err.message : t('push.failedToSubscribe');
-        setState((s) => ({ ...s, loading: false, error: msg }));
+        setState(s => ({ ...s, loading: false, error: msg }));
         handleError(err, { component: 'PushNotificationProvider', action: 'subscribe' });
       }
     }, [isSupported, isAuthenticated, api, serviceWorkerPath, requestPermission]);
@@ -160,7 +167,7 @@ export const PushNotificationProvider: React.FC<PushNotificationProviderProps> =
     const unsubscribe = useCallback(async () => {
       if (!isSupported) return;
 
-      setState((s) => ({ ...s, loading: true, error: null }));
+      setState(s => ({ ...s, loading: true, error: null }));
       try {
         const registration = await navigator.serviceWorker.getRegistration(serviceWorkerPath);
         if (registration) {
@@ -171,10 +178,10 @@ export const PushNotificationProvider: React.FC<PushNotificationProviderProps> =
             await api.unsubscribe(endpoint);
           }
         }
-        setState((s) => ({ ...s, isSubscribed: false, loading: false }));
+        setState(s => ({ ...s, isSubscribed: false, loading: false }));
       } catch (err: any) {
         const msg = err instanceof Error ? err.message : t('push.failedToUnsubscribe');
-        setState((s) => ({ ...s, loading: false, error: msg }));
+        setState(s => ({ ...s, loading: false, error: msg }));
         handleError(err, { component: 'PushNotificationProvider', action: 'unsubscribe' });
       }
     }, [isSupported, api, serviceWorkerPath]);
@@ -185,9 +192,7 @@ export const PushNotificationProvider: React.FC<PushNotificationProviderProps> =
     );
 
     return (
-      <PushNotificationContext.Provider value={value}>
-        {children}
-      </PushNotificationContext.Provider>
+      <PushNotificationContext.Provider value={value}>{children}</PushNotificationContext.Provider>
     );
   }
 );

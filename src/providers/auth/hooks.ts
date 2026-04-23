@@ -1,9 +1,9 @@
 import { useCallback, useMemo } from 'react';
 import { AuthApi } from '../../api/services/auth-api';
 import { authActions, useAppDispatch, useAppSelector } from '../../contexts';
-import { handleError } from '../../lib/error-handler';
 import { useTranslation } from '../../i18n';
 import { saveAuthIntent } from '../../lib/auth-intent';
+import { handleError } from '../../lib/error-handler';
 import { safeRedirect } from '../../lib/security';
 import { useSaaSOs } from '../os/hooks';
 import { useSaaSWorkspaces } from '../workspace/hooks';
@@ -87,36 +87,42 @@ export function useSaaSAuth() {
   const { serverUrl, orgId, auth: authConfig } = os;
   const { resetCurrentWorkspace, currentWorkspace } = useSaaSWorkspaces();
 
-  const authApi = useMemo(() => new AuthApi({ serverUrl, version: os.version }), [serverUrl, os.version]);
+  const authApi = useMemo(
+    () => new AuthApi({ serverUrl, version: os.version }),
+    [serverUrl, os.version]
+  );
 
-  const signIn = useCallback(async (returnUrl?: string) => {
-    saveAuthIntent(returnUrl || window.location.href);
-    dispatch.auth(authActions.authenticationStarted());
-    try {
-      const response = await authApi.requestAuth({
-        orgId,
-        clientId: authConfig?.clientId ?? '',
-        redirect: {
-          success: authConfig?.redirectUrl || window.location.href,
-          error: authConfig?.redirectUrl || window.location.href,
-        },
-      });
+  const signIn = useCallback(
+    async (returnUrl?: string) => {
+      saveAuthIntent(returnUrl || window.location.href);
+      dispatch.auth(authActions.authenticationStarted());
+      try {
+        const response = await authApi.requestAuth({
+          orgId,
+          clientId: authConfig?.clientId ?? '',
+          redirect: {
+            success: authConfig?.redirectUrl || window.location.href,
+            error: authConfig?.redirectUrl || window.location.href,
+          },
+        });
 
-      if (response.success) {
-        safeRedirect(response.data.redirectUrl);
-      } else {
+        if (response.success) {
+          safeRedirect(response.data.redirectUrl);
+        } else {
+          dispatch.auth(authActions.authenticationFailed());
+          throw new Error(response.message || t('errors.generic'));
+        }
+      } catch (error) {
         dispatch.auth(authActions.authenticationFailed());
-        throw new Error(response.message || t('errors.generic'));
+        handleError(error, {
+          component: 'useSaaSAuth',
+          action: 'signIn',
+        });
+        throw error;
       }
-    } catch (error) {
-      dispatch.auth(authActions.authenticationFailed());
-      handleError(error, {
-        component: 'useSaaSAuth',
-        action: 'signIn',
-      });
-      throw error;
-    }
-  }, [authApi, orgId, authConfig, dispatch]);
+    },
+    [authApi, orgId, authConfig, dispatch]
+  );
 
   const signOut = useCallback(async () => {
     try {

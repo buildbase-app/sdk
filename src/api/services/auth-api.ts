@@ -3,8 +3,8 @@
  * Extends BaseApi for shared URL/auth/request handling.
  */
 
-import type { IUser } from '../types';
 import { BaseApi } from '../../lib/api-base';
+import type { IUser } from '../types';
 import type { IOsConfig } from './shared-types';
 
 export interface AuthRequestParams {

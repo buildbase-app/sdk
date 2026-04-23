@@ -1,5 +1,4 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useTranslation } from '../../../i18n';
 import React, { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -18,6 +17,7 @@ import {
   FormMessage,
 } from '../../../components/ui/form';
 import { Input } from '../../../components/ui/input';
+import { useTranslation } from '../../../i18n';
 import { handleError } from '../../../lib/error-handler';
 import { useSaaSWorkspaces } from '../hooks';
 import { IWorkspace } from '../types';
@@ -33,7 +33,9 @@ const WorkspaceSettingsProfile: React.FC<{ workspace: IWorkspace }> = ({ workspa
   const successTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
 
   useEffect(() => {
-    return () => { if (successTimerRef.current) clearTimeout(successTimerRef.current); };
+    return () => {
+      if (successTimerRef.current) clearTimeout(successTimerRef.current);
+    };
   }, []);
 
   const formSchema = z.object({

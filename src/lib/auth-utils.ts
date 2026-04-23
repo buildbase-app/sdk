@@ -4,8 +4,8 @@
  * Used by BaseApi for client-side auth. No React dependency.
  */
 
-import { getStorageItem, removeStorageItem, setStorageItem } from './storage';
 import { handleError } from './error-handler';
+import { getStorageItem, removeStorageItem, setStorageItem } from './storage';
 
 const AUTH_SESSION_ID_KEY = 'saas-session-id';
 const AUTH_TOKEN_PARAM = 'code';

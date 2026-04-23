@@ -86,7 +86,8 @@ function decodeBBParam(raw: string): Record<string, string> {
 export function createBBUrl(params: Record<string, string>, baseUrl?: string): string {
   let url: URL;
   try {
-    const raw = baseUrl || (typeof window !== 'undefined' ? window.location.href : 'https://localhost');
+    const raw =
+      baseUrl || (typeof window !== 'undefined' ? window.location.href : 'https://localhost');
     url = new URL(raw);
     // Strip existing query params — only keep the path. The bb param is the only one we need.
     url.search = '';
@@ -102,11 +103,20 @@ export function createBBUrl(params: Record<string, string>, baseUrl?: string): s
  * Build success + cancel URL pair for Stripe checkout redirects.
  * Both include the workspace ID and screen:subscription.
  */
-export function createCheckoutRedirectUrls(workspaceId: string, baseUrl?: string): { successUrl: string; cancelUrl: string } {
+export function createCheckoutRedirectUrls(
+  workspaceId: string,
+  baseUrl?: string
+): { successUrl: string; cancelUrl: string } {
   const base = baseUrl || (typeof window !== 'undefined' ? window.location.href : undefined);
   return {
-    successUrl: createBBUrl({ action: 'checkout', status: 'success', ws: workspaceId, screen: 'subscription' }, base),
-    cancelUrl: createBBUrl({ action: 'checkout', status: 'cancel', ws: workspaceId, screen: 'subscription' }, base),
+    successUrl: createBBUrl(
+      { action: 'checkout', status: 'success', ws: workspaceId, screen: 'subscription' },
+      base
+    ),
+    cancelUrl: createBBUrl(
+      { action: 'checkout', status: 'cancel', ws: workspaceId, screen: 'subscription' },
+      base
+    ),
   };
 }
 

@@ -19,9 +19,9 @@
  * ```
  */
 
-import { getAuthHeaders } from './auth-utils';
 import type { ApiVersion } from '../api/services/shared-types';
 import { handleApiResponse } from './api-utils';
+import { getAuthHeaders } from './auth-utils';
 
 export interface IBaseApiConfig {
   serverUrl: string;
@@ -172,7 +172,9 @@ export abstract class BaseApi {
         if (response.status >= 500 && retryCount < this._maxRetries) {
           const delay = Math.min(1000 * Math.pow(2, retryCount), 10_000);
           if (this._debug) {
-            console.log(`[BuildBase] Retrying in ${delay}ms (attempt ${retryCount + 1}/${this._maxRetries})`);
+            console.log(
+              `[BuildBase] Retrying in ${delay}ms (attempt ${retryCount + 1}/${this._maxRetries})`
+            );
           }
           await new Promise(r => setTimeout(r, delay));
           return attempt(retryCount + 1);
@@ -183,7 +185,9 @@ export abstract class BaseApi {
         // Don't retry abort errors
         if (error instanceof Error && error.name === 'AbortError') {
           if (timeoutId !== undefined) {
-            const timeoutError = new Error(`Request timeout after ${this._timeout}ms: ${method} ${path}`);
+            const timeoutError = new Error(
+              `Request timeout after ${this._timeout}ms: ${method} ${path}`
+            );
             this._onError?.(timeoutError, { method, path });
             throw timeoutError;
           }
@@ -194,7 +198,9 @@ export abstract class BaseApi {
         if (retryCount < this._maxRetries) {
           const delay = Math.min(1000 * Math.pow(2, retryCount), 10_000);
           if (this._debug) {
-            console.log(`[BuildBase] Network error, retrying in ${delay}ms (attempt ${retryCount + 1}/${this._maxRetries})`);
+            console.log(
+              `[BuildBase] Network error, retrying in ${delay}ms (attempt ${retryCount + 1}/${this._maxRetries})`
+            );
           }
           await new Promise(r => setTimeout(r, delay));
           return attempt(retryCount + 1);

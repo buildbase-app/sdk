@@ -19,11 +19,7 @@ export function PermissionConfigProvider({
   children: React.ReactNode;
 }) {
   const value = useMemo(() => ({ appPermissions }), [appPermissions]);
-  return (
-    <PermissionContext.Provider value={value}>
-      {children}
-    </PermissionContext.Provider>
-  );
+  return <PermissionContext.Provider value={value}>{children}</PermissionContext.Provider>;
 }
 
 export function usePermissionConfig() {

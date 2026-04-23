@@ -1,5 +1,5 @@
-import { IAsset, IDocument } from '../types';
 import { BaseApi } from '../../lib/api-base';
+import { IAsset, IDocument } from '../types';
 import type { IOsConfig } from './shared-types';
 
 interface IScreenDetail {

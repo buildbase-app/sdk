@@ -88,7 +88,8 @@ export const ja: SDKMessages = {
     paymentPastDue: '支払い期限超過',
     paymentPastDueDescription: 'サービスの中断を避けるため、お支払い方法を更新してください。',
     subscriptionPaused: 'サブスクリプション一時停止中',
-    subscriptionPausedDescription: 'サブスクリプションは現在一時停止中です。再開してフルアクセスを復元してください。',
+    subscriptionPausedDescription:
+      'サブスクリプションは現在一時停止中です。再開してフルアクセスを復元してください。',
     errorLoading: 'サブスクリプションデータの読み込みエラー',
     errorLoadingDescription: '接続を確認して、もう一度お試しください。',
     errorProcessing: 'サブスクリプションの処理に失敗しました',
@@ -144,7 +145,8 @@ export const ja: SDKMessages = {
     noPlanAssigned: 'プランが割り当てられていません',
     free: '無料',
     perSeatDisplay: '+ {price}/シート{interval}',
-    estTotalDisplay: '推定合計: {total}{interval} ({count, plural, one {追加シート #} other {追加シート #}})',
+    estTotalDisplay:
+      '推定合計: {total}{interval} ({count, plural, one {追加シート #} other {追加シート #}})',
     nextBillingDisplay: '次回請求日: {date}',
     membersInWorkspace: 'ワークスペースに{count, plural, one {# メンバー} other {# メンバー}}',
     billingInCurrency: '{currency}で請求',
@@ -160,20 +162,25 @@ export const ja: SDKMessages = {
     dunningFinal: '最終警告：サブスクリプションが停止されます',
     dunningSuspended: 'サブスクリプションが停止されました',
     dunningRecovery: '支払い回収中',
-    dunningSuspendedDescription: '支払いの失敗が繰り返されたため、サブスクリプションが停止されました。アクセスを復元するには、お支払い方法を更新してください。',
-    dunningRecoveryDescription: 'お支払いを処理できませんでした。アクセスを失わないよう、お支払い方法を更新してください。',
+    dunningSuspendedDescription:
+      '支払いの失敗が繰り返されたため、サブスクリプションが停止されました。アクセスを復元するには、お支払い方法を更新してください。',
+    dunningRecoveryDescription:
+      'お支払いを処理できませんでした。アクセスを失わないよう、お支払い方法を更新してください。',
     cancelEndDescription: 'サブスクリプションの終了日：',
     trialEndDescription: 'トライアルの終了日：',
-    cancelEndFallback: 'サブスクリプションは現在の請求期間の終了時にキャンセルされます。以降の課金はありません。',
+    cancelEndFallback:
+      'サブスクリプションは現在の請求期間の終了時にキャンセルされます。以降の課金はありません。',
     resumeChargeDate: '次回の課金日：',
     resumeChargeFallback: '次回の請求日',
     resumeContinue: 'サブスクリプションは自動的に継続され、プランに基づいて請求されます',
     resumeCancelAnytime: '次回の請求日前であれば、いつでもキャンセルできます',
     retainAccess: 'このプランへのフルアクセスは次の日まで維持されます：',
     retainAccessFallback: '現在の請求期間の終了まで',
-    noPlansAvailable: 'このワークスペースで利用可能なプラングループがありません。エラーだと思われる場合は、サポートにお問い合わせください。',
+    noPlansAvailable:
+      'このワークスペースで利用可能なプラングループがありません。エラーだと思われる場合は、サポートにお問い合わせください。',
     noPlansAvailableHint: 'このワークスペースで利用可能なプラングループがありません。',
-    startTrialDescription: 'コミットなしでフルプランをお試しください。いつでもアップグレードまたはキャンセルできます。',
+    startTrialDescription:
+      'コミットなしでフルプランをお試しください。いつでもアップグレードまたはキャンセルできます。',
     noSubscriptionDescription: 'ワークスペースを始めるにはプランを選択してください',
     startFreeTrial: '無料トライアルを開始',
     startTrialDays: '{days}日間の無料トライアルを開始',
@@ -195,7 +202,8 @@ export const ja: SDKMessages = {
     you: 'あなた',
     owner: 'オーナー',
     noMembers: 'このワークスペースにメンバーが見つかりません。',
-    extraSeatCost: '追加メンバーごとにサブスクリプションに{price}/{interval, select, yearly {年} quarterly {四半期} other {月}}が追加されます',
+    extraSeatCost:
+      '追加メンバーごとにサブスクリプションに{price}/{interval, select, yearly {年} quarterly {四半期} other {月}}が追加されます',
     unknownUser: '不明なユーザー',
     seats: 'シート',
     members: 'メンバー',
@@ -205,11 +213,14 @@ export const ja: SDKMessages = {
     available: '利用可能',
     noMemberLimit: 'メンバー制限なし',
     seatHeading: '{hasSeatPricing, select, true {シート} other {メンバー}}',
-    limitReached: '{reason, select, seat_limit_reached {シート上限に達しました} other {メンバー上限に達しました}}',
+    limitReached:
+      '{reason, select, seat_limit_reached {シート上限に達しました} other {メンバー上限に達しました}}',
     memberCount: '{count, plural, one {# メンバー} other {# メンバー}}',
     subscriptionRequired: 'メンバーを招待するにはサブスクリプションが必要です。',
-    seatLimitMessage: 'プランでは最大{maxUsers, number}メンバーまで許可されています。シートを増やすにはアップグレードしてください。',
-    settingsLimitMessage: 'このワークスペースでは最大{maxUsers, number}メンバーまで許可されています。',
+    seatLimitMessage:
+      'プランでは最大{maxUsers, number}メンバーまで許可されています。シートを増やすにはアップグレードしてください。',
+    settingsLimitMessage:
+      'このワークスペースでは最大{maxUsers, number}メンバーまで許可されています。',
     memberLimitMessage: 'メンバー上限の{maxUsers, number}に達しました。',
     selectRole: 'ロールを選択',
     inviteAs: '{role}として招待',
@@ -255,7 +266,8 @@ export const ja: SDKMessages = {
     percentUsed: '{percent, number}%使用済み',
     availableRemaining: '残り{count}',
     overLimitCount: '{count}が上限超過',
-    overageWarning: '{count, plural, one {# リソースが含まれるクォータを超過しました。} other {# リソースが含まれるクォータを超過しました。}}追加使用分は次回の請求書で超過分として課金されます。',
+    overageWarning:
+      '{count, plural, one {# リソースが含まれるクォータを超過しました。} other {# リソースが含まれるクォータを超過しました。}}追加使用分は次回の請求書で超過分として課金されます。',
     fullyUsed: '全量使用済み',
     renewingSoon: 'まもなく更新',
     almostFull: 'ほぼ上限',
@@ -264,7 +276,8 @@ export const ja: SDKMessages = {
     perUnit: '/ ユニット',
     perUnits: '/ ユニット',
     rateDisplay: '{rate} {unitSize, plural, =1 {/ ユニット} other {/ {unitSize, number} ユニット}}',
-    resourcesExceeded: '{count, plural, one {# リソースが含まれるクォータを超過しました。} other {# リソースが含まれるクォータを超過しました。}}',
+    resourcesExceeded:
+      '{count, plural, one {# リソースが含まれるクォータを超過しました。} other {# リソースが含まれるクォータを超過しました。}}',
     estOverageCharges: 'この期間の推定超過料金: {amount}',
     overageRateDisplay: '超過料金: {rate}',
     resetDateDisplay: '使用量は{date}にリセットされます',
@@ -290,10 +303,12 @@ export const ja: SDKMessages = {
     nameMinLength: 'ワークスペース名は2文字以上で入力してください。',
     billingCurrency: '請求通貨',
     icon: 'アイコン',
-    iconDescription: '絵文字を選択するか、ワークスペース用のカスタム画像をアップロードしてください。',
+    iconDescription:
+      '絵文字を選択するか、ワークスペース用のカスタム画像をアップロードしてください。',
     imageUrl: '画像URL',
     imageUrlPlaceholder: 'https://example.com/image.png',
-    imageUrlDescription: 'ワークスペース画像の有効なURLを入力してください。PNG、JPG、SVG形式に対応しています。',
+    imageUrlDescription:
+      'ワークスペース画像の有効なURLを入力してください。PNG、JPG、SVG形式に対応しています。',
     previewLabel: 'プレビュー：',
     success: 'ワークスペース設定が正常に保存されました',
     chooseEmoji: '絵文字を選択',
@@ -317,10 +332,13 @@ export const ja: SDKMessages = {
     adminOnly: '管理者のみがワークスペースを削除できます。',
     deleteWorkspace: 'ワークスペースを削除',
     deleteConfirm: '本当によろしいですか？',
-    deleteWarning: 'この操作は取り消せません。ワークスペースと関連するすべてのデータが完全に削除されます。',
+    deleteWarning:
+      'この操作は取り消せません。ワークスペースと関連するすべてのデータが完全に削除されます。',
     deleting: '削除中...',
-    deleteDescription: 'ワークスペースを削除すると元に戻すことはできません。ワークスペースとメンバー、設定、機能を含むすべてのデータが完全に削除されます。',
-    deleteConfirmDescription: 'この操作は取り消せません。ワークスペースと関連するすべてのデータが完全に削除されます。',
+    deleteDescription:
+      'ワークスペースを削除すると元に戻すことはできません。ワークスペースとメンバー、設定、機能を含むすべてのデータが完全に削除されます。',
+    deleteConfirmDescription:
+      'この操作は取り消せません。ワークスペースと関連するすべてのデータが完全に削除されます。',
     failedToDelete: 'ワークスペースの削除に失敗しました',
   },
   notifications: {
@@ -329,16 +347,20 @@ export const ja: SDKMessages = {
     notSupported: 'このブラウザではプッシュ通知はサポートされていません。',
     manageDescription: 'このワークスペースからの通知の受信方法を管理します。',
     blocked: '通知がブロックされています',
-    blockedDescription: 'このサイトの通知を以前ブロックしました。有効にするには、ブラウザの設定を更新してください：',
+    blockedDescription:
+      'このサイトの通知を以前ブロックしました。有効にするには、ブラウザの設定を更新してください：',
     pushTitle: 'プッシュ通知',
     pushEnabledDescription: '重要な更新についてブラウザ通知を受信します。',
-    pushDisabledDescription: '支払い問題、トライアル期限、その他の重要な更新についての通知を受け取ります。',
+    pushDisabledDescription:
+      '支払い問題、トライアル期限、その他の重要な更新についての通知を受け取ります。',
     enabling: '有効化中...',
     disabling: '無効化中...',
     enable: '有効にする',
     disable: '無効にする',
-    toggleAction: '{loading, select, true {{subscribed, select, true {無効化中...} other {有効化中...}}} other {{subscribed, select, true {無効にする} other {有効にする}}}}',
-    pushDescription: '{subscribed, select, true {重要な更新についてブラウザ通知を受信します。} other {支払い問題、トライアル期限、その他の重要な更新についての通知を受け取ります。}}',
+    toggleAction:
+      '{loading, select, true {{subscribed, select, true {無効化中...} other {有効化中...}}} other {{subscribed, select, true {無効にする} other {有効にする}}}}',
+    pushDescription:
+      '{subscribed, select, true {重要な更新についてブラウザ通知を受信します。} other {支払い問題、トライアル期限、その他の重要な更新についての通知を受け取ります。}}',
     deviceNote: '通知はこのデバイスに送信されます。他のデバイスでは個別に有効にしてください。',
     prefsSaved: 'Notification preferences saved.',
     loadingPrefs: 'Loading preferences...',
@@ -352,7 +374,7 @@ export const ja: SDKMessages = {
       workspace_removed: 'Member Removed',
       workspace_removed_desc: 'When a member is removed from the workspace',
       workspace_role_changed: 'Role Changed',
-      workspace_role_changed_desc: 'When a member\'s role is updated',
+      workspace_role_changed_desc: "When a member's role is updated",
       subscription_created: 'Subscription Created',
       subscription_created_desc: 'When a new subscription is activated',
       subscription_upgraded: 'Plan Upgraded',
@@ -452,12 +474,14 @@ export const ja: SDKMessages = {
     workspaceNamePlaceholder: 'マイワークスペース',
     workspaceNameMinLength: 'ワークスペース名は2文字以上で入力してください。',
     workspaceIcon: 'ワークスペースアイコン',
-    iconDescription: '絵文字を選択するか、ワークスペース用のカスタム画像をアップロードしてください。',
+    iconDescription:
+      '絵文字を選択するか、ワークスペース用のカスタム画像をアップロードしてください。',
     chooseEmoji: '絵文字を選択',
     customImageUrl: 'カスタム画像URL',
     imageUrl: '画像URL',
     imageUrlPlaceholder: 'https://example.com/image.png',
-    imageUrlDescription: 'ワークスペース画像の有効なURLを入力してください。PNG、JPG、SVG形式に対応しています。',
+    imageUrlDescription:
+      'ワークスペース画像の有効なURLを入力してください。PNG、JPG、SVG形式に対応しています。',
     invalidUrl: '有効なURLを入力してください',
     creating: '作成中...',
     createWorkspace: 'ワークスペースを作成',

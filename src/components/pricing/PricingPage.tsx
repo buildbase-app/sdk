@@ -4,8 +4,8 @@ import { ReactNode, useCallback } from 'react';
 import type { BillingInterval, IPublicPlanItem, IPublicPlanVersion } from '../../api/types';
 import { createBBUrl } from '../../lib/url-params';
 import { useSaaSAuth } from '../../providers/auth/hooks';
-import { usePublicPlans } from '../../providers/workspace/subscription-hooks';
 import { workspaceSettingsManager } from '../../providers/workspace/settings-manager';
+import { usePublicPlans } from '../../providers/workspace/subscription-hooks';
 import { Skeleton } from '../ui/skeleton';
 
 export interface PricingPageDetails {
@@ -78,7 +78,13 @@ export interface PricingPageProps {
  * </PricingPage>
  * ```
  */
-export function PricingPage({ slug, children, loadingFallback, errorFallback, redirectBaseUrl }: PricingPageProps) {
+export function PricingPage({
+  slug,
+  children,
+  loadingFallback,
+  errorFallback,
+  redirectBaseUrl,
+}: PricingPageProps) {
   const { items, plans, notes, loading, error, refetch } = usePublicPlans(slug);
   const { isAuthenticated, signIn } = useSaaSAuth();
 
@@ -87,10 +93,10 @@ export function PricingPage({ slug, children, loadingFallback, errorFallback, re
       if (!redirectBaseUrl) return null;
       return createBBUrl(
         { action: 'selectPlan', plan: planVersionId, interval, currency },
-        redirectBaseUrl,
+        redirectBaseUrl
       );
     },
-    [redirectBaseUrl],
+    [redirectBaseUrl]
   );
 
   const selectPlan = useCallback(
@@ -107,7 +113,7 @@ export function PricingPage({ slug, children, loadingFallback, errorFallback, re
       const checkoutUrl = getCheckoutUrl(planVersionId, interval, currency);
       signIn(checkoutUrl ?? undefined);
     },
-    [isAuthenticated, signIn, getCheckoutUrl],
+    [isAuthenticated, signIn, getCheckoutUrl]
   );
 
   if (loading) {

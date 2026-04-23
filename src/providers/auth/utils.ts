@@ -1,12 +1,12 @@
 // Re-export session/auth utilities from canonical location in lib/
 export {
-  setSessionId,
-  removeSession,
-  getSessionId,
   getAccessToken,
   getAuthHeaders,
+  getSessionId,
   getTokenFromUrl,
+  removeSession,
   removeTokenFromUrl,
+  setSessionId,
 } from '../../lib/auth-utils';
 
 // Auth-specific utils that depend on provider types stay here

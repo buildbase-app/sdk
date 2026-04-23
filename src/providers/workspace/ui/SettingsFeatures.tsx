@@ -1,9 +1,9 @@
 import { Loader2 } from 'lucide-react';
-import { useTranslation } from '../../../i18n';
 import React, { useEffect, useRef, useState } from 'react';
 import { Switch } from '../../../components/ui/switch';
-import { handleError } from '../../../lib/error-handler';
 import { usePermissions } from '../../../hooks/usePermissions';
+import { useTranslation } from '../../../i18n';
+import { handleError } from '../../../lib/error-handler';
 import { Permission } from '../../../lib/permissions';
 import { useSaaSWorkspaces } from '../hooks';
 import { IWorkspace } from '../types';
@@ -19,7 +19,9 @@ const WorkspaceSettingsFeatures: React.FC<{ workspaceId: string }> = ({ workspac
   const successTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
 
   useEffect(() => {
-    return () => { if (successTimerRef.current) clearTimeout(successTimerRef.current); };
+    return () => {
+      if (successTimerRef.current) clearTimeout(successTimerRef.current);
+    };
   }, []);
 
   useEffect(() => {
@@ -35,7 +37,9 @@ const WorkspaceSettingsFeatures: React.FC<{ workspaceId: string }> = ({ workspac
       setWorkspace(data);
       const feature = allFeatures.find(f => f.slug === key);
       const featureName = feature?.name || 'Feature';
-      setSuccessMessage(t('features.updateSuccess', { feature: featureName, enabled: String(value) }));
+      setSuccessMessage(
+        t('features.updateSuccess', { feature: featureName, enabled: String(value) })
+      );
       if (successTimerRef.current) clearTimeout(successTimerRef.current);
       successTimerRef.current = setTimeout(() => {
         setSuccessMessage(null);
@@ -66,9 +70,7 @@ const WorkspaceSettingsFeatures: React.FC<{ workspaceId: string }> = ({ workspac
         </div>
       )}
       <div className="flex flex-col gap-y-3.5 pe-4">
-        {!canEditFeatures && (
-          <div className="text-red-500">{t('features.ownerOnly')}</div>
-        )}
+        {!canEditFeatures && <div className="text-red-500">{t('features.ownerOnly')}</div>}
         {!allFeatures.length && (
           <div className="text-muted-foreground">{t('features.noFeatures')}</div>
         )}
@@ -81,7 +83,8 @@ const WorkspaceSettingsFeatures: React.FC<{ workspaceId: string }> = ({ workspac
                 updatingFeatures[feature.slug] !== undefined;
               const targetValue = updatingFeatures[feature.slug];
               const actionText = t('features.actionStatus', {
-                action: targetValue === true ? 'enabling' : targetValue === false ? 'disabling' : 'none',
+                action:
+                  targetValue === true ? 'enabling' : targetValue === false ? 'disabling' : 'none',
               });
 
               return (

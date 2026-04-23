@@ -88,7 +88,8 @@ export const en: SDKMessages = {
     paymentPastDue: 'Payment past due',
     paymentPastDueDescription: 'Please update your payment method to avoid service interruption.',
     subscriptionPaused: 'Subscription paused',
-    subscriptionPausedDescription: 'Your subscription is currently paused. Resume to restore full access.',
+    subscriptionPausedDescription:
+      'Your subscription is currently paused. Resume to restore full access.',
     errorLoading: 'Error loading subscription data',
     errorLoadingDescription: 'Please check your connection and try again.',
     errorProcessing: 'Failed to process subscription',
@@ -144,7 +145,8 @@ export const en: SDKMessages = {
     noPlanAssigned: 'No plan assigned',
     free: 'Free',
     perSeatDisplay: '+ {price}/seat{interval}',
-    estTotalDisplay: 'Est. total: {total}{interval} ({count, plural, one {# extra seat} other {# extra seats}})',
+    estTotalDisplay:
+      'Est. total: {total}{interval} ({count, plural, one {# extra seat} other {# extra seats}})',
     nextBillingDisplay: 'Next billing: {date}',
     membersInWorkspace: '{count, plural, one {# member} other {# members}} in workspace',
     billingInCurrency: 'Billing in {currency}',
@@ -160,20 +162,27 @@ export const en: SDKMessages = {
     dunningFinal: 'Final warning: Subscription will be suspended',
     dunningSuspended: 'Subscription suspended',
     dunningRecovery: 'Payment recovery in progress',
-    dunningSuspendedDescription: 'Your subscription has been suspended due to repeated payment failures. Update your payment method to restore access.',
-    dunningRecoveryDescription: 'We were unable to process your payment. Please update your payment method to avoid losing access.',
+    dunningSuspendedDescription:
+      'Your subscription has been suspended due to repeated payment failures. Update your payment method to restore access.',
+    dunningRecoveryDescription:
+      'We were unable to process your payment. Please update your payment method to avoid losing access.',
     cancelEndDescription: 'Your subscription will end on',
     trialEndDescription: 'Your trial will end on',
-    cancelEndFallback: "Your subscription will be canceled at the end of the current billing period. You won't be charged again.",
+    cancelEndFallback:
+      "Your subscription will be canceled at the end of the current billing period. You won't be charged again.",
     resumeChargeDate: 'You will be charged again on',
     resumeChargeFallback: 'the next billing date',
-    resumeContinue: 'Your subscription will continue automatically and you\'ll be billed according to your plan',
-    resumeCancelAnytime: 'You can cancel anytime before the next billing date if you change your mind',
-    retainAccess: 'You\'ll retain full access to this plan until',
+    resumeContinue:
+      "Your subscription will continue automatically and you'll be billed according to your plan",
+    resumeCancelAnytime:
+      'You can cancel anytime before the next billing date if you change your mind',
+    retainAccess: "You'll retain full access to this plan until",
     retainAccessFallback: 'the end of your current billing period',
-    noPlansAvailable: 'No plan groups are available for this workspace. Please contact support if you believe this is an error.',
+    noPlansAvailable:
+      'No plan groups are available for this workspace. Please contact support if you believe this is an error.',
     noPlansAvailableHint: 'No plan groups are available for this workspace.',
-    startTrialDescription: 'Try the full plan with no commitment. You can upgrade or cancel anytime.',
+    startTrialDescription:
+      'Try the full plan with no commitment. You can upgrade or cancel anytime.',
     noSubscriptionDescription: 'Choose a plan to get started with your workspace',
     startFreeTrial: 'Start Free Trial',
     startTrialDays: 'Start {days}-day Free Trial',
@@ -195,7 +204,8 @@ export const en: SDKMessages = {
     you: 'You',
     owner: 'Owner',
     noMembers: 'No members found in this workspace.',
-    extraSeatCost: 'Each additional member adds {price}/{interval, select, yearly {yr} quarterly {qtr} other {mo}} to your subscription',
+    extraSeatCost:
+      'Each additional member adds {price}/{interval, select, yearly {yr} quarterly {qtr} other {mo}} to your subscription',
     unknownUser: 'Unknown User',
     seats: 'Seats',
     members: 'Members',
@@ -205,7 +215,8 @@ export const en: SDKMessages = {
     available: 'available',
     noMemberLimit: 'No member limit',
     seatHeading: '{hasSeatPricing, select, true {Seats} other {Members}}',
-    limitReached: '{reason, select, seat_limit_reached {Seat limit reached} other {Member limit reached}}',
+    limitReached:
+      '{reason, select, seat_limit_reached {Seat limit reached} other {Member limit reached}}',
     memberCount: '{count, plural, one {# member} other {# members}}',
     subscriptionRequired: 'A subscription is required to invite members.',
     seatLimitMessage: 'Your plan allows up to {maxUsers, number} members. Upgrade for more seats.',
@@ -255,7 +266,8 @@ export const en: SDKMessages = {
     percentUsed: '{percent, number}% used',
     availableRemaining: '{count} remaining',
     overLimitCount: '{count} over limit',
-    overageWarning: '{count, plural, one {# resource has exceeded the included quota.} other {# resources have exceeded the included quota.}} Additional usage will be billed as overage on your next invoice.',
+    overageWarning:
+      '{count, plural, one {# resource has exceeded the included quota.} other {# resources have exceeded the included quota.}} Additional usage will be billed as overage on your next invoice.',
     fullyUsed: 'Fully used',
     renewingSoon: 'renewing soon',
     almostFull: 'Almost full',
@@ -264,7 +276,8 @@ export const en: SDKMessages = {
     perUnit: '/ unit',
     perUnits: '/ units',
     rateDisplay: '{rate} {unitSize, plural, =1 {/ unit} other {/ {unitSize, number} units}}',
-    resourcesExceeded: '{count, plural, one {# resource has exceeded the included quota.} other {# resources have exceeded the included quota.}}',
+    resourcesExceeded:
+      '{count, plural, one {# resource has exceeded the included quota.} other {# resources have exceeded the included quota.}}',
     estOverageCharges: 'Estimated overage charges this period: {amount}',
     overageRateDisplay: 'Overage rate: {rate}',
     resetDateDisplay: 'Usage resets on {date}',
@@ -293,7 +306,8 @@ export const en: SDKMessages = {
     iconDescription: 'Choose an emoji or upload a custom image for your workspace.',
     imageUrl: 'Image URL',
     imageUrlPlaceholder: 'https://example.com/image.png',
-    imageUrlDescription: 'Enter a valid URL for your workspace image. Supports PNG, JPG, and SVG formats.',
+    imageUrlDescription:
+      'Enter a valid URL for your workspace image. Supports PNG, JPG, and SVG formats.',
     previewLabel: 'Preview:',
     success: 'Workspace settings saved successfully',
     chooseEmoji: 'Choose Emoji',
@@ -317,10 +331,13 @@ export const en: SDKMessages = {
     adminOnly: 'Only workspace admins can delete workspaces.',
     deleteWorkspace: 'Delete Workspace',
     deleteConfirm: 'Are you absolutely sure?',
-    deleteWarning: 'This action cannot be undone. This will permanently delete the workspace and all associated data.',
+    deleteWarning:
+      'This action cannot be undone. This will permanently delete the workspace and all associated data.',
     deleting: 'Deleting...',
-    deleteDescription: 'Once you delete a workspace, there is no going back. This will permanently delete the workspace and all of its data, including members, settings, and features.',
-    deleteConfirmDescription: 'This action cannot be undone. This will permanently delete the workspace and all of its data.',
+    deleteDescription:
+      'Once you delete a workspace, there is no going back. This will permanently delete the workspace and all of its data, including members, settings, and features.',
+    deleteConfirmDescription:
+      'This action cannot be undone. This will permanently delete the workspace and all of its data.',
     failedToDelete: 'Failed to delete workspace',
   },
   notifications: {
@@ -329,16 +346,20 @@ export const en: SDKMessages = {
     notSupported: 'Push notifications are not supported in this browser.',
     manageDescription: 'Manage how you receive notifications from this workspace.',
     blocked: 'Notifications Blocked',
-    blockedDescription: 'You previously blocked notifications for this site. To enable them, update your browser settings:',
+    blockedDescription:
+      'You previously blocked notifications for this site. To enable them, update your browser settings:',
     pushTitle: 'Push Notifications',
     pushEnabledDescription: 'You will receive browser notifications for important updates.',
-    pushDisabledDescription: 'Get notified about payment issues, trial expiry, and other important updates.',
+    pushDisabledDescription:
+      'Get notified about payment issues, trial expiry, and other important updates.',
     enabling: 'Enabling...',
     disabling: 'Disabling...',
     enable: 'Enable',
     disable: 'Disable',
-    toggleAction: '{loading, select, true {{subscribed, select, true {Disabling...} other {Enabling...}}} other {{subscribed, select, true {Disable} other {Enable}}}}',
-    pushDescription: '{subscribed, select, true {You will receive browser notifications for important updates.} other {Get notified about payment issues, trial expiry, and other important updates.}}',
+    toggleAction:
+      '{loading, select, true {{subscribed, select, true {Disabling...} other {Enabling...}}} other {{subscribed, select, true {Disable} other {Enable}}}}',
+    pushDescription:
+      '{subscribed, select, true {You will receive browser notifications for important updates.} other {Get notified about payment issues, trial expiry, and other important updates.}}',
     deviceNote: 'Notifications are sent to this device. Enable on other devices separately.',
     prefsSaved: 'Notification preferences saved.',
     loadingPrefs: 'Loading preferences...',
@@ -352,7 +373,7 @@ export const en: SDKMessages = {
       workspace_removed: 'Member Removed',
       workspace_removed_desc: 'When a member is removed from the workspace',
       workspace_role_changed: 'Role Changed',
-      workspace_role_changed_desc: 'When a member\'s role is updated',
+      workspace_role_changed_desc: "When a member's role is updated",
       subscription_created: 'Subscription Created',
       subscription_created_desc: 'When a new subscription is activated',
       subscription_upgraded: 'Plan Upgraded',
@@ -460,7 +481,8 @@ export const en: SDKMessages = {
     customImageUrl: 'Custom Image URL',
     imageUrl: 'Image URL',
     imageUrlPlaceholder: 'https://example.com/image.png',
-    imageUrlDescription: 'Enter a valid URL for your workspace image. Supports PNG, JPG, and SVG formats.',
+    imageUrlDescription:
+      'Enter a valid URL for your workspace image. Supports PNG, JPG, and SVG formats.',
     invalidUrl: 'Please enter a valid URL',
     creating: 'Creating...',
     createWorkspace: 'Create Workspace',

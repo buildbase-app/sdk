@@ -55,8 +55,8 @@ export function useTrialStatus(): TrialStatus {
     // Prefer trialEnd (explicitly set), fall back to stripeCurrentPeriodEnd
     // (during a Stripe trial, current_period_end equals the trial end date).
     // Use safeDate to prevent Invalid Date objects from breaking calculations.
-    const trialEndsAt = safeDate(subscription.trialEnd)
-      ?? safeDate(subscription.stripeCurrentPeriodEnd);
+    const trialEndsAt =
+      safeDate(subscription.trialEnd) ?? safeDate(subscription.stripeCurrentPeriodEnd);
 
     const trialStartedAt = safeDate(subscription.trialStart);
 

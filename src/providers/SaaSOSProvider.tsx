@@ -4,20 +4,20 @@ import React, { useEffect } from 'react';
 import { SDKErrorBoundary } from '../components/ErrorBoundary';
 import { SDKContextProvider } from '../contexts';
 
+import { PermissionConfigProvider } from '../contexts/PermissionContext';
 import { QuotaUsageContextProvider } from '../contexts/QuotaUsageContext';
 import { SubscriptionContextProvider } from '../contexts/SubscriptionContext';
-import { PushNotificationProvider } from './push/PushNotificationContext';
+import type { SDKLocale } from '../i18n';
+import { TranslationProvider } from '../i18n';
 import '../styles/globals.css';
 import { AuthProviderWrapper } from './auth/provider';
 import { ContextConfigProvider } from './ContextConfigProvider';
 import { eventEmitter } from './events';
 import { ApiVersion, IOsState } from './os/types';
 import PortalProvider from './PortalContainer';
+import { PushNotificationProvider } from './push/PushNotificationContext';
 import { UserProvider } from './user/provider';
 import { WorkspaceSettingsProvider } from './workspace/WorkspaceSettingsProvider';
-import { TranslationProvider } from '../i18n';
-import type { SDKLocale } from '../i18n';
-import { PermissionConfigProvider } from '../contexts/PermissionContext';
 
 export interface SaaSOSProviderProps extends IOsState {
   children: React.ReactNode;

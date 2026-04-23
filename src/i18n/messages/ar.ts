@@ -144,15 +144,18 @@ export const ar: SDKMessages = {
     noPlanAssigned: 'لم يتم تعيين خطة',
     free: 'مجاني',
     perSeatDisplay: '+ {price}/مقعد{interval}',
-    estTotalDisplay: 'الإجمالي التقديري: {total}{interval} ({count, plural, zero {بدون مقاعد إضافية} one {مقعد إضافي واحد} two {مقعدان إضافيان} few {# مقاعد إضافية} many {# مقعداً إضافياً} other {# مقعد إضافي}})',
+    estTotalDisplay:
+      'الإجمالي التقديري: {total}{interval} ({count, plural, zero {بدون مقاعد إضافية} one {مقعد إضافي واحد} two {مقعدان إضافيان} few {# مقاعد إضافية} many {# مقعداً إضافياً} other {# مقعد إضافي}})',
     nextBillingDisplay: 'الفوترة التالية: {date}',
-    membersInWorkspace: '{count, plural, zero {لا أعضاء} one {عضو واحد} two {عضوان} few {# أعضاء} many {# عضواً} other {# عضو}} في مساحة العمل',
+    membersInWorkspace:
+      '{count, plural, zero {لا أعضاء} one {عضو واحد} two {عضوان} few {# أعضاء} many {# عضواً} other {# عضو}} في مساحة العمل',
     billingInCurrency: 'الفوترة بـ {currency}',
     savingsPercent: 'وفّر {percent, number}%',
     switchToInterval: 'التبديل إلى {interval}',
     seatPriceDisplay: '+ {price}/مقعد{interval} ({included} {includedLabel})',
     trialEnded: 'انتهت فترتك التجريبية.',
-    trialEndsIn: 'تنتهي فترتك التجريبية خلال {days, plural, zero {اليوم} one {يوم واحد} two {يومين} few {# أيام} many {# يوماً} other {# يوم}}.',
+    trialEndsIn:
+      'تنتهي فترتك التجريبية خلال {days, plural, zero {اليوم} one {يوم واحد} two {يومين} few {# أيام} many {# يوماً} other {# يوم}}.',
     onTrial: 'أنت في فترة تجريبية.',
     upgradeToKeepAccess: 'قم بالترقية للحفاظ على الوصول.',
     viewInvoices: 'عرض الفواتير',
@@ -160,18 +163,22 @@ export const ar: SDKMessages = {
     dunningFinal: 'تحذير أخير: سيتم تعليق الاشتراك',
     dunningSuspended: 'الاشتراك معلق',
     dunningRecovery: 'جارٍ استرداد الدفع',
-    dunningSuspendedDescription: 'تم تعليق اشتراكك بسبب فشل الدفع المتكرر. حدّث طريقة الدفع لاستعادة الوصول.',
-    dunningRecoveryDescription: 'لم نتمكن من معالجة دفعتك. يرجى تحديث طريقة الدفع لتجنب فقدان الوصول.',
+    dunningSuspendedDescription:
+      'تم تعليق اشتراكك بسبب فشل الدفع المتكرر. حدّث طريقة الدفع لاستعادة الوصول.',
+    dunningRecoveryDescription:
+      'لم نتمكن من معالجة دفعتك. يرجى تحديث طريقة الدفع لتجنب فقدان الوصول.',
     cancelEndDescription: 'سينتهي اشتراكك في',
     trialEndDescription: 'ستنتهي فترتك التجريبية في',
-    cancelEndFallback: 'سيتم إلغاء اشتراكك في نهاية فترة الفوترة الحالية. لن يتم تحصيل رسوم منك مرة أخرى.',
+    cancelEndFallback:
+      'سيتم إلغاء اشتراكك في نهاية فترة الفوترة الحالية. لن يتم تحصيل رسوم منك مرة أخرى.',
     resumeChargeDate: 'سيتم تحصيل الرسوم منك مرة أخرى في',
     resumeChargeFallback: 'تاريخ الفوترة التالي',
     resumeContinue: 'سيستمر اشتراكك تلقائياً وسيتم فوترتك وفقاً لخطتك',
     resumeCancelAnytime: 'يمكنك الإلغاء في أي وقت قبل تاريخ الفوترة التالي إذا غيرت رأيك',
     retainAccess: 'ستحتفظ بالوصول الكامل إلى هذه الخطة حتى',
     retainAccessFallback: 'نهاية فترة الفوترة الحالية',
-    noPlansAvailable: 'لا توجد مجموعات خطط متاحة لمساحة العمل هذه. يرجى الاتصال بالدعم إذا كنت تعتقد أن هذا خطأ.',
+    noPlansAvailable:
+      'لا توجد مجموعات خطط متاحة لمساحة العمل هذه. يرجى الاتصال بالدعم إذا كنت تعتقد أن هذا خطأ.',
     noPlansAvailableHint: 'لا توجد مجموعات خطط متاحة لمساحة العمل هذه.',
     startTrialDescription: 'جرب الخطة الكاملة بدون التزام. يمكنك الترقية أو الإلغاء في أي وقت.',
     noSubscriptionDescription: 'اختر خطة للبدء مع مساحة العمل الخاصة بك',
@@ -195,7 +202,8 @@ export const ar: SDKMessages = {
     you: 'أنت',
     owner: 'المالك',
     noMembers: 'لم يتم العثور على أعضاء في مساحة العمل هذه.',
-    extraSeatCost: 'كل عضو إضافي يضيف {price}/{interval, select, yearly {سنة} quarterly {ربع سنة} other {شهر}} لاشتراكك',
+    extraSeatCost:
+      'كل عضو إضافي يضيف {price}/{interval, select, yearly {سنة} quarterly {ربع سنة} other {شهر}} لاشتراكك',
     unknownUser: 'مستخدم غير معروف',
     seats: 'المقاعد',
     members: 'الأعضاء',
@@ -205,11 +213,15 @@ export const ar: SDKMessages = {
     available: 'متاح',
     noMemberLimit: 'لا حد للأعضاء',
     seatHeading: '{hasSeatPricing, select, true {المقاعد} other {الأعضاء}}',
-    limitReached: '{reason, select, seat_limit_reached {تم الوصول لحد المقاعد} other {تم الوصول لحد الأعضاء}}',
-    memberCount: '{count, plural, zero {لا أعضاء} one {عضو واحد} two {عضوان} few {# أعضاء} many {# عضواً} other {# عضو}}',
+    limitReached:
+      '{reason, select, seat_limit_reached {تم الوصول لحد المقاعد} other {تم الوصول لحد الأعضاء}}',
+    memberCount:
+      '{count, plural, zero {لا أعضاء} one {عضو واحد} two {عضوان} few {# أعضاء} many {# عضواً} other {# عضو}}',
     subscriptionRequired: 'الاشتراك مطلوب لدعوة الأعضاء.',
-    seatLimitMessage: 'خطتك تسمح بحد أقصى {maxUsers, number} {maxUsers, plural, zero {أعضاء} one {عضو} two {عضوين} few {أعضاء} many {عضواً} other {عضو}}. قم بالترقية للحصول على مقاعد إضافية.',
-    settingsLimitMessage: 'مساحة العمل هذه تسمح بحد أقصى {maxUsers, number} {maxUsers, plural, zero {أعضاء} one {عضو} two {عضوين} few {أعضاء} many {عضواً} other {عضو}}.',
+    seatLimitMessage:
+      'خطتك تسمح بحد أقصى {maxUsers, number} {maxUsers, plural, zero {أعضاء} one {عضو} two {عضوين} few {أعضاء} many {عضواً} other {عضو}}. قم بالترقية للحصول على مقاعد إضافية.',
+    settingsLimitMessage:
+      'مساحة العمل هذه تسمح بحد أقصى {maxUsers, number} {maxUsers, plural, zero {أعضاء} one {عضو} two {عضوين} few {أعضاء} many {عضواً} other {عضو}}.',
     memberLimitMessage: 'تم الوصول لحد الأعضاء: {maxUsers, number}.',
     selectRole: 'اختر دوراً',
     inviteAs: 'دعوة كـ {role}',
@@ -255,7 +267,8 @@ export const ar: SDKMessages = {
     percentUsed: '{percent, number}% مستخدم',
     availableRemaining: '{count} متبقٍ',
     overLimitCount: '{count} فوق الحد',
-    overageWarning: '{count, plural, zero {لم تتجاوز أي موارد الحصة المشمولة.} one {مورد واحد تجاوز الحصة المشمولة.} two {مورداً تجاوزا الحصة المشمولة.} few {# موارد تجاوزت الحصة المشمولة.} many {# مورداً تجاوز الحصة المشمولة.} other {# مورد تجاوز الحصة المشمولة.}} سيتم فوترة الاستخدام الإضافي كتجاوز في فاتورتك التالية.',
+    overageWarning:
+      '{count, plural, zero {لم تتجاوز أي موارد الحصة المشمولة.} one {مورد واحد تجاوز الحصة المشمولة.} two {مورداً تجاوزا الحصة المشمولة.} few {# موارد تجاوزت الحصة المشمولة.} many {# مورداً تجاوز الحصة المشمولة.} other {# مورد تجاوز الحصة المشمولة.}} سيتم فوترة الاستخدام الإضافي كتجاوز في فاتورتك التالية.',
     fullyUsed: 'مستخدم بالكامل',
     renewingSoon: 'يتجدد قريباً',
     almostFull: 'ممتلئ تقريباً',
@@ -264,11 +277,13 @@ export const ar: SDKMessages = {
     perUnit: '/ وحدة',
     perUnits: '/ وحدات',
     rateDisplay: '{rate} {unitSize, plural, =1 {/ وحدة} other {/ {unitSize, number} وحدة}}',
-    resourcesExceeded: '{count, plural, zero {لم تتجاوز أي موارد الحصة المشمولة.} one {مورد واحد تجاوز الحصة المشمولة.} two {مورداً تجاوزا الحصة المشمولة.} few {# موارد تجاوزت الحصة المشمولة.} many {# مورداً تجاوز الحصة المشمولة.} other {# مورد تجاوز الحصة المشمولة.}}',
+    resourcesExceeded:
+      '{count, plural, zero {لم تتجاوز أي موارد الحصة المشمولة.} one {مورد واحد تجاوز الحصة المشمولة.} two {مورداً تجاوزا الحصة المشمولة.} few {# موارد تجاوزت الحصة المشمولة.} many {# مورداً تجاوز الحصة المشمولة.} other {# مورد تجاوز الحصة المشمولة.}}',
     estOverageCharges: 'الرسوم التقديرية للتجاوز في هذه الفترة: {amount}',
     overageRateDisplay: 'معدل التجاوز: {rate}',
     resetDateDisplay: 'يتم إعادة تعيين الاستخدام في {date}',
-    daysRemainingDisplay: '{count, plural, zero {اليوم} one {يوم واحد متبقٍ} two {يومان متبقيان} few {# أيام متبقية} many {# يوماً متبقياً} other {# يوم متبقٍ}}',
+    daysRemainingDisplay:
+      '{count, plural, zero {اليوم} one {يوم واحد متبقٍ} two {يومان متبقيان} few {# أيام متبقية} many {# يوماً متبقياً} other {# يوم متبقٍ}}',
   },
   profile: {
     email: 'البريد الإلكتروني',
@@ -317,10 +332,13 @@ export const ar: SDKMessages = {
     adminOnly: 'فقط مديرو مساحة العمل يمكنهم حذف مساحات العمل.',
     deleteWorkspace: 'حذف مساحة العمل',
     deleteConfirm: 'هل أنت متأكد تماماً؟',
-    deleteWarning: 'لا يمكن التراجع عن هذا الإجراء. سيتم حذف مساحة العمل وجميع البيانات المرتبطة نهائياً.',
+    deleteWarning:
+      'لا يمكن التراجع عن هذا الإجراء. سيتم حذف مساحة العمل وجميع البيانات المرتبطة نهائياً.',
     deleting: 'جارٍ الحذف...',
-    deleteDescription: 'بمجرد حذف مساحة العمل لا يمكن العودة. سيتم حذف مساحة العمل وجميع بياناتها نهائياً، بما في ذلك الأعضاء والإعدادات والميزات.',
-    deleteConfirmDescription: 'لا يمكن التراجع عن هذا الإجراء. سيتم حذف مساحة العمل وجميع بياناتها نهائياً.',
+    deleteDescription:
+      'بمجرد حذف مساحة العمل لا يمكن العودة. سيتم حذف مساحة العمل وجميع بياناتها نهائياً، بما في ذلك الأعضاء والإعدادات والميزات.',
+    deleteConfirmDescription:
+      'لا يمكن التراجع عن هذا الإجراء. سيتم حذف مساحة العمل وجميع بياناتها نهائياً.',
     failedToDelete: 'فشل في حذف مساحة العمل',
   },
   notifications: {
@@ -332,13 +350,16 @@ export const ar: SDKMessages = {
     blockedDescription: 'لقد حظرت الإشعارات لهذا الموقع سابقاً. لتفعيلها، حدّث إعدادات متصفحك:',
     pushTitle: 'الإشعارات الفورية',
     pushEnabledDescription: 'ستتلقى إشعارات المتصفح للتحديثات المهمة.',
-    pushDisabledDescription: 'احصل على إشعارات حول مشاكل الدفع وانتهاء التجربة والتحديثات المهمة الأخرى.',
+    pushDisabledDescription:
+      'احصل على إشعارات حول مشاكل الدفع وانتهاء التجربة والتحديثات المهمة الأخرى.',
     enabling: 'جارٍ التفعيل...',
     disabling: 'جارٍ التعطيل...',
     enable: 'تفعيل',
     disable: 'تعطيل',
-    toggleAction: '{loading, select, true {{subscribed, select, true {جارٍ التعطيل...} other {جارٍ التفعيل...}}} other {{subscribed, select, true {تعطيل} other {تفعيل}}}}',
-    pushDescription: '{subscribed, select, true {ستتلقى إشعارات المتصفح للتحديثات المهمة.} other {احصل على إشعارات حول مشاكل الدفع وانتهاء التجربة والتحديثات المهمة الأخرى.}}',
+    toggleAction:
+      '{loading, select, true {{subscribed, select, true {جارٍ التعطيل...} other {جارٍ التفعيل...}}} other {{subscribed, select, true {تعطيل} other {تفعيل}}}}',
+    pushDescription:
+      '{subscribed, select, true {ستتلقى إشعارات المتصفح للتحديثات المهمة.} other {احصل على إشعارات حول مشاكل الدفع وانتهاء التجربة والتحديثات المهمة الأخرى.}}',
     deviceNote: 'يتم إرسال الإشعارات إلى هذا الجهاز. فعّلها على الأجهزة الأخرى بشكل منفصل.',
     prefsSaved: 'Notification preferences saved.',
     loadingPrefs: 'Loading preferences...',
@@ -352,7 +373,7 @@ export const ar: SDKMessages = {
       workspace_removed: 'Member Removed',
       workspace_removed_desc: 'When a member is removed from the workspace',
       workspace_role_changed: 'Role Changed',
-      workspace_role_changed_desc: 'When a member\'s role is updated',
+      workspace_role_changed_desc: "When a member's role is updated",
       subscription_created: 'Subscription Created',
       subscription_created_desc: 'When a new subscription is activated',
       subscription_upgraded: 'Plan Upgraded',
@@ -444,7 +465,8 @@ export const ar: SDKMessages = {
     noWorkspacesFound: 'لم يتم العثور على مساحات عمل',
     noWorkspacesAvailable: 'لا تتوفر مساحات عمل',
     switchTo: 'التبديل إلى',
-    membersCount: '{count, plural, zero {لا أعضاء} one {عضو واحد} two {عضوان} few {# أعضاء} many {# عضواً} other {# عضو}}',
+    membersCount:
+      '{count, plural, zero {لا أعضاء} one {عضو واحد} two {عضوان} few {# أعضاء} many {# عضواً} other {# عضو}}',
     createNew: 'إنشاء مساحة عمل جديدة',
     createTitle: 'إنشاء مساحة عمل جديدة',
     createDescription: 'أنشئ مساحة عمل جديدة للبدء.',

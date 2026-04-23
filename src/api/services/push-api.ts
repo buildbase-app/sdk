@@ -29,5 +29,4 @@ export class PushApi extends BaseApi {
       body: JSON.stringify({ endpoint }),
     });
   }
-
 }

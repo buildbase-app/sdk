@@ -1,9 +1,8 @@
 import { Download, ExternalLink, FileText } from 'lucide-react';
-import { useTranslation, type TranslationKey } from '../../../i18n';
-import { InvoiceStatuses } from '../../../api/types';
 import React from 'react';
-import { IInvoice } from '../../../api/types';
+import { IInvoice, InvoiceStatuses } from '../../../api/types';
 import { Button } from '../../../components/ui/button';
+import { useTranslation, type TranslationKey } from '../../../i18n';
 import { useInvoices } from '../subscription-hooks';
 import SettingSkeleton from './Skeleton';
 
@@ -132,9 +131,7 @@ const SettingsInvoices: React.FC<SettingsInvoicesProps> = ({
         <div className="border rounded-lg p-6 text-center">
           <FileText className="h-12 w-12 mx-auto text-gray-400 mb-3" />
           <p className="text-sm text-gray-500">
-            {hasActiveSubscription
-              ? t('invoices.noInvoicesWithSub')
-              : t('invoices.noInvoices')}
+            {hasActiveSubscription ? t('invoices.noInvoicesWithSub') : t('invoices.noInvoices')}
           </p>
           {!hasActiveSubscription && onViewPricingPlans && (
             <Button size="sm" className="mt-4" onClick={onViewPricingPlans}>
@@ -178,7 +175,13 @@ const SettingsInvoices: React.FC<SettingsInvoicesProps> = ({
                   )}
                   {invoice.amount_paid > 0 && invoice.amount_due > 0 && (
                     <span className="text-xs text-gray-500">
-                      {t('invoices.paidAmount', { amount: formatCurrency(invoice.amount_paid, invoice.currency, formattingLocale) })}
+                      {t('invoices.paidAmount', {
+                        amount: formatCurrency(
+                          invoice.amount_paid,
+                          invoice.currency,
+                          formattingLocale
+                        ),
+                      })}
                     </span>
                   )}
                 </div>

@@ -41,30 +41,35 @@
  * ```
  */
 
+import { PushApi, SettingsApi, UserApi, WorkspaceApi } from '../api/services';
 import type {
+  ApiVersion,
+  ISettings,
+  IWorkspace,
+  IWorkspaceFeature,
+  IWorkspaceUser,
+} from '../api/services/shared-types';
+import type {
+  CheckoutResult,
+  IAllQuotaUsageResponse,
   ICheckoutSessionRequest,
+  ICheckoutSessionResponse,
+  IInvoiceListResponse,
+  IInvoiceResponse,
+  IPlanGroupResponse,
+  IPlanGroupVersion,
+  IPlanGroupVersionsResponse,
+  IPublicPlansResponse,
+  IQuotaUsageStatusResponse,
+  IRecordUsageRequest,
+  IRecordUsageResponse,
   ISubscriptionResponse,
   ISubscriptionUpdateRequest,
   ISubscriptionUpdateResponse,
-  IPlanGroupResponse,
-  IPlanGroupVersionsResponse,
-  IInvoiceListResponse,
-  IInvoiceResponse,
-  IRecordUsageRequest,
-  IRecordUsageResponse,
-  IQuotaUsageStatusResponse,
-  IAllQuotaUsageResponse,
   IUsageLogsQuery,
   IUsageLogsResponse,
   IUser,
-  CheckoutResult,
-  ICheckoutSessionResponse,
-  IPublicPlansResponse,
-  IPlanGroupVersion,
 } from '../api/types';
-import type { IWorkspace, IWorkspaceUser, IWorkspaceFeature, IOsConfig, ISettings } from '../api/services/shared-types';
-import type { ApiVersion } from '../api/services/shared-types';
-import { WorkspaceApi, UserApi, SettingsApi, PushApi } from '../api/services';
 import { hasPermission, resolvePermissions } from './permissions';
 
 // ─── Config ────────────────────────────────────────────────────────────────────
@@ -173,17 +178,34 @@ export interface WorkspaceActions {
 
 export interface UserActions {
   list(workspaceId: string): Promise<IWorkspaceUser[]>;
-  invite(workspaceId: string, email: string, role: string): Promise<{ userId: string; workspace: IWorkspace; message: string }>;
-  remove(workspaceId: string, userId: string): Promise<{ userId: string; workspace: IWorkspace; message: string }>;
-  updateRole(workspaceId: string, userId: string, role: string): Promise<{ userId: string; workspace: IWorkspace; message: string }>;
+  invite(
+    workspaceId: string,
+    email: string,
+    role: string
+  ): Promise<{ userId: string; workspace: IWorkspace; message: string }>;
+  remove(
+    workspaceId: string,
+    userId: string
+  ): Promise<{ userId: string; workspace: IWorkspace; message: string }>;
+  updateRole(
+    workspaceId: string,
+    userId: string,
+    role: string
+  ): Promise<{ userId: string; workspace: IWorkspace; message: string }>;
   getProfile(): Promise<IUser>;
   updateProfile(data: Partial<IUser>): Promise<IUser>;
 }
 
 export interface SubscriptionActions {
   get(workspaceId: string): Promise<ISubscriptionResponse>;
-  checkout(workspaceId: string, request: ICheckoutSessionRequest): Promise<CheckoutResult | ICheckoutSessionResponse>;
-  update(workspaceId: string, request: ISubscriptionUpdateRequest): Promise<ISubscriptionUpdateResponse | ICheckoutSessionResponse>;
+  checkout(
+    workspaceId: string,
+    request: ICheckoutSessionRequest
+  ): Promise<CheckoutResult | ICheckoutSessionResponse>;
+  update(
+    workspaceId: string,
+    request: ISubscriptionUpdateRequest
+  ): Promise<ISubscriptionUpdateResponse | ICheckoutSessionResponse>;
   cancel(workspaceId: string): Promise<ISubscriptionResponse>;
   resume(workspaceId: string): Promise<ISubscriptionResponse>;
   getBillingPortalUrl(workspaceId: string, returnUrl?: string): Promise<{ url: string }>;
@@ -390,39 +412,42 @@ export default function BuildBase(config: BuildBaseConfig): BuildBaseResult {
   const buildActions = (getApi: () => Promise<ReturnType<typeof forSession>>): ScopedActions => ({
     workspace: {
       list: async () => (await getApi()).workspace.getWorkspaces(),
-      get: async (wid) => (await getApi()).workspace.getWorkspace(wid),
-      create: async (data) => (await getApi()).workspace.createWorkspace(data),
+      get: async wid => (await getApi()).workspace.getWorkspace(wid),
+      create: async data => (await getApi()).workspace.createWorkspace(data),
       update: async (wid, data) => (await getApi()).workspace.updateWorkspace(wid, data),
-      delete: async (wid) => (await getApi()).workspace.deleteWorkspace(wid),
+      delete: async wid => (await getApi()).workspace.deleteWorkspace(wid),
     },
 
     users: {
-      list: async (wid) => (await getApi()).workspace.getWorkspaceUsers(wid),
+      list: async wid => (await getApi()).workspace.getWorkspaceUsers(wid),
       invite: async (wid, email, role) => (await getApi()).workspace.addUser(wid, { email, role }),
       remove: async (wid, uid) => (await getApi()).workspace.removeUser(wid, uid),
-      updateRole: async (wid, uid, role) => (await getApi()).workspace.updateUser(wid, uid, { role }),
+      updateRole: async (wid, uid, role) =>
+        (await getApi()).workspace.updateUser(wid, uid, { role }),
       getProfile: async () => (await getApi()).workspace.getProfile(),
-      updateProfile: async (data) => (await getApi()).workspace.updateUserProfile(data),
+      updateProfile: async data => (await getApi()).workspace.updateUserProfile(data),
     },
 
     subscription: {
-      get: async (wid) => (await getApi()).workspace.getCurrentSubscription(wid),
+      get: async wid => (await getApi()).workspace.getCurrentSubscription(wid),
       checkout: async (wid, req) => (await getApi()).workspace.createCheckoutSession(wid, req),
       update: async (wid, req) => (await getApi()).workspace.updateSubscription(wid, req),
-      cancel: async (wid) => (await getApi()).workspace.cancelSubscriptionAtPeriodEnd(wid),
-      resume: async (wid) => (await getApi()).workspace.resumeSubscription(wid),
-      getBillingPortalUrl: async (wid, returnUrl?) => (await getApi()).workspace.createBillingPortalSession(wid, returnUrl),
+      cancel: async wid => (await getApi()).workspace.cancelSubscriptionAtPeriodEnd(wid),
+      resume: async wid => (await getApi()).workspace.resumeSubscription(wid),
+      getBillingPortalUrl: async (wid, returnUrl?) =>
+        (await getApi()).workspace.createBillingPortalSession(wid, returnUrl),
     },
 
     plans: {
-      getGroup: async (wid) => (await getApi()).workspace.getPlanGroup(wid),
-      getVersions: async (wid) => (await getApi()).workspace.getPlanGroupVersions(wid),
-      getPublic: (slug) => publicApi.getPublicPlans(slug),
-      getVersion: (gvid) => publicApi.getPlanGroupVersion(gvid),
+      getGroup: async wid => (await getApi()).workspace.getPlanGroup(wid),
+      getVersions: async wid => (await getApi()).workspace.getPlanGroupVersions(wid),
+      getPublic: slug => publicApi.getPublicPlans(slug),
+      getVersion: gvid => publicApi.getPlanGroupVersion(gvid),
     },
 
     invoices: {
-      list: async (wid, limit?, startingAfter?) => (await getApi()).workspace.listInvoices(wid, limit, startingAfter),
+      list: async (wid, limit?, startingAfter?) =>
+        (await getApi()).workspace.listInvoices(wid, limit, startingAfter),
       get: async (wid, invoiceId) => (await getApi()).workspace.getInvoice(wid, invoiceId),
     },
 
@@ -431,7 +456,7 @@ export default function BuildBase(config: BuildBaseConfig): BuildBaseResult {
       /** Record multiple usage entries in one request. Max 100 items. For bulk operations. */
       recordBatch: async (wid, req) => (await getApi()).workspace.recordUsageBatch(wid, req),
       getQuota: async (wid, slug) => (await getApi()).workspace.getQuotaUsageStatus(wid, slug),
-      getAll: async (wid) => (await getApi()).workspace.getAllQuotaUsage(wid),
+      getAll: async wid => (await getApi()).workspace.getAllQuotaUsage(wid),
       getLogs: async (wid, query?) => (await getApi()).workspace.getUsageLogs(wid, query),
     },
 
@@ -445,7 +470,8 @@ export default function BuildBase(config: BuildBaseConfig): BuildBaseResult {
     },
 
     notification: {
-      send: async (wid, event, uid, data?) => (await getApi()).workspace.sendNotification(wid, event, uid, data),
+      send: async (wid, event, uid, data?) =>
+        (await getApi()).workspace.sendNotification(wid, event, uid, data),
     },
 
     permissions: {
@@ -493,7 +519,7 @@ export default function BuildBase(config: BuildBaseConfig): BuildBaseResult {
     if (!getSessionIdFn) {
       throw new Error(
         'BuildBase: getSessionId callback is required for authenticated calls. ' +
-        'Pass it in BuildBase({ getSessionId: ... }) or use withSession(id) / client.forSession(id).'
+          'Pass it in BuildBase({ getSessionId: ... }) or use withSession(id) / client.forSession(id).'
       );
     }
     const sessionId = await getSessionIdFn();

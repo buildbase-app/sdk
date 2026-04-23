@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState } from 'react';
 import {
   BillingInterval,
   CheckoutResult,
-  IAllQuotaUsageResponse,
   ICheckoutSessionRequest,
   ICheckoutSessionResponse,
   IInvoice,
@@ -19,19 +18,22 @@ import {
   ISubscriptionUpdateResponse,
   IUsageLogEntry,
   IUsageLogsQuery,
-  IUsageLogsResponse,
 } from '../../api/types';
 import { invalidateQuotaUsage } from '../../contexts/QuotaUsageContext/quotaUsageInvalidation';
 import { invalidateSubscription } from '../../contexts/SubscriptionContext/subscriptionInvalidation';
 import { useTranslation, type TranslationKey } from '../../i18n';
 import { handleError } from '../../lib/error-handler';
-
-/** Extract error message from catch block, falling back to a translated key */
-function getErrorMessage(err: unknown, fallbackKey: string, t: (key: TranslationKey) => string): string {
-  return err instanceof Error ? err.message : t(fallbackKey as TranslationKey);
-}
 import { isOsConfigReady } from '../os/types';
 import { useWorkspaceApiWithOs } from './use-workspace-api';
+
+/** Extract error message from catch block, falling back to a translated key */
+function getErrorMessage(
+  err: unknown,
+  fallbackKey: string,
+  t: (key: TranslationKey) => string
+): string {
+  return err instanceof Error ? err.message : t(fallbackKey as TranslationKey);
+}
 
 /**
  * Hook to get public plans by slug (no auth required).
@@ -1446,4 +1448,3 @@ export const useUsageLogs = (
     refetch: fetchLogs,
   };
 };
-

@@ -70,17 +70,17 @@ npm install @buildbase/sdk react@^19.0.0 react-dom@^19.0.0
 
 ```tsx
 // app/layout.tsx (or your root layout)
-import '@buildbase/sdk/css'
+import '@buildbase/sdk/css';
 ```
 
 ### 2. Create Provider
 
 ```tsx
 // components/provider.tsx
-'use client'
+'use client';
 
-import { SaaSOSProvider } from '@buildbase/sdk/react'
-import { ApiVersion } from '@buildbase/sdk'
+import { SaaSOSProvider } from '@buildbase/sdk/react';
+import { ApiVersion } from '@buildbase/sdk';
 
 export default function SaaSProvider({ children }: { children: React.ReactNode }) {
   return (
@@ -94,40 +94,40 @@ export default function SaaSProvider({ children }: { children: React.ReactNode }
         callbacks: {
           // Called on page refresh to restore session from httpOnly cookie
           getSession: async () => {
-            const res = await fetch('/api/auth/session')
-            const data = await res.json()
-            return data.sessionId ?? null
+            const res = await fetch('/api/auth/session');
+            const data = await res.json();
+            return data.sessionId ?? null;
           },
 
           // Called after OAuth redirect to exchange code for sessionId
-          handleAuthentication: async (code) => {
+          handleAuthentication: async code => {
             const res = await fetch('/api/auth/verify', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ code }),
-            })
-            const data = await res.json()
-            return { sessionId: data.sessionId }
+            });
+            const data = await res.json();
+            return { sessionId: data.sessionId };
           },
 
           // Called on sign out to clear the httpOnly cookie
           onSignOut: async () => {
-            await fetch('/api/auth/signout', { method: 'POST' })
-            window.location.reload()
+            await fetch('/api/auth/signout', { method: 'POST' });
+            window.location.reload();
           },
 
           handleEvent: (eventType, data) => {
-            console.log('SDK Event:', eventType, data)
+            console.log('SDK Event:', eventType, data);
           },
           onWorkspaceChange: async ({ workspace, user, role }) => {
-            console.log('Switching to:', workspace.name, 'as', role)
+            console.log('Switching to:', workspace.name, 'as', role);
           },
         },
       }}
     >
       {children}
     </SaaSOSProvider>
-  )
+  );
 }
 ```
 
@@ -141,8 +141,8 @@ The SDK uses the same session pattern as next-auth: the session token lives in a
 
 ```tsx
 // app/layout.tsx
-import SaaSProvider from '@/components/provider'
-import '@buildbase/sdk/css'
+import SaaSProvider from '@/components/provider';
+import '@buildbase/sdk/css';
 
 export default function RootLayout({ children }) {
   return (
@@ -151,7 +151,7 @@ export default function RootLayout({ children }) {
         <SaaSProvider>{children}</SaaSProvider>
       </body>
     </html>
-  )
+  );
 }
 ```
 
@@ -253,13 +253,13 @@ const {
 Open the workspace settings dialog to a specific section:
 
 ```tsx
-openWorkspaceSettings('profile');      // Account profile
-openWorkspaceSettings('general');      // Workspace name, icon
-openWorkspaceSettings('users');        // Workspace members
+openWorkspaceSettings('profile'); // Account profile
+openWorkspaceSettings('general'); // Workspace name, icon
+openWorkspaceSettings('users'); // Workspace members
 openWorkspaceSettings('subscription'); // Plan & Billing
-openWorkspaceSettings('usage');        // Quota usage dashboard
-openWorkspaceSettings('features');     // Feature toggles
-openWorkspaceSettings('danger');       // Delete workspace (owner only)
+openWorkspaceSettings('usage'); // Quota usage dashboard
+openWorkspaceSettings('features'); // Feature toggles
+openWorkspaceSettings('danger'); // Delete workspace (owner only)
 ```
 
 ### Authentication Components
@@ -324,11 +324,11 @@ createCheckoutSession({
 });
 ```
 
-| Field                  | Stripe mapping                    | Use case                        |
-| ---------------------- | --------------------------------- | ------------------------------- |
-| `clientReferenceId`    | `client_reference_id`             | Rewardful, FirstPromoter, etc.  |
-| `metadata`             | `metadata` (checkout session)     | Custom tracking, Endorsely      |
-| `subscriptionMetadata` | `subscription_data.metadata`      | Data that persists on the subscription |
+| Field                  | Stripe mapping                | Use case                               |
+| ---------------------- | ----------------------------- | -------------------------------------- |
+| `clientReferenceId`    | `client_reference_id`         | Rewardful, FirstPromoter, etc.         |
+| `metadata`             | `metadata` (checkout session) | Custom tracking, Endorsely             |
+| `subscriptionMetadata` | `subscription_data.metadata`  | Data that persists on the subscription |
 
 ## 👥 Role-Based Access Control
 
@@ -423,7 +423,11 @@ Control UI visibility based on the current workspace’s subscription. Subscript
 ### Subscription Gate Components
 
 ```tsx
-import { WhenSubscription, WhenNoSubscription, WhenSubscriptionToPlans } from '@buildbase/sdk/react';
+import {
+  WhenSubscription,
+  WhenNoSubscription,
+  WhenSubscriptionToPlans,
+} from '@buildbase/sdk/react';
 
 function BillingExample() {
   return (
@@ -538,10 +542,10 @@ function TrialExample() {
 }
 ```
 
-| Component         | Renders when                                             |
-| ----------------- | -------------------------------------------------------- |
-| `WhenTrialing`    | Subscription status is `trialing`                        |
-| `WhenNotTrialing` | Subscription status is NOT `trialing`                    |
+| Component         | Renders when                                                    |
+| ----------------- | --------------------------------------------------------------- |
+| `WhenTrialing`    | Subscription status is `trialing`                               |
+| `WhenNotTrialing` | Subscription status is NOT `trialing`                           |
 | `WhenTrialEnding` | Trialing AND trial ends within `daysThreshold` days (default 3) |
 
 All trial gates support `loadingComponent` and `fallbackComponent` props.
@@ -567,13 +571,13 @@ function TrialInfo() {
 }
 ```
 
-| Property        | Type           | Description                                      |
-| --------------- | -------------- | ------------------------------------------------ |
-| `isTrialing`    | `boolean`      | Whether subscription is in trial                 |
-| `daysRemaining` | `number`       | Days left in trial (0 if not trialing or expired) |
-| `trialEndsAt`   | `Date \| null` | Trial end date                                   |
-| `trialStartedAt`| `Date \| null` | Trial start date                                 |
-| `isTrialEnding` | `boolean`      | True when 3 or fewer days remaining              |
+| Property         | Type           | Description                                       |
+| ---------------- | -------------- | ------------------------------------------------- |
+| `isTrialing`     | `boolean`      | Whether subscription is in trial                  |
+| `daysRemaining`  | `number`       | Days left in trial (0 if not trialing or expired) |
+| `trialEndsAt`    | `Date \| null` | Trial end date                                    |
+| `trialStartedAt` | `Date \| null` | Trial start date                                  |
+| `isTrialEnding`  | `boolean`      | True when 3 or fewer days remaining               |
 
 ## 🔔 Push Notifications
 
@@ -582,7 +586,7 @@ Browser push notifications — built into the SDK. Users can enable/disable from
 **Only setup required:** Create `public/push-sw.js` in your app:
 
 ```js
-self.addEventListener('push', function(event) {
+self.addEventListener('push', function (event) {
   if (!event.data) return;
   try {
     var payload = event.data.json();
@@ -601,17 +605,23 @@ self.addEventListener('push', function(event) {
       data: { url: payload.url, ...(payload.data || {}) },
     };
     event.waitUntil(self.registration.showNotification(payload.title || 'Notification', options));
-  } catch (e) { console.error('[PushSW]', e); }
+  } catch (e) {
+    console.error('[PushSW]', e);
+  }
 });
 
-self.addEventListener('notificationclick', function(event) {
+self.addEventListener('notificationclick', function (event) {
   event.notification.close();
   var url = event.notification.data && event.notification.data.url;
   if (url) {
-    event.waitUntil(clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(list) {
-      for (var i = 0; i < list.length; i++) { if (list[i].url === url && 'focus' in list[i]) return list[i].focus(); }
-      if (clients.openWindow) return clients.openWindow(url);
-    }));
+    event.waitUntil(
+      clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (list) {
+        for (var i = 0; i < list.length; i++) {
+          if (list[i].url === url && 'focus' in list[i]) return list[i].focus();
+        }
+        if (clients.openWindow) return clients.openWindow(url);
+      })
+    );
   }
 });
 ```
@@ -629,16 +639,16 @@ Send email and push notifications to workspace members. The system has three lay
 ### Sending Notifications (Server-Side)
 
 ```ts
-import { notification } from '@/lib/buildbase'
+import { notification } from '@/lib/buildbase';
 
 // Notify a specific user
 await notification.send(workspaceId, 'comment_added', userId, {
-  title: 'New Comment',                       // Push title (falls back to event name)
+  title: 'New Comment', // Push title (falls back to event name)
   message: 'Alice commented on your project', // Push body + email {{message}}
   icon: 'https://example.com/comment-icon.png', // Custom push icon (falls back to org icon)
-  image: 'https://example.com/screenshot.jpg',  // Large image in push notification body
+  image: 'https://example.com/screenshot.jpg', // Large image in push notification body
   url: 'https://app.example.com/projects/123#comments', // Opens on push click + {{url}} in email
-})
+});
 
 // Notify all workspace members (omit userId)
 await notification.send(workspaceId, 'new_release', undefined, {
@@ -646,7 +656,7 @@ await notification.send(workspaceId, 'new_release', undefined, {
   message: 'Version 2.0 is now available with dark mode and API v2!',
   image: 'https://example.com/release-banner.jpg',
   url: 'https://app.example.com/changelog',
-})
+});
 ```
 
 ### Ad-hoc Notifications
@@ -661,7 +671,7 @@ await notification.send(workspaceId, 'deployment_success', userId, {
   icon: 'https://example.com/deploy-icon.png',
   url: '/deployments/latest',
   channels: { push: true },
-})
+});
 ```
 
 > **Note:** Ad-hoc events support push only. Email requires a registered event with a linked email template.
@@ -679,20 +689,20 @@ await notification.send(workspaceId, 'new_message', userId, {
     { action: 'reply', title: 'Reply', icon: 'https://example.com/reply.png' },
     { action: 'dismiss', title: 'Dismiss' },
   ],
-  tag: 'chat-alice',         // Replaces previous "chat-alice" notification instead of stacking
-  renotify: true,            // Still vibrate/sound when replacing
+  tag: 'chat-alice', // Replaces previous "chat-alice" notification instead of stacking
+  renotify: true, // Still vibrate/sound when replacing
   channels: { push: true },
-})
+});
 
 // Critical alert — stays visible until user interacts
 await notification.send(workspaceId, 'payment_failed', userId, {
   title: 'Payment Failed',
   message: 'Your subscription will be suspended in 3 days',
   badge: 'https://example.com/alert-badge.png',
-  requireInteraction: true,  // No auto-dismiss
-  urgency: 'high',           // Prioritized delivery on mobile
+  requireInteraction: true, // No auto-dismiss
+  urgency: 'high', // Prioritized delivery on mobile
   channels: { push: true },
-})
+});
 
 // Silent notification — no sound or vibration
 await notification.send(workspaceId, 'sync_complete', userId, {
@@ -701,19 +711,19 @@ await notification.send(workspaceId, 'sync_complete', userId, {
   silent: true,
   urgency: 'low',
   channels: { push: true },
-})
+});
 ```
 
-| Option | Type | Description |
-|--------|------|-------------|
-| `badge` | `string` | Small monochrome icon for status bar (Android/ChromeOS) |
-| `tag` | `string` | Replaces existing notification with same tag instead of stacking |
-| `actions` | `Array<{action, title, icon?}>` | Up to 2 action buttons on the notification |
-| `silent` | `boolean` | No sound or vibration |
-| `requireInteraction` | `boolean` | Stays visible until user interacts |
-| `renotify` | `boolean` | Sound/vibrate again when replacing via `tag` |
-| `timestamp` | `number` | Custom timestamp (ms since epoch) shown on notification |
-| `dir` | `'ltr' \| 'rtl' \| 'auto'` | Text direction for title/body |
+| Option               | Type                            | Description                                                      |
+| -------------------- | ------------------------------- | ---------------------------------------------------------------- |
+| `badge`              | `string`                        | Small monochrome icon for status bar (Android/ChromeOS)          |
+| `tag`                | `string`                        | Replaces existing notification with same tag instead of stacking |
+| `actions`            | `Array<{action, title, icon?}>` | Up to 2 action buttons on the notification                       |
+| `silent`             | `boolean`                       | No sound or vibration                                            |
+| `requireInteraction` | `boolean`                       | Stays visible until user interacts                               |
+| `renotify`           | `boolean`                       | Sound/vibrate again when replacing via `tag`                     |
+| `timestamp`          | `number`                        | Custom timestamp (ms since epoch) shown on notification          |
+| `dir`                | `'ltr' \| 'rtl' \| 'auto'`      | Text direction for title/body                                    |
 
 ### Delivery Options
 
@@ -724,26 +734,26 @@ Control how and when the push service delivers the notification:
 await notification.send(workspaceId, 'daily_digest', undefined, {
   title: 'Your Daily Digest',
   message: '12 new updates in your workspace',
-  scheduledAt: '2026-04-16T09:00:00Z',  // Deliver at 9am UTC tomorrow
+  scheduledAt: '2026-04-16T09:00:00Z', // Deliver at 9am UTC tomorrow
   channels: { push: true },
-})
+});
 
 // Short-lived notification — discard if not delivered in 1 hour
 await notification.send(workspaceId, 'flash_sale', undefined, {
   title: 'Flash Sale — 50% off!',
   message: 'Ends in 1 hour',
   image: 'https://example.com/sale-banner.jpg',
-  ttl: 3600,                // Expires after 1 hour (seconds)
-  urgency: 'high',          // Deliver ASAP
+  ttl: 3600, // Expires after 1 hour (seconds)
+  urgency: 'high', // Deliver ASAP
   channels: { push: true },
-})
+});
 ```
 
-| Option | Type | Description |
-|--------|------|-------------|
-| `scheduledAt` | `string` | ISO 8601 date. Delays delivery until the specified time |
-| `ttl` | `number` | Time-to-live in seconds. Push service discards if not delivered in time. Default: 86400 (24h) |
-| `urgency` | `'very-low' \| 'low' \| 'normal' \| 'high'` | Delivery priority hint. Affects battery usage on mobile |
+| Option        | Type                                        | Description                                                                                   |
+| ------------- | ------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| `scheduledAt` | `string`                                    | ISO 8601 date. Delays delivery until the specified time                                       |
+| `ttl`         | `number`                                    | Time-to-live in seconds. Push service discards if not delivered in time. Default: 86400 (24h) |
+| `urgency`     | `'very-low' \| 'low' \| 'normal' \| 'high'` | Delivery priority hint. Affects battery usage on mobile                                       |
 
 ### Channel Control
 
@@ -754,19 +764,19 @@ By default, both email and push are sent (based on event config). Override per-s
 await notification.send(workspaceId, 'typing_indicator', userId, {
   message: 'Alice is typing...',
   channels: { push: true },
-})
+});
 
 // Only email — digest or report, no push
 await notification.send(workspaceId, 'weekly_report', undefined, {
   message: 'Your weekly activity report is ready',
   channels: { email: true },
-})
+});
 
 // Both channels explicitly
 await notification.send(workspaceId, 'comment_added', userId, {
   message: 'New comment on your project',
   channels: { email: true, push: true },
-})
+});
 ```
 
 > **Note:** Even with `channels` override, the 4-layer gate still applies. If the admin disabled push globally, `channels: { push: true }` won't send push.
@@ -777,21 +787,21 @@ Both email and push support merge tags with `{{tag}}` syntax:
 
 ```ts
 await notification.send(workspaceId, 'export_ready', userId, {
-  title: '{{workspaceName}} — Export Ready',    // → "Acme Corp — Export Ready"
+  title: '{{workspaceName}} — Export Ready', // → "Acme Corp — Export Ready"
   message: 'Hi {{name}}, your export is ready', // → "Hi Alice, your export is ready"
   downloadUrl: 'https://example.com/exports/123',
   fileName: 'report.csv',
-})
+});
 ```
 
-| Tag | Resolves to | Available in |
-|-----|-------------|--------------|
-| `{{name}}` | Recipient's name | Email + Push |
-| `{{email}}` | Recipient's email | Email + Push |
-| `{{workspaceName}}` | Workspace name | Email + Push |
-| `{{message}}` | The `message` field | Email template |
-| `{{url}}` | The `url` field | Email template + Push click target |
-| `{{anyKey}}` | Value from `data` object | Email + Push |
+| Tag                 | Resolves to              | Available in                       |
+| ------------------- | ------------------------ | ---------------------------------- |
+| `{{name}}`          | Recipient's name         | Email + Push                       |
+| `{{email}}`         | Recipient's email        | Email + Push                       |
+| `{{workspaceName}}` | Workspace name           | Email + Push                       |
+| `{{message}}`       | The `message` field      | Email template                     |
+| `{{url}}`           | The `url` field          | Email template + Push click target |
+| `{{anyKey}}`        | Value from `data` object | Email + Push                       |
 
 ### Response
 
@@ -829,7 +839,7 @@ An email template is auto-created for each custom event. Edit it in **Email Temp
 The workspace settings panel shows notification preferences automatically — **only for events where the developer enabled "User Control"**. System notifications are never shown to end users.
 
 ```tsx
-import { SaaSOSProvider } from '@buildbase/sdk/react'
+import { SaaSOSProvider } from '@buildbase/sdk/react';
 
 // The Notifications tab in workspace settings shows:
 // - Browser push toggle (subscribe/unsubscribe)
@@ -839,34 +849,34 @@ import { SaaSOSProvider } from '@buildbase/sdk/react'
 ### Types
 
 ```ts
-import type { NotificationData, NotificationResult, NotificationEvent } from '@buildbase/sdk'
+import type { NotificationData, NotificationResult, NotificationEvent } from '@buildbase/sdk';
 
 interface NotificationData {
-  title?: string;                           // Push title (falls back to event name)
-  message?: string;                         // Push body + email {{message}}
-  icon?: string;                            // Custom push icon URL (falls back to org icon)
-  image?: string;                           // Large image in push notification body
-  badge?: string;                           // Small monochrome status bar icon
-  url?: string;                             // Opens on push click + {{url}} in email
-  tag?: string;                             // Replace instead of stack notifications
-  actions?: Array<{action, title, icon?}>;  // Action buttons (max 2)
-  silent?: boolean;                         // No sound/vibration
-  requireInteraction?: boolean;             // No auto-dismiss
-  renotify?: boolean;                       // Re-alert on tag replace
-  timestamp?: number;                       // Custom timestamp (ms)
-  dir?: 'ltr' | 'rtl' | 'auto';            // Text direction
-  ttl?: number;                             // Time-to-live (seconds)
-  urgency?: 'very-low'|'low'|'normal'|'high'; // Delivery priority
-  scheduledAt?: string;                     // ISO 8601 delayed delivery
+  title?: string; // Push title (falls back to event name)
+  message?: string; // Push body + email {{message}}
+  icon?: string; // Custom push icon URL (falls back to org icon)
+  image?: string; // Large image in push notification body
+  badge?: string; // Small monochrome status bar icon
+  url?: string; // Opens on push click + {{url}} in email
+  tag?: string; // Replace instead of stack notifications
+  actions?: Array<{ action; title; icon? }>; // Action buttons (max 2)
+  silent?: boolean; // No sound/vibration
+  requireInteraction?: boolean; // No auto-dismiss
+  renotify?: boolean; // Re-alert on tag replace
+  timestamp?: number; // Custom timestamp (ms)
+  dir?: 'ltr' | 'rtl' | 'auto'; // Text direction
+  ttl?: number; // Time-to-live (seconds)
+  urgency?: 'very-low' | 'low' | 'normal' | 'high'; // Delivery priority
+  scheduledAt?: string; // ISO 8601 delayed delivery
   channels?: { email?: boolean; push?: boolean }; // Override which channels to use
-  [key: string]: any;                       // Custom merge tags for email + push
+  [key: string]: any; // Custom merge tags for email + push
 }
 
 interface NotificationResult {
   sent: boolean;
   channels: { email: boolean; push: boolean };
   notifiedCount?: number;
-  reason?: string;                          // Only when sent=false
+  reason?: string; // Only when sent=false
 }
 
 interface NotificationEvent {
@@ -885,23 +895,21 @@ The SDK supports 8 locales with ICU MessageFormat for plurals, selects, and numb
 ### Setup
 
 ```tsx
-<SaaSOSProvider locale="hi">
-  {/* All SDK UI renders in Hindi */}
-</SaaSOSProvider>
+<SaaSOSProvider locale="hi">{/* All SDK UI renders in Hindi */}</SaaSOSProvider>
 ```
 
 ### Supported Locales
 
-| Code | Language | Numerals | Direction |
-|---|---|---|---|
-| `en` | English | 1,234.56 | LTR |
-| `es` | Spanish | 1.234,56 | LTR |
-| `fr` | French | 1 234,56 | LTR |
-| `de` | German | 1.234,56 | LTR |
-| `ja` | Japanese | 1,234.56 | LTR |
-| `zh` | Chinese | 1,234.56 | LTR |
-| `hi` | Hindi | Devanagari (e.g. 1,234) | LTR |
-| `ar` | Arabic | Arabic-Indic (e.g. 1,234) | RTL |
+| Code | Language | Numerals                  | Direction |
+| ---- | -------- | ------------------------- | --------- |
+| `en` | English  | 1,234.56                  | LTR       |
+| `es` | Spanish  | 1.234,56                  | LTR       |
+| `fr` | French   | 1 234,56                  | LTR       |
+| `de` | German   | 1.234,56                  | LTR       |
+| `ja` | Japanese | 1,234.56                  | LTR       |
+| `zh` | Chinese  | 1,234.56                  | LTR       |
+| `hi` | Hindi    | Devanagari (e.g. 1,234)   | LTR       |
+| `ar` | Arabic   | Arabic-Indic (e.g. 1,234) | RTL       |
 
 ### useTranslation Hook
 
@@ -913,10 +921,10 @@ function MyComponent() {
 
   return (
     <div dir={dir}>
-      <p>{t('subscription.currentPlan')}</p>          {/* Type-safe key lookup */}
-      <p>{t('users.memberCount', { count: 5 })}</p>   {/* ICU plural: "5 members" */}
-      <p>{fmtNum(1234)}</p>                            {/* Locale-aware: "1,234" or "1,234" */}
-      <p>{fmtCents(1999, 'usd')}</p>                   {/* "$19.99" or "19.99 US$" */}
+      <p>{t('subscription.currentPlan')}</p> {/* Type-safe key lookup */}
+      <p>{t('users.memberCount', { count: 5 })}</p> {/* ICU plural: "5 members" */}
+      <p>{fmtNum(1234)}</p> {/* Locale-aware: "1,234" or "1,234" */}
+      <p>{fmtCents(1999, 'usd')}</p> {/* "$19.99" or "19.99 US$" */}
     </div>
   );
 }
@@ -958,13 +966,13 @@ For full SaaS platforms (Slack, GitHub, Discord):
 
 Platform mode supports granular overrides from the admin dashboard:
 
-| Setting | Options | Default |
-|---|---|---|
-| Can Create Workspace | Everyone / Owner Only / Disabled | Everyone |
-| Can Invite Members | Everyone / Admin Only / Disabled | Everyone |
-| Show Workspace Switcher | On / Off | On |
-| Max Workspaces Per User | 0 (unlimited) or a number | 0 |
-| Auto-Create First Workspace | On / Off | On |
+| Setting                     | Options                          | Default  |
+| --------------------------- | -------------------------------- | -------- |
+| Can Create Workspace        | Everyone / Owner Only / Disabled | Everyone |
+| Can Invite Members          | Everyone / Admin Only / Disabled | Everyone |
+| Show Workspace Switcher     | On / Off                         | On       |
+| Max Workspaces Per User     | 0 (unlimited) or a number        | 0        |
+| Auto-Create First Workspace | On / Off                         | On       |
 
 These let you achieve team-like, managed, or enterprise-like behavior without a separate mode.
 
@@ -1113,16 +1121,17 @@ function PublicPricingPage() {
 ```
 
 `selectPlan()` handles everything automatically:
+
 - **Authenticated** → opens the "Choose Your Plan" dialog
 - **Not authenticated** → saves a redirect URL, triggers sign-in, and after login the user lands on the dashboard with the plan picker dialog open
 
-| Prop              | Type                           | Description                                                       |
-| ----------------- | ------------------------------ | ----------------------------------------------------------------- |
-| `slug`            | `string`                       | Plan group slug (e.g. 'main-pricing', 'enterprise')               |
-| `children`        | `(details) => ReactNode`       | Render prop receiving plan details (see below)                    |
+| Prop              | Type                           | Description                                                                                                               |
+| ----------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------- |
+| `slug`            | `string`                       | Plan group slug (e.g. 'main-pricing', 'enterprise')                                                                       |
+| `children`        | `(details) => ReactNode`       | Render prop receiving plan details (see below)                                                                            |
 | `redirectBaseUrl` | `string`                       | Base URL for post-login redirects (e.g. `"https://app.com/dashboard"`). Enables `selectPlan()` for unauthenticated users. |
-| `loadingFallback` | `ReactNode`                    | Custom loading UI (defaults to skeleton)                          |
-| `errorFallback`   | `(error: string) => ReactNode` | Custom error UI                                                   |
+| `loadingFallback` | `ReactNode`                    | Custom loading UI (defaults to skeleton)                                                                                  |
+| `errorFallback`   | `(error: string) => ReactNode` | Custom error UI                                                                                                           |
 
 **Render prop details**: `{ loading, error, items, plans, notes, refetch, selectPlan }`
 
@@ -1138,41 +1147,41 @@ Plans support **pricing variants** (multi-currency). Use these utilities for dis
 
 ### Currency utilities
 
-| Export | Purpose |
-|--------|--------|
-| `CURRENCY_DISPLAY` | Map of currency code → symbol (e.g. `usd` → `$`) |
-| `CURRENCY_FLAG` | Map of currency code → flag emoji |
-| `PLAN_CURRENCY_CODES` | Allowed billing currency codes (for dropdowns/validation) |
-| `PLAN_CURRENCY_OPTIONS` | Options array for plan currency selects |
-| `getCurrencySymbol(currency)` | Symbol for a Stripe currency code |
-| `getCurrencyFlag(currency)` | Flag emoji for a currency code |
-| `formatCents(cents, currency)` | Format cents as localized price string |
-| `formatOverageRate(cents, currency)` | Format overage rate for display |
-| `formatOverageRateWithLabel(...)` | Overage rate with optional unit label |
-| `formatQuotaIncludedOverage(...)` | "X included, then $Y / unit" style text |
-| `getQuotaUnitLabelFromName(name)` | Human-readable unit label from quota name |
+| Export                               | Purpose                                                   |
+| ------------------------------------ | --------------------------------------------------------- |
+| `CURRENCY_DISPLAY`                   | Map of currency code → symbol (e.g. `usd` → `$`)          |
+| `CURRENCY_FLAG`                      | Map of currency code → flag emoji                         |
+| `PLAN_CURRENCY_CODES`                | Allowed billing currency codes (for dropdowns/validation) |
+| `PLAN_CURRENCY_OPTIONS`              | Options array for plan currency selects                   |
+| `getCurrencySymbol(currency)`        | Symbol for a Stripe currency code                         |
+| `getCurrencyFlag(currency)`          | Flag emoji for a currency code                            |
+| `formatCents(cents, currency)`       | Format cents as localized price string                    |
+| `formatOverageRate(cents, currency)` | Format overage rate for display                           |
+| `formatOverageRateWithLabel(...)`    | Overage rate with optional unit label                     |
+| `formatQuotaIncludedOverage(...)`    | "X included, then $Y / unit" style text                   |
+| `getQuotaUnitLabelFromName(name)`    | Human-readable unit label from quota name                 |
 
 ### Pricing variant utilities
 
-| Export | Purpose |
-|--------|--------|
-| `getPricingVariant(planVersion, currency)` | Get variant for a currency, or `null` |
-| `getBasePriceCents(planVersion, currency, interval)` | Base price in cents for currency/interval |
-| `getStripePriceIdForInterval(planVersion, currency, interval)` | Stripe price ID for checkout |
-| `getQuotaOverageCents(planVersion, currency, quotaSlug, interval)` | Overage cents for a quota |
-| `getQuotaDisplayWithVariant(planVersion, currency, quotaSlug, interval)` | Display value with overage for a variant |
-| `getAvailableCurrenciesFromPlans(plans)` | Unique currency codes across plan versions |
-| `getDisplayCurrency(planVersion, currency)` | Display currency (variant exists ? currency : plan.currency) |
-| `getBillingIntervalAndCurrencyFromPriceId(planVersions, priceId)` | Resolve price ID to interval + currency |
+| Export                                                                   | Purpose                                                      |
+| ------------------------------------------------------------------------ | ------------------------------------------------------------ |
+| `getPricingVariant(planVersion, currency)`                               | Get variant for a currency, or `null`                        |
+| `getBasePriceCents(planVersion, currency, interval)`                     | Base price in cents for currency/interval                    |
+| `getStripePriceIdForInterval(planVersion, currency, interval)`           | Stripe price ID for checkout                                 |
+| `getQuotaOverageCents(planVersion, currency, quotaSlug, interval)`       | Overage cents for a quota                                    |
+| `getQuotaDisplayWithVariant(planVersion, currency, quotaSlug, interval)` | Display value with overage for a variant                     |
+| `getAvailableCurrenciesFromPlans(plans)`                                 | Unique currency codes across plan versions                   |
+| `getDisplayCurrency(planVersion, currency)`                              | Display currency (variant exists ? currency : plan.currency) |
+| `getBillingIntervalAndCurrencyFromPriceId(planVersions, priceId)`        | Resolve price ID to interval + currency                      |
 
 Types: `IPricingVariant`, `PlanVersionWithPricingVariants`, `QuotaDisplayWithOverage`.
 
 ### Quota utilities
 
-| Export | Purpose |
-|--------|--------|
+| Export                                             | Purpose                                                             |
+| -------------------------------------------------- | ------------------------------------------------------------------- |
 | `getQuotaDisplayValue(quotaByInterval, interval?)` | Normalize `IQuotaByInterval` to `{ included, overage?, unitSize? }` |
-| `formatQuotaWithPrice(value, unitName, options?)` | Format as "X included, then $Y.YY / unit" |
+| `formatQuotaWithPrice(value, unitName, options?)`  | Format as "X included, then $Y.YY / unit"                           |
 
 Types: `QuotaDisplayValue`, `FormatQuotaWithPriceOptions`. Plan/subscription types use `IQuotaByInterval` and `IQuotaIntervalValue` for per-interval quotas and overages.
 
@@ -1204,12 +1213,12 @@ Track and monitor metered usage for subscription quotas (e.g., API calls, emails
 
 ### When to use which?
 
-| Scenario | Where to record | Why |
-|----------|----------------|-----|
+| Scenario                        | Where to record        | Why                                          |
+| ------------------------------- | ---------------------- | -------------------------------------------- |
 | User clicks "Send Email" button | Client-side (SDK hook) | User-initiated, immediate UI feedback needed |
-| API request hits your backend | Server-side (REST API) | Backend controls the resource, more secure |
-| Background job processes data | Server-side (REST API) | No browser context available |
-| File upload completes | Either | Depends on where validation happens |
+| API request hits your backend   | Server-side (REST API) | Backend controls the resource, more secure   |
+| Background job processes data   | Server-side (REST API) | No browser context available                 |
+| File upload completes           | Either                 | Depends on where validation happens          |
 
 As a general rule: **record usage where the resource is consumed**. If your backend processes the work, record from the backend. If it's a client-side action, record from the client.
 
@@ -1233,8 +1242,8 @@ function SendEmailButton() {
       const result = await recordUsage({
         quotaSlug: 'emails',
         quantity: 1,
-        source: 'web-app',           // optional: track where usage came from
-        idempotencyKey: 'email-abc',  // optional: prevent duplicate recordings
+        source: 'web-app', // optional: track where usage came from
+        idempotencyKey: 'email-abc', // optional: prevent duplicate recordings
       });
       console.log(`Used: ${result.consumed}/${result.included}, Available: ${result.available}`);
       if (result.overage > 0) {
@@ -1245,7 +1254,11 @@ function SendEmailButton() {
     }
   };
 
-  return <button onClick={handleSend} disabled={loading}>Send Email</button>;
+  return (
+    <button onClick={handleSend} disabled={loading}>
+      Send Email
+    </button>
+  );
 }
 ```
 
@@ -1265,7 +1278,9 @@ function QuotaStatusBar({ quotaSlug }: { quotaSlug: string }) {
 
   return (
     <div>
-      <p>{quotaSlug}: {status.consumed} / {status.included} ({usagePercent}%)</p>
+      <p>
+        {quotaSlug}: {status.consumed} / {status.included} ({usagePercent}%)
+      </p>
       <p>Available: {status.available}</p>
       {status.hasOverage && <p>Overage: {status.overage} units</p>}
       <button onClick={refetch}>Refresh</button>
@@ -1306,12 +1321,10 @@ import { useUsageLogs, useSaaSWorkspaces } from '@buildbase/sdk/react';
 
 function UsageLogsTable() {
   const { currentWorkspace } = useSaaSWorkspaces();
-  const {
-    logs, totalDocs, totalPages, page, hasNextPage, loading, refetch,
-  } = useUsageLogs(
+  const { logs, totalDocs, totalPages, page, hasNextPage, loading, refetch } = useUsageLogs(
     currentWorkspace?._id,
-    'api_calls',                       // optional: filter by quota slug
-    { limit: 20, page: 1 }            // optional: pagination and filters
+    'api_calls', // optional: filter by quota slug
+    { limit: 20, page: 1 } // optional: pagination and filters
   );
 
   if (loading) return <Spinner />;
@@ -1320,7 +1333,12 @@ function UsageLogsTable() {
     <div>
       <table>
         <thead>
-          <tr><th>Quota</th><th>Quantity</th><th>Source</th><th>Date</th></tr>
+          <tr>
+            <th>Quota</th>
+            <th>Quantity</th>
+            <th>Source</th>
+            <th>Date</th>
+          </tr>
         </thead>
         <tbody>
           {logs.map(log => (
@@ -1333,7 +1351,9 @@ function UsageLogsTable() {
           ))}
         </tbody>
       </table>
-      <p>Page {page} of {totalPages} ({totalDocs} total)</p>
+      <p>
+        Page {page} of {totalPages} ({totalDocs} total)
+      </p>
     </div>
   );
 }
@@ -1341,23 +1361,23 @@ function UsageLogsTable() {
 
 **`useUsageLogs` parameters:**
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `workspaceId` | `string \| null \| undefined` | Yes | Workspace ID (null/undefined disables fetching) |
-| `quotaSlug` | `string` | No | Filter logs by quota slug |
-| `options.from` | `string` | No | ISO date string — filter logs from this date |
-| `options.to` | `string` | No | ISO date string — filter logs until this date |
-| `options.source` | `string` | No | Filter logs by source |
-| `options.page` | `number` | No | Page number (default: 1) |
-| `options.limit` | `number` | No | Results per page (default: 20) |
+| Parameter        | Type                          | Required | Description                                     |
+| ---------------- | ----------------------------- | -------- | ----------------------------------------------- |
+| `workspaceId`    | `string \| null \| undefined` | Yes      | Workspace ID (null/undefined disables fetching) |
+| `quotaSlug`      | `string`                      | No       | Filter logs by quota slug                       |
+| `options.from`   | `string`                      | No       | ISO date string — filter logs from this date    |
+| `options.to`     | `string`                      | No       | ISO date string — filter logs until this date   |
+| `options.source` | `string`                      | No       | Filter logs by source                           |
+| `options.page`   | `number`                      | No       | Page number (default: 1)                        |
+| `options.limit`  | `number`                      | No       | Results per page (default: 20)                  |
 
 #### Client-Side Hooks Summary
 
-| Hook | Purpose |
-|------|---------|
-| `useRecordUsage(workspaceId)` | Record quota consumption (mutation) |
-| `useQuotaUsageStatus(workspaceId, quotaSlug)` | Get single quota status (auto-fetches) |
-| `useAllQuotaUsage(workspaceId)` | Get all quotas status (auto-fetches) |
+| Hook                                              | Purpose                                    |
+| ------------------------------------------------- | ------------------------------------------ |
+| `useRecordUsage(workspaceId)`                     | Record quota consumption (mutation)        |
+| `useQuotaUsageStatus(workspaceId, quotaSlug)`     | Get single quota status (auto-fetches)     |
+| `useAllQuotaUsage(workspaceId)`                   | Get all quotas status (auto-fetches)       |
 | `useUsageLogs(workspaceId, quotaSlug?, options?)` | Get paginated usage history (auto-fetches) |
 
 ---
@@ -1404,8 +1424,8 @@ async function recordUsage(workspaceId: string, quotaSlug: string, quantity: num
     body: JSON.stringify({
       quotaSlug,
       quantity,
-      source: 'backend',         // optional: helps distinguish from client-side usage
-      metadata: {},              // optional: attach custom data
+      source: 'backend', // optional: helps distinguish from client-side usage
+      metadata: {}, // optional: attach custom data
       idempotencyKey: undefined, // optional: prevent duplicate recordings
     }),
   });
@@ -1443,10 +1463,9 @@ async function getQuotaStatus(workspaceId: string, quotaSlug: string) {
 
 // Get status for ALL quotas
 async function getAllQuotaStatus(workspaceId: string) {
-  const response = await fetch(
-    `${BASE_URL}/workspaces/${workspaceId}/subscription/usage/all`,
-    { headers: { 'x-session-id': SESSION_ID } }
-  );
+  const response = await fetch(`${BASE_URL}/workspaces/${workspaceId}/subscription/usage/all`, {
+    headers: { 'x-session-id': SESSION_ID },
+  });
   return response.json();
   // Returns: { quotas: { [slug]: { consumed, included, available, overage, hasOverage } } }
 }
@@ -1483,26 +1502,23 @@ await bb.usage.recordBatch(workspaceId, {
     { quotaSlug: 'images', quantity: 500, source: 'batch-export-job' },
     { quotaSlug: 'videos', quantity: 10, source: 'batch-export-job' },
     { quotaSlug: 'images', quantity: 200, metadata: { jobId: 'abc123' } },
-  ]
+  ],
 });
 // Returns: { success, total: 3, succeeded: 3, failed: 0, results: [...] }
 ```
 
 ```ts
 // Using REST API directly
-const response = await fetch(
-  `${BASE_URL}/workspaces/${workspaceId}/subscription/usage/batch`,
-  {
-    method: 'POST',
-    headers: { 'x-session-id': SESSION_ID, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      items: [
-        { quotaSlug: 'images', quantity: 500, source: 'batch-export' },
-        { quotaSlug: 'videos', quantity: 10 },
-      ]
-    }),
-  }
-);
+const response = await fetch(`${BASE_URL}/workspaces/${workspaceId}/subscription/usage/batch`, {
+  method: 'POST',
+  headers: { 'x-session-id': SESSION_ID, 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    items: [
+      { quotaSlug: 'images', quantity: 500, source: 'batch-export' },
+      { quotaSlug: 'videos', quantity: 10 },
+    ],
+  }),
+});
 ```
 
 - Max **100 items** per request
@@ -1512,35 +1528,35 @@ const response = await fetch(
 
 #### Server-Side API Reference
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/v1/public/token/exchange` | POST | Exchange API token for session ID |
-| `/api/v1/public/workspaces/:id/subscription/usage` | POST | Record quota usage |
-| `/api/v1/public/workspaces/:id/subscription/usage/status?quotaSlug=X` | GET | Get single quota status |
-| `/api/v1/public/workspaces/:id/subscription/usage/all` | GET | Get all quotas status |
-| `/api/v1/public/workspaces/:id/subscription/usage/logs` | GET | Get paginated usage logs |
+| Endpoint                                                              | Method | Description                       |
+| --------------------------------------------------------------------- | ------ | --------------------------------- |
+| `/api/v1/public/token/exchange`                                       | POST   | Exchange API token for session ID |
+| `/api/v1/public/workspaces/:id/subscription/usage`                    | POST   | Record quota usage                |
+| `/api/v1/public/workspaces/:id/subscription/usage/status?quotaSlug=X` | GET    | Get single quota status           |
+| `/api/v1/public/workspaces/:id/subscription/usage/all`                | GET    | Get all quotas status             |
+| `/api/v1/public/workspaces/:id/subscription/usage/logs`               | GET    | Get paginated usage logs          |
 
 All endpoints (except `/token/exchange`) require the `x-session-id` header.
 
 **Record usage request body:**
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `quotaSlug` | `string` | Yes | Quota identifier (e.g. `'api_calls'`, `'emails'`, `'storage'`) |
-| `quantity` | `number` | Yes | Units to consume (minimum 1) |
-| `metadata` | `object` | No | Custom metadata to attach to the usage record |
-| `source` | `string` | No | Source identifier (e.g. `'backend'`, `'worker'`, `'cron'`) |
-| `idempotencyKey` | `string` | No | Unique key for deduplication |
+| Field            | Type     | Required | Description                                                    |
+| ---------------- | -------- | -------- | -------------------------------------------------------------- |
+| `quotaSlug`      | `string` | Yes      | Quota identifier (e.g. `'api_calls'`, `'emails'`, `'storage'`) |
+| `quantity`       | `number` | Yes      | Units to consume (minimum 1)                                   |
+| `metadata`       | `object` | No       | Custom metadata to attach to the usage record                  |
+| `source`         | `string` | No       | Source identifier (e.g. `'backend'`, `'worker'`, `'cron'`)     |
+| `idempotencyKey` | `string` | No       | Unique key for deduplication                                   |
 
 **Record usage response:**
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `used` | `number` | Quantity recorded in this request |
-| `consumed` | `number` | Total usage in the current billing period |
-| `included` | `number` | Total units included in the plan |
-| `available` | `number` | Remaining units before overage |
-| `overage` | `number` | Units used beyond the included amount |
+| Field         | Type      | Description                                  |
+| ------------- | --------- | -------------------------------------------- |
+| `used`        | `number`  | Quantity recorded in this request            |
+| `consumed`    | `number`  | Total usage in the current billing period    |
+| `included`    | `number`  | Total units included in the plan             |
+| `available`   | `number`  | Remaining units before overage               |
+| `overage`     | `number`  | Units used beyond the included amount        |
 | `billedAsync` | `boolean` | Whether overage billing was queued to Stripe |
 
 ## 🚦 Quota Gates
@@ -1609,12 +1625,12 @@ All quota gate components support optional `loadingComponent` and `fallbackCompo
 
 ### Quota Gate Components Reference
 
-| Component | Renders children when | Props |
-|-----------|----------------------|-------|
-| `WhenQuotaAvailable` | Quota has remaining units (`available > 0`) | `slug`, `children`, `loadingComponent?`, `fallbackComponent?` |
-| `WhenQuotaExhausted` | Quota is fully consumed (`available <= 0`) | `slug`, `children`, `loadingComponent?`, `fallbackComponent?` |
-| `WhenQuotaOverage` | Usage exceeds included amount (`hasOverage`) | `slug`, `children`, `loadingComponent?`, `fallbackComponent?` |
-| `WhenQuotaThreshold` | Usage percentage >= threshold | `slug`, `threshold` (0-100), `children`, `loadingComponent?`, `fallbackComponent?` |
+| Component            | Renders children when                        | Props                                                                              |
+| -------------------- | -------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `WhenQuotaAvailable` | Quota has remaining units (`available > 0`)  | `slug`, `children`, `loadingComponent?`, `fallbackComponent?`                      |
+| `WhenQuotaExhausted` | Quota is fully consumed (`available <= 0`)   | `slug`, `children`, `loadingComponent?`, `fallbackComponent?`                      |
+| `WhenQuotaOverage`   | Usage exceeds included amount (`hasOverage`) | `slug`, `children`, `loadingComponent?`, `fallbackComponent?`                      |
+| `WhenQuotaThreshold` | Usage percentage >= threshold                | `slug`, `threshold` (0-100), `children`, `loadingComponent?`, `fallbackComponent?` |
 
 All gates must be used inside `QuotaUsageContextProvider` (included in `SaaSOSProvider`). By default they return `null` while loading or when the condition is not met.
 
@@ -1634,7 +1650,9 @@ function QuotaDebug() {
   return (
     <div>
       {Object.entries(quotas).map(([slug, usage]) => (
-        <p key={slug}>{slug}: {usage.consumed}/{usage.included}</p>
+        <p key={slug}>
+          {slug}: {usage.consumed}/{usage.included}
+        </p>
       ))}
       <button onClick={() => refetch()}>Refresh</button>
     </div>
@@ -1642,13 +1660,14 @@ function QuotaDebug() {
 }
 ```
 
-| Property | Type | Description |
-|----------|------|-------------|
-| `quotas` | `Record<string, IQuotaUsageStatus> \| null` | Current quota usage data keyed by slug |
-| `loading` | `boolean` | True while quota data is being fetched |
-| `refetch` | `() => Promise<void>` | Manually refetch all quota usage |
+| Property  | Type                                        | Description                            |
+| --------- | ------------------------------------------- | -------------------------------------- |
+| `quotas`  | `Record<string, IQuotaUsageStatus> \| null` | Current quota usage data keyed by slug |
+| `loading` | `boolean`                                   | True while quota data is being fetched |
+| `refetch` | `() => Promise<void>`                       | Manually refetch all quota usage       |
 
 **When quota usage refetches:**
+
 - When the current workspace changes (automatic).
 - When usage is recorded via `useRecordUsage` — refetch is triggered automatically.
 - When you call `refetch()` manually.
@@ -1751,25 +1770,25 @@ All SDK API clients extend a shared base class and are exported from the package
 | `BaseApi`        | Abstract base (URL, auth, `fetchJson`/`fetchResponse`) – extend for custom APIs |
 | `IBaseApiConfig` | Config type: `serverUrl`, `version`, optional `orgId`                           |
 | `UserApi`        | User attributes and features                                                    |
-| `WorkspaceApi`   | Workspaces, subscription, invoices, quota usage, users                            |
+| `WorkspaceApi`   | Workspaces, subscription, invoices, quota usage, users                          |
 | `SettingsApi`    | Organization settings                                                           |
 
 ### Components
 
-| Component | Purpose |
-| --- | --- |
-| `SubscriptionContextProvider` | Provides subscription data to children (included in SaaSOSProvider) |
-| `WhenSubscription`, `WhenNoSubscription`, `WhenSubscriptionToPlans` | Subscription gate components |
-| `WhenTrialing`, `WhenNotTrialing`, `WhenTrialEnding` | Trial gate components |
-| `WhenQuotaAvailable`, `WhenQuotaExhausted`, `WhenQuotaOverage` | Quota gate components |
+| Component                                                           | Purpose                                                             |
+| ------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| `SubscriptionContextProvider`                                       | Provides subscription data to children (included in SaaSOSProvider) |
+| `WhenSubscription`, `WhenNoSubscription`, `WhenSubscriptionToPlans` | Subscription gate components                                        |
+| `WhenTrialing`, `WhenNotTrialing`, `WhenTrialEnding`                | Trial gate components                                               |
+| `WhenQuotaAvailable`, `WhenQuotaExhausted`, `WhenQuotaOverage`      | Quota gate components                                               |
 
 ### Currency, pricing variant & quota utilities
 
-| Category | Exports |
-| -------- | ------- |
-| **Currency** | `CURRENCY_DISPLAY`, `CURRENCY_FLAG`, `PLAN_CURRENCY_CODES`, `PLAN_CURRENCY_OPTIONS`, `getCurrencySymbol`, `getCurrencyFlag`, `formatCents`, `formatOverageRate`, `formatOverageRateWithLabel`, `formatQuotaIncludedOverage`, `getQuotaUnitLabelFromName` |
+| Category             | Exports                                                                                                                                                                                                                                                                                                                   |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Currency**         | `CURRENCY_DISPLAY`, `CURRENCY_FLAG`, `PLAN_CURRENCY_CODES`, `PLAN_CURRENCY_OPTIONS`, `getCurrencySymbol`, `getCurrencyFlag`, `formatCents`, `formatOverageRate`, `formatOverageRateWithLabel`, `formatQuotaIncludedOverage`, `getQuotaUnitLabelFromName`                                                                  |
 | **Pricing variants** | `getPricingVariant`, `getBasePriceCents`, `getStripePriceIdForInterval`, `getQuotaOverageCents`, `getQuotaDisplayWithVariant`, `getAvailableCurrenciesFromPlans`, `getDisplayCurrency`, `getBillingIntervalAndCurrencyFromPriceId`; types: `IPricingVariant`, `PlanVersionWithPricingVariants`, `QuotaDisplayWithOverage` |
-| **Quota** | `getQuotaDisplayValue`, `formatQuotaWithPrice`; types: `QuotaDisplayValue`, `FormatQuotaWithPriceOptions`. Plan types use `IQuotaByInterval`, `IQuotaIntervalValue` for per-interval quotas. |
+| **Quota**            | `getQuotaDisplayValue`, `formatQuotaWithPrice`; types: `QuotaDisplayValue`, `FormatQuotaWithPriceOptions`. Plan types use `IQuotaByInterval`, `IQuotaIntervalValue` for per-interval quotas.                                                                                                                              |
 
 Get OS config from `useSaaSOs()` and instantiate API classes when you need low-level access; otherwise prefer the high-level hooks (`useSaaSWorkspaces`, `useUserAttributes`, `useSaaSSettings`, etc.):
 
@@ -1790,21 +1809,21 @@ const workspaceApi = new WorkspaceApi({
 
 Prefer these SDK hooks for state and operations instead of `useAppSelector`:
 
-| Hook                       | Purpose                                                                                                 |
-| -------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `useSaaSAuth()`            | Auth state (user, session, status), signIn(returnUrl?), signOut, openWorkspaceSettings                  |
-| `useSaaSWorkspaces()`      | Workspaces, currentWorkspace, loading, switching/switchingToId, CRUD and switch actions                 |
-| `useSaaSOs()`              | OS config (serverUrl, version, orgId, auth, settings) when you need the full config object              |
-| `useSaaSSettings()`        | Organization settings and getSettings (prefer this when you only need settings)                         |
-| `useUserAttributes()`      | User attributes and update/refresh                                                                      |
-| `useUserFeatures()`        | User feature flags                                                                                      |
-| `useSubscriptionContext()` | Subscription for current workspace (response, loading, refetch); use inside SubscriptionContextProvider |
-| `useTrialStatus()`         | Trial state: `isTrialing`, `daysRemaining`, `trialEndsAt`, `isTrialEnding`                              |
-| `usePushNotifications()`   | Push notification state and actions: `isSubscribed`, `subscribe()`, `unsubscribe()`                     |
+| Hook                       | Purpose                                                                                                                                                                                                                                                                   |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `useSaaSAuth()`            | Auth state (user, session, status), signIn(returnUrl?), signOut, openWorkspaceSettings                                                                                                                                                                                    |
+| `useSaaSWorkspaces()`      | Workspaces, currentWorkspace, loading, switching/switchingToId, CRUD and switch actions                                                                                                                                                                                   |
+| `useSaaSOs()`              | OS config (serverUrl, version, orgId, auth, settings) when you need the full config object                                                                                                                                                                                |
+| `useSaaSSettings()`        | Organization settings and getSettings (prefer this when you only need settings)                                                                                                                                                                                           |
+| `useUserAttributes()`      | User attributes and update/refresh                                                                                                                                                                                                                                        |
+| `useUserFeatures()`        | User feature flags                                                                                                                                                                                                                                                        |
+| `useSubscriptionContext()` | Subscription for current workspace (response, loading, refetch); use inside SubscriptionContextProvider                                                                                                                                                                   |
+| `useTrialStatus()`         | Trial state: `isTrialing`, `daysRemaining`, `trialEndsAt`, `isTrialEnding`                                                                                                                                                                                                |
+| `usePushNotifications()`   | Push notification state and actions: `isSubscribed`, `subscribe()`, `unsubscribe()`                                                                                                                                                                                       |
 | Subscription hooks         | `usePublicPlans`, `useSubscription`, `useSubscriptionManagement`, `usePlanGroup`, `usePlanGroupVersions`, `usePublicPlanGroupVersion`, `useCreateCheckoutSession`, `useUpdateSubscription`, `useCancelSubscription`, `useResumeSubscription`, `useInvoices`, `useInvoice` |
-| `useQuotaUsageContext()`   | Quota usage for current workspace (quotas, loading, refetch); use inside QuotaUsageContextProvider      |
-| Quota usage hooks          | `useRecordUsage`, `useQuotaUsageStatus`, `useAllQuotaUsage`, `useUsageLogs`                             |
-| Invalidation helpers       | `invalidateSubscription()`, `invalidateQuotaUsage()` — trigger context refetch after server-side mutations |
+| `useQuotaUsageContext()`   | Quota usage for current workspace (quotas, loading, refetch); use inside QuotaUsageContextProvider                                                                                                                                                                        |
+| Quota usage hooks          | `useRecordUsage`, `useQuotaUsageStatus`, `useAllQuotaUsage`, `useUsageLogs`                                                                                                                                                                                               |
+| Invalidation helpers       | `invalidateSubscription()`, `invalidateQuotaUsage()` — trigger context refetch after server-side mutations                                                                                                                                                                |
 
 Using hooks keeps your code stable if internal state shape changes and avoids direct Redux/context coupling.
 
@@ -1862,6 +1881,7 @@ interface OnWorkspaceChangeParams {
 ```
 
 **Session flow** (same pattern as next-auth):
+
 - Session token is stored in an **httpOnly cookie** (set by your server, not readable by JS)
 - On page refresh, the SDK calls `getSession()` once to restore the session
 - Session data (user info) lives **in-memory only** (React context) — no localStorage
@@ -1874,16 +1894,16 @@ interface OnWorkspaceChangeParams {
 
 ### BetaForm Props
 
-| Prop                     | Type                                                   | Default                          | Description                             |
-| ------------------------ | ------------------------------------------------------ | -------------------------------- | --------------------------------------- |
-| `onSuccess`              | `() => void`                                           | -                                | Callback when form submits successfully |
-| `onError`                | `(error: string) => void`                              | -                                | Callback when form submission fails     |
-| `className`              | `string`                                               | `'w-full'`                       | CSS class for form container            |
-| `fieldClassName`         | `string`                                               | `'flex flex-col gap-1.5 w-full'` | CSS class for form fields               |
-| `autoFocus`              | `boolean`                                              | `true`                           | Auto-focus name field                   |
-| `showSuccessMessage`     | `boolean`                                              | `true`                           | Show success message after submit       |
-| `hideLogo`               | `boolean`                                              | `false`                          | Hide logo                               |
-| `hideTitles`             | `boolean`                                              | `false`                          | Hide titles                             |
+| Prop                 | Type                      | Default                          | Description                             |
+| -------------------- | ------------------------- | -------------------------------- | --------------------------------------- |
+| `onSuccess`          | `() => void`              | -                                | Callback when form submits successfully |
+| `onError`            | `(error: string) => void` | -                                | Callback when form submission fails     |
+| `className`          | `string`                  | `'w-full'`                       | CSS class for form container            |
+| `fieldClassName`     | `string`                  | `'flex flex-col gap-1.5 w-full'` | CSS class for form fields               |
+| `autoFocus`          | `boolean`                 | `true`                           | Auto-focus name field                   |
+| `showSuccessMessage` | `boolean`                 | `true`                           | Show success message after submit       |
+| `hideLogo`           | `boolean`                 | `false`                          | Hide logo                               |
+| `hideTitles`         | `boolean`                 | `false`                          | Hide titles                             |
 
 > **Note:** The form language is inherited from the `SaaSOSProvider` locale setting. Supported locales: en, es, fr, de, ja, zh, hi, ar.
 
@@ -1983,7 +2003,11 @@ function Dashboard() {
 ### Pattern 4b: Subscription-Gated UI
 
 ```tsx
-import { WhenSubscription, WhenNoSubscription, WhenSubscriptionToPlans } from '@buildbase/sdk/react';
+import {
+  WhenSubscription,
+  WhenNoSubscription,
+  WhenSubscriptionToPlans,
+} from '@buildbase/sdk/react';
 
 function BillingPage() {
   return (
@@ -2023,7 +2047,9 @@ function FeatureWithQuota() {
       </WhenQuotaAvailable>
 
       <WhenQuotaExhausted slug="api_calls">
-        <p>No API calls remaining. <a href="/billing">Upgrade your plan</a></p>
+        <p>
+          No API calls remaining. <a href="/billing">Upgrade your plan</a>
+        </p>
       </WhenQuotaExhausted>
     </div>
   );
@@ -2385,31 +2411,45 @@ Configure once, use everywhere. Same pattern as Auth.js.
 
 ```ts
 // lib/buildbase.ts
-import BuildBase from '@buildbase/sdk'
-import { cookies } from 'next/headers'
+import BuildBase from '@buildbase/sdk';
+import { cookies } from 'next/headers';
 
-export const { auth, workspace, subscription, usage, plans, invoices, users, features, settings, notification, permissions, withSession, client } = BuildBase({
+export const {
+  auth,
+  workspace,
+  subscription,
+  usage,
+  plans,
+  invoices,
+  users,
+  features,
+  settings,
+  notification,
+  permissions,
+  withSession,
+  client,
+} = BuildBase({
   serverUrl: process.env.BUILDBASE_URL!,
   orgId: process.env.BUILDBASE_ORG_ID!,
   getSessionId: async () => {
-    const c = await cookies()
-    return c.get('bb-session-id')?.value ?? null
+    const c = await cookies();
+    return c.get('bb-session-id')?.value ?? null;
   },
-})
+});
 ```
 
 Use in API routes — session is resolved automatically:
 
 ```ts
 // app/api/workspace/route.ts
-import { auth, workspace, subscription } from '@/lib/buildbase'
+import { auth, workspace, subscription } from '@/lib/buildbase';
 
 export async function GET() {
-  const session = await auth()
-  if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 })
+  const session = await auth();
+  if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const workspaces = await workspace.list()
-  return Response.json({ workspaces })
+  const workspaces = await workspace.list();
+  return Response.json({ workspaces });
 }
 ```
 
@@ -2419,31 +2459,31 @@ No `getSessionId` callback — use `withSession()` per-request instead.
 
 ```ts
 // buildbase.ts
-import BuildBase from '@buildbase/sdk'
+import BuildBase from '@buildbase/sdk';
 
 const bb = BuildBase({
   serverUrl: process.env.BUILDBASE_URL!,
   orgId: process.env.BUILDBASE_ORG_ID!,
-})
+});
 
-export const { withSession, plans } = bb
+export const { withSession, plans } = bb;
 ```
 
 ```ts
 // routes
 app.get('/workspaces', async (req, res) => {
-  const { workspace } = withSession(req.headers['x-session-id'])
-  res.json(await workspace.list())
-})
+  const { workspace } = withSession(req.headers['x-session-id']);
+  res.json(await workspace.list());
+});
 
 app.post('/usage', async (req, res) => {
-  const { usage } = withSession(req.headers['x-session-id'])
+  const { usage } = withSession(req.headers['x-session-id']);
   const result = await usage.record(req.body.workspaceId, {
     quotaSlug: 'api-calls',
     quantity: 1,
-  })
-  res.json(result)
-})
+  });
+  res.json(result);
+});
 ```
 
 ### Background Jobs / Webhooks
@@ -2451,35 +2491,35 @@ app.post('/usage', async (req, res) => {
 For service accounts (no user session), use `withSession()` with a service token:
 
 ```ts
-import { withSession } from '@/lib/buildbase'
+import { withSession } from '@/lib/buildbase';
 
-const bb = withSession(process.env.SERVICE_SESSION_ID!)
+const bb = withSession(process.env.SERVICE_SESSION_ID!);
 
 // Record usage from a webhook
 await bb.usage.record(workspaceId, {
   quotaSlug: 'uploads',
   quantity: 1,
   source: 'webhook:file.processed',
-})
+});
 
 // Check subscription
-const sub = await bb.subscription.get(workspaceId)
+const sub = await bb.subscription.get(workspaceId);
 ```
 
 ### Server-Side Actions Reference
 
-| Module | Methods |
-|--------|---------|
-| `workspace` | `list`, `get`, `create`, `update`, `delete` |
-| `users` | `list`, `invite`, `remove`, `updateRole`, `getProfile`, `updateProfile` |
-| `subscription` | `get`, `checkout`, `update`, `cancel`, `resume`, `getBillingPortalUrl` |
-| `plans` | `getGroup`, `getVersions`, `getPublic`, `getVersion` |
-| `invoices` | `list`, `get` |
-| `usage` | `record`, `recordBatch`, `getQuota`, `getAll`, `getLogs` |
-| `settings` | `get` |
-| `features` | `list`, `update` |
-| `notification` | `send(workspaceId, event, userId?, data?)` |
-| `permissions` | `check(workspaceId, userId, permission)`, `resolve(workspaceId, userId)` |
+| Module         | Methods                                                                  |
+| -------------- | ------------------------------------------------------------------------ |
+| `workspace`    | `list`, `get`, `create`, `update`, `delete`                              |
+| `users`        | `list`, `invite`, `remove`, `updateRole`, `getProfile`, `updateProfile`  |
+| `subscription` | `get`, `checkout`, `update`, `cancel`, `resume`, `getBillingPortalUrl`   |
+| `plans`        | `getGroup`, `getVersions`, `getPublic`, `getVersion`                     |
+| `invoices`     | `list`, `get`                                                            |
+| `usage`        | `record`, `recordBatch`, `getQuota`, `getAll`, `getLogs`                 |
+| `settings`     | `get`                                                                    |
+| `features`     | `list`, `update`                                                         |
+| `notification` | `send(workspaceId, event, userId?, data?)`                               |
+| `permissions`  | `check(workspaceId, userId, permission)`, `resolve(workspaceId, userId)` |
 
 ### BuildBase Config Options
 

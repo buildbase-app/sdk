@@ -9,7 +9,19 @@ import { isDevelopment } from './utils';
 function redactForLog(obj: unknown): unknown {
   if (obj === null || obj === undefined) return obj;
   if (typeof obj !== 'object') return obj;
-  const sensitive = new Set(['authorization', 'token', 'password', 'accesstoken', 'refreshtoken', 'secret', 'apikey', 'api_key', 'session', 'sessionid', 'x-session-id']);
+  const sensitive = new Set([
+    'authorization',
+    'token',
+    'password',
+    'accesstoken',
+    'refreshtoken',
+    'secret',
+    'apikey',
+    'api_key',
+    'session',
+    'sessionid',
+    'x-session-id',
+  ]);
   if (Array.isArray(obj)) return obj.map(redactForLog);
   const out: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(obj)) {
@@ -332,11 +344,11 @@ export function fetchWithTimeout(
   const timeoutId = setTimeout(() => controller.abort(), timeout);
 
   return safeFetch(url, mergedOptions)
-    .then((response) => {
+    .then(response => {
       clearTimeout(timeoutId);
       return response;
     })
-    .catch((error) => {
+    .catch(error => {
       clearTimeout(timeoutId);
       if (controller.signal.aborted && !options.signal?.aborted) {
         throw new Error(`Request timeout after ${timeout}ms`);

@@ -16,7 +16,7 @@
  * platform permissions + any app permissions defined in the config.
  */
 
-import { isWorkspaceOwner, getWorkspaceUserRole } from './workspace-utils';
+import { getWorkspaceUserRole, isWorkspaceOwner } from './workspace-utils';
 
 // ─── Platform Permission Constants ────────────────────────────────────────────
 
@@ -62,10 +62,7 @@ export const DEFAULT_ROLE_PERMISSIONS: RolePermissionMap = {
     Permission.WORKSPACE_BILLING_VIEW,
     Permission.WORKSPACE_USAGE_VIEW,
   ],
-  viewer: [
-    Permission.WORKSPACE_SETTINGS_VIEW,
-    Permission.WORKSPACE_MEMBERS_VIEW,
-  ],
+  viewer: [Permission.WORKSPACE_SETTINGS_VIEW, Permission.WORKSPACE_MEMBERS_VIEW],
 };
 
 // ─── Permission Context ───────────────────────────────────────────────────────
@@ -200,10 +197,7 @@ export function resolvePermissions(ctx: PermissionContext): Set<string> {
  * Works with both platform permissions (Permission.WORKSPACE_*) and
  * app permissions (any custom string).
  */
-export function hasPermission(
-  permission: string | string[],
-  ctx: PermissionContext,
-): boolean {
+export function hasPermission(permission: string | string[], ctx: PermissionContext): boolean {
   const permissions = resolvePermissions(ctx);
   if (Array.isArray(permission)) {
     return permission.every(p => permissions.has(p));
@@ -216,7 +210,7 @@ export function hasPermission(
 function applySettingRestrictions(
   permissions: Set<string>,
   role: string,
-  settings?: SettingsLike | null,
+  settings?: SettingsLike | null
 ): void {
   if (!settings?.workspace) return;
 

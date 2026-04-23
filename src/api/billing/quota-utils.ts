@@ -1,7 +1,12 @@
-import { getCurrencySymbol } from './currency-utils';
 import type { BillingInterval, IQuotaByInterval } from '../types';
+import { getCurrencySymbol } from './currency-utils';
 
-export type QuotaDisplayValue = { included: number; overage?: number; unitSize?: number; allowOverage?: boolean } | null;
+export type QuotaDisplayValue = {
+  included: number;
+  overage?: number;
+  unitSize?: number;
+  allowOverage?: boolean;
+} | null;
 
 /**
  * Normalize a per-interval quota value to a display shape for the given billing interval.
@@ -107,7 +112,12 @@ export interface QuotaDisplayParts {
 export function getQuotaDisplayParts(
   value: QuotaDisplayValue,
   unitName: string,
-  options: { overageInCents?: boolean; currency?: string; currencySymbol?: string; locale?: string } = {}
+  options: {
+    overageInCents?: boolean;
+    currency?: string;
+    currencySymbol?: string;
+    locale?: string;
+  } = {}
 ): QuotaDisplayParts | null {
   if (value === null || value === undefined) return null;
   const { overageInCents = true, currency, locale = 'en' } = options;

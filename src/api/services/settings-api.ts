@@ -4,7 +4,7 @@
  */
 
 import { BaseApi } from '../../lib/api-base';
-import type { ISettings, IOsConfig } from './shared-types';
+import type { IOsConfig, ISettings } from './shared-types';
 
 export class SettingsApi extends BaseApi {
   constructor(config: IOsConfig & { sessionId?: string }) {

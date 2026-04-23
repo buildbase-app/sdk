@@ -23,8 +23,8 @@ export { SaaSOSProvider } from './providers/SaaSOSProvider';
 export type { SaaSOSProviderProps } from './providers/SaaSOSProvider';
 
 // ─── Auth Hooks & Gate Components ──────────────────────────────────────────────
-export { useSaaSAuth } from './providers/auth/hooks';
 export { WhenAuthenticated, WhenUnauthenticated } from './components/user/auth';
+export { useSaaSAuth } from './providers/auth/hooks';
 
 // ─── Role Gate Components ──────────────────────────────────────────────────────
 export { WhenRoles, WhenWorkspaceRoles } from './components/user/role';
@@ -66,10 +66,7 @@ export {
 } from './contexts/SubscriptionContext';
 export type { SubscriptionContextValue } from './contexts/SubscriptionContext';
 
-export {
-  QuotaUsageContextProvider,
-  useQuotaUsageContext,
-} from './contexts/QuotaUsageContext';
+export { QuotaUsageContextProvider, useQuotaUsageContext } from './contexts/QuotaUsageContext';
 export type { QuotaUsageContextValue } from './contexts/QuotaUsageContext';
 
 // ─── Hooks ─────────────────────────────────────────────────────────────────────
@@ -104,10 +101,10 @@ export { useSeatStatus } from './hooks/use-seat-status';
 export type { SeatStatus } from './hooks/use-seat-status';
 
 // ─── UI Components ─────────────────────────────────────────────────────────────
-export { WorkspaceSwitcher } from './providers/workspace/provider';
 export { BetaForm } from './components/beta/BetaForm';
 export { PricingPage } from './components/pricing';
 export type { PricingPageDetails, PricingPageProps } from './components/pricing';
+export { WorkspaceSwitcher } from './providers/workspace/provider';
 
 export {
   PushNotificationProvider,
@@ -115,9 +112,9 @@ export {
 } from './providers/push/PushNotificationContext';
 
 // ─── Translations ──────────────────────────────────────────────────────────────
-export { useTranslation, SUPPORTED_LOCALES } from './i18n';
+export { SUPPORTED_LOCALES, useTranslation } from './i18n';
 export type { SDKLocale, SDKMessages } from './i18n';
 
 // ─── Settings Screen Constants ─────────────────────────────────────────────────
-export { SettingsScreen, SETTINGS_SCREENS } from './providers/workspace/ui/SettingsDialog';
+export { SETTINGS_SCREENS, SettingsScreen } from './providers/workspace/ui/SettingsDialog';
 export type { WorkspaceSettingsSection } from './providers/workspace/ui/SettingsDialog';

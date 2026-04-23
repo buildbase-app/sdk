@@ -15,11 +15,15 @@
 // These are the low-level HTTP clients. Framework-agnostic, no React.
 // Both server (BuildBase factory) and React (hooks) use these internally.
 
-export { BaseApi } from './lib/api-base';
-export type { IBaseApiConfig } from './lib/api-base';
 export { AuthApi, BetaForm, PushApi, SettingsApi, UserApi, WorkspaceApi } from './api/services';
 export type { IBetaConfig } from './api/services';
-export type { NotificationData, NotificationResult, NotificationEvent } from './api/services/workspace-api';
+export type {
+  NotificationData,
+  NotificationEvent,
+  NotificationResult,
+} from './api/services/workspace-api';
+export { BaseApi } from './lib/api-base';
+export type { IBaseApiConfig } from './lib/api-base';
 
 // ─── API Version & Config ──────────────────────────────────────────────────────
 
@@ -46,26 +50,26 @@ export type {
 
 // ─── Invalidation ──────────────────────────────────────────────────────────────
 
-export { invalidateSubscription } from './lib/subscription-invalidation';
 export { invalidateQuotaUsage } from './lib/quota-usage-invalidation';
+export { invalidateSubscription } from './lib/subscription-invalidation';
 
 // ─── URL Params ────────────────────────────────────────────────────────────────
 
 export {
+  BB_PARAM,
+  cleanBBParams,
   createBBUrl,
   createCheckoutRedirectUrls,
   readBBParams,
-  cleanBBParams,
-  BB_PARAM,
 } from './lib/url-params';
 
 // ─── Security ──────────────────────────────────────────────────────────────────
 
-export { validateRedirectUrl, safeRedirect } from './lib/security';
+export { safeRedirect, validateRedirectUrl } from './lib/security';
 
 // ─── Auth Intent (redirect preservation) ────────────────────────────────────────
 
-export { saveAuthIntent, consumeAuthIntent, clearAuthIntent } from './lib/auth-intent';
+export { clearAuthIntent, consumeAuthIntent, saveAuthIntent } from './lib/auth-intent';
 
 // ─── Billing Utilities (currency, pricing, quotas) ─────────────────────────────
 
@@ -114,16 +118,12 @@ export type {
 // ─── Permissions ──────────────────────────────────────────────────────────────
 
 export {
-  Permission,
   DEFAULT_ROLE_PERMISSIONS,
-  resolvePermissions,
+  Permission,
   hasPermission,
+  resolvePermissions,
 } from './lib/permissions';
-export type {
-  PermissionKey,
-  PermissionContext,
-  RolePermissionMap,
-} from './lib/permissions';
+export type { PermissionContext, PermissionKey, RolePermissionMap } from './lib/permissions';
 
 // ─── Push Notification (service worker template) ───────────────────────────────
 
@@ -190,10 +190,10 @@ export type {
 
 export {
   BillingIntervals,
-  SubscriptionStatus,
+  DunningState,
   InvoiceStatuses,
   SubscriptionItemType,
-  DunningState,
+  SubscriptionStatus,
 } from './api/types';
 export type { SubscriptionStatusType } from './api/types';
 

@@ -144,7 +144,8 @@ export const zh: SDKMessages = {
     noPlanAssigned: '未分配套餐',
     free: '免费',
     perSeatDisplay: '+ {price}/席位{interval}',
-    estTotalDisplay: '预估总计：{total}{interval}（{count, plural, one {# 个额外席位} other {# 个额外席位}}）',
+    estTotalDisplay:
+      '预估总计：{total}{interval}（{count, plural, one {# 个额外席位} other {# 个额外席位}}）',
     nextBillingDisplay: '下次计费日：{date}',
     membersInWorkspace: '工作区有 {count, plural, one {# 名成员} other {# 名成员}}',
     billingInCurrency: '以{currency}计费',
@@ -160,7 +161,8 @@ export const zh: SDKMessages = {
     dunningFinal: '最终警告：订阅将被暂停',
     dunningSuspended: '订阅已暂停',
     dunningRecovery: '付款恢复中',
-    dunningSuspendedDescription: '由于多次付款失败，您的订阅已被暂停。请更新支付方式以恢复访问权限。',
+    dunningSuspendedDescription:
+      '由于多次付款失败，您的订阅已被暂停。请更新支付方式以恢复访问权限。',
     dunningRecoveryDescription: '我们无法处理您的付款。请更新您的支付方式以避免失去访问权限。',
     cancelEndDescription: '您的订阅将于以下日期结束：',
     trialEndDescription: '您的试用将于以下日期结束：',
@@ -195,7 +197,8 @@ export const zh: SDKMessages = {
     you: '您',
     owner: '拥有者',
     noMembers: '此工作区未找到成员。',
-    extraSeatCost: '每增加一名成员将增加{price}/{interval, select, yearly {年} quarterly {季} other {月}}的订阅费用',
+    extraSeatCost:
+      '每增加一名成员将增加{price}/{interval, select, yearly {年} quarterly {季} other {月}}的订阅费用',
     unknownUser: '未知用户',
     seats: '席位',
     members: '成员',
@@ -255,7 +258,8 @@ export const zh: SDKMessages = {
     percentUsed: '已使用 {percent, number}%',
     availableRemaining: '剩余 {count}',
     overLimitCount: '{count} 超出上限',
-    overageWarning: '{count, plural, one {# 项资源已超出包含的配额。} other {# 项资源已超出包含的配额。}}额外用量将作为超额部分在下次账单中收取。',
+    overageWarning:
+      '{count, plural, one {# 项资源已超出包含的配额。} other {# 项资源已超出包含的配额。}}额外用量将作为超额部分在下次账单中收取。',
     fullyUsed: '已全部使用',
     renewingSoon: '即将续期',
     almostFull: '即将用完',
@@ -264,7 +268,8 @@ export const zh: SDKMessages = {
     perUnit: '/ 单位',
     perUnits: '/ 单位',
     rateDisplay: '{rate} {unitSize, plural, =1 {/ 单位} other {/ {unitSize, number} 单位}}',
-    resourcesExceeded: '{count, plural, one {# 项资源已超出包含的配额。} other {# 项资源已超出包含的配额。}}',
+    resourcesExceeded:
+      '{count, plural, one {# 项资源已超出包含的配额。} other {# 项资源已超出包含的配额。}}',
     estOverageCharges: '本期预估超额费用：{amount}',
     overageRateDisplay: '超额费率：{rate}',
     resetDateDisplay: '用量将于 {date} 重置',
@@ -319,7 +324,8 @@ export const zh: SDKMessages = {
     deleteConfirm: '您确定吗？',
     deleteWarning: '此操作不可撤销。这将永久删除工作区及所有相关数据。',
     deleting: '正在删除...',
-    deleteDescription: '一旦删除工作区，将无法恢复。这将永久删除工作区及其所有数据，包括成员、设置和功能。',
+    deleteDescription:
+      '一旦删除工作区，将无法恢复。这将永久删除工作区及其所有数据，包括成员、设置和功能。',
     deleteConfirmDescription: '此操作不可撤销。这将永久删除工作区及所有相关数据。',
     failedToDelete: '删除工作区失败',
   },
@@ -337,8 +343,10 @@ export const zh: SDKMessages = {
     disabling: '正在禁用...',
     enable: '启用',
     disable: '禁用',
-    toggleAction: '{loading, select, true {{subscribed, select, true {正在禁用...} other {正在启用...}}} other {{subscribed, select, true {禁用} other {启用}}}}',
-    pushDescription: '{subscribed, select, true {您将收到重要更新的浏览器通知。} other {接收有关付款问题、试用到期和其他重要更新的通知。}}',
+    toggleAction:
+      '{loading, select, true {{subscribed, select, true {正在禁用...} other {正在启用...}}} other {{subscribed, select, true {禁用} other {启用}}}}',
+    pushDescription:
+      '{subscribed, select, true {您将收到重要更新的浏览器通知。} other {接收有关付款问题、试用到期和其他重要更新的通知。}}',
     deviceNote: '通知将发送到此设备。请在其他设备上单独启用。',
     prefsSaved: 'Notification preferences saved.',
     loadingPrefs: 'Loading preferences...',
@@ -352,7 +360,7 @@ export const zh: SDKMessages = {
       workspace_removed: 'Member Removed',
       workspace_removed_desc: 'When a member is removed from the workspace',
       workspace_role_changed: 'Role Changed',
-      workspace_role_changed_desc: 'When a member\'s role is updated',
+      workspace_role_changed_desc: "When a member's role is updated",
       subscription_created: 'Subscription Created',
       subscription_created_desc: 'When a new subscription is activated',
       subscription_upgraded: 'Plan Upgraded',

@@ -2,8 +2,8 @@
 
 import React, { useCallback, useState } from 'react';
 import { IUser } from '../../api/types';
-import { isAbortError } from '../../lib/api-utils';
 import { useTranslation } from '../../i18n';
+import { isAbortError } from '../../lib/api-utils';
 import { handleError } from '../../lib/error-handler';
 import { useAsyncEffect } from '../../lib/useAsyncEffect';
 import { useSaaSAuth } from '../auth/hooks';

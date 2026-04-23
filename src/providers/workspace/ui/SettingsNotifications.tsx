@@ -1,14 +1,14 @@
-import { Bell, BellOff, Mail, Smartphone, ShieldAlert } from 'lucide-react';
-import { useTranslation, type TranslationKey } from '../../../i18n';
+import { Bell, BellOff, Mail, ShieldAlert, Smartphone } from 'lucide-react';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '../../../components/ui/button';
 import { Switch } from '../../../components/ui/switch';
-import { usePushNotifications } from '../../push/PushNotificationContext';
-import { useWorkspaceApiWithOs } from '../use-workspace-api';
 import { usePermissions } from '../../../hooks/usePermissions';
-import { Permission } from '../../../lib/permissions';
+import { useTranslation, type TranslationKey } from '../../../i18n';
 import { handleError } from '../../../lib/error-handler';
+import { Permission } from '../../../lib/permissions';
+import { usePushNotifications } from '../../push/PushNotificationContext';
 import { IWorkspace } from '../types';
+import { useWorkspaceApiWithOs } from '../use-workspace-api';
 
 type BrowserId = 'firefox' | 'safari' | 'edge' | 'chrome';
 
@@ -21,7 +21,10 @@ function detectBrowser(): BrowserId {
 }
 
 const BROWSER_STEP_COUNT: Record<BrowserId, number> = {
-  firefox: 4, safari: 4, edge: 4, chrome: 4,
+  firefox: 4,
+  safari: 4,
+  edge: 4,
+  chrome: 4,
 };
 
 // ─── Types ───────────────────────────────────────────────────────
@@ -40,8 +43,15 @@ type Preferences = Record<string, ChannelPref>;
 // ─── Component ───────────────────────────────────────────────────
 
 const WorkspaceSettingsNotifications: React.FC<{ workspace: IWorkspace }> = ({ workspace }) => {
-  const { isSupported, permission, isSubscribed, loading: pushLoading, error: pushError, subscribe, unsubscribe } =
-    usePushNotifications();
+  const {
+    isSupported,
+    permission,
+    isSubscribed,
+    loading: pushLoading,
+    error: pushError,
+    subscribe,
+    unsubscribe,
+  } = usePushNotifications();
   const { t } = useTranslation();
   const { api } = useWorkspaceApiWithOs();
   const { can } = usePermissions();
@@ -60,7 +70,9 @@ const WorkspaceSettingsNotifications: React.FC<{ workspace: IWorkspace }> = ({ w
   const timerRef = useRef<ReturnType<typeof setTimeout>>(null);
 
   useEffect(() => {
-    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
   }, []);
 
   // Fetch user-manageable events + current preferences
@@ -73,49 +85,53 @@ const WorkspaceSettingsNotifications: React.FC<{ workspace: IWorkspace }> = ({ w
 
     Promise.all([
       api.getNotificationEvents(wsId).catch(() => [] as NotificationEvent[]),
-      api.getNotificationPreferences(wsId).catch(() => ({} as Preferences)),
-    ]).then(([evts, prefs]) => {
-      setEvents(evts);
-      setPreferences(prefs);
-    }).finally(() => {
-      setLoadingEvents(false);
-      setLoadingPrefs(false);
-    });
+      api.getNotificationPreferences(wsId).catch(() => ({}) as Preferences),
+    ])
+      .then(([evts, prefs]) => {
+        setEvents(evts);
+        setPreferences(prefs);
+      })
+      .finally(() => {
+        setLoadingEvents(false);
+        setLoadingPrefs(false);
+      });
   }, [workspace?._id]);
 
-  const toggleChannel = useCallback(async (eventSlug: string, channel: 'email' | 'push', currentValue: boolean) => {
-    if (!workspace?._id || !canEdit) return;
-    const newValue = !currentValue;
-    const updateKey = `${eventSlug}.${channel}`;
-    setUpdating(updateKey);
-    setSuccessMsg(null);
+  const toggleChannel = useCallback(
+    async (eventSlug: string, channel: 'email' | 'push', currentValue: boolean) => {
+      if (!workspace?._id || !canEdit) return;
+      const newValue = !currentValue;
+      const updateKey = `${eventSlug}.${channel}`;
+      setUpdating(updateKey);
+      setSuccessMsg(null);
 
-    // Optimistic update
-    setPreferences(prev => ({
-      ...prev,
-      [eventSlug]: { ...prev[eventSlug], [channel]: newValue },
-    }));
-
-    try {
-      const updated = await api.updateNotificationPreferences(
-        workspace._id.toString(),
-        { [eventSlug]: { [channel]: newValue } }
-      );
-      setPreferences(updated);
-      setSuccessMsg(t('notifications.prefsSaved'));
-      if (timerRef.current) clearTimeout(timerRef.current);
-      timerRef.current = setTimeout(() => setSuccessMsg(null), 3000);
-    } catch (error) {
-      // Revert
+      // Optimistic update
       setPreferences(prev => ({
         ...prev,
-        [eventSlug]: { ...prev[eventSlug], [channel]: currentValue },
+        [eventSlug]: { ...prev[eventSlug], [channel]: newValue },
       }));
-      handleError(error, { component: 'SettingsNotifications', action: 'toggleChannel' });
-    } finally {
-      setUpdating(null);
-    }
-  }, [workspace?._id, canEdit, api, t]);
+
+      try {
+        const updated = await api.updateNotificationPreferences(workspace._id.toString(), {
+          [eventSlug]: { [channel]: newValue },
+        });
+        setPreferences(updated);
+        setSuccessMsg(t('notifications.prefsSaved'));
+        if (timerRef.current) clearTimeout(timerRef.current);
+        timerRef.current = setTimeout(() => setSuccessMsg(null), 3000);
+      } catch (error) {
+        // Revert
+        setPreferences(prev => ({
+          ...prev,
+          [eventSlug]: { ...prev[eventSlug], [channel]: currentValue },
+        }));
+        handleError(error, { component: 'SettingsNotifications', action: 'toggleChannel' });
+      } finally {
+        setUpdating(null);
+      }
+    },
+    [workspace?._id, canEdit, api, t]
+  );
 
   const getChannelValue = (eventSlug: string, channel: 'email' | 'push'): boolean => {
     return preferences[eventSlug]?.[channel] !== false;
@@ -137,9 +153,7 @@ const WorkspaceSettingsNotifications: React.FC<{ workspace: IWorkspace }> = ({ w
 
   return (
     <div className="space-y-6">
-      <p className="text-sm text-gray-600">
-        {t('notifications.manageDescription')}
-      </p>
+      <p className="text-sm text-gray-600">{t('notifications.manageDescription')}</p>
 
       {/* ─── Push Notifications (browser-level) ─── */}
       {isSupported && (
@@ -155,11 +169,17 @@ const WorkspaceSettingsNotifications: React.FC<{ workspace: IWorkspace }> = ({ w
               <div className="flex items-start gap-3">
                 <ShieldAlert className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
                 <div>
-                  <h4 className="text-sm font-medium text-amber-800">{t('notifications.blocked')}</h4>
-                  <p className="text-xs text-amber-700 mt-1">{t('notifications.blockedDescription')}</p>
+                  <h4 className="text-sm font-medium text-amber-800">
+                    {t('notifications.blocked')}
+                  </h4>
+                  <p className="text-xs text-amber-700 mt-1">
+                    {t('notifications.blockedDescription')}
+                  </p>
                   <ol className="text-xs text-amber-700 mt-2 space-y-1 list-decimal list-inside">
                     {Array.from({ length: stepCount }, (_, i) => (
-                      <li key={i}>{t(`notifications.unblock.${browser}.step${i + 1}` as TranslationKey)}</li>
+                      <li key={i}>
+                        {t(`notifications.unblock.${browser}.step${i + 1}` as TranslationKey)}
+                      </li>
                     ))}
                   </ol>
                 </div>
@@ -171,11 +191,19 @@ const WorkspaceSettingsNotifications: React.FC<{ workspace: IWorkspace }> = ({ w
             <div className="border rounded-lg p-4">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-start gap-3">
-                  <div className={`mt-0.5 p-2 rounded-lg ${isSubscribed ? 'bg-green-100' : 'bg-gray-100'}`}>
-                    {isSubscribed ? <Bell className="h-4 w-4 text-green-600" /> : <BellOff className="h-4 w-4 text-gray-400" />}
+                  <div
+                    className={`mt-0.5 p-2 rounded-lg ${isSubscribed ? 'bg-green-100' : 'bg-gray-100'}`}
+                  >
+                    {isSubscribed ? (
+                      <Bell className="h-4 w-4 text-green-600" />
+                    ) : (
+                      <BellOff className="h-4 w-4 text-gray-400" />
+                    )}
                   </div>
                   <div>
-                    <h4 className="text-sm font-medium text-gray-900">{t('notifications.pushTitle')}</h4>
+                    <h4 className="text-sm font-medium text-gray-900">
+                      {t('notifications.pushTitle')}
+                    </h4>
                     <p className="text-xs text-gray-500 mt-0.5">
                       {t('notifications.pushDescription', { subscribed: String(isSubscribed) })}
                     </p>
@@ -189,7 +217,10 @@ const WorkspaceSettingsNotifications: React.FC<{ workspace: IWorkspace }> = ({ w
                   disabled={pushLoading}
                   progress={pushLoading}
                 >
-                  {t('notifications.toggleAction', { loading: String(pushLoading), subscribed: String(isSubscribed) })}
+                  {t('notifications.toggleAction', {
+                    loading: String(pushLoading),
+                    subscribed: String(isSubscribed),
+                  })}
                 </Button>
               </div>
               {isSubscribed && (

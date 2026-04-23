@@ -86,9 +86,11 @@ export const de: SDKMessages = {
     scheduledCancellation: 'Kündigung des Abonnements geplant',
     scheduledTrialCancellation: 'Kündigung der Testversion geplant',
     paymentPastDue: 'Zahlung überfällig',
-    paymentPastDueDescription: 'Bitte aktualisiere deine Zahlungsmethode, um eine Dienstunterbrechung zu vermeiden.',
+    paymentPastDueDescription:
+      'Bitte aktualisiere deine Zahlungsmethode, um eine Dienstunterbrechung zu vermeiden.',
     subscriptionPaused: 'Abonnement pausiert',
-    subscriptionPausedDescription: 'Dein Abonnement ist derzeit pausiert. Setze es fort, um den vollen Zugang wiederherzustellen.',
+    subscriptionPausedDescription:
+      'Dein Abonnement ist derzeit pausiert. Setze es fort, um den vollen Zugang wiederherzustellen.',
     errorLoading: 'Fehler beim Laden der Abonnementdaten',
     errorLoadingDescription: 'Bitte überprüfe deine Verbindung und versuche es erneut.',
     errorProcessing: 'Abonnement konnte nicht verarbeitet werden',
@@ -144,7 +146,8 @@ export const de: SDKMessages = {
     noPlanAssigned: 'Kein Plan zugewiesen',
     free: 'Kostenlos',
     perSeatDisplay: '+ {price}/Platz{interval}',
-    estTotalDisplay: 'Geschätztes Gesamt: {total}{interval} ({count, plural, one {# zusätzlicher Platz} other {# zusätzliche Plätze}})',
+    estTotalDisplay:
+      'Geschätztes Gesamt: {total}{interval} ({count, plural, one {# zusätzlicher Platz} other {# zusätzliche Plätze}})',
     nextBillingDisplay: 'Nächste Abrechnung: {date}',
     membersInWorkspace: '{count, plural, one {# Mitglied} other {# Mitglieder}} im Arbeitsbereich',
     billingInCurrency: 'Abrechnung in {currency}',
@@ -160,20 +163,27 @@ export const de: SDKMessages = {
     dunningFinal: 'Letzte Warnung: Abonnement wird ausgesetzt',
     dunningSuspended: 'Abonnement ausgesetzt',
     dunningRecovery: 'Zahlungswiederherstellung läuft',
-    dunningSuspendedDescription: 'Dein Abonnement wurde aufgrund wiederholter Zahlungsfehler ausgesetzt. Aktualisiere deine Zahlungsmethode, um den Zugang wiederherzustellen.',
-    dunningRecoveryDescription: 'Wir konnten deine Zahlung nicht verarbeiten. Bitte aktualisiere deine Zahlungsmethode, um den Zugang nicht zu verlieren.',
+    dunningSuspendedDescription:
+      'Dein Abonnement wurde aufgrund wiederholter Zahlungsfehler ausgesetzt. Aktualisiere deine Zahlungsmethode, um den Zugang wiederherzustellen.',
+    dunningRecoveryDescription:
+      'Wir konnten deine Zahlung nicht verarbeiten. Bitte aktualisiere deine Zahlungsmethode, um den Zugang nicht zu verlieren.',
     cancelEndDescription: 'Dein Abonnement endet am',
     trialEndDescription: 'Deine Testversion endet am',
-    cancelEndFallback: 'Dein Abonnement wird zum Ende des aktuellen Abrechnungszeitraums gekündigt. Dir wird nichts mehr berechnet.',
+    cancelEndFallback:
+      'Dein Abonnement wird zum Ende des aktuellen Abrechnungszeitraums gekündigt. Dir wird nichts mehr berechnet.',
     resumeChargeDate: 'Dir wird erneut berechnet am',
     resumeChargeFallback: 'dem nächsten Abrechnungsdatum',
-    resumeContinue: 'Dein Abonnement wird automatisch fortgesetzt und gemäß deinem Plan abgerechnet',
-    resumeCancelAnytime: 'Du kannst jederzeit vor dem nächsten Abrechnungsdatum kündigen, wenn du es dir anders überlegst',
+    resumeContinue:
+      'Dein Abonnement wird automatisch fortgesetzt und gemäß deinem Plan abgerechnet',
+    resumeCancelAnytime:
+      'Du kannst jederzeit vor dem nächsten Abrechnungsdatum kündigen, wenn du es dir anders überlegst',
     retainAccess: 'Du behältst den vollen Zugang zu diesem Plan bis',
     retainAccessFallback: 'zum Ende deines aktuellen Abrechnungszeitraums',
-    noPlansAvailable: 'Für diesen Arbeitsbereich sind keine Plangruppen verfügbar. Bitte kontaktiere den Support, wenn du glaubst, dass dies ein Fehler ist.',
+    noPlansAvailable:
+      'Für diesen Arbeitsbereich sind keine Plangruppen verfügbar. Bitte kontaktiere den Support, wenn du glaubst, dass dies ein Fehler ist.',
     noPlansAvailableHint: 'Für diesen Arbeitsbereich sind keine Plangruppen verfügbar.',
-    startTrialDescription: 'Teste den vollständigen Plan ohne Verpflichtung. Du kannst jederzeit upgraden oder kündigen.',
+    startTrialDescription:
+      'Teste den vollständigen Plan ohne Verpflichtung. Du kannst jederzeit upgraden oder kündigen.',
     noSubscriptionDescription: 'Wähle einen Plan, um mit deinem Arbeitsbereich loszulegen',
     startFreeTrial: 'Kostenlose Testversion starten',
     startTrialDays: '{days}-tägige kostenlose Testversion starten',
@@ -195,7 +205,8 @@ export const de: SDKMessages = {
     you: 'Du',
     owner: 'Eigentümer',
     noMembers: 'Keine Mitglieder in diesem Arbeitsbereich gefunden.',
-    extraSeatCost: 'Jedes zusätzliche Mitglied fügt {price}/{interval, select, yearly {Jahr} quarterly {Quartal} other {Monat}} zu deinem Abonnement hinzu',
+    extraSeatCost:
+      'Jedes zusätzliche Mitglied fügt {price}/{interval, select, yearly {Jahr} quarterly {Quartal} other {Monat}} zu deinem Abonnement hinzu',
     unknownUser: 'Unbekannter Benutzer',
     seats: 'Plätze',
     members: 'Mitglieder',
@@ -205,10 +216,12 @@ export const de: SDKMessages = {
     available: 'verfügbar',
     noMemberLimit: 'Kein Mitgliederlimit',
     seatHeading: '{hasSeatPricing, select, true {Plätze} other {Mitglieder}}',
-    limitReached: '{reason, select, seat_limit_reached {Platzlimit erreicht} other {Mitgliederlimit erreicht}}',
+    limitReached:
+      '{reason, select, seat_limit_reached {Platzlimit erreicht} other {Mitgliederlimit erreicht}}',
     memberCount: '{count, plural, one {# Mitglied} other {# Mitglieder}}',
     subscriptionRequired: 'Ein Abonnement ist erforderlich, um Mitglieder einzuladen.',
-    seatLimitMessage: 'Dein Plan erlaubt bis zu {maxUsers, number} Mitglieder. Upgrade für mehr Plätze.',
+    seatLimitMessage:
+      'Dein Plan erlaubt bis zu {maxUsers, number} Mitglieder. Upgrade für mehr Plätze.',
     settingsLimitMessage: 'Dieser Arbeitsbereich erlaubt bis zu {maxUsers, number} Mitglieder.',
     memberLimitMessage: 'Mitgliederlimit von {maxUsers, number} erreicht.',
     selectRole: 'Rolle auswählen',
@@ -242,7 +255,8 @@ export const de: SDKMessages = {
     inOverage: 'Im Überschuss',
     estOverageCost: 'Geschätzte Überschusskosten',
     overageDetected: 'Überschuss erkannt',
-    overageDescription: 'Zusätzliche Nutzung wird als Überschuss auf deiner nächsten Rechnung berechnet.',
+    overageDescription:
+      'Zusätzliche Nutzung wird als Überschuss auf deiner nächsten Rechnung berechnet.',
     overageUnits: 'Überschusseinheiten',
     rate: 'Tarif',
     billableBlocks: 'Abrechenbare Blöcke',
@@ -255,7 +269,8 @@ export const de: SDKMessages = {
     percentUsed: '{percent, number}% genutzt',
     availableRemaining: '{count} verbleibend',
     overLimitCount: '{count} über dem Limit',
-    overageWarning: '{count, plural, one {# Ressource hat das enthaltene Kontingent überschritten.} other {# Ressourcen haben das enthaltene Kontingent überschritten.}} Zusätzliche Nutzung wird als Überschuss auf deiner nächsten Rechnung berechnet.',
+    overageWarning:
+      '{count, plural, one {# Ressource hat das enthaltene Kontingent überschritten.} other {# Ressourcen haben das enthaltene Kontingent überschritten.}} Zusätzliche Nutzung wird als Überschuss auf deiner nächsten Rechnung berechnet.',
     fullyUsed: 'Vollständig genutzt',
     renewingSoon: 'wird bald erneuert',
     almostFull: 'Fast voll',
@@ -264,7 +279,8 @@ export const de: SDKMessages = {
     perUnit: '/ Einheit',
     perUnits: '/ Einheiten',
     rateDisplay: '{rate} {unitSize, plural, =1 {/ Einheit} other {/ {unitSize, number} Einheiten}}',
-    resourcesExceeded: '{count, plural, one {# Ressource hat das enthaltene Kontingent überschritten.} other {# Ressourcen haben das enthaltene Kontingent überschritten.}}',
+    resourcesExceeded:
+      '{count, plural, one {# Ressource hat das enthaltene Kontingent überschritten.} other {# Ressourcen haben das enthaltene Kontingent überschritten.}}',
     estOverageCharges: 'Geschätzte Überschusskosten in diesem Zeitraum: {amount}',
     overageRateDisplay: 'Überschusstarif: {rate}',
     resetDateDisplay: 'Nutzung wird zurückgesetzt am {date}',
@@ -290,10 +306,12 @@ export const de: SDKMessages = {
     nameMinLength: 'Der Arbeitsbereichname muss mindestens 2 Zeichen lang sein.',
     billingCurrency: 'Abrechnungswährung',
     icon: 'Symbol',
-    iconDescription: 'Wähle ein Emoji oder lade ein benutzerdefiniertes Bild für deinen Arbeitsbereich hoch.',
+    iconDescription:
+      'Wähle ein Emoji oder lade ein benutzerdefiniertes Bild für deinen Arbeitsbereich hoch.',
     imageUrl: 'Bild-URL',
     imageUrlPlaceholder: 'https://beispiel.de/bild.png',
-    imageUrlDescription: 'Gib eine gültige URL für dein Arbeitsbereich-Bild ein. Unterstützt PNG-, JPG- und SVG-Formate.',
+    imageUrlDescription:
+      'Gib eine gültige URL für dein Arbeitsbereich-Bild ein. Unterstützt PNG-, JPG- und SVG-Formate.',
     previewLabel: 'Vorschau:',
     success: 'Arbeitsbereich-Einstellungen erfolgreich gespeichert',
     chooseEmoji: 'Emoji wählen',
@@ -310,17 +328,21 @@ export const de: SDKMessages = {
     disabling: 'Wird deaktiviert',
     featureSuccess: 'erfolgreich',
     updateSuccess: '{feature} erfolgreich {enabled, select, true {aktiviert} other {deaktiviert}}',
-    actionStatus: '{action, select, enabling {Wird aktiviert} disabling {Wird deaktiviert} other {}}',
+    actionStatus:
+      '{action, select, enabling {Wird aktiviert} disabling {Wird deaktiviert} other {}}',
   },
   danger: {
     title: 'Arbeitsbereich löschen',
     adminOnly: 'Nur Administratoren können Arbeitsbereiche löschen.',
     deleteWorkspace: 'Arbeitsbereich löschen',
     deleteConfirm: 'Bist du dir absolut sicher?',
-    deleteWarning: 'Diese Aktion kann nicht rückgängig gemacht werden. Der Arbeitsbereich und alle zugehörigen Daten werden dauerhaft gelöscht.',
+    deleteWarning:
+      'Diese Aktion kann nicht rückgängig gemacht werden. Der Arbeitsbereich und alle zugehörigen Daten werden dauerhaft gelöscht.',
     deleting: 'Wird gelöscht...',
-    deleteDescription: 'Sobald du einen Arbeitsbereich löschst, gibt es kein Zurück. Der Arbeitsbereich und alle seine Daten werden dauerhaft gelöscht, einschließlich Mitglieder, Einstellungen und Funktionen.',
-    deleteConfirmDescription: 'Diese Aktion kann nicht rückgängig gemacht werden. Der Arbeitsbereich und alle seine Daten werden dauerhaft gelöscht.',
+    deleteDescription:
+      'Sobald du einen Arbeitsbereich löschst, gibt es kein Zurück. Der Arbeitsbereich und alle seine Daten werden dauerhaft gelöscht, einschließlich Mitglieder, Einstellungen und Funktionen.',
+    deleteConfirmDescription:
+      'Diese Aktion kann nicht rückgängig gemacht werden. Der Arbeitsbereich und alle seine Daten werden dauerhaft gelöscht.',
     failedToDelete: 'Arbeitsbereich konnte nicht gelöscht werden',
   },
   notifications: {
@@ -329,17 +351,22 @@ export const de: SDKMessages = {
     notSupported: 'Push-Benachrichtigungen werden in diesem Browser nicht unterstützt.',
     manageDescription: 'Verwalte, wie du Benachrichtigungen von diesem Arbeitsbereich erhältst.',
     blocked: 'Benachrichtigungen blockiert',
-    blockedDescription: 'Du hast Benachrichtigungen für diese Seite zuvor blockiert. Um sie zu aktivieren, aktualisiere deine Browsereinstellungen:',
+    blockedDescription:
+      'Du hast Benachrichtigungen für diese Seite zuvor blockiert. Um sie zu aktivieren, aktualisiere deine Browsereinstellungen:',
     pushTitle: 'Push-Benachrichtigungen',
     pushEnabledDescription: 'Du erhältst Browser-Benachrichtigungen für wichtige Updates.',
-    pushDisabledDescription: 'Erhalte Benachrichtigungen über Zahlungsprobleme, Ablauf der Testversion und andere wichtige Updates.',
+    pushDisabledDescription:
+      'Erhalte Benachrichtigungen über Zahlungsprobleme, Ablauf der Testversion und andere wichtige Updates.',
     enabling: 'Wird aktiviert...',
     disabling: 'Wird deaktiviert...',
     enable: 'Aktivieren',
     disable: 'Deaktivieren',
-    toggleAction: '{loading, select, true {{subscribed, select, true {Wird deaktiviert...} other {Wird aktiviert...}}} other {{subscribed, select, true {Deaktivieren} other {Aktivieren}}}}',
-    pushDescription: '{subscribed, select, true {Du erhältst Browser-Benachrichtigungen für wichtige Updates.} other {Erhalte Benachrichtigungen über Zahlungsprobleme, Ablauf der Testversion und andere wichtige Updates.}}',
-    deviceNote: 'Benachrichtigungen werden an dieses Gerät gesendet. Aktiviere sie auf anderen Geräten separat.',
+    toggleAction:
+      '{loading, select, true {{subscribed, select, true {Wird deaktiviert...} other {Wird aktiviert...}}} other {{subscribed, select, true {Deaktivieren} other {Aktivieren}}}}',
+    pushDescription:
+      '{subscribed, select, true {Du erhältst Browser-Benachrichtigungen für wichtige Updates.} other {Erhalte Benachrichtigungen über Zahlungsprobleme, Ablauf der Testversion und andere wichtige Updates.}}',
+    deviceNote:
+      'Benachrichtigungen werden an dieses Gerät gesendet. Aktiviere sie auf anderen Geräten separat.',
     prefsSaved: 'Notification preferences saved.',
     loadingPrefs: 'Loading preferences...',
     categories: {
@@ -352,7 +379,7 @@ export const de: SDKMessages = {
       workspace_removed: 'Member Removed',
       workspace_removed_desc: 'When a member is removed from the workspace',
       workspace_role_changed: 'Role Changed',
-      workspace_role_changed_desc: 'When a member\'s role is updated',
+      workspace_role_changed_desc: "When a member's role is updated",
       subscription_created: 'Subscription Created',
       subscription_created_desc: 'When a new subscription is activated',
       subscription_upgraded: 'Plan Upgraded',
@@ -437,7 +464,8 @@ export const de: SDKMessages = {
   workspace: {
     switchTitle: 'Arbeitsbereich wechseln',
     switchDescription: 'Wähle einen Arbeitsbereich aus oder erstelle einen neuen.',
-    notLoggedIn: 'Es sieht so aus, als wärst du nicht eingeloggt. Bitte melde dich an, um fortzufahren.',
+    notLoggedIn:
+      'Es sieht so aus, als wärst du nicht eingeloggt. Bitte melde dich an, um fortzufahren.',
     availableWorkspaces: 'Verfügbare Arbeitsbereiche ({count, number})',
     loadingWorkspaces: 'Arbeitsbereiche werden geladen...',
     searchPlaceholder: 'Arbeitsbereiche suchen...',
@@ -452,12 +480,14 @@ export const de: SDKMessages = {
     workspaceNamePlaceholder: 'Mein Arbeitsbereich',
     workspaceNameMinLength: 'Der Arbeitsbereichname muss mindestens 2 Zeichen lang sein.',
     workspaceIcon: 'Arbeitsbereich-Symbol',
-    iconDescription: 'Wähle ein Emoji oder lade ein benutzerdefiniertes Bild für deinen Arbeitsbereich hoch.',
+    iconDescription:
+      'Wähle ein Emoji oder lade ein benutzerdefiniertes Bild für deinen Arbeitsbereich hoch.',
     chooseEmoji: 'Emoji wählen',
     customImageUrl: 'Benutzerdefinierte Bild-URL',
     imageUrl: 'Bild-URL',
     imageUrlPlaceholder: 'https://beispiel.de/bild.png',
-    imageUrlDescription: 'Gib eine gültige URL für dein Arbeitsbereich-Bild ein. Unterstützt PNG-, JPG- und SVG-Formate.',
+    imageUrlDescription:
+      'Gib eine gültige URL für dein Arbeitsbereich-Bild ein. Unterstützt PNG-, JPG- und SVG-Formate.',
     invalidUrl: 'Bitte gib eine gültige URL ein',
     creating: 'Wird erstellt...',
     createWorkspace: 'Arbeitsbereich erstellen',
