@@ -1,25 +1,25 @@
-import { useTranslation } from '../../../i18n';
-import { useSaaSSettings } from '../../os/hooks';
 import {
   AlertTriangle,
   BarChart3,
   Bell,
   CreditCard,
-  Shield,
   SettingsIcon,
+  Shield,
   ToggleRight,
   UserIcon,
   UsersIcon,
 } from 'lucide-react';
 import React from 'react';
-import { cn } from '../../../lib/utils';
-import { usePermissions } from '../../../hooks/usePermissions';
 import { usePermissionConfig } from '../../../contexts/PermissionContext';
+import { usePermissions } from '../../../hooks/usePermissions';
+import { useTranslation } from '../../../i18n';
 import { Permission } from '../../../lib/permissions';
+import { cn } from '../../../lib/utils';
+import { useSaaSSettings } from '../../os/hooks';
 import { WorkspaceModes } from '../../types';
 import { IWorkspace } from '../types';
-import { SettingsScreen } from './SettingsDialog';
 import type { WorkspaceSettingsSection } from './SettingsDialog';
+import { SettingsScreen } from './SettingsDialog';
 
 interface Props {
   workspace: IWorkspace;
@@ -75,65 +75,65 @@ const Sidebar: React.FC<Props> = ({ workspace, section, setSection }) => {
         </div>
       )}
 
-      <SidebarSection title={t("settings.sidebar.account")}>
+      <SidebarSection title={t('settings.sidebar.account')}>
         <SidebarItem
           activeSection={section}
           icon={<UserIcon className="h-3.5 w-3.5" />}
-          label={t("settings.sidebar.profile")}
+          label={t('settings.sidebar.profile')}
           section={SettingsScreen.Profile}
           onClick={() => setSection(SettingsScreen.Profile)}
         />
       </SidebarSection>
-      <SidebarSection title={t("settings.sidebar.workspace")}>
+      <SidebarSection title={t('settings.sidebar.workspace')}>
         {can(Permission.WORKSPACE_SETTINGS_VIEW) && (
-        <SidebarItem
-          activeSection={section}
-          icon={<SettingsIcon className="h-3.5 w-3.5" />}
-          label={t("settings.sidebar.general")}
-          section={SettingsScreen.General}
-          onClick={() => setSection(SettingsScreen.General)}
-        />
+          <SidebarItem
+            activeSection={section}
+            icon={<SettingsIcon className="h-3.5 w-3.5" />}
+            label={t('settings.sidebar.general')}
+            section={SettingsScreen.General}
+            onClick={() => setSection(SettingsScreen.General)}
+          />
         )}
         {!isPersonalMode && can(Permission.WORKSPACE_MEMBERS_VIEW) && (
-        <SidebarItem
-          activeSection={section}
-          icon={<UsersIcon className="h-3.5 w-3.5" />}
-          label={t("settings.sidebar.users")}
-          section={SettingsScreen.Users}
-          onClick={() => setSection(SettingsScreen.Users)}
-        />
+          <SidebarItem
+            activeSection={section}
+            icon={<UsersIcon className="h-3.5 w-3.5" />}
+            label={t('settings.sidebar.users')}
+            section={SettingsScreen.Users}
+            onClick={() => setSection(SettingsScreen.Users)}
+          />
         )}
         {can(Permission.WORKSPACE_BILLING_VIEW) && (
-        <SidebarItem
-          activeSection={section}
-          icon={<CreditCard className="h-3.5 w-3.5" />}
-          label={t("settings.sidebar.subscription")}
-          section={SettingsScreen.Subscription}
-          onClick={() => setSection(SettingsScreen.Subscription)}
-        />
+          <SidebarItem
+            activeSection={section}
+            icon={<CreditCard className="h-3.5 w-3.5" />}
+            label={t('settings.sidebar.subscription')}
+            section={SettingsScreen.Subscription}
+            onClick={() => setSection(SettingsScreen.Subscription)}
+          />
         )}
         {can(Permission.WORKSPACE_USAGE_VIEW) && (
-        <SidebarItem
-          activeSection={section}
-          icon={<BarChart3 className="h-3.5 w-3.5" />}
-          label={t("settings.sidebar.usage")}
-          section={SettingsScreen.Usage}
-          onClick={() => setSection(SettingsScreen.Usage)}
-        />
+          <SidebarItem
+            activeSection={section}
+            icon={<BarChart3 className="h-3.5 w-3.5" />}
+            label={t('settings.sidebar.usage')}
+            section={SettingsScreen.Usage}
+            onClick={() => setSection(SettingsScreen.Usage)}
+          />
         )}
         {can(Permission.WORKSPACE_FEATURES_VIEW) && (
-        <SidebarItem
-          activeSection={section}
-          icon={<ToggleRight className="h-3.5 w-3.5" />}
-          label={t("settings.sidebar.features")}
-          section={SettingsScreen.Features}
-          onClick={() => setSection(SettingsScreen.Features)}
-        />
+          <SidebarItem
+            activeSection={section}
+            icon={<ToggleRight className="h-3.5 w-3.5" />}
+            label={t('settings.sidebar.features')}
+            section={SettingsScreen.Features}
+            onClick={() => setSection(SettingsScreen.Features)}
+          />
         )}
         <SidebarItem
           activeSection={section}
           icon={<Bell className="h-3.5 w-3.5" />}
-          label={t("settings.sidebar.notifications")}
+          label={t('settings.sidebar.notifications')}
           section={SettingsScreen.Notifications}
           onClick={() => setSection(SettingsScreen.Notifications)}
         />
@@ -141,7 +141,7 @@ const Sidebar: React.FC<Props> = ({ workspace, section, setSection }) => {
           <SidebarItem
             activeSection={section}
             icon={<Shield className="h-3.5 w-3.5" />}
-            label={t("settings.sidebar.permissions")}
+            label={t('settings.sidebar.permissions')}
             section={SettingsScreen.Permissions}
             onClick={() => setSection(SettingsScreen.Permissions)}
           />
@@ -150,7 +150,7 @@ const Sidebar: React.FC<Props> = ({ workspace, section, setSection }) => {
           <SidebarItem
             activeSection={section}
             icon={<AlertTriangle className="h-3.5 w-3.5" />}
-            label={t("settings.sidebar.danger")}
+            label={t('settings.sidebar.danger')}
             section={SettingsScreen.Danger}
             onClick={() => setSection(SettingsScreen.Danger)}
           />

@@ -2,8 +2,13 @@
  * Helpers for multi-currency plan version pricing (pricingVariants).
  */
 
+import type {
+  BillingInterval,
+  IPlanVersion,
+  IPlanVersionWithPlan,
+  IPricingVariant,
+} from '../types';
 import { BillingIntervals } from '../types';
-import type { BillingInterval, IPlanVersion, IPlanVersionWithPlan, IPricingVariant } from '../types';
 
 /** Get the pricing variant for a currency, or null if not available. */
 export function getPricingVariant(
@@ -46,7 +51,12 @@ export function getStripePriceIdForInterval(
       : interval === BillingIntervals.Yearly
         ? 'yearlyPriceId'
         : 'quarterlyPriceId';
-  const altKey = interval === BillingIntervals.Monthly ? 'monthly' : interval === BillingIntervals.Yearly ? 'yearly' : undefined;
+  const altKey =
+    interval === BillingIntervals.Monthly
+      ? 'monthly'
+      : interval === BillingIntervals.Yearly
+        ? 'yearly'
+        : undefined;
   const id =
     variant.stripePrices[key] ??
     (altKey ? variant.stripePrices[altKey as keyof typeof variant.stripePrices] : undefined);
@@ -186,10 +196,7 @@ export function getPerSeatPriceCents(
 }
 
 /** Calculate billable seats: max(0, currentSeats - includedSeats). */
-export function calculateBillableSeats(
-  currentSeatCount: number,
-  includedSeats: number
-): number {
+export function calculateBillableSeats(currentSeatCount: number, includedSeats: number): number {
   return Math.max(0, currentSeatCount - (includedSeats || 0));
 }
 

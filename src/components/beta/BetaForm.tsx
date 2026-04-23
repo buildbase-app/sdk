@@ -198,7 +198,11 @@ export const BetaForm: React.FC<BetaFormProps> = ({
                     aria-live="assertive"
                     aria-atomic={true}
                   >
-                    <span className="text-4xl mb-2" role="img" aria-label={t('settings.common.error')}>
+                    <span
+                      className="text-4xl mb-2"
+                      role="img"
+                      aria-label={t('settings.common.error')}
+                    >
                       ❗
                     </span>
                     {error}

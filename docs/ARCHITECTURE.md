@@ -97,11 +97,11 @@ All are exported from the package; consumers typically use the high-level hooks 
 
 Multi-currency plans use **pricing variants** (`IPricingVariant`) and **per-interval quotas** (`IQuotaByInterval`). These modules are in `src/api/` and are exported from the package:
 
-| Module                 | Purpose                                                                 |
-| ---------------------- | ----------------------------------------------------------------------- |
-| **currency-utils**     | `CURRENCY_DISPLAY`, `CURRENCY_FLAG`, `PLAN_CURRENCY_CODES`, `PLAN_CURRENCY_OPTIONS`, `getCurrencySymbol`, `getCurrencyFlag`, `formatCents`, `formatOverageRate`, `formatOverageRateWithLabel`, `formatQuotaIncludedOverage`, `getQuotaUnitLabelFromName` |
+| Module                    | Purpose                                                                                                                                                                                                                                                                                                                   |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **currency-utils**        | `CURRENCY_DISPLAY`, `CURRENCY_FLAG`, `PLAN_CURRENCY_CODES`, `PLAN_CURRENCY_OPTIONS`, `getCurrencySymbol`, `getCurrencyFlag`, `formatCents`, `formatOverageRate`, `formatOverageRateWithLabel`, `formatQuotaIncludedOverage`, `getQuotaUnitLabelFromName`                                                                  |
 | **pricing-variant-utils** | `getPricingVariant`, `getBasePriceCents`, `getStripePriceIdForInterval`, `getQuotaOverageCents`, `getQuotaDisplayWithVariant`, `getAvailableCurrenciesFromPlans`, `getDisplayCurrency`, `getBillingIntervalAndCurrencyFromPriceId`; types: `IPricingVariant`, `PlanVersionWithPricingVariants`, `QuotaDisplayWithOverage` |
-| **quota-utils**        | `getQuotaDisplayValue`, `formatQuotaWithPrice`; types: `QuotaDisplayValue`, `FormatQuotaWithPriceOptions` |
+| **quota-utils**           | `getQuotaDisplayValue`, `formatQuotaWithPrice`; types: `QuotaDisplayValue`, `FormatQuotaWithPriceOptions`                                                                                                                                                                                                                 |
 
 Plan and subscription types use `IPlanVersion.pricingVariants` (instead of single `basePricing`/`stripePrices`) and `IQuotaByInterval` / `IQuotaIntervalValue` for quotas and overages per billing interval.
 

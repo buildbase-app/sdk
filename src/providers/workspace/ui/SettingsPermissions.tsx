@@ -1,12 +1,12 @@
 'use client';
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { useTranslation } from '../../../i18n';
 import { Button } from '../../../components/ui/button';
 import { Switch } from '../../../components/ui/switch';
-import { handleError } from '../../../lib/error-handler';
-import { usePermissions } from '../../../hooks/usePermissions';
 import { usePermissionConfig } from '../../../contexts/PermissionContext';
+import { usePermissions } from '../../../hooks/usePermissions';
+import { useTranslation } from '../../../i18n';
+import { handleError } from '../../../lib/error-handler';
 import { useSaaSSettings } from '../../os/hooks';
 import { useSaaSWorkspaces } from '../hooks';
 import { IWorkspace } from '../types';
@@ -30,12 +30,14 @@ const WorkspaceSettingsPermissions: React.FC<{ workspace: IWorkspace }> = ({ wor
   const successTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
 
   useEffect(() => {
-    return () => { if (successTimerRef.current) clearTimeout(successTimerRef.current); };
+    return () => {
+      if (successTimerRef.current) clearTimeout(successTimerRef.current);
+    };
   }, []);
 
   const roles = useMemo(
-    () => (settings?.workspace?.roles ?? workspace.roles ?? []),
-    [settings?.workspace?.roles, workspace.roles],
+    () => settings?.workspace?.roles ?? workspace.roles ?? [],
+    [settings?.workspace?.roles, workspace.roles]
   );
 
   // Collect all unique app permission strings from the developer's defaults
@@ -124,9 +126,7 @@ const WorkspaceSettingsPermissions: React.FC<{ workspace: IWorkspace }> = ({ wor
         </div>
       )}
 
-      {!isOwner && (
-        <div className="text-red-500 mb-4">{t('permissions.ownerOnly')}</div>
-      )}
+      {!isOwner && <div className="text-red-500 mb-4">{t('permissions.ownerOnly')}</div>}
 
       <p className="text-sm text-muted-foreground mb-4">{t('permissions.description')}</p>
 
@@ -136,7 +136,10 @@ const WorkspaceSettingsPermissions: React.FC<{ workspace: IWorkspace }> = ({ wor
             <tr className="border-b">
               <th className="text-start py-2 pe-4 font-medium text-gray-500 min-w-[160px]"></th>
               {roles.map(role => (
-                <th key={role} className="text-center py-2 px-3 font-medium text-gray-700 capitalize min-w-[80px]">
+                <th
+                  key={role}
+                  className="text-center py-2 px-3 font-medium text-gray-700 capitalize min-w-[80px]"
+                >
                   {role}
                 </th>
               ))}
@@ -145,9 +148,7 @@ const WorkspaceSettingsPermissions: React.FC<{ workspace: IWorkspace }> = ({ wor
           <tbody>
             {allAppPermissions.map(perm => (
               <tr key={perm} className="border-b border-gray-50 hover:bg-gray-50/50">
-                <td className="py-2 pe-4 text-gray-700 font-mono text-xs">
-                  {perm}
-                </td>
+                <td className="py-2 pe-4 text-gray-700 font-mono text-xs">{perm}</td>
                 {roles.map(role => {
                   const isAdmin = role === 'admin';
                   const checked = isAdmin || (permMap[role] ?? []).includes(perm);

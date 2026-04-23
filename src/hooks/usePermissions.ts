@@ -1,12 +1,12 @@
 'use client';
 
 import { useCallback, useMemo } from 'react';
+import { usePermissionConfig } from '../contexts/PermissionContext';
+import { resolvePermissions, type WorkspaceLike } from '../lib/permissions';
+import { getWorkspaceUserRole, isWorkspaceOwner } from '../lib/workspace-utils';
 import { useSaaSAuth } from '../providers/auth/hooks';
 import { useSaaSSettings } from '../providers/os/hooks';
 import { useSaaSWorkspaces } from '../providers/workspace/hooks';
-import { usePermissionConfig } from '../contexts/PermissionContext';
-import { isWorkspaceOwner, getWorkspaceUserRole } from '../lib/workspace-utils';
-import { resolvePermissions, type WorkspaceLike } from '../lib/permissions';
 
 /**
  * Resolve the current user's permissions in the current (or specified) workspace.
@@ -48,13 +48,13 @@ export function usePermissions(workspace?: WorkspaceLike | null) {
   const userId = user?.id ?? null;
 
   const workspaceRole = useMemo(
-    () => effectiveWorkspace ? getWorkspaceUserRole(effectiveWorkspace, userId) : null,
-    [effectiveWorkspace, userId],
+    () => (effectiveWorkspace ? getWorkspaceUserRole(effectiveWorkspace, userId) : null),
+    [effectiveWorkspace, userId]
   );
 
   const isOwner = useMemo(
-    () => effectiveWorkspace ? isWorkspaceOwner(effectiveWorkspace, userId) : false,
-    [effectiveWorkspace, userId],
+    () => (effectiveWorkspace ? isWorkspaceOwner(effectiveWorkspace, userId) : false),
+    [effectiveWorkspace, userId]
   );
 
   const permissions = useMemo(
@@ -66,7 +66,7 @@ export function usePermissions(workspace?: WorkspaceLike | null) {
         settings,
         appPermissions,
       }),
-    [userId, workspaceRole, effectiveWorkspace, settings, appPermissions],
+    [userId, workspaceRole, effectiveWorkspace, settings, appPermissions]
   );
 
   const can = useCallback(
@@ -76,7 +76,7 @@ export function usePermissions(workspace?: WorkspaceLike | null) {
       }
       return permissions.has(permission);
     },
-    [permissions],
+    [permissions]
   );
 
   return { can, permissions, isOwner, role: workspaceRole };

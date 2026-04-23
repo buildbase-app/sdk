@@ -1,5 +1,4 @@
 import { AlertTriangle, BarChart3, Calendar, RefreshCw } from 'lucide-react';
-import { useTranslation } from '../../../i18n';
 import React, { useMemo, useState } from 'react';
 import { getCurrencySymbol } from '../../../api/billing/currency-utils';
 import { getQuotaOverageCents } from '../../../api/billing/pricing-variant-utils';
@@ -8,20 +7,20 @@ import { Button } from '../../../components/ui/button';
 import { useQuotaUsageContext } from '../../../contexts/QuotaUsageContext';
 import { useSubscriptionContext } from '../../../contexts/SubscriptionContext';
 import { usePermissions } from '../../../hooks/usePermissions';
+import { useTranslation } from '../../../i18n';
 import { Permission } from '../../../lib/permissions';
 import { cn } from '../../../lib/utils';
 import SettingSkeleton from './Skeleton';
 
 function formatNumber(n: number, locale?: string): string {
-  if (n >= 1_000_000) return (n / 1_000_000).toLocaleString(locale, { maximumFractionDigits: 1 }) + 'M';
+  if (n >= 1_000_000)
+    return (n / 1_000_000).toLocaleString(locale, { maximumFractionDigits: 1 }) + 'M';
   if (n >= 1_000) return (n / 1_000).toLocaleString(locale, { maximumFractionDigits: 1 }) + 'K';
   return n.toLocaleString(locale);
 }
 
 function formatSlug(slug: string): string {
-  return slug
-    .replace(/[_-]/g, ' ')
-    .replace(/\b\w/g, c => c.toUpperCase());
+  return slug.replace(/[_-]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }
 
 function getUsagePercent(consumed: number, included: number): number {
@@ -29,16 +28,37 @@ function getUsagePercent(consumed: number, included: number): number {
   return Math.min((consumed / included) * 100, 100);
 }
 
-function getStatusColor(percent: number, hasOverage: boolean): {
+function getStatusColor(
+  percent: number,
+  hasOverage: boolean
+): {
   bar: string;
   bg: string;
   badge: string;
   badgeText: string;
 } {
-  if (hasOverage) return { bar: 'bg-red-500', bg: 'bg-red-100', badge: 'bg-red-100', badgeText: 'text-red-800' };
-  if (percent >= 90) return { bar: 'bg-amber-500', bg: 'bg-amber-100', badge: 'bg-amber-100', badgeText: 'text-amber-800' };
-  if (percent >= 75) return { bar: 'bg-yellow-500', bg: 'bg-yellow-100', badge: 'bg-yellow-100', badgeText: 'text-yellow-800' };
-  return { bar: 'bg-blue-500', bg: 'bg-blue-100', badge: 'bg-blue-100', badgeText: 'text-blue-800' };
+  if (hasOverage)
+    return { bar: 'bg-red-500', bg: 'bg-red-100', badge: 'bg-red-100', badgeText: 'text-red-800' };
+  if (percent >= 90)
+    return {
+      bar: 'bg-amber-500',
+      bg: 'bg-amber-100',
+      badge: 'bg-amber-100',
+      badgeText: 'text-amber-800',
+    };
+  if (percent >= 75)
+    return {
+      bar: 'bg-yellow-500',
+      bg: 'bg-yellow-100',
+      badge: 'bg-yellow-100',
+      badgeText: 'text-yellow-800',
+    };
+  return {
+    bar: 'bg-blue-500',
+    bg: 'bg-blue-100',
+    badge: 'bg-blue-100',
+    badgeText: 'text-blue-800',
+  };
 }
 
 interface QuotaOverageInfo {
@@ -50,7 +70,9 @@ interface QuotaOverageInfo {
 }
 
 function formatCost(amount: number, symbol: string, locale?: string): string {
-  return symbol + amount.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return (
+    symbol + amount.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  );
 }
 
 function formatDate(isoDate: string, locale = 'en-US'): string {
@@ -194,11 +216,20 @@ const WorkspaceSettingsUsage: React.FC = () => {
 
   const overageCount = entries.filter(([, q]) => q.hasOverage).length;
   // Compute average usage percentage across quotas (each quota weighted equally)
-  const avgUsagePercent = entries.length > 0
-    ? Math.round(entries.reduce((sum, [, q]) => sum + (q.included > 0 ? (q.consumed / q.included) * 100 : 0), 0) / entries.length)
-    : 0;
+  const avgUsagePercent =
+    entries.length > 0
+      ? Math.round(
+          entries.reduce(
+            (sum, [, q]) => sum + (q.included > 0 ? (q.consumed / q.included) * 100 : 0),
+            0
+          ) / entries.length
+        )
+      : 0;
 
-  const totalOverageCost = Object.values(overagePricing).reduce((sum, info) => sum + info.estimatedCost, 0);
+  const totalOverageCost = Object.values(overagePricing).reduce(
+    (sum, info) => sum + info.estimatedCost,
+    0
+  );
   const anyCurrency = Object.values(overagePricing)[0]?.currencySymbol ?? '$';
 
   return (
@@ -206,12 +237,7 @@ const WorkspaceSettingsUsage: React.FC = () => {
       {/* Header with refresh */}
       <div className="flex items-center justify-between">
         <p className="text-sm text-gray-600">{t('usage.description')}</p>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleRefresh}
-          disabled={refreshing}
-        >
+        <Button variant="ghost" size="sm" onClick={handleRefresh} disabled={refreshing}>
           <RefreshCw className={cn('h-3.5 w-3.5 me-1.5', refreshing && 'animate-spin')} />
           {t('settings.common.refreshAction', { loading: String(refreshing) })}
         </Button>
@@ -224,7 +250,10 @@ const WorkspaceSettingsUsage: React.FC = () => {
           <span>
             {t('usage.resetDateDisplay', { date: billingPeriod.endDate })}
             {billingPeriod.daysRemaining !== null && billingPeriod.daysRemaining > 0 && (
-              <span className="text-gray-500"> ({t('usage.daysRemainingDisplay', { count: billingPeriod.daysRemaining })})</span>
+              <span className="text-gray-500">
+                {' '}
+                ({t('usage.daysRemainingDisplay', { count: billingPeriod.daysRemaining })})
+              </span>
             )}
             {billingPeriod.daysRemaining !== null && billingPeriod.daysRemaining <= 0 && (
               <span className="text-amber-600 font-medium"> ({t('usage.renewingSoon')})</span>
@@ -237,7 +266,9 @@ const WorkspaceSettingsUsage: React.FC = () => {
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
         <div className="border border-gray-200 rounded-lg p-3 sm:p-4">
           <p className="text-xs text-gray-500 font-medium">{t('usage.totalResources')}</p>
-          <p className="text-lg sm:text-xl font-semibold text-gray-900 mt-1">{fmtNum(entries.length)}</p>
+          <p className="text-lg sm:text-xl font-semibold text-gray-900 mt-1">
+            {fmtNum(entries.length)}
+          </p>
         </div>
         <div className="border border-gray-200 rounded-lg p-3 sm:p-4">
           <p className="text-xs text-gray-500 font-medium">{t('usage.overallUsage')}</p>
@@ -245,12 +276,19 @@ const WorkspaceSettingsUsage: React.FC = () => {
             {fmtNum(avgUsagePercent) + '%'}
           </p>
         </div>
-        <div className={cn(
-          'border rounded-lg p-3 sm:p-4',
-          overageCount > 0 ? 'border-red-200 bg-red-50' : 'border-gray-200'
-        )}>
+        <div
+          className={cn(
+            'border rounded-lg p-3 sm:p-4',
+            overageCount > 0 ? 'border-red-200 bg-red-50' : 'border-gray-200'
+          )}
+        >
           <p className="text-xs text-gray-500 font-medium">{t('usage.inOverage')}</p>
-          <p className={cn('text-lg sm:text-xl font-semibold mt-1', overageCount > 0 ? 'text-red-600' : 'text-gray-900')}>
+          <p
+            className={cn(
+              'text-lg sm:text-xl font-semibold mt-1',
+              overageCount > 0 ? 'text-red-600' : 'text-gray-900'
+            )}
+          >
             {fmtNum(overageCount)}
           </p>
         </div>
@@ -270,7 +308,9 @@ const WorkspaceSettingsUsage: React.FC = () => {
           <div className="flex items-start gap-3">
             <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5 hidden sm:block" />
             <div className="flex-1">
-              <h3 className="text-sm font-semibold text-amber-800 mb-1">{t('usage.overageDetected')}</h3>
+              <h3 className="text-sm font-semibold text-amber-800 mb-1">
+                {t('usage.overageDetected')}
+              </h3>
               <p className="text-sm text-amber-700">
                 {t('usage.overageWarning', { count: overageCount })}
               </p>
@@ -323,18 +363,30 @@ function QuotaCard({
   const { t, formattingLocale } = useTranslation();
   const fmtN = (n: number) => formatNumber(n, formattingLocale);
   const fmtCost = (amount: number, symbol: string) => formatCost(amount, symbol, formattingLocale);
-   return (
+  return (
     <div className="border border-gray-200 rounded-lg p-4 sm:p-5">
       <div className="flex flex-wrap items-center justify-between gap-y-1 mb-3">
         <div className="flex items-center gap-2 min-w-0">
           <h3 className="text-sm font-semibold text-gray-900 truncate">{formatSlug(slug)}</h3>
           {quota.hasOverage && (
-            <span className={cn('inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium', colors.badge, colors.badgeText)}>
+            <span
+              className={cn(
+                'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium',
+                colors.badge,
+                colors.badgeText
+              )}
+            >
               {t('usage.overage')}
             </span>
           )}
           {!quota.hasOverage && percent >= 90 && (
-            <span className={cn('inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium', colors.badge, colors.badgeText)}>
+            <span
+              className={cn(
+                'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium',
+                colors.badge,
+                colors.badgeText
+              )}
+            >
               {t('usage.almostFull')}
             </span>
           )}
@@ -374,7 +426,10 @@ function QuotaCard({
           <div className="flex items-center justify-between text-xs">
             <span className="text-gray-500">{t('usage.rate')}</span>
             <span className="font-medium text-gray-900">
-              {t('usage.rateDisplay', { rate: fmtCost(pricing.overageCents / 100, pricing.currencySymbol), unitSize: pricing.unitSize })}
+              {t('usage.rateDisplay', {
+                rate: fmtCost(pricing.overageCents / 100, pricing.currencySymbol),
+                unitSize: pricing.unitSize,
+              })}
             </span>
           </div>
           {pricing.unitSize > 1 && (
@@ -397,7 +452,12 @@ function QuotaCard({
       {/* Overage rate info when not yet in overage but pricing exists */}
       {!quota.hasOverage && pricing && (
         <div className="mt-2 text-xs text-gray-500">
-          {t('usage.overageRateDisplay', { rate: t('usage.rateDisplay', { rate: fmtCost(pricing.overageCents / 100, pricing.currencySymbol), unitSize: pricing.unitSize }) })}
+          {t('usage.overageRateDisplay', {
+            rate: t('usage.rateDisplay', {
+              rate: fmtCost(pricing.overageCents / 100, pricing.currencySymbol),
+              unitSize: pricing.unitSize,
+            }),
+          })}
         </div>
       )}
     </div>

@@ -1,8 +1,8 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useMemo, type ReactNode } from 'react';
-import { useAppSelector } from '../shared/useAppSelector';
 import { useSubscription } from '../../providers/workspace/subscription-hooks';
+import { useAppSelector } from '../shared/useAppSelector';
 import { subscribeSubscriptionInvalidate } from './subscriptionInvalidation';
 import type { SubscriptionContextValue } from './types';
 
@@ -26,7 +26,12 @@ export const SubscriptionContextProvider: React.FC<{ children: ReactNode }> = Re
   function SubscriptionContextProvider({ children }) {
     // Read workspace directly from context (not from useSaaSWorkspaces) to avoid circular dependency
     const currentWorkspace = useAppSelector(state => state.workspaces.currentWorkspace);
-    const { subscription: response, loading, error, refetch } = useSubscription(currentWorkspace?._id);
+    const {
+      subscription: response,
+      loading,
+      error,
+      refetch,
+    } = useSubscription(currentWorkspace?._id);
 
     useEffect(() => {
       return subscribeSubscriptionInvalidate(refetch);

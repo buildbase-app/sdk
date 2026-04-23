@@ -1,6 +1,7 @@
+import { BaseApi } from '../../lib/api-base';
 import {
-  IAllQuotaUsageResponse,
   CheckoutResult,
+  IAllQuotaUsageResponse,
   ICheckoutSessionRequest,
   ICheckoutSessionResponse,
   IInvoiceListResponse,
@@ -19,9 +20,7 @@ import {
   IUsageLogsResponse,
   IUser,
 } from '../types';
-import { BaseApi } from '../../lib/api-base';
-import type { IOsConfig } from './shared-types';
-import type { IWorkspace, IWorkspaceFeature, IWorkspaceUser } from './shared-types';
+import type { IOsConfig, IWorkspace, IWorkspaceFeature, IWorkspaceUser } from './shared-types';
 
 // ─── Notification Types ──────────────────────────────────────────
 
@@ -186,7 +185,10 @@ export class WorkspaceApi extends BaseApi {
     );
   }
 
-  async updateWorkspacePermissions(workspaceId: string, permissions: Record<string, string[]>): Promise<any> {
+  async updateWorkspacePermissions(
+    workspaceId: string,
+    permissions: Record<string, string[]>
+  ): Promise<any> {
     return this.fetchJson(
       `workspaces/${workspaceId}/permissions`,
       { method: 'PATCH', body: JSON.stringify({ permissions }) },
@@ -496,10 +498,13 @@ export class WorkspaceApi extends BaseApi {
     workspaceId: string,
     planVersionId: string
   ): Promise<{ success: boolean; message: string }> {
-    const response = await this.fetchResponse(`workspaces/${workspaceId}/subscription/select-free-plan`, {
-      method: 'POST',
-      body: JSON.stringify({ planVersionId }),
-    });
+    const response = await this.fetchResponse(
+      `workspaces/${workspaceId}/subscription/select-free-plan`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ planVersionId }),
+      }
+    );
 
     if (!response.ok) {
       let errorMessage = 'Failed to select free plan';
@@ -569,13 +574,10 @@ export class WorkspaceApi extends BaseApi {
     workspaceId: string,
     returnUrl?: string
   ): Promise<{ url: string }> {
-    return this.fetchJson(
-      `workspaces/${workspaceId}/subscription/billing-portal`,
-      {
-        method: 'POST',
-        body: JSON.stringify(returnUrl ? { returnUrl } : {}),
-      }
-    );
+    return this.fetchJson(`workspaces/${workspaceId}/subscription/billing-portal`, {
+      method: 'POST',
+      body: JSON.stringify(returnUrl ? { returnUrl } : {}),
+    });
   }
 
   /**
@@ -821,10 +823,13 @@ export class WorkspaceApi extends BaseApi {
     failed: number;
     results: Array<{ success: boolean; quotaSlug: string; quantity: number; error?: string }>;
   }> {
-    const response = await this.fetchResponse(`workspaces/${workspaceId}/subscription/usage/batch`, {
-      method: 'POST',
-      body: JSON.stringify(request),
-    });
+    const response = await this.fetchResponse(
+      `workspaces/${workspaceId}/subscription/usage/batch`,
+      {
+        method: 'POST',
+        body: JSON.stringify(request),
+      }
+    );
 
     if (!response.ok) {
       let errorMessage = 'Failed to record batch usage';
@@ -888,9 +893,7 @@ export class WorkspaceApi extends BaseApi {
    * @returns All quota usage statuses keyed by quota slug
    */
   async getAllQuotaUsage(workspaceId: string): Promise<IAllQuotaUsageResponse> {
-    const response = await this.fetchResponse(
-      `workspaces/${workspaceId}/subscription/usage/all`
-    );
+    const response = await this.fetchResponse(`workspaces/${workspaceId}/subscription/usage/all`);
 
     if (!response.ok) {
       let errorMessage = 'Failed to fetch all quota usage';
@@ -1019,8 +1022,12 @@ export class WorkspaceApi extends BaseApi {
     );
   }
 
-  async getNotificationPreferences(workspaceId: string): Promise<Record<string, { email?: boolean; push?: boolean }>> {
-    const result = await this.fetchJson<{ notificationPreferences: Record<string, { email?: boolean; push?: boolean }> }>(
+  async getNotificationPreferences(
+    workspaceId: string
+  ): Promise<Record<string, { email?: boolean; push?: boolean }>> {
+    const result = await this.fetchJson<{
+      notificationPreferences: Record<string, { email?: boolean; push?: boolean }>;
+    }>(
       `workspaces/${workspaceId}/notification-preferences`,
       {},
       'Failed to fetch notification preferences'
@@ -1032,7 +1039,9 @@ export class WorkspaceApi extends BaseApi {
     workspaceId: string,
     preferences: Record<string, { email?: boolean; push?: boolean }>
   ): Promise<Record<string, { email?: boolean; push?: boolean }>> {
-    const result = await this.fetchJson<{ notificationPreferences: Record<string, { email?: boolean; push?: boolean }> }>(
+    const result = await this.fetchJson<{
+      notificationPreferences: Record<string, { email?: boolean; push?: boolean }>;
+    }>(
       `workspaces/${workspaceId}/notification-preferences`,
       {
         method: 'PATCH',
@@ -1042,5 +1051,4 @@ export class WorkspaceApi extends BaseApi {
     );
     return result.notificationPreferences ?? {};
   }
-
 }

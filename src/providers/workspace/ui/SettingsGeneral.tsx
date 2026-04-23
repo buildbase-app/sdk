@@ -1,5 +1,4 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useTranslation } from '../../../i18n';
 import { ImageIcon, Smile } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -19,8 +18,9 @@ import { Input } from '../../../components/ui/input';
 import { Label } from '../../../components/ui/label';
 import { RadioGroup, RadioGroupItem } from '../../../components/ui/radio-group';
 import { ScrollArea } from '../../../components/ui/scroll-area';
-import { handleError } from '../../../lib/error-handler';
 import { usePermissions } from '../../../hooks/usePermissions';
+import { useTranslation } from '../../../i18n';
+import { handleError } from '../../../lib/error-handler';
 import { Permission } from '../../../lib/permissions';
 import { useSaaSWorkspaces } from '../hooks';
 import { IWorkspace } from '../types';
@@ -38,7 +38,9 @@ const WorkspaceSettingsGeneral: React.FC<{ workspace: IWorkspace }> = ({ workspa
   const successTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
 
   useEffect(() => {
-    return () => { if (successTimerRef.current) clearTimeout(successTimerRef.current); };
+    return () => {
+      if (successTimerRef.current) clearTimeout(successTimerRef.current);
+    };
   }, []);
 
   const formSchema = z.object({
@@ -95,11 +97,7 @@ const WorkspaceSettingsGeneral: React.FC<{ workspace: IWorkspace }> = ({ workspa
           <p className="text-sm">{successMessage}</p>
         </div>
       )}
-      {!canEdit && (
-        <div className="text-red-500">
-          {t('general.ownerOnly')}
-        </div>
-      )}
+      {!canEdit && <div className="text-red-500">{t('general.ownerOnly')}</div>}
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <FormField
@@ -109,7 +107,11 @@ const WorkspaceSettingsGeneral: React.FC<{ workspace: IWorkspace }> = ({ workspa
               <FormItem>
                 <FormLabel>{t('general.name')}</FormLabel>
                 <FormControl>
-                  <Input placeholder={t('general.namePlaceholder')} {...field} disabled={!canEdit} />
+                  <Input
+                    placeholder={t('general.namePlaceholder')}
+                    {...field}
+                    disabled={!canEdit}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -118,7 +120,9 @@ const WorkspaceSettingsGeneral: React.FC<{ workspace: IWorkspace }> = ({ workspa
 
           {workspace.billingCurrency?.trim() && (
             <div className="space-y-1.5">
-              <Label className="text-sm font-medium text-muted-foreground">{t('general.billingCurrency')}</Label>
+              <Label className="text-sm font-medium text-muted-foreground">
+                {t('general.billingCurrency')}
+              </Label>
               <div className="flex items-center gap-2 text-sm">
                 {getCurrencyFlag(workspace.billingCurrency) && (
                   <span className="text-base">{getCurrencyFlag(workspace.billingCurrency)}</span>
@@ -131,9 +135,7 @@ const WorkspaceSettingsGeneral: React.FC<{ workspace: IWorkspace }> = ({ workspa
           <div className="space-y-4">
             <div>
               <Label className="text-sm font-medium">{t('general.icon')}</Label>
-              <FormDescription>
-                {t('general.iconDescription')}
-              </FormDescription>
+              <FormDescription>{t('general.iconDescription')}</FormDescription>
             </div>
 
             <RadioGroup
@@ -206,9 +208,7 @@ const WorkspaceSettingsGeneral: React.FC<{ workspace: IWorkspace }> = ({ workspa
                           disabled={!canEdit}
                         />
                       </FormControl>
-                      <FormDescription>
-                        {t('general.imageUrlDescription')}
-                      </FormDescription>
+                      <FormDescription>{t('general.imageUrlDescription')}</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}

@@ -1,8 +1,8 @@
-import { SDKEvent } from "./types";
 import type { IUser } from '../../api/types';
 import { handleError } from '../../lib/error-handler';
 import type { IWorkspace } from '../workspace/types';
 import type { EventData, EventType, IEventCallbacks } from './types';
+import { SDKEvent } from './types';
 
 /**
  * EventEmitter class to handle and trigger event callbacks
@@ -120,7 +120,12 @@ export class EventEmitter {
     previousRole: string,
     newRole: string
   ): Promise<void> {
-    await this.emit(SDKEvent.WorkspaceUserRoleChanged, { userId, workspace, previousRole, newRole });
+    await this.emit(SDKEvent.WorkspaceUserRoleChanged, {
+      userId,
+      workspace,
+      previousRole,
+      newRole,
+    });
   }
 
   /**

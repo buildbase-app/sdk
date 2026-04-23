@@ -1,5 +1,5 @@
-import { useSubscriptionContext } from '../../contexts/SubscriptionContext';
 import { SubscriptionStatus } from '../../api/types';
+import { useSubscriptionContext } from '../../contexts/SubscriptionContext';
 
 interface IWhenSubscriptionProps {
   /** Content to render when the condition is met (workspace has an active subscription). */
@@ -188,7 +188,8 @@ export const WhenNotTrialing = (props: IWhenTrialingProps) => {
   const { response, loading } = useSubscriptionContext();
 
   if (loading) return loadingComponent ?? null;
-  if (response?.subscription?.subscriptionStatus === SubscriptionStatus.Trialing) return fallbackComponent ?? null;
+  if (response?.subscription?.subscriptionStatus === SubscriptionStatus.Trialing)
+    return fallbackComponent ?? null;
   return children;
 };
 
@@ -232,7 +233,10 @@ export const WhenTrialEnding = (props: IWhenTrialEndingProps) => {
 
   const trialEnd = new Date(trialEndStr);
   if (isNaN(trialEnd.getTime())) return fallbackComponent ?? null; // Guard against Invalid Date
-  const daysRemaining = Math.max(0, Math.ceil((trialEnd.getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
+  const daysRemaining = Math.max(
+    0,
+    Math.ceil((trialEnd.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+  );
 
   if (daysRemaining > daysThreshold) return fallbackComponent ?? null;
   return children;

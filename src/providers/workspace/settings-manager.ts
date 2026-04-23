@@ -1,5 +1,5 @@
-import { SettingsScreen } from './ui/SettingsDialog';
 import type { WorkspaceSettingsSection } from './ui/SettingsDialog';
+import { SettingsScreen } from './ui/SettingsDialog';
 
 export interface SettingsManagerState {
   open: boolean;

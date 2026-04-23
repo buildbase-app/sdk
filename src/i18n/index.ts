@@ -115,11 +115,16 @@ export function TranslationProvider({
         if (!cancelled) setMessages(m);
       });
     }
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [locale]);
 
   const formattingLocale = getFormattingLocale(locale);
-  const value = useMemo(() => ({ messages, locale, formattingLocale }), [messages, locale, formattingLocale]);
+  const value = useMemo(
+    () => ({ messages, locale, formattingLocale }),
+    [messages, locale, formattingLocale]
+  );
 
   return React.createElement(TranslationContext.Provider, { value }, children);
 }
@@ -253,7 +258,8 @@ export function useTranslation() {
   const fmtCents = useMemo(() => {
     return (cents: number, currency: string): string => {
       const code = (currency ?? '').trim().toUpperCase();
-      if (!code) return (cents / 100).toLocaleString(formattingLocale, { minimumFractionDigits: 2 });
+      if (!code)
+        return (cents / 100).toLocaleString(formattingLocale, { minimumFractionDigits: 2 });
       try {
         return new Intl.NumberFormat(formattingLocale, {
           style: 'currency',
@@ -272,4 +278,4 @@ export function useTranslation() {
 
 // ─── Re-exports ────────────────────────────────────────────────────────────────
 
-export type { SDKMessages, SDKLocale, TranslationKey } from './types';
+export type { SDKLocale, SDKMessages, TranslationKey } from './types';

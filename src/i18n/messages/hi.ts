@@ -88,7 +88,8 @@ export const hi: SDKMessages = {
     paymentPastDue: 'भुगतान अतिदेय',
     paymentPastDueDescription: 'सेवा में रुकावट से बचने के लिए कृपया अपना भुगतान तरीका अपडेट करें।',
     subscriptionPaused: 'सदस्यता रुकी हुई है',
-    subscriptionPausedDescription: 'आपकी सदस्यता वर्तमान में रुकी हुई है। पूर्ण पहुँच बहाल करने के लिए फिर से शुरू करें।',
+    subscriptionPausedDescription:
+      'आपकी सदस्यता वर्तमान में रुकी हुई है। पूर्ण पहुँच बहाल करने के लिए फिर से शुरू करें।',
     errorLoading: 'सदस्यता डेटा लोड करने में त्रुटि',
     errorLoadingDescription: 'कृपया अपना कनेक्शन जाँचें और पुनः प्रयास करें।',
     errorProcessing: 'सदस्यता प्रोसेस करने में विफल',
@@ -144,7 +145,8 @@ export const hi: SDKMessages = {
     noPlanAssigned: 'कोई प्लान नहीं',
     free: 'मुफ़्त',
     perSeatDisplay: '+ {price}/सीट{interval}',
-    estTotalDisplay: 'अनुमानित कुल: {total}{interval} ({count, plural, one {# अतिरिक्त सीट} other {# अतिरिक्त सीटें}})',
+    estTotalDisplay:
+      'अनुमानित कुल: {total}{interval} ({count, plural, one {# अतिरिक्त सीट} other {# अतिरिक्त सीटें}})',
     nextBillingDisplay: 'अगली बिलिंग: {date}',
     membersInWorkspace: 'वर्कस्पेस में {count, plural, one {# सदस्य} other {# सदस्य}}',
     billingInCurrency: '{currency} में बिलिंग',
@@ -160,20 +162,27 @@ export const hi: SDKMessages = {
     dunningFinal: 'अंतिम चेतावनी: सदस्यता निलंबित की जाएगी',
     dunningSuspended: 'सदस्यता निलंबित',
     dunningRecovery: 'भुगतान वसूली प्रक्रिया चल रही है',
-    dunningSuspendedDescription: 'बार-बार भुगतान विफल होने के कारण आपकी सदस्यता निलंबित कर दी गई है। पहुँच बहाल करने के लिए अपना भुगतान तरीका अपडेट करें।',
-    dunningRecoveryDescription: 'हम आपका भुगतान प्रोसेस करने में असमर्थ रहे। पहुँच न खोने के लिए कृपया अपना भुगतान तरीका अपडेट करें।',
+    dunningSuspendedDescription:
+      'बार-बार भुगतान विफल होने के कारण आपकी सदस्यता निलंबित कर दी गई है। पहुँच बहाल करने के लिए अपना भुगतान तरीका अपडेट करें।',
+    dunningRecoveryDescription:
+      'हम आपका भुगतान प्रोसेस करने में असमर्थ रहे। पहुँच न खोने के लिए कृपया अपना भुगतान तरीका अपडेट करें।',
     cancelEndDescription: 'आपकी सदस्यता इस तारीख को समाप्त होगी',
     trialEndDescription: 'आपका ट्रायल इस तारीख को समाप्त होगा',
-    cancelEndFallback: 'वर्तमान बिलिंग अवधि के अंत में आपकी सदस्यता रद्द कर दी जाएगी। आपसे दोबारा शुल्क नहीं लिया जाएगा।',
+    cancelEndFallback:
+      'वर्तमान बिलिंग अवधि के अंत में आपकी सदस्यता रद्द कर दी जाएगी। आपसे दोबारा शुल्क नहीं लिया जाएगा।',
     resumeChargeDate: 'आपसे फिर से शुल्क लिया जाएगा',
     resumeChargeFallback: 'अगली बिलिंग तिथि',
-    resumeContinue: 'आपकी सदस्यता स्वचालित रूप से जारी रहेगी और आपसे आपके प्लान के अनुसार बिल लिया जाएगा',
-    resumeCancelAnytime: 'अगर आप अपना मन बदलते हैं तो अगली बिलिंग तिथि से पहले कभी भी रद्द कर सकते हैं',
+    resumeContinue:
+      'आपकी सदस्यता स्वचालित रूप से जारी रहेगी और आपसे आपके प्लान के अनुसार बिल लिया जाएगा',
+    resumeCancelAnytime:
+      'अगर आप अपना मन बदलते हैं तो अगली बिलिंग तिथि से पहले कभी भी रद्द कर सकते हैं',
     retainAccess: 'आपके पास इस प्लान की पूर्ण पहुँच बनी रहेगी',
     retainAccessFallback: 'आपकी वर्तमान बिलिंग अवधि के अंत तक',
-    noPlansAvailable: 'इस वर्कस्पेस के लिए कोई प्लान ग्रुप उपलब्ध नहीं है। अगर आपको लगता है कि यह त्रुटि है तो कृपया सहायता से संपर्क करें।',
+    noPlansAvailable:
+      'इस वर्कस्पेस के लिए कोई प्लान ग्रुप उपलब्ध नहीं है। अगर आपको लगता है कि यह त्रुटि है तो कृपया सहायता से संपर्क करें।',
     noPlansAvailableHint: 'इस वर्कस्पेस के लिए कोई प्लान ग्रुप उपलब्ध नहीं है।',
-    startTrialDescription: 'बिना किसी प्रतिबद्धता के पूरा प्लान आज़माएँ। आप कभी भी अपग्रेड या रद्द कर सकते हैं।',
+    startTrialDescription:
+      'बिना किसी प्रतिबद्धता के पूरा प्लान आज़माएँ। आप कभी भी अपग्रेड या रद्द कर सकते हैं।',
     noSubscriptionDescription: 'अपने वर्कस्पेस के लिए एक प्लान चुनें',
     startFreeTrial: 'मुफ़्त ट्रायल शुरू करें',
     startTrialDays: '{days} दिन का मुफ़्त ट्रायल शुरू करें',
@@ -195,7 +204,8 @@ export const hi: SDKMessages = {
     you: 'आप',
     owner: 'मालिक',
     noMembers: 'इस वर्कस्पेस में कोई सदस्य नहीं मिला।',
-    extraSeatCost: 'प्रत्येक अतिरिक्त सदस्य आपकी सदस्यता में {price}/{interval, select, yearly {वर्ष} quarterly {तिमाही} other {माह}} जोड़ता है',
+    extraSeatCost:
+      'प्रत्येक अतिरिक्त सदस्य आपकी सदस्यता में {price}/{interval, select, yearly {वर्ष} quarterly {तिमाही} other {माह}} जोड़ता है',
     unknownUser: 'अज्ञात उपयोगकर्ता',
     seats: 'सीटें',
     members: 'सदस्य',
@@ -205,10 +215,12 @@ export const hi: SDKMessages = {
     available: 'उपलब्ध',
     noMemberLimit: 'कोई सदस्य सीमा नहीं',
     seatHeading: '{hasSeatPricing, select, true {सीटें} other {सदस्य}}',
-    limitReached: '{reason, select, seat_limit_reached {सीट सीमा पूरी हो गई} other {सदस्य सीमा पूरी हो गई}}',
+    limitReached:
+      '{reason, select, seat_limit_reached {सीट सीमा पूरी हो गई} other {सदस्य सीमा पूरी हो गई}}',
     memberCount: '{count, plural, one {# सदस्य} other {# सदस्य}}',
     subscriptionRequired: 'सदस्यों को आमंत्रित करने के लिए सदस्यता आवश्यक है।',
-    seatLimitMessage: 'आपका प्लान अधिकतम {maxUsers, number} सदस्यों की अनुमति देता है। अधिक सीटों के लिए अपग्रेड करें।',
+    seatLimitMessage:
+      'आपका प्लान अधिकतम {maxUsers, number} सदस्यों की अनुमति देता है। अधिक सीटों के लिए अपग्रेड करें।',
     settingsLimitMessage: 'यह वर्कस्पेस अधिकतम {maxUsers, number} सदस्यों की अनुमति देता है।',
     memberLimitMessage: '{maxUsers, number} सदस्यों की सीमा पूरी हो गई है।',
     selectRole: 'भूमिका चुनें',
@@ -242,7 +254,8 @@ export const hi: SDKMessages = {
     inOverage: 'अतिरिक्त उपयोग में',
     estOverageCost: 'अनुमानित अतिरिक्त लागत',
     overageDetected: 'अतिरिक्त उपयोग पाया गया',
-    overageDescription: 'अतिरिक्त उपयोग आपके अगले चालान में अतिरिक्त शुल्क के रूप में बिल किया जाएगा।',
+    overageDescription:
+      'अतिरिक्त उपयोग आपके अगले चालान में अतिरिक्त शुल्क के रूप में बिल किया जाएगा।',
     overageUnits: 'अतिरिक्त इकाइयाँ',
     rate: 'दर',
     billableBlocks: 'बिल योग्य ब्लॉक',
@@ -255,7 +268,8 @@ export const hi: SDKMessages = {
     percentUsed: '{percent, number}% उपयोग किया',
     availableRemaining: '{count} शेष',
     overLimitCount: '{count} सीमा से अधिक',
-    overageWarning: '{count, plural, one {# संसाधन ने शामिल कोटा पार कर लिया है।} other {# संसाधनों ने शामिल कोटा पार कर लिया है।}} अतिरिक्त उपयोग आपके अगले चालान में अतिरिक्त शुल्क के रूप में बिल किया जाएगा।',
+    overageWarning:
+      '{count, plural, one {# संसाधन ने शामिल कोटा पार कर लिया है।} other {# संसाधनों ने शामिल कोटा पार कर लिया है।}} अतिरिक्त उपयोग आपके अगले चालान में अतिरिक्त शुल्क के रूप में बिल किया जाएगा।',
     fullyUsed: 'पूरी तरह उपयोग किया',
     renewingSoon: 'जल्द नवीनीकरण',
     almostFull: 'लगभग भरा',
@@ -264,7 +278,8 @@ export const hi: SDKMessages = {
     perUnit: '/ इकाई',
     perUnits: '/ इकाइयाँ',
     rateDisplay: '{rate} {unitSize, plural, =1 {/ इकाई} other {/ {unitSize, number} इकाइयाँ}}',
-    resourcesExceeded: '{count, plural, one {# संसाधन ने शामिल कोटा पार कर लिया है।} other {# संसाधनों ने शामिल कोटा पार कर लिया है।}}',
+    resourcesExceeded:
+      '{count, plural, one {# संसाधन ने शामिल कोटा पार कर लिया है।} other {# संसाधनों ने शामिल कोटा पार कर लिया है।}}',
     estOverageCharges: 'इस अवधि का अनुमानित अतिरिक्त शुल्क: {amount}',
     overageRateDisplay: 'अतिरिक्त दर: {rate}',
     resetDateDisplay: 'उपयोग {date} को रीसेट होगा',
@@ -293,7 +308,8 @@ export const hi: SDKMessages = {
     iconDescription: 'अपने वर्कस्पेस के लिए एक इमोजी चुनें या कस्टम छवि अपलोड करें।',
     imageUrl: 'छवि URL',
     imageUrlPlaceholder: 'https://example.com/image.png',
-    imageUrlDescription: 'अपने वर्कस्पेस की छवि के लिए एक मान्य URL दर्ज करें। PNG, JPG और SVG प्रारूप समर्थित हैं।',
+    imageUrlDescription:
+      'अपने वर्कस्पेस की छवि के लिए एक मान्य URL दर्ज करें। PNG, JPG और SVG प्रारूप समर्थित हैं।',
     previewLabel: 'पूर्वावलोकन:',
     success: 'वर्कस्पेस सेटिंग्स सफलतापूर्वक सहेजी गईं',
     chooseEmoji: 'इमोजी चुनें',
@@ -309,18 +325,23 @@ export const hi: SDKMessages = {
     enabling: 'सक्रिय किया जा रहा है',
     disabling: 'निष्क्रिय किया जा रहा है',
     featureSuccess: 'सफलतापूर्वक',
-    updateSuccess: '{feature} सफलतापूर्वक {enabled, select, true {सक्रिय} other {निष्क्रिय}} किया गया',
-    actionStatus: '{action, select, enabling {सक्रिय किया जा रहा है} disabling {निष्क्रिय किया जा रहा है} other {}}',
+    updateSuccess:
+      '{feature} सफलतापूर्वक {enabled, select, true {सक्रिय} other {निष्क्रिय}} किया गया',
+    actionStatus:
+      '{action, select, enabling {सक्रिय किया जा रहा है} disabling {निष्क्रिय किया जा रहा है} other {}}',
   },
   danger: {
     title: 'वर्कस्पेस हटाएँ',
     adminOnly: 'केवल वर्कस्पेस एडमिन ही वर्कस्पेस हटा सकते हैं।',
     deleteWorkspace: 'वर्कस्पेस हटाएँ',
     deleteConfirm: 'क्या आप बिल्कुल सुनिश्चित हैं?',
-    deleteWarning: 'यह क्रिया पूर्ववत नहीं की जा सकती। यह वर्कस्पेस और सभी संबंधित डेटा को स्थायी रूप से हटा देगी।',
+    deleteWarning:
+      'यह क्रिया पूर्ववत नहीं की जा सकती। यह वर्कस्पेस और सभी संबंधित डेटा को स्थायी रूप से हटा देगी।',
     deleting: 'हटाया जा रहा है...',
-    deleteDescription: 'एक बार वर्कस्पेस हटाने के बाद वापस नहीं जा सकते। यह वर्कस्पेस और उसका सभी डेटा स्थायी रूप से हटा देगा, जिसमें सदस्य, सेटिंग्स और फ़ीचर्स शामिल हैं।',
-    deleteConfirmDescription: 'यह क्रिया पूर्ववत नहीं की जा सकती। यह वर्कस्पेस और उसके सभी डेटा को स्थायी रूप से हटा देगी।',
+    deleteDescription:
+      'एक बार वर्कस्पेस हटाने के बाद वापस नहीं जा सकते। यह वर्कस्पेस और उसका सभी डेटा स्थायी रूप से हटा देगा, जिसमें सदस्य, सेटिंग्स और फ़ीचर्स शामिल हैं।',
+    deleteConfirmDescription:
+      'यह क्रिया पूर्ववत नहीं की जा सकती। यह वर्कस्पेस और उसके सभी डेटा को स्थायी रूप से हटा देगी।',
     failedToDelete: 'वर्कस्पेस हटाने में विफल',
   },
   notifications: {
@@ -329,16 +350,20 @@ export const hi: SDKMessages = {
     notSupported: 'इस ब्राउज़र में पुश सूचनाएँ समर्थित नहीं हैं।',
     manageDescription: 'प्रबंधित करें कि आप इस वर्कस्पेस से कैसे सूचनाएँ प्राप्त करते हैं।',
     blocked: 'सूचनाएँ अवरुद्ध हैं',
-    blockedDescription: 'आपने पहले इस साइट के लिए सूचनाएँ अवरुद्ध की थीं। उन्हें सक्रिय करने के लिए अपनी ब्राउज़र सेटिंग्स अपडेट करें:',
+    blockedDescription:
+      'आपने पहले इस साइट के लिए सूचनाएँ अवरुद्ध की थीं। उन्हें सक्रिय करने के लिए अपनी ब्राउज़र सेटिंग्स अपडेट करें:',
     pushTitle: 'पुश सूचनाएँ',
     pushEnabledDescription: 'आपको महत्वपूर्ण अपडेट के लिए ब्राउज़र सूचनाएँ प्राप्त होंगी।',
-    pushDisabledDescription: 'भुगतान समस्याओं, ट्रायल समाप्ति और अन्य महत्वपूर्ण अपडेट के बारे में सूचित रहें।',
+    pushDisabledDescription:
+      'भुगतान समस्याओं, ट्रायल समाप्ति और अन्य महत्वपूर्ण अपडेट के बारे में सूचित रहें।',
     enabling: 'सक्रिय किया जा रहा है...',
     disabling: 'निष्क्रिय किया जा रहा है...',
     enable: 'सक्रिय करें',
     disable: 'निष्क्रिय करें',
-    toggleAction: '{loading, select, true {{subscribed, select, true {निष्क्रिय किया जा रहा है...} other {सक्रिय किया जा रहा है...}}} other {{subscribed, select, true {निष्क्रिय करें} other {सक्रिय करें}}}}',
-    pushDescription: '{subscribed, select, true {आपको महत्वपूर्ण अपडेट के लिए ब्राउज़र सूचनाएँ प्राप्त होंगी।} other {भुगतान समस्याओं, ट्रायल समाप्ति और अन्य महत्वपूर्ण अपडेट के बारे में सूचित रहें।}}',
+    toggleAction:
+      '{loading, select, true {{subscribed, select, true {निष्क्रिय किया जा रहा है...} other {सक्रिय किया जा रहा है...}}} other {{subscribed, select, true {निष्क्रिय करें} other {सक्रिय करें}}}}',
+    pushDescription:
+      '{subscribed, select, true {आपको महत्वपूर्ण अपडेट के लिए ब्राउज़र सूचनाएँ प्राप्त होंगी।} other {भुगतान समस्याओं, ट्रायल समाप्ति और अन्य महत्वपूर्ण अपडेट के बारे में सूचित रहें।}}',
     deviceNote: 'सूचनाएँ इस डिवाइस पर भेजी जाती हैं। अन्य डिवाइसों पर अलग से सक्रिय करें।',
     prefsSaved: 'Notification preferences saved.',
     loadingPrefs: 'Loading preferences...',
@@ -352,7 +377,7 @@ export const hi: SDKMessages = {
       workspace_removed: 'Member Removed',
       workspace_removed_desc: 'When a member is removed from the workspace',
       workspace_role_changed: 'Role Changed',
-      workspace_role_changed_desc: 'When a member\'s role is updated',
+      workspace_role_changed_desc: "When a member's role is updated",
       subscription_created: 'Subscription Created',
       subscription_created_desc: 'When a new subscription is activated',
       subscription_upgraded: 'Plan Upgraded',
@@ -457,7 +482,8 @@ export const hi: SDKMessages = {
     customImageUrl: 'कस्टम छवि URL',
     imageUrl: 'छवि URL',
     imageUrlPlaceholder: 'https://example.com/image.png',
-    imageUrlDescription: 'अपने वर्कस्पेस की छवि के लिए एक मान्य URL दर्ज करें। PNG, JPG और SVG प्रारूप समर्थित हैं।',
+    imageUrlDescription:
+      'अपने वर्कस्पेस की छवि के लिए एक मान्य URL दर्ज करें। PNG, JPG और SVG प्रारूप समर्थित हैं।',
     invalidUrl: 'कृपया एक मान्य URL दर्ज करें',
     creating: 'बनाया जा रहा है...',
     createWorkspace: 'वर्कस्पेस बनाएँ',

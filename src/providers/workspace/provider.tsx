@@ -110,17 +110,17 @@ export function WorkspaceSwitcher(props: {
   const showSwitcher = settings?.workspace?.showSwitcher ?? true;
   const maxPerUser = settings?.workspace?.maxWorkspacesPerUser ?? 0; // 0 = unlimited
 
-  const myWorkspacesCount = workspacesToUse?.filter(workspace => {
-    const createdBy =
-      typeof workspace.createdBy === 'object'
-        ? workspace.createdBy._id?.toString()
-        : workspace.createdBy?.toString();
-    return createdBy === user?.id?.toString();
-  }).length ?? 0;
+  const myWorkspacesCount =
+    workspacesToUse?.filter(workspace => {
+      const createdBy =
+        typeof workspace.createdBy === 'object'
+          ? workspace.createdBy._id?.toString()
+          : workspace.createdBy?.toString();
+      return createdBy === user?.id?.toString();
+    }).length ?? 0;
 
   const allowedToCreateWorkspace =
-    canCreate !== false &&
-    (maxPerUser === 0 || myWorkspacesCount < maxPerUser);
+    canCreate !== false && (maxPerUser === 0 || myWorkspacesCount < maxPerUser);
 
   // In single-workspace modes (showSwitcher: false), auto-select the only workspace
   useEffect(() => {
@@ -154,9 +154,7 @@ export function WorkspaceSwitcher(props: {
             <Building2 className="h-5 w-5" />
             {t('workspace.switchTitle')}
           </DialogTitle>
-          <DialogDescription>
-            {t('workspace.switchDescription')}
-          </DialogDescription>
+          <DialogDescription>{t('workspace.switchDescription')}</DialogDescription>
         </DialogHeader>
         {!user && (
           <div className="flex flex-col items-center justify-center h-full py-4 sm:py-8">
@@ -214,13 +212,17 @@ export function WorkspaceSwitcher(props: {
               {loading ? (
                 <div className="flex items-center justify-center py-8">
                   <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                  <span className="ms-2 text-sm text-muted-foreground">{t('workspace.loadingWorkspaces')}</span>
+                  <span className="ms-2 text-sm text-muted-foreground">
+                    {t('workspace.loadingWorkspaces')}
+                  </span>
                 </div>
               ) : filteredWorkspaces.length === 0 ? (
                 <div className="text-center py-8">
                   <Building2 className="mx-auto h-12 w-12 text-muted-foreground" />
                   <p className="mt-2 text-sm text-muted-foreground">
-                    {searchQuery ? t('workspace.noWorkspacesFound') : t('workspace.noWorkspacesAvailable')}
+                    {searchQuery
+                      ? t('workspace.noWorkspacesFound')
+                      : t('workspace.noWorkspacesAvailable')}
                   </p>
                 </div>
               ) : (
@@ -462,9 +464,7 @@ function CreateWorkspaceDialog(props: { onCreated: () => void }) {
             <div className="flex flex-col gap-y-2 my-2">
               <div>
                 <Label className="text-sm font-medium">{t('workspace.workspaceIcon')}</Label>
-                <FormDescription>
-                  {t('workspace.iconDescription')}
-                </FormDescription>
+                <FormDescription>{t('workspace.iconDescription')}</FormDescription>
               </div>
 
               <RadioGroup
@@ -526,9 +526,7 @@ function CreateWorkspaceDialog(props: { onCreated: () => void }) {
                         <FormControl>
                           <Input placeholder={t('workspace.imageUrlPlaceholder')} {...field} />
                         </FormControl>
-                        <FormDescription>
-                          {t('workspace.imageUrlDescription')}
-                        </FormDescription>
+                        <FormDescription>{t('workspace.imageUrlDescription')}</FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}

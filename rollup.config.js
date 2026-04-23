@@ -21,7 +21,11 @@ const external = id => {
   return false;
 };
 
-const createPlugins = ({ extractCss = false, cssPath = 'styles.css', declarationDir = 'dist/types' } = {}) => [
+const createPlugins = ({
+  extractCss = false,
+  cssPath = 'styles.css',
+  declarationDir = 'dist/types',
+} = {}) => [
   resolve({ browser: true, preferBuiltins: false }),
   commonjs({ transformMixedEsModules: true }),
   json(),
@@ -73,7 +77,11 @@ export default [
       { file: 'dist/react/index.mjs', format: 'esm', sourcemap: false, inlineDynamicImports: true },
     ],
     plugins: [
-      ...createPlugins({ extractCss: true, cssPath: 'styles.css', declarationDir: 'dist/react/types' }),
+      ...createPlugins({
+        extractCss: true,
+        cssPath: 'styles.css',
+        declarationDir: 'dist/react/types',
+      }),
       {
         name: 'use-client-directive',
         renderChunk(code) {

@@ -1,16 +1,16 @@
-import React, { useCallback, useEffect, useMemo } from 'react';
-import { IUser } from '../../api/types';
+import React, { useCallback, useEffect } from 'react';
 import { resolveMaxUsers, validateInvite } from '../../api/billing/pricing-variant-utils';
+import { IUser } from '../../api/types';
 import { useAppDispatch, useAppSelector, workspaceActions } from '../../contexts';
 import { invalidateSubscription } from '../../contexts/SubscriptionContext/subscriptionInvalidation';
 import { handleError } from '../../lib/error-handler';
 import { eventEmitter } from '../events';
 import { useSaaSSettings } from '../os/hooks';
-import { useWorkspaceApiWithOs } from './use-workspace-api';
-import { IWorkspace, IWorkspaceUser } from './types';
-import { getWorkspaceUserRole, isWorkspaceOwner, workspaceStorage } from './utils';
 import { workspaceSettingsManager } from './settings-manager';
+import { IWorkspace, IWorkspaceUser } from './types';
 import { SettingsScreen } from './ui/SettingsDialog';
+import { useWorkspaceApiWithOs } from './use-workspace-api';
+import { getWorkspaceUserRole, isWorkspaceOwner, workspaceStorage } from './utils';
 
 /**
  * Main workspace management hook for the SDK.

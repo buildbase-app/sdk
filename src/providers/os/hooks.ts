@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from 'react';
+import { osActions } from '../../contexts/OSContext/actions';
 import { useAppDispatch } from '../../contexts/shared/useAppDispatch';
 import { useAppSelector } from '../../contexts/shared/useAppSelector';
-import { osActions } from '../../contexts/OSContext/actions';
 import { handleErrorUnlessAborted } from '../../lib/error-handler';
 import { useAsyncEffect } from '../../lib/useAsyncEffect';
 import type { ISettings } from '../types';

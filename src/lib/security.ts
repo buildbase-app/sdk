@@ -19,7 +19,9 @@ export function validateRedirectUrl(url: string | null | undefined): string | nu
     // Allow http only on localhost for development
     if (
       parsed.protocol === 'http:' &&
-      (parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1' || parsed.hostname === '::1')
+      (parsed.hostname === 'localhost' ||
+        parsed.hostname === '127.0.0.1' ||
+        parsed.hostname === '::1')
     ) {
       return url;
     }

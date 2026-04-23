@@ -53,7 +53,8 @@ export const es: SDKMessages = {
     currentPlan: 'Plan actual',
     noSubscription: 'No tienes una suscripción activa',
     choosePlan: 'Elige tu plan',
-    choosePlanDescription: 'Compara los planes y selecciona el que mejor se adapte a tus necesidades',
+    choosePlanDescription:
+      'Compara los planes y selecciona el que mejor se adapte a tus necesidades',
     forWorkspace: 'para {name}',
     planUpdateAvailable: 'Actualización de plan disponible',
     updateSuccess: '¡Suscripción actualizada correctamente!',
@@ -86,9 +87,11 @@ export const es: SDKMessages = {
     scheduledCancellation: 'Cancelación de suscripción programada',
     scheduledTrialCancellation: 'Cancelación de prueba programada',
     paymentPastDue: 'Pago vencido',
-    paymentPastDueDescription: 'Por favor, actualiza tu método de pago para evitar la interrupción del servicio.',
+    paymentPastDueDescription:
+      'Por favor, actualiza tu método de pago para evitar la interrupción del servicio.',
     subscriptionPaused: 'Suscripción pausada',
-    subscriptionPausedDescription: 'Tu suscripción está actualmente pausada. Reanúdala para restaurar el acceso completo.',
+    subscriptionPausedDescription:
+      'Tu suscripción está actualmente pausada. Reanúdala para restaurar el acceso completo.',
     errorLoading: 'Error al cargar los datos de la suscripción',
     errorLoadingDescription: 'Por favor, verifica tu conexión e inténtalo de nuevo.',
     errorProcessing: 'Error al procesar la suscripción',
@@ -144,9 +147,11 @@ export const es: SDKMessages = {
     noPlanAssigned: 'Sin plan asignado',
     free: 'Gratis',
     perSeatDisplay: '+ {price}/puesto{interval}',
-    estTotalDisplay: 'Total est.: {total}{interval} ({count, plural, one {# puesto adicional} other {# puestos adicionales}})',
+    estTotalDisplay:
+      'Total est.: {total}{interval} ({count, plural, one {# puesto adicional} other {# puestos adicionales}})',
     nextBillingDisplay: 'Próxima facturación: {date}',
-    membersInWorkspace: '{count, plural, one {# miembro} other {# miembros}} en el espacio de trabajo',
+    membersInWorkspace:
+      '{count, plural, one {# miembro} other {# miembros}} en el espacio de trabajo',
     billingInCurrency: 'Facturación en {currency}',
     savingsPercent: 'Ahorra {percent, number}%',
     switchToInterval: 'Cambiar a {interval}',
@@ -160,20 +165,26 @@ export const es: SDKMessages = {
     dunningFinal: 'Última advertencia: La suscripción será suspendida',
     dunningSuspended: 'Suscripción suspendida',
     dunningRecovery: 'Recuperación de pago en curso',
-    dunningSuspendedDescription: 'Tu suscripción ha sido suspendida debido a fallos de pago repetidos. Actualiza tu método de pago para restaurar el acceso.',
-    dunningRecoveryDescription: 'No pudimos procesar tu pago. Por favor, actualiza tu método de pago para no perder el acceso.',
+    dunningSuspendedDescription:
+      'Tu suscripción ha sido suspendida debido a fallos de pago repetidos. Actualiza tu método de pago para restaurar el acceso.',
+    dunningRecoveryDescription:
+      'No pudimos procesar tu pago. Por favor, actualiza tu método de pago para no perder el acceso.',
     cancelEndDescription: 'Tu suscripción terminará el',
     trialEndDescription: 'Tu período de prueba terminará el',
-    cancelEndFallback: 'Tu suscripción se cancelará al final del período de facturación actual. No se te cobrará de nuevo.',
+    cancelEndFallback:
+      'Tu suscripción se cancelará al final del período de facturación actual. No se te cobrará de nuevo.',
     resumeChargeDate: 'Se te cobrará de nuevo el',
     resumeChargeFallback: 'la próxima fecha de facturación',
     resumeContinue: 'Tu suscripción continuará automáticamente y se te facturará según tu plan',
-    resumeCancelAnytime: 'Puedes cancelar en cualquier momento antes de la próxima fecha de facturación si cambias de opinión',
+    resumeCancelAnytime:
+      'Puedes cancelar en cualquier momento antes de la próxima fecha de facturación si cambias de opinión',
     retainAccess: 'Mantendrás acceso completo a este plan hasta',
     retainAccessFallback: 'el final de tu período de facturación actual',
-    noPlansAvailable: 'No hay grupos de planes disponibles para este espacio de trabajo. Por favor, contacta a soporte si crees que esto es un error.',
+    noPlansAvailable:
+      'No hay grupos de planes disponibles para este espacio de trabajo. Por favor, contacta a soporte si crees que esto es un error.',
     noPlansAvailableHint: 'No hay grupos de planes disponibles para este espacio de trabajo.',
-    startTrialDescription: 'Prueba el plan completo sin compromiso. Puedes mejorar o cancelar en cualquier momento.',
+    startTrialDescription:
+      'Prueba el plan completo sin compromiso. Puedes mejorar o cancelar en cualquier momento.',
     noSubscriptionDescription: 'Elige un plan para comenzar con tu espacio de trabajo',
     startFreeTrial: 'Comenzar prueba gratuita',
     startTrialDays: 'Comenzar prueba gratuita de {days} días',
@@ -195,7 +206,8 @@ export const es: SDKMessages = {
     you: 'Tú',
     owner: 'Propietario',
     noMembers: 'No se encontraron miembros en este espacio de trabajo.',
-    extraSeatCost: 'Cada miembro adicional añade {price}/{interval, select, yearly {año} quarterly {trim.} other {mes}} a tu suscripción',
+    extraSeatCost:
+      'Cada miembro adicional añade {price}/{interval, select, yearly {año} quarterly {trim.} other {mes}} a tu suscripción',
     unknownUser: 'Usuario desconocido',
     seats: 'Puestos',
     members: 'Miembros',
@@ -205,10 +217,12 @@ export const es: SDKMessages = {
     available: 'disponibles',
     noMemberLimit: 'Sin límite de miembros',
     seatHeading: '{hasSeatPricing, select, true {Puestos} other {Miembros}}',
-    limitReached: '{reason, select, seat_limit_reached {Límite de puestos alcanzado} other {Límite de miembros alcanzado}}',
+    limitReached:
+      '{reason, select, seat_limit_reached {Límite de puestos alcanzado} other {Límite de miembros alcanzado}}',
     memberCount: '{count, plural, one {# miembro} other {# miembros}}',
     subscriptionRequired: 'Se requiere una suscripción para invitar miembros.',
-    seatLimitMessage: 'Tu plan permite hasta {maxUsers, number} miembros. Mejora tu plan para más puestos.',
+    seatLimitMessage:
+      'Tu plan permite hasta {maxUsers, number} miembros. Mejora tu plan para más puestos.',
     settingsLimitMessage: 'Este espacio de trabajo permite hasta {maxUsers, number} miembros.',
     memberLimitMessage: 'Límite de miembros de {maxUsers, number} alcanzado.',
     selectRole: 'Seleccionar un rol',
@@ -255,7 +269,8 @@ export const es: SDKMessages = {
     percentUsed: '{percent, number}% usado',
     availableRemaining: '{count} restantes',
     overLimitCount: '{count} sobre el límite',
-    overageWarning: '{count, plural, one {# recurso ha excedido la cuota incluida.} other {# recursos han excedido la cuota incluida.}} El uso adicional se facturará como exceso en tu próxima factura.',
+    overageWarning:
+      '{count, plural, one {# recurso ha excedido la cuota incluida.} other {# recursos han excedido la cuota incluida.}} El uso adicional se facturará como exceso en tu próxima factura.',
     fullyUsed: 'Completamente usado',
     renewingSoon: 'se renueva pronto',
     almostFull: 'Casi lleno',
@@ -264,7 +279,8 @@ export const es: SDKMessages = {
     perUnit: '/ unidad',
     perUnits: '/ unidades',
     rateDisplay: '{rate} {unitSize, plural, =1 {/ unidad} other {/ {unitSize, number} unidades}}',
-    resourcesExceeded: '{count, plural, one {# recurso ha excedido la cuota incluida.} other {# recursos han excedido la cuota incluida.}}',
+    resourcesExceeded:
+      '{count, plural, one {# recurso ha excedido la cuota incluida.} other {# recursos han excedido la cuota incluida.}}',
     estOverageCharges: 'Cargos estimados por exceso este período: {amount}',
     overageRateDisplay: 'Tarifa de exceso: {rate}',
     resetDateDisplay: 'El uso se restablece el {date}',
@@ -293,7 +309,8 @@ export const es: SDKMessages = {
     iconDescription: 'Elige un emoji o sube una imagen personalizada para tu espacio de trabajo.',
     imageUrl: 'URL de imagen',
     imageUrlPlaceholder: 'https://ejemplo.com/imagen.png',
-    imageUrlDescription: 'Introduce una URL válida para la imagen de tu espacio de trabajo. Compatible con formatos PNG, JPG y SVG.',
+    imageUrlDescription:
+      'Introduce una URL válida para la imagen de tu espacio de trabajo. Compatible con formatos PNG, JPG y SVG.',
     previewLabel: 'Vista previa:',
     success: 'Configuración del espacio de trabajo guardada correctamente',
     chooseEmoji: 'Elegir emoji',
@@ -309,7 +326,8 @@ export const es: SDKMessages = {
     enabling: 'Habilitando',
     disabling: 'Deshabilitando',
     featureSuccess: 'correctamente',
-    updateSuccess: '{feature} {enabled, select, true {habilitada} other {deshabilitada}} correctamente',
+    updateSuccess:
+      '{feature} {enabled, select, true {habilitada} other {deshabilitada}} correctamente',
     actionStatus: '{action, select, enabling {Habilitando} disabling {Deshabilitando} other {}}',
   },
   danger: {
@@ -317,10 +335,13 @@ export const es: SDKMessages = {
     adminOnly: 'Solo los administradores pueden eliminar espacios de trabajo.',
     deleteWorkspace: 'Eliminar espacio de trabajo',
     deleteConfirm: '¿Estás completamente seguro?',
-    deleteWarning: 'Esta acción no se puede deshacer. Esto eliminará permanentemente el espacio de trabajo y todos los datos asociados.',
+    deleteWarning:
+      'Esta acción no se puede deshacer. Esto eliminará permanentemente el espacio de trabajo y todos los datos asociados.',
     deleting: 'Eliminando...',
-    deleteDescription: 'Una vez que elimines un espacio de trabajo, no hay vuelta atrás. Esto eliminará permanentemente el espacio de trabajo y todos sus datos, incluidos miembros, configuración y funciones.',
-    deleteConfirmDescription: 'Esta acción no se puede deshacer. Esto eliminará permanentemente el espacio de trabajo y todos sus datos.',
+    deleteDescription:
+      'Una vez que elimines un espacio de trabajo, no hay vuelta atrás. Esto eliminará permanentemente el espacio de trabajo y todos sus datos, incluidos miembros, configuración y funciones.',
+    deleteConfirmDescription:
+      'Esta acción no se puede deshacer. Esto eliminará permanentemente el espacio de trabajo y todos sus datos.',
     failedToDelete: 'Error al eliminar el espacio de trabajo',
   },
   notifications: {
@@ -329,17 +350,23 @@ export const es: SDKMessages = {
     notSupported: 'Las notificaciones push no son compatibles con este navegador.',
     manageDescription: 'Administra cómo recibes notificaciones de este espacio de trabajo.',
     blocked: 'Notificaciones bloqueadas',
-    blockedDescription: 'Previamente bloqueaste las notificaciones para este sitio. Para habilitarlas, actualiza la configuración de tu navegador:',
+    blockedDescription:
+      'Previamente bloqueaste las notificaciones para este sitio. Para habilitarlas, actualiza la configuración de tu navegador:',
     pushTitle: 'Notificaciones push',
-    pushEnabledDescription: 'Recibirás notificaciones del navegador para actualizaciones importantes.',
-    pushDisabledDescription: 'Recibe notificaciones sobre problemas de pago, expiración de prueba y otras actualizaciones importantes.',
+    pushEnabledDescription:
+      'Recibirás notificaciones del navegador para actualizaciones importantes.',
+    pushDisabledDescription:
+      'Recibe notificaciones sobre problemas de pago, expiración de prueba y otras actualizaciones importantes.',
     enabling: 'Habilitando...',
     disabling: 'Deshabilitando...',
     enable: 'Habilitar',
     disable: 'Deshabilitar',
-    toggleAction: '{loading, select, true {{subscribed, select, true {Deshabilitando...} other {Habilitando...}}} other {{subscribed, select, true {Deshabilitar} other {Habilitar}}}}',
-    pushDescription: '{subscribed, select, true {Recibirás notificaciones del navegador para actualizaciones importantes.} other {Recibe notificaciones sobre problemas de pago, expiración de prueba y otras actualizaciones importantes.}}',
-    deviceNote: 'Las notificaciones se envían a este dispositivo. Habilítalas en otros dispositivos por separado.',
+    toggleAction:
+      '{loading, select, true {{subscribed, select, true {Deshabilitando...} other {Habilitando...}}} other {{subscribed, select, true {Deshabilitar} other {Habilitar}}}}',
+    pushDescription:
+      '{subscribed, select, true {Recibirás notificaciones del navegador para actualizaciones importantes.} other {Recibe notificaciones sobre problemas de pago, expiración de prueba y otras actualizaciones importantes.}}',
+    deviceNote:
+      'Las notificaciones se envían a este dispositivo. Habilítalas en otros dispositivos por separado.',
     prefsSaved: 'Notification preferences saved.',
     loadingPrefs: 'Loading preferences...',
     categories: {
@@ -352,7 +379,7 @@ export const es: SDKMessages = {
       workspace_removed: 'Member Removed',
       workspace_removed_desc: 'When a member is removed from the workspace',
       workspace_role_changed: 'Role Changed',
-      workspace_role_changed_desc: 'When a member\'s role is updated',
+      workspace_role_changed_desc: "When a member's role is updated",
       subscription_created: 'Subscription Created',
       subscription_created_desc: 'When a new subscription is activated',
       subscription_upgraded: 'Plan Upgraded',
@@ -457,7 +484,8 @@ export const es: SDKMessages = {
     customImageUrl: 'URL de imagen personalizada',
     imageUrl: 'URL de imagen',
     imageUrlPlaceholder: 'https://ejemplo.com/imagen.png',
-    imageUrlDescription: 'Introduce una URL válida para la imagen de tu espacio de trabajo. Compatible con formatos PNG, JPG y SVG.',
+    imageUrlDescription:
+      'Introduce una URL válida para la imagen de tu espacio de trabajo. Compatible con formatos PNG, JPG y SVG.',
     invalidUrl: 'Por favor, introduce una URL válida',
     creating: 'Creando...',
     createWorkspace: 'Crear espacio de trabajo',

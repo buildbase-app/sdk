@@ -1,10 +1,14 @@
 'use client';
 
 import React, { lazy, Suspense, useEffect, useRef, useState } from 'react';
-import { readBBParams, cleanBBParams } from '../../lib/url-params';
+import { cleanBBParams, readBBParams } from '../../lib/url-params';
 import { useSaaSWorkspaces } from './hooks';
 import { workspaceSettingsManager } from './settings-manager';
-import { SETTINGS_SCREENS, SettingsScreen, type WorkspaceSettingsSection } from './ui/SettingsDialog';
+import {
+  SETTINGS_SCREENS,
+  SettingsScreen,
+  type WorkspaceSettingsSection,
+} from './ui/SettingsDialog';
 
 const WorkspaceSettingsDialog = lazy(() =>
   import('./ui/SettingsDialog').then(m => ({ default: m.default }))
@@ -54,7 +58,7 @@ export const WorkspaceSettingsProvider: React.FC<{ children: React.ReactNode }> 
     const initialState = workspaceSettingsManager.getState();
     setOpen(initialState.open);
     setSection(initialState.section);
-    const unsubscribe = workspaceSettingsManager.subscribe((state) => {
+    const unsubscribe = workspaceSettingsManager.subscribe(state => {
       setOpen(state.open);
       setSection(state.section);
     });

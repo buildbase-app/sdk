@@ -1,9 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { useTranslation, type TranslationKey } from '../../../i18n';
-import { BillingIntervals, SubscriptionItemType } from '../../../api/types';
 import { getCurrencyFlag } from '../../../api/billing/currency-utils';
-import { useSaaSSettings } from '../../os/hooks';
-import { WorkspaceModes } from '../../types';
 import {
   getAvailableCurrenciesFromPlans,
   getBasePriceCents,
@@ -13,7 +9,13 @@ import {
   getSeatPricing,
 } from '../../../api/billing/pricing-variant-utils';
 import { getQuotaDisplayParts, getQuotaDisplayValue } from '../../../api/billing/quota-utils';
-import { BillingInterval, IPlanVersionWithPlan, ISubscriptionItem } from '../../../api/types';
+import {
+  BillingInterval,
+  BillingIntervals,
+  IPlanVersionWithPlan,
+  ISubscriptionItem,
+  SubscriptionItemType,
+} from '../../../api/types';
 import { Button } from '../../../components/ui/button';
 import {
   Dialog,
@@ -21,6 +23,9 @@ import {
   DialogDescription,
   DialogTitle,
 } from '../../../components/ui/dialog';
+import { useTranslation, type TranslationKey } from '../../../i18n';
+import { useSaaSSettings } from '../../os/hooks';
+import { WorkspaceModes } from '../../types';
 
 interface SubscriptionDialogProps {
   open: boolean;
@@ -39,6 +44,10 @@ interface SubscriptionDialogProps {
   trialUsedAt?: string | null;
   /** Workspace name — displayed in the dialog header so users know which workspace they're subscribing for. */
   workspaceName?: string;
+  /** Pre-select billing interval when dialog opens (e.g. from pricing page BB params). */
+  initialInterval?: BillingInterval;
+  /** Pre-select currency when dialog opens (e.g. from pricing page BB params). */
+  initialCurrency?: string;
   /** Called when user selects a plan. Currency is optional (for display/logging only; not sent to API). */
   onSelectPlan: (
     planVersionId: string,
@@ -106,6 +115,8 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
   currentMemberCount,
   trialUsedAt,
   workspaceName,
+  initialInterval,
+  initialCurrency,
   onSelectPlan,
   loading: isUpdating = false,
 }) => {
@@ -147,9 +158,10 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
   }, [workspaceBillingCurrency, allPlanCurrencies]);
 
   const [selectedInterval, setSelectedInterval] = useState<BillingInterval>(
-    currentBillingInterval || BillingIntervals.Monthly
+    initialInterval || currentBillingInterval || BillingIntervals.Monthly
   );
   const [selectedCurrency, setSelectedCurrency] = useState<string>(() => {
+    if (initialCurrency && availableCurrencies.includes(initialCurrency)) return initialCurrency;
     if (currentCurrency && availableCurrencies.includes(currentCurrency)) return currentCurrency;
     return availableCurrencies.length > 0 ? availableCurrencies[0]! : '';
   });
@@ -157,22 +169,29 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
   // Effective currency for display/checkout: workspace lock or user selection (never hardcoded).
   const effectiveCurrency = workspaceBillingCurrency?.trim() || selectedCurrency;
 
-  // Sync selected interval and currency when dialog opens or current subscription changes
+  // Sync selected interval and currency when dialog opens or current subscription changes.
+  // Priority: initialInterval/initialCurrency (from BB params) > current subscription > defaults.
   useEffect(() => {
     if (open) {
-      setSelectedInterval(currentBillingInterval || BillingIntervals.Monthly);
-      if (currentCurrency && availableCurrencies.includes(currentCurrency)) {
-        setSelectedCurrency(currentCurrency);
+      setSelectedInterval(initialInterval || currentBillingInterval || BillingIntervals.Monthly);
+      const preferredCurrency = initialCurrency || currentCurrency;
+      if (preferredCurrency && availableCurrencies.includes(preferredCurrency)) {
+        setSelectedCurrency(preferredCurrency);
       } else if (
         availableCurrencies.length > 0 &&
         !availableCurrencies.includes(selectedCurrency)
       ) {
-        // Only reset if current selection is invalid — preserve user's previous choice
         setSelectedCurrency(availableCurrencies[0]!);
       }
-      // If selectedCurrency is already valid, keep it (e.g. free plan with no stripePriceId)
     }
-  }, [open, currentBillingInterval, currentCurrency, availableCurrencies]);
+  }, [
+    open,
+    initialInterval,
+    initialCurrency,
+    currentBillingInterval,
+    currentCurrency,
+    availableCurrencies,
+  ]);
 
   // Preserve plan order from planVersionIds (admin-configured display order)
   const sortedPlans = useMemo(() => {
@@ -240,17 +259,27 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
 
     // Same plan + same interval = Current Plan (disabled)
     if (isSamePlan && isSameInterval) {
-      return { labelKey: 'subscription.currentPlan' as TranslationKey, variant: 'outline' as const, disabled: true };
+      return {
+        labelKey: 'subscription.currentPlan' as TranslationKey,
+        variant: 'outline' as const,
+        disabled: true,
+      };
     }
 
     // Same plan + different interval = Allow switching interval (skip for freemium — $0 at any interval)
     if (isSamePlan && !isSameInterval) {
       if (planVersion.plan?.isFreemium) {
-        return { labelKey: 'subscription.currentPlan' as TranslationKey, variant: 'outline' as const, disabled: true };
+        return {
+          labelKey: 'subscription.currentPlan' as TranslationKey,
+          variant: 'outline' as const,
+          disabled: true,
+        };
       }
       return {
         labelKey: '_dynamic',
-        dynamicLabel: t('subscription.switchToInterval', { interval: getIntervalDisplayName(selectedInterval) }),
+        dynamicLabel: t('subscription.switchToInterval', {
+          interval: getIntervalDisplayName(selectedInterval),
+        }),
         variant: 'default' as const,
         disabled: false,
       };
@@ -273,7 +302,11 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
           disabled: false,
         };
       }
-      return { labelKey: 'subscription.subscribe' as TranslationKey, variant: 'default' as const, disabled: false };
+      return {
+        labelKey: 'subscription.subscribe' as TranslationKey,
+        variant: 'default' as const,
+        disabled: false,
+      };
     }
 
     // Find current plan index in sorted array
@@ -289,11 +322,19 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
           disabled: false,
         };
       }
-      return { labelKey: 'subscription.checkout.select' as TranslationKey, variant: 'default' as const, disabled: false };
+      return {
+        labelKey: 'subscription.checkout.select' as TranslationKey,
+        variant: 'default' as const,
+        disabled: false,
+      };
     }
 
     if (planIndex < currentIndex) {
-      return { labelKey: 'subscription.checkout.downgrade' as TranslationKey, variant: 'outline' as const, disabled: false };
+      return {
+        labelKey: 'subscription.checkout.downgrade' as TranslationKey,
+        variant: 'outline' as const,
+        disabled: false,
+      };
     } else if (planIndex > currentIndex) {
       if (trialAvailable) {
         return {
@@ -303,10 +344,18 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
           disabled: false,
         };
       }
-      return { labelKey: 'subscription.checkout.upgrade' as TranslationKey, variant: 'default' as const, disabled: false };
+      return {
+        labelKey: 'subscription.checkout.upgrade' as TranslationKey,
+        variant: 'default' as const,
+        disabled: false,
+      };
     }
 
-    return { labelKey: 'subscription.checkout.select' as TranslationKey, variant: 'default' as const, disabled: false };
+    return {
+      labelKey: 'subscription.checkout.select' as TranslationKey,
+      variant: 'default' as const,
+      disabled: false,
+    };
   };
 
   const getValueForPlan = (
@@ -343,13 +392,20 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
     } else if (item.type === SubscriptionItemType.Quota) {
       const quotaValue =
         typeof value === 'object' && value !== null && 'included' in value ? value : null;
-      const parts = getQuotaDisplayParts(quotaValue, item.name.toLowerCase(), { currency, locale: formattingLocale });
+      const parts = getQuotaDisplayParts(quotaValue, item.name.toLowerCase(), {
+        currency,
+        locale: formattingLocale,
+      });
       if (!parts) return '—';
       if (!parts.allowOverage) {
         return t('quota.includedHardLimit', { count: parts.included });
       }
       return parts.hasOverage
-        ? t('quota.includedWithOverage', { count: parts.included, price: parts.price, unit: parts.unit })
+        ? t('quota.includedWithOverage', {
+            count: parts.included,
+            price: parts.price,
+            unit: parts.unit,
+          })
         : t('quota.includedOnly', { count: parts.included });
     }
     return '—';
@@ -357,10 +413,15 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent dir={dir} className="inset-0 w-screen h-screen max-w-none rounded-none translate-x-0 translate-y-0 p-0 flex flex-col">
+      <DialogContent
+        dir={dir}
+        className="inset-0 w-screen h-screen max-w-none rounded-none translate-x-0 translate-y-0 p-0 flex flex-col"
+      >
         <div className="flex-shrink-0 px-4 py-4 sm:px-6 sm:py-6 border-b space-y-3 sm:space-y-4">
           <div>
-            <DialogTitle className="text-xl sm:text-2xl font-bold">{t('pricing.title')}</DialogTitle>
+            <DialogTitle className="text-xl sm:text-2xl font-bold">
+              {t('pricing.title')}
+            </DialogTitle>
             <DialogDescription className="mt-1 text-sm">
               {t('subscription.choosePlanDescription')}
               {workspaceName && (
@@ -396,7 +457,9 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
               )}
               {workspaceBillingCurrency?.trim() && (
                 <span className="text-xs text-slate-500">
-                  {t('subscription.billingInCurrency', { currency: workspaceBillingCurrency.toUpperCase() })}
+                  {t('subscription.billingInCurrency', {
+                    currency: workspaceBillingCurrency.toUpperCase(),
+                  })}
                 </span>
               )}
             </div>
@@ -406,7 +469,13 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
               role="group"
               aria-label={t('pricing.billingInterval')}
             >
-              {([BillingIntervals.Monthly, BillingIntervals.Quarterly, BillingIntervals.Yearly] as BillingInterval[]).map(interval => {
+              {(
+                [
+                  BillingIntervals.Monthly,
+                  BillingIntervals.Quarterly,
+                  BillingIntervals.Yearly,
+                ] as BillingInterval[]
+              ).map(interval => {
                 const isCurrentInterval = currentBillingInterval === interval;
                 return (
                   <button
@@ -420,9 +489,12 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                     }`}
                   >
                     <span className="flex items-center justify-center gap-1 sm:gap-1.5">
-                      {interval === BillingIntervals.Monthly && t('subscription.billingInterval.monthly')}
-                      {interval === BillingIntervals.Quarterly && t('subscription.billingInterval.quarterly')}
-                      {interval === BillingIntervals.Yearly && t('subscription.billingInterval.yearly')}
+                      {interval === BillingIntervals.Monthly &&
+                        t('subscription.billingInterval.monthly')}
+                      {interval === BillingIntervals.Quarterly &&
+                        t('subscription.billingInterval.quarterly')}
+                      {interval === BillingIntervals.Yearly &&
+                        t('subscription.billingInterval.yearly')}
                       {interval === BillingIntervals.Yearly && (
                         <span className="text-[10px] sm:text-xs px-1 sm:px-1.5 py-0.5 bg-emerald-100 text-emerald-700 rounded-full font-semibold">
                           {t('pricing.save')}
@@ -444,12 +516,8 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
         <div className="flex-1 min-h-0 flex flex-col">
           {workspaceBillingCurrency?.trim() && availableCurrencies.length === 0 ? (
             <div className="text-center py-12 px-4">
-              <p className="text-slate-600 font-medium">
-                {t('pricing.noPlansCurrency')}
-              </p>
-              <p className="text-slate-500 text-sm mt-2">
-                {t('pricing.noPlansCurrencyHint')}
-              </p>
+              <p className="text-slate-600 font-medium">{t('pricing.noPlansCurrency')}</p>
+              <p className="text-slate-500 text-sm mt-2">{t('pricing.noPlansCurrencyHint')}</p>
             </div>
           ) : sortedPlans.length === 0 ? (
             <div className="text-center py-12 text-gray-500">
@@ -457,9 +525,11 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
             </div>
           ) : (
             <div className="flex-1 min-h-0 overflow-hidden bg-white">
-
               {/* ─── Mobile Layout: Stacked plan cards ─── */}
-              <div className="md:hidden overflow-auto h-full" style={{ maxHeight: 'calc(100vh - 13rem)' }}>
+              <div
+                className="md:hidden overflow-auto h-full"
+                style={{ maxHeight: 'calc(100vh - 13rem)' }}
+              >
                 <div className="p-4 space-y-4">
                   {sortedPlans.map(planVersion => {
                     const isCurrent = planVersion._id === currentPlanVersionId;
@@ -467,14 +537,24 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                     const isPlanLoading = isLoading && planVersion._id === processingPlanId;
                     const price = getPriceForInterval(planVersion);
                     const hasVariant = hasVariantForCurrency(planVersion);
-                    const displayCurrency = planVersion.pricingVariants?.length
-                      && planVersion.pricingVariants.some(v => v.currency?.toLowerCase() === effectiveCurrency.toLowerCase())
-                      ? effectiveCurrency : (planVersion.plan?.currency ?? effectiveCurrency ?? '');
-                    const monthlyPrice = getBasePriceCents(planVersion, effectiveCurrency, BillingIntervals.Monthly) ?? 0;
-                    const savings = selectedInterval !== BillingIntervals.Monthly && price !== null
-                      ? calculateSavings(monthlyPrice, price, selectedInterval) : null;
+                    const displayCurrency =
+                      planVersion.pricingVariants?.length &&
+                      planVersion.pricingVariants.some(
+                        v => v.currency?.toLowerCase() === effectiveCurrency.toLowerCase()
+                      )
+                        ? effectiveCurrency
+                        : (planVersion.plan?.currency ?? effectiveCurrency ?? '');
+                    const monthlyPrice =
+                      getBasePriceCents(planVersion, effectiveCurrency, BillingIntervals.Monthly) ??
+                      0;
+                    const savings =
+                      selectedInterval !== BillingIntervals.Monthly && price !== null
+                        ? calculateSavings(monthlyPrice, price, selectedInterval)
+                        : null;
                     const sp = getSeatPricing(planVersion, effectiveCurrency);
-                    const perSeat = sp ? getPerSeatPriceCents(planVersion, effectiveCurrency, selectedInterval) : null;
+                    const perSeat = sp
+                      ? getPerSeatPriceCents(planVersion, effectiveCurrency, selectedInterval)
+                      : null;
 
                     return (
                       <div
@@ -485,15 +565,25 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                         <div className="flex items-start justify-between mb-3">
                           <div>
                             <div className="flex items-center gap-2">
-                              <h3 className="text-lg font-bold text-slate-900">{planVersion.plan.name}</h3>
-                              {planVersion.trial?.enabled && planVersion.trial.durationDays > 0 && !isCurrent && !trialUsedAt && !currentStripePriceId && (
-                                <span className="shrink-0 rounded-md bg-emerald-100 text-emerald-700 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider">
-                                  {t('subscription.trialBadge', { days: planVersion.trial.durationDays })}
-                                </span>
-                              )}
+                              <h3 className="text-lg font-bold text-slate-900">
+                                {planVersion.plan.name}
+                              </h3>
+                              {planVersion.trial?.enabled &&
+                                planVersion.trial.durationDays > 0 &&
+                                !isCurrent &&
+                                !trialUsedAt &&
+                                !currentStripePriceId && (
+                                  <span className="shrink-0 rounded-md bg-emerald-100 text-emerald-700 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider">
+                                    {t('subscription.trialBadge', {
+                                      days: planVersion.trial.durationDays,
+                                    })}
+                                  </span>
+                                )}
                             </div>
                             {planVersion.plan.description && (
-                              <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">{planVersion.plan.description}</p>
+                              <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">
+                                {planVersion.plan.description}
+                              </p>
                             )}
                           </div>
                           {isCurrent && (
@@ -507,18 +597,31 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                         <div className="mb-4">
                           <div className="flex items-baseline gap-1 whitespace-nowrap">
                             <span className="text-2xl font-bold text-slate-900">
-                              {hasVariant && price !== null ? (formatPrice(price, displayCurrency) || t('pricing.free')) : !hasVariant ? '—' : (formatPrice(price, displayCurrency) || t('pricing.free'))}
+                              {hasVariant && price !== null
+                                ? formatPrice(price, displayCurrency) || t('pricing.free')
+                                : !hasVariant
+                                  ? '—'
+                                  : formatPrice(price, displayCurrency) || t('pricing.free')}
                             </span>
                             {price !== null && price > 0 && hasVariant && (
-                              <span className="text-sm text-slate-500">{getIntervalLabel(selectedInterval)}</span>
+                              <span className="text-sm text-slate-500">
+                                {getIntervalLabel(selectedInterval)}
+                              </span>
                             )}
                           </div>
                           {savings !== null && savings > 0 && hasVariant && (
-                            <span className="text-xs text-emerald-600 font-medium">{t('subscription.savingsPercent', { percent: savings })}</span>
+                            <span className="text-xs text-emerald-600 font-medium">
+                              {t('subscription.savingsPercent', { percent: savings })}
+                            </span>
                           )}
                           {sp?.enabled && perSeat && perSeat > 0 && !isPersonalMode && (
                             <div className="text-xs text-slate-500 mt-1">
-                              {t('subscription.seatPriceDisplay', { price: fmtCents(perSeat, displayCurrency), interval: getIntervalLabel(selectedInterval), included: fmtNum(sp.includedSeats), includedLabel: t('pricing.included') })}
+                              {t('subscription.seatPriceDisplay', {
+                                price: fmtCents(perSeat, displayCurrency),
+                                interval: getIntervalLabel(selectedInterval),
+                                included: fmtNum(sp.includedSeats),
+                                includedLabel: t('pricing.included'),
+                              })}
                             </div>
                           )}
                         </div>
@@ -526,19 +629,28 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                         {/* Features list */}
                         {features.length > 0 && (
                           <div className="mb-3">
-                            <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">{t('subscription.items.features')}</div>
+                            <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
+                              {t('subscription.items.features')}
+                            </div>
                             <div className="space-y-1">
                               {features.map(item => {
                                 const value = getValueForPlan(planVersion, item, selectedInterval);
-                                const isEnabled = item.type === SubscriptionItemType.Feature && value === true;
+                                const isEnabled =
+                                  item.type === SubscriptionItemType.Feature && value === true;
                                 return (
                                   <div key={item._id} className="flex items-center gap-2 text-sm">
                                     {item.type === SubscriptionItemType.Feature ? (
-                                      isEnabled
-                                        ? <span className="text-emerald-500 text-xs">&#10003;</span>
-                                        : <span className="text-slate-300 text-xs">&#10005;</span>
+                                      isEnabled ? (
+                                        <span className="text-emerald-500 text-xs">&#10003;</span>
+                                      ) : (
+                                        <span className="text-slate-300 text-xs">&#10005;</span>
+                                      )
                                     ) : null}
-                                    <span className={isEnabled ? 'text-slate-700' : 'text-slate-400'}>{item.name}</span>
+                                    <span
+                                      className={isEnabled ? 'text-slate-700' : 'text-slate-400'}
+                                    >
+                                      {item.name}
+                                    </span>
                                   </div>
                                 );
                               })}
@@ -549,14 +661,21 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                         {/* Limits */}
                         {limits.length > 0 && (
                           <div className="mb-3">
-                            <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">{t('subscription.items.limits')}</div>
+                            <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
+                              {t('subscription.items.limits')}
+                            </div>
                             <div className="space-y-1">
                               {limits.map(item => {
                                 const value = getValueForPlan(planVersion, item, selectedInterval);
                                 return (
-                                  <div key={item._id} className="flex items-center justify-between text-sm">
+                                  <div
+                                    key={item._id}
+                                    className="flex items-center justify-between text-sm"
+                                  >
                                     <span className="text-slate-600">{item.name}</span>
-                                    <span className="font-medium text-slate-700">{typeof value === 'number' ? fmtNum(value) : '—'}</span>
+                                    <span className="font-medium text-slate-700">
+                                      {typeof value === 'number' ? fmtNum(value) : '—'}
+                                    </span>
                                   </div>
                                 );
                               })}
@@ -567,21 +686,48 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                         {/* Seats */}
                         {sp?.enabled && !isPersonalMode && (
                           <div className="mb-3">
-                            <div className="text-xs font-semibold text-emerald-600 uppercase tracking-wider mb-1.5">{t('subscription.seats.title')}</div>
+                            <div className="text-xs font-semibold text-emerald-600 uppercase tracking-wider mb-1.5">
+                              {t('subscription.seats.title')}
+                            </div>
                             <div className="space-y-1 text-sm">
-                              <div className="flex justify-between"><span className="text-slate-600">{t('subscription.seats.included')}</span><span className="font-medium">{fmtNum(sp.includedSeats || 0)}</span></div>
-                              <div className="flex justify-between"><span className="text-slate-600">{t('subscription.seats.maxSeats')}</span><span className="font-medium">{(sp as any).maxSeats > 0 ? fmtNum((sp as any).maxSeats) : t('subscription.seats.unlimited')}</span></div>
-                              {currentMemberCount != null && currentMemberCount > 0 && (() => {
-                                const billable = Math.max(0, currentMemberCount - (sp.includedSeats || 0));
-                                return (
-                                  <div className="flex justify-between">
-                                    <span className="text-slate-600">{t('subscription.seats.billable')}</span>
-                                    <span className={`font-medium ${billable === 0 ? 'text-emerald-600' : 'text-amber-600'}`}>
-                                      {billable === 0 ? t('subscription.seats.allIncluded') : `${fmtNum(billable)} ${t('subscription.seats.extra')}`}
-                                    </span>
-                                  </div>
-                                );
-                              })()}
+                              <div className="flex justify-between">
+                                <span className="text-slate-600">
+                                  {t('subscription.seats.included')}
+                                </span>
+                                <span className="font-medium">{fmtNum(sp.includedSeats || 0)}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-slate-600">
+                                  {t('subscription.seats.maxSeats')}
+                                </span>
+                                <span className="font-medium">
+                                  {(sp as any).maxSeats > 0
+                                    ? fmtNum((sp as any).maxSeats)
+                                    : t('subscription.seats.unlimited')}
+                                </span>
+                              </div>
+                              {currentMemberCount != null &&
+                                currentMemberCount > 0 &&
+                                (() => {
+                                  const billable = Math.max(
+                                    0,
+                                    currentMemberCount - (sp.includedSeats || 0)
+                                  );
+                                  return (
+                                    <div className="flex justify-between">
+                                      <span className="text-slate-600">
+                                        {t('subscription.seats.billable')}
+                                      </span>
+                                      <span
+                                        className={`font-medium ${billable === 0 ? 'text-emerald-600' : 'text-amber-600'}`}
+                                      >
+                                        {billable === 0
+                                          ? t('subscription.seats.allIncluded')
+                                          : `${fmtNum(billable)} ${t('subscription.seats.extra')}`}
+                                      </span>
+                                    </div>
+                                  );
+                                })()}
                             </div>
                           </div>
                         )}
@@ -594,7 +740,12 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                           progress={isPlanLoading}
                           onClick={() => handleSelectPlan(planVersion._id)}
                         >
-                          {isPlanLoading ? t('pricing.processing') : !hasVariant ? t('pricing.unavailable') : (buttonState as any).dynamicLabel ?? t(buttonState.labelKey as TranslationKey)}
+                          {isPlanLoading
+                            ? t('pricing.processing')
+                            : !hasVariant
+                              ? t('pricing.unavailable')
+                              : ((buttonState as any).dynamicLabel ??
+                                t(buttonState.labelKey as TranslationKey))}
                         </Button>
                       </div>
                     );
@@ -603,7 +754,10 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
               </div>
 
               {/* ─── Desktop Layout: Comparison table ─── */}
-              <div className="hidden md:block overflow-auto h-full" style={{ maxHeight: 'calc(100vh - 12rem)' }}>
+              <div
+                className="hidden md:block overflow-auto h-full"
+                style={{ maxHeight: 'calc(100vh - 12rem)' }}
+              >
                 <table
                   className="w-full border-separate border-spacing-0"
                   style={{
@@ -627,7 +781,11 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                         const isPlanLoading = isLoading && planVersion._id === processingPlanId;
                         const price = getPriceForInterval(planVersion);
                         const monthlyPrice =
-                          getBasePriceCents(planVersion, effectiveCurrency, BillingIntervals.Monthly) ?? 0;
+                          getBasePriceCents(
+                            planVersion,
+                            effectiveCurrency,
+                            BillingIntervals.Monthly
+                          ) ?? 0;
                         const savings =
                           selectedInterval !== BillingIntervals.Monthly && price !== null
                             ? calculateSavings(monthlyPrice, price, selectedInterval)
@@ -656,11 +814,17 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                                   <h3 className="text-base font-bold text-slate-900 truncate">
                                     {planVersion.plan.name}
                                   </h3>
-                                  {planVersion.trial?.enabled && planVersion.trial.durationDays > 0 && !isCurrent && !trialUsedAt && !currentStripePriceId && (
-                                    <span className="shrink-0 rounded-md bg-emerald-100 text-emerald-700 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider">
-                                      {t('subscription.trialBadge', { days: planVersion.trial.durationDays })}
-                                    </span>
-                                  )}
+                                  {planVersion.trial?.enabled &&
+                                    planVersion.trial.durationDays > 0 &&
+                                    !isCurrent &&
+                                    !trialUsedAt &&
+                                    !currentStripePriceId && (
+                                      <span className="shrink-0 rounded-md bg-emerald-100 text-emerald-700 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider">
+                                        {t('subscription.trialBadge', {
+                                          days: planVersion.trial.durationDays,
+                                        })}
+                                      </span>
+                                    )}
                                 </div>
                                 {isCurrent && (
                                   <span className="shrink-0 rounded-md bg-blue-600 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white">
@@ -674,10 +838,10 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                                 <div className="flex items-baseline gap-1 flex-wrap">
                                   <span className="text-2xl font-bold text-slate-900">
                                     {hasVariant && price !== null
-                                      ? (formatPrice(price, displayCurrency) || t('pricing.free'))
+                                      ? formatPrice(price, displayCurrency) || t('pricing.free')
                                       : !hasVariant
                                         ? '—'
-                                        : (formatPrice(price, displayCurrency) || t('pricing.free'))}
+                                        : formatPrice(price, displayCurrency) || t('pricing.free')}
                                   </span>
                                   {price !== null && price > 0 && hasVariant && (
                                     <span className="text-sm text-slate-500">
@@ -695,11 +859,22 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                                   if (isPersonalMode) return null;
                                   const seatConfig = getSeatPricing(planVersion, effectiveCurrency);
                                   if (!seatConfig) return null;
-                                  const perSeat = getPerSeatPriceCents(planVersion, effectiveCurrency, selectedInterval);
+                                  const perSeat = getPerSeatPriceCents(
+                                    planVersion,
+                                    effectiveCurrency,
+                                    selectedInterval
+                                  );
                                   if (!perSeat || perSeat <= 0) return null;
                                   return (
                                     <div className="text-[11px] text-slate-500 mt-1.5 border-t border-slate-100 pt-1 leading-tight">
-                                      <div>{t('subscription.seatPriceDisplay', { price: fmtCents(perSeat, displayCurrency), interval: getIntervalLabel(selectedInterval), included: fmtNum(seatConfig.includedSeats), includedLabel: t('pricing.included') })}</div>
+                                      <div>
+                                        {t('subscription.seatPriceDisplay', {
+                                          price: fmtCents(perSeat, displayCurrency),
+                                          interval: getIntervalLabel(selectedInterval),
+                                          included: fmtNum(seatConfig.includedSeats),
+                                          includedLabel: t('pricing.included'),
+                                        })}
+                                      </div>
                                     </div>
                                   );
                                 })()}
@@ -721,7 +896,8 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                                   ? t('pricing.processing')
                                   : !hasVariant
                                     ? t('pricing.unavailable')
-                                    : (buttonState as any).dynamicLabel ?? t(buttonState.labelKey as TranslationKey)}
+                                    : ((buttonState as any).dynamicLabel ??
+                                      t(buttonState.labelKey as TranslationKey))}
                               </Button>
                             </div>
                           </th>
@@ -758,7 +934,8 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                                 ? effectiveCurrency
                                 : (planVersion.plan?.currency ?? effectiveCurrency ?? '');
                               const formatted = formatValue(value, item, displayCurrency);
-                              const isEnabled = item.type === SubscriptionItemType.Feature && value === true;
+                              const isEnabled =
+                                item.type === SubscriptionItemType.Feature && value === true;
                               return (
                                 <td
                                   key={planVersion._id}
@@ -892,103 +1069,148 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                     )}
 
                     {/* Seats Section */}
-                    {!isPersonalMode && sortedPlans.some(pv => {
-                      const sp = getSeatPricing(pv, effectiveCurrency);
-                      return sp?.enabled;
-                    }) && (
-                      <>
-                        <tr>
-                          <td className="sticky start-0 z-10 border-t border-emerald-200 bg-emerald-50 px-4 py-2.5 font-semibold text-xs uppercase tracking-wider text-emerald-700 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.06)]">
-                            {t('subscription.seats.title')}
-                          </td>
-                          <td
-                            colSpan={sortedPlans.length}
-                            className="border-t border-emerald-200 bg-emerald-50"
-                          />
-                        </tr>
-                        {/* Included seats row */}
-                        <tr className="group hover:bg-slate-50/50">
-                          <td className="sticky start-0 z-10 border-t border-slate-100 bg-white p-4 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.06)] group-hover:bg-slate-50/80">
-                            <div className="font-medium text-sm text-slate-900">{t('subscription.seats.includedSeats')}</div>
-                            <div className="text-xs text-slate-500 mt-0.5">{t('subscription.seats.freeWithBase')}</div>
-                          </td>
-                          {sortedPlans.map(planVersion => {
-                            const sp = getSeatPricing(planVersion, effectiveCurrency);
-                            return (
-                              <td key={planVersion._id} className={`border-t border-slate-100 p-4 text-center align-middle ${planVersion._id === currentPlanVersionId ? 'bg-blue-50/50' : 'bg-white'}`}>
-                                <span className="text-sm font-medium text-slate-700">
-                                  {sp?.enabled ? fmtNum(sp.includedSeats || 0) : '—'}
-                                </span>
-                              </td>
-                            );
-                          })}
-                        </tr>
-                        {/* Max seats row */}
-                        <tr className="group hover:bg-slate-50/50">
-                          <td className="sticky start-0 z-10 border-t border-slate-100 bg-white p-4 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.06)] group-hover:bg-slate-50/80">
-                            <div className="font-medium text-sm text-slate-900">{t('subscription.seats.maxSeats')}</div>
-                          </td>
-                          {sortedPlans.map(planVersion => {
-                            const sp = getSeatPricing(planVersion, effectiveCurrency);
-                            return (
-                              <td key={planVersion._id} className={`border-t border-slate-100 p-4 text-center align-middle ${planVersion._id === currentPlanVersionId ? 'bg-blue-50/50' : 'bg-white'}`}>
-                                <span className="text-sm font-medium text-slate-700">
-                                  {sp?.enabled ? ((sp as any).maxSeats > 0 ? fmtNum((sp as any).maxSeats) : t('subscription.seats.unlimited')) : '—'}
-                                </span>
-                              </td>
-                            );
-                          })}
-                        </tr>
-                        {/* Per seat price row */}
-                        <tr className="group hover:bg-slate-50/50">
-                          <td className="sticky start-0 z-10 border-t border-slate-100 bg-white p-4 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.06)] group-hover:bg-slate-50/80">
-                            <div className="font-medium text-sm text-slate-900">{t('subscription.seats.perExtraSeat')}</div>
-                          </td>
-                          {sortedPlans.map(planVersion => {
-                            const perSeat = getPerSeatPriceCents(planVersion, effectiveCurrency, selectedInterval);
-                            const displayCurrency = planVersion.pricingVariants?.length
-                              ? effectiveCurrency : (planVersion.plan?.currency ?? effectiveCurrency ?? '');
-                            return (
-                              <td key={planVersion._id} className={`border-t border-slate-100 p-4 text-center align-middle ${planVersion._id === currentPlanVersionId ? 'bg-blue-50/50' : 'bg-white'}`}>
-                                <span className="text-sm font-medium text-slate-700">
-                                  {perSeat && perSeat > 0 ? `${fmtCents(perSeat, displayCurrency)}${getIntervalLabel(selectedInterval)}` : '—'}
-                                </span>
-                              </td>
-                            );
-                          })}
-                        </tr>
-                        {/* Billable seats row — only show when we know the member count */}
-                        {currentMemberCount != null && currentMemberCount > 0 && (
+                    {!isPersonalMode &&
+                      sortedPlans.some(pv => {
+                        const sp = getSeatPricing(pv, effectiveCurrency);
+                        return sp?.enabled;
+                      }) && (
+                        <>
+                          <tr>
+                            <td className="sticky start-0 z-10 border-t border-emerald-200 bg-emerald-50 px-4 py-2.5 font-semibold text-xs uppercase tracking-wider text-emerald-700 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.06)]">
+                              {t('subscription.seats.title')}
+                            </td>
+                            <td
+                              colSpan={sortedPlans.length}
+                              className="border-t border-emerald-200 bg-emerald-50"
+                            />
+                          </tr>
+                          {/* Included seats row */}
                           <tr className="group hover:bg-slate-50/50">
                             <td className="sticky start-0 z-10 border-t border-slate-100 bg-white p-4 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.06)] group-hover:bg-slate-50/80">
-                              <div className="font-medium text-sm text-slate-900">{t('subscription.seats.billable')}</div>
-                              <div className="text-xs text-slate-500 mt-0.5">{t('subscription.membersInWorkspace', { count: currentMemberCount })}</div>
+                              <div className="font-medium text-sm text-slate-900">
+                                {t('subscription.seats.includedSeats')}
+                              </div>
+                              <div className="text-xs text-slate-500 mt-0.5">
+                                {t('subscription.seats.freeWithBase')}
+                              </div>
                             </td>
                             {sortedPlans.map(planVersion => {
                               const sp = getSeatPricing(planVersion, effectiveCurrency);
-                              if (!sp?.enabled) {
-                                return (
-                                  <td key={planVersion._id} className={`border-t border-slate-100 p-4 text-center align-middle ${planVersion._id === currentPlanVersionId ? 'bg-blue-50/50' : 'bg-white'}`}>
-                                    <span className="text-sm text-slate-400">—</span>
-                                  </td>
-                                );
-                              }
-                              const included = sp.includedSeats || 0;
-                              const billable = Math.max(0, currentMemberCount - included);
                               return (
-                                <td key={planVersion._id} className={`border-t border-slate-100 p-4 text-center align-middle ${planVersion._id === currentPlanVersionId ? 'bg-blue-50/50' : 'bg-white'}`}>
-                                  {billable === 0 ? (
-                                    <span className="text-sm font-medium text-emerald-600">{t('subscription.seats.allIncluded')}</span>
-                                  ) : (
-                                    <span className="text-sm font-medium text-amber-600">{fmtNum(billable)} {t('subscription.seats.extra')}</span>
-                                  )}
+                                <td
+                                  key={planVersion._id}
+                                  className={`border-t border-slate-100 p-4 text-center align-middle ${planVersion._id === currentPlanVersionId ? 'bg-blue-50/50' : 'bg-white'}`}
+                                >
+                                  <span className="text-sm font-medium text-slate-700">
+                                    {sp?.enabled ? fmtNum(sp.includedSeats || 0) : '—'}
+                                  </span>
                                 </td>
                               );
                             })}
                           </tr>
-                        )}
-                      </>
-                    )}
+                          {/* Max seats row */}
+                          <tr className="group hover:bg-slate-50/50">
+                            <td className="sticky start-0 z-10 border-t border-slate-100 bg-white p-4 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.06)] group-hover:bg-slate-50/80">
+                              <div className="font-medium text-sm text-slate-900">
+                                {t('subscription.seats.maxSeats')}
+                              </div>
+                            </td>
+                            {sortedPlans.map(planVersion => {
+                              const sp = getSeatPricing(planVersion, effectiveCurrency);
+                              return (
+                                <td
+                                  key={planVersion._id}
+                                  className={`border-t border-slate-100 p-4 text-center align-middle ${planVersion._id === currentPlanVersionId ? 'bg-blue-50/50' : 'bg-white'}`}
+                                >
+                                  <span className="text-sm font-medium text-slate-700">
+                                    {sp?.enabled
+                                      ? (sp as any).maxSeats > 0
+                                        ? fmtNum((sp as any).maxSeats)
+                                        : t('subscription.seats.unlimited')
+                                      : '—'}
+                                  </span>
+                                </td>
+                              );
+                            })}
+                          </tr>
+                          {/* Per seat price row */}
+                          <tr className="group hover:bg-slate-50/50">
+                            <td className="sticky start-0 z-10 border-t border-slate-100 bg-white p-4 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.06)] group-hover:bg-slate-50/80">
+                              <div className="font-medium text-sm text-slate-900">
+                                {t('subscription.seats.perExtraSeat')}
+                              </div>
+                            </td>
+                            {sortedPlans.map(planVersion => {
+                              const perSeat = getPerSeatPriceCents(
+                                planVersion,
+                                effectiveCurrency,
+                                selectedInterval
+                              );
+                              const displayCurrency = planVersion.pricingVariants?.length
+                                ? effectiveCurrency
+                                : (planVersion.plan?.currency ?? effectiveCurrency ?? '');
+                              return (
+                                <td
+                                  key={planVersion._id}
+                                  className={`border-t border-slate-100 p-4 text-center align-middle ${planVersion._id === currentPlanVersionId ? 'bg-blue-50/50' : 'bg-white'}`}
+                                >
+                                  <span className="text-sm font-medium text-slate-700">
+                                    {perSeat && perSeat > 0
+                                      ? `${fmtCents(perSeat, displayCurrency)}${getIntervalLabel(selectedInterval)}`
+                                      : '—'}
+                                  </span>
+                                </td>
+                              );
+                            })}
+                          </tr>
+                          {/* Billable seats row — only show when we know the member count */}
+                          {currentMemberCount != null && currentMemberCount > 0 && (
+                            <tr className="group hover:bg-slate-50/50">
+                              <td className="sticky start-0 z-10 border-t border-slate-100 bg-white p-4 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.06)] group-hover:bg-slate-50/80">
+                                <div className="font-medium text-sm text-slate-900">
+                                  {t('subscription.seats.billable')}
+                                </div>
+                                <div className="text-xs text-slate-500 mt-0.5">
+                                  {t('subscription.membersInWorkspace', {
+                                    count: currentMemberCount,
+                                  })}
+                                </div>
+                              </td>
+                              {sortedPlans.map(planVersion => {
+                                const sp = getSeatPricing(planVersion, effectiveCurrency);
+                                if (!sp?.enabled) {
+                                  return (
+                                    <td
+                                      key={planVersion._id}
+                                      className={`border-t border-slate-100 p-4 text-center align-middle ${planVersion._id === currentPlanVersionId ? 'bg-blue-50/50' : 'bg-white'}`}
+                                    >
+                                      <span className="text-sm text-slate-400">—</span>
+                                    </td>
+                                  );
+                                }
+                                const included = sp.includedSeats || 0;
+                                const billable = Math.max(0, currentMemberCount - included);
+                                return (
+                                  <td
+                                    key={planVersion._id}
+                                    className={`border-t border-slate-100 p-4 text-center align-middle ${planVersion._id === currentPlanVersionId ? 'bg-blue-50/50' : 'bg-white'}`}
+                                  >
+                                    {billable === 0 ? (
+                                      <span className="text-sm font-medium text-emerald-600">
+                                        {t('subscription.seats.allIncluded')}
+                                      </span>
+                                    ) : (
+                                      <span className="text-sm font-medium text-amber-600">
+                                        {fmtNum(billable)} {t('subscription.seats.extra')}
+                                      </span>
+                                    )}
+                                  </td>
+                                );
+                              })}
+                            </tr>
+                          )}
+                        </>
+                      )}
                   </tbody>
                 </table>
               </div>

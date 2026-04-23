@@ -8,8 +8,12 @@ export { ApiVersion } from '../../providers/os/types';
 export type { IOsConfig, IOsState } from '../../providers/os/types';
 
 // Workspace types
-export type { IWorkspace, IWorkspaceFeature, IWorkspaceUser } from '../../providers/workspace/types';
+export type {
+  IWorkspace,
+  IWorkspaceFeature,
+  IWorkspaceUser,
+} from '../../providers/workspace/types';
 
 // Settings types
-export type { ISettings, WorkspaceMode } from '../../providers/types';
 export { WorkspaceModes } from '../../providers/types';
+export type { ISettings, WorkspaceMode } from '../../providers/types';

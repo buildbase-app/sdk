@@ -1,5 +1,4 @@
 import { Settings } from 'lucide-react';
-import { useTranslation, type TranslationKey } from '../../../i18n';
 import React, { useState } from 'react';
 import { Button } from '../../../components/ui/button';
 import {
@@ -9,16 +8,17 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '../../../components/ui/dialog';
+import { useTranslation, type TranslationKey } from '../../../i18n';
 import { IWorkspace } from '../types';
 import WorkspaceSettingsDanger from './SettingsDanger';
 import WorkspaceSettingsFeatures from './SettingsFeatures';
 import WorkspaceSettingsGeneral from './SettingsGeneral';
+import WorkspaceSettingsNotifications from './SettingsNotifications';
+import WorkspaceSettingsPermissions from './SettingsPermissions';
 import WorkspaceSettingsProfile from './SettingsProfile';
 import WorkspaceSettingsSubscription from './SettingsSubscription';
 import WorkspaceSettingsUsage from './SettingsUsage';
 import WorkspaceSettingsUsers from './SettingsUsers';
-import WorkspaceSettingsNotifications from './SettingsNotifications';
-import WorkspaceSettingsPermissions from './SettingsPermissions';
 import WorkspaceSettingsSidebar from './Sidebar';
 
 export const SettingsScreen = {
@@ -36,9 +36,7 @@ export const SettingsScreen = {
 export type WorkspaceSettingsSection = (typeof SettingsScreen)[keyof typeof SettingsScreen];
 
 /** Set of all valid section values — used for runtime validation */
-export const SETTINGS_SCREENS = new Set<WorkspaceSettingsSection>(
-  Object.values(SettingsScreen)
-);
+export const SETTINGS_SCREENS = new Set<WorkspaceSettingsSection>(Object.values(SettingsScreen));
 
 /** Translation key for each screen title */
 const SCREEN_TITLE_KEYS: Record<WorkspaceSettingsSection, TranslationKey> = {
@@ -107,7 +105,10 @@ const WorkspaceSettingsDialog: React.FC<WorkspaceSettingsDialogProps> = ({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       {showTrigger && <DialogTrigger asChild>{trigger || defaultTrigger}</DialogTrigger>}
-      <DialogContent dir={dir} className="flex max-w-2xl min-w-full sm:min-w-[800px] p-0 m-0 bg-muted sm:min-h-[600px] min-h-full gap-x-0 space-x-0">
+      <DialogContent
+        dir={dir}
+        className="flex max-w-2xl min-w-full sm:min-w-[800px] p-0 m-0 bg-muted sm:min-h-[600px] min-h-full gap-x-0 space-x-0"
+      >
         <DialogDescription className="sr-only">{t(SCREEN_TITLE_KEYS[section])}</DialogDescription>
         <WorkspaceSettingsSidebar workspace={workspace} section={section} setSection={setSection} />
         <div className="flex-1 p-6 overflow-auto flex flex-col bg-background">
@@ -115,16 +116,26 @@ const WorkspaceSettingsDialog: React.FC<WorkspaceSettingsDialogProps> = ({
             {t(SCREEN_TITLE_KEYS[section])}
           </DialogTitle>
           <div className="sm:max-h-[500px] overflow-y-auto">
-            {section === SettingsScreen.Profile && <WorkspaceSettingsProfile workspace={workspace} />}
-            {section === SettingsScreen.General && <WorkspaceSettingsGeneral workspace={workspace} />}
+            {section === SettingsScreen.Profile && (
+              <WorkspaceSettingsProfile workspace={workspace} />
+            )}
+            {section === SettingsScreen.General && (
+              <WorkspaceSettingsGeneral workspace={workspace} />
+            )}
             {section === SettingsScreen.Users && <WorkspaceSettingsUsers workspace={workspace} />}
-            {section === SettingsScreen.Subscription && <WorkspaceSettingsSubscription workspace={workspace} />}
+            {section === SettingsScreen.Subscription && (
+              <WorkspaceSettingsSubscription workspace={workspace} />
+            )}
             {section === SettingsScreen.Usage && <WorkspaceSettingsUsage />}
             {section === SettingsScreen.Features && (
               <WorkspaceSettingsFeatures workspaceId={workspace._id?.toString()} />
             )}
-            {section === SettingsScreen.Notifications && <WorkspaceSettingsNotifications workspace={workspace} />}
-            {section === SettingsScreen.Permissions && <WorkspaceSettingsPermissions workspace={workspace} />}
+            {section === SettingsScreen.Notifications && (
+              <WorkspaceSettingsNotifications workspace={workspace} />
+            )}
+            {section === SettingsScreen.Permissions && (
+              <WorkspaceSettingsPermissions workspace={workspace} />
+            )}
             {section === SettingsScreen.Danger && <WorkspaceSettingsDanger workspace={workspace} />}
           </div>
         </div>

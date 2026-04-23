@@ -4,7 +4,7 @@
  */
 
 import { validateRedirectUrl } from './security';
-import { getStorageJSON, setStorageJSON, removeStorageItem } from './storage';
+import { getStorageJSON, removeStorageItem, setStorageJSON } from './storage';
 
 const AUTH_INTENT_KEY = 'saas-auth-intent';
 const AUTH_INTENT_TTL_MS = 10 * 60 * 1000; // 10 minutes
