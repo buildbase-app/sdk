@@ -388,7 +388,7 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
     if (item.type === SubscriptionItemType.Feature) {
       return value === true ? '✓' : '—';
     } else if (item.type === SubscriptionItemType.Limit) {
-      return value !== null && value !== undefined ? String(value) : '—';
+      return value !== null && value !== undefined && typeof value === 'number' ? fmtNum(value) : '—';
     } else if (item.type === SubscriptionItemType.Quota) {
       const quotaValue =
         typeof value === 'object' && value !== null && 'included' in value ? value : null;

@@ -1072,7 +1072,7 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                                         className="flex items-center justify-between text-sm"
                                       >
                                         <span className="text-gray-600">{item.name}</span>
-                                        <span className="font-medium text-gray-900">{value}</span>
+                                        <span className="font-medium text-gray-900">{fmtNum(value)}</span>
                                       </li>
                                     ))}
                                   </ul>
