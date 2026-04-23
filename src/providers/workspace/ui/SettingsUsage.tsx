@@ -436,7 +436,7 @@ function QuotaCard({
             <div className="flex items-center justify-between text-xs">
               <span className="text-gray-500">{t('usage.billableBlocks')}</span>
               <span className="font-medium text-gray-900">
-                {Math.ceil(quota.overage / pricing.unitSize).toLocaleString(formattingLocale)}
+                {fmtN(Math.ceil(quota.overage / pricing.unitSize))}
               </span>
             </div>
           )}
