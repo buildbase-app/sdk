@@ -380,13 +380,32 @@ export interface IPlanGroupVersionsResponse {
   availableVersions: IPlanGroupVersionWithPlans[];
 }
 
-/** Request body for POST .../workspaces/:id/subscription/checkout. Only these fields are allowed. */
+/**
+ * Optional Stripe-level overrides forwarded to the checkout session.
+ * Use this to pass affiliate/referral tracking data or other Stripe parameters
+ * that should be set on the checkout session or resulting subscription.
+ */
+export interface ICheckoutStripeOptions {
+  /** Custom metadata merged into the Stripe checkout session metadata. */
+  metadata?: Record<string, string>;
+  /**
+   * Stripe `client_reference_id` — most affiliate platforms (Rewardful,
+   * FirstPromoter, PartnerStack, etc.) read this field to attribute conversions.
+   */
+  clientReferenceId?: string;
+  /** Custom metadata merged into `subscription_data.metadata` on the Stripe session. */
+  subscriptionMetadata?: Record<string, string>;
+}
+
+/** Request body for POST .../workspaces/:id/subscription/checkout. */
 export interface ICheckoutSessionRequest {
   planVersionId: string;
   billingInterval?: BillingInterval;
   currency?: string;
   successUrl?: string;
   cancelUrl?: string;
+  /** Stripe-level overrides for affiliate tracking, referral IDs, etc. */
+  stripeOptions?: ICheckoutStripeOptions;
 }
 
 export interface ICheckoutSessionResponse {
