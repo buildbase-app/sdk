@@ -47,7 +47,7 @@ Also works server-side (Next.js API routes, Express, Hono) — see [Server-Side 
 - **📬 Notifications** - Email + push notification system with per-event channel control, workspace preferences, and server-side `notification.send()` API
 - **💺 Seat-Based Pricing** - Per-seat billing with included seats, billable seat tracking, and seat limit enforcement
 - **💱 Multi-Currency** - Per-currency pricing variants with workspace billing currency lock
-- **🤝 Affiliate Tracking** - Pass referral data to Stripe checkout via `stripeOptions` (Rewardful, Endorsely, FirstPromoter, etc.)
+- **🤝 Affiliate Tracking** - Pass referral data to Stripe checkout via `getCheckoutStripeParams` prop (Rewardful, Endorsely, FirstPromoter, etc.)
 - **📊 Quota Usage Tracking** - Record and monitor metered usage (API calls, storage, etc.) with real-time status
 - **📈 Usage Dashboard** - Built-in workspace settings page showing quota consumption, overage billing breakdowns, and billing period info
 - **👤 User Management** - User attributes and feature flags management
@@ -306,23 +306,34 @@ import { saveAuthIntent, consumeAuthIntent, clearAuthIntent } from '@buildbase/s
 
 ### Affiliate / Referral Tracking
 
-Pass affiliate data to Stripe checkout sessions via `stripeOptions` on the checkout request:
+Pass affiliate/referral data to Stripe checkout sessions via the `getCheckoutStripeParams` prop on `SaaSOSProvider`. This async callback is called before every checkout session is created, so you can fetch referral IDs, read cookies, or call any async API:
 
 ```tsx
-createCheckoutSession({
-  planVersionId: '...',
-  stripeOptions: {
+<SaaSOSProvider
+  serverUrl="https://your-api-server.com"
+  version={ApiVersion.V1}
+  orgId="your-org-id"
+  auth={authConfig}
+  getCheckoutStripeParams={async (request) => {
     // Rewardful, FirstPromoter, PartnerStack — read client_reference_id
-    clientReferenceId: Rewardful.referral,
+    const referralId = await getRewardfulReferralId();
 
-    // Endorsely — reads subscription metadata
-    subscriptionMetadata: { endorsely_referral: window.endorsely_referral },
+    return {
+      clientReferenceId: referralId,
 
-    // Custom tracking on the checkout session
-    metadata: { campaign: 'summer-sale' },
-  },
-});
+      // Endorsely — reads subscription metadata
+      subscriptionMetadata: { endorsely_referral: window.endorsely_referral },
+
+      // Custom tracking on the checkout session
+      metadata: { campaign: 'summer-sale' },
+    };
+  }}
+>
+  <App />
+</SaaSOSProvider>
 ```
+
+The returned object is merged into the Stripe checkout session. You can return any combination of the fields below, or `undefined` to proceed without extra options:
 
 | Field                  | Stripe mapping                | Use case                               |
 | ---------------------- | ----------------------------- | -------------------------------------- |
@@ -1845,13 +1856,16 @@ All TypeScript types are exported for type safety. See the [TypeScript definitio
 
 ### SaaSOSProvider Props
 
-| Prop        | Type          | Required | Description                                                          |
-| ----------- | ------------- | -------- | -------------------------------------------------------------------- |
-| `serverUrl` | `string`      | ✅       | API server URL (must be valid URL)                                   |
-| `version`   | `ApiVersion`  | ✅       | API version (currently only `'v1'`)                                  |
-| `orgId`     | `string`      | ✅       | Organization ID (must be valid MongoDB ObjectId - 24 hex characters) |
-| `auth`      | `IAuthConfig` | ❌       | Authentication configuration                                         |
-| `children`  | `ReactNode`   | ✅       | React children                                                       |
+| Prop                       | Type                        | Required | Description                                                                                      |
+| -------------------------- | --------------------------- | -------- | ------------------------------------------------------------------------------------------------ |
+| `serverUrl`                | `string`                    | ✅       | API server URL (must be valid URL)                                                               |
+| `version`                  | `ApiVersion`                | ✅       | API version (currently only `'v1'`)                                                              |
+| `orgId`                    | `string`                    | ✅       | Organization ID (must be valid MongoDB ObjectId - 24 hex characters)                             |
+| `auth`                     | `IAuthConfig`               | ❌       | Authentication configuration                                                                     |
+| `locale`                   | `SDKLocale`                 | ❌       | SDK UI language (`'en'`, `'es'`, `'fr'`, `'de'`, `'ja'`, `'zh'`, `'hi'`, `'ar'`)                |
+| `defaultPermissions`       | `Record<string, string[]>`  | ❌       | Default app permissions per role                                                                 |
+| `getCheckoutStripeParams`  | `GetCheckoutStripeParams`   | ❌       | Async callback called before every Stripe checkout to return metadata, referral IDs, etc.        |
+| `children`                 | `ReactNode`                 | ✅       | React children                                                                                   |
 
 ### Auth Configuration
 

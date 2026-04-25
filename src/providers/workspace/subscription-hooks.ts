@@ -19,6 +19,7 @@ import {
   IUsageLogEntry,
   IUsageLogsQuery,
 } from '../../api/types';
+import { useCheckoutConfig } from '../../contexts/CheckoutConfigContext';
 import { invalidateQuotaUsage } from '../../contexts/QuotaUsageContext/quotaUsageInvalidation';
 import { invalidateSubscription } from '../../contexts/SubscriptionContext/subscriptionInvalidation';
 import { useTranslation, type TranslationKey } from '../../i18n';
@@ -481,6 +482,7 @@ export const usePlanGroupVersions = (workspaceId: string | null | undefined) => 
 export const useCreateCheckoutSession = (workspaceId: string | null | undefined) => {
   const { t } = useTranslation();
   const { api } = useWorkspaceApiWithOs();
+  const { getCheckoutStripeParams } = useCheckoutConfig();
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -492,7 +494,28 @@ export const useCreateCheckoutSession = (workspaceId: string | null | undefined)
       setLoading(true);
       setError(null);
       try {
-        const result = await api.createCheckoutSession(workspaceId, request);
+        // Call the customer-provided callback to get Stripe params
+        let finalRequest = request;
+        if (getCheckoutStripeParams) {
+          const extraStripeOptions = await getCheckoutStripeParams(request);
+          if (extraStripeOptions) {
+            finalRequest = {
+              ...request,
+              stripeOptions: {
+                ...request.stripeOptions,
+                ...extraStripeOptions,
+                // Deep-merge metadata objects so neither side overwrites the other
+                metadata: { ...request.stripeOptions?.metadata, ...extraStripeOptions.metadata },
+                subscriptionMetadata: {
+                  ...request.stripeOptions?.subscriptionMetadata,
+                  ...extraStripeOptions.subscriptionMetadata,
+                },
+              },
+            };
+          }
+        }
+
+        const result = await api.createCheckoutSession(workspaceId, finalRequest);
 
         // No-card trial was started server-side: invalidate subscription
         // context so gates and UI update immediately (no redirect needed).
@@ -515,7 +538,7 @@ export const useCreateCheckoutSession = (workspaceId: string | null | undefined)
         setLoading(false);
       }
     },
-    [api, workspaceId]
+    [api, workspaceId, getCheckoutStripeParams]
   );
 
   return {

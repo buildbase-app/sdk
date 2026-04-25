@@ -7,6 +7,8 @@ import { SDKContextProvider } from '../contexts';
 import { PermissionConfigProvider } from '../contexts/PermissionContext';
 import { QuotaUsageContextProvider } from '../contexts/QuotaUsageContext';
 import { SubscriptionContextProvider } from '../contexts/SubscriptionContext';
+import type { GetCheckoutStripeParams } from '../api/types';
+import { CheckoutConfigProvider } from '../contexts/CheckoutConfigContext';
 import type { SDKLocale } from '../i18n';
 import { TranslationProvider } from '../i18n';
 import '../styles/globals.css';
@@ -40,6 +42,23 @@ export interface SaaSOSProviderProps extends IOsState {
    * ```
    */
   defaultPermissions?: Record<string, string[]>;
+  /**
+   * Async callback called before every Stripe checkout session is created.
+   * Use it to return Stripe-level params (metadata, client reference ID, subscription metadata)
+   * that will be forwarded to the Stripe checkout session.
+   *
+   * @example
+   * ```tsx
+   * <SaaSOSProvider
+   *   getCheckoutStripeParams={async (request) => ({
+   *     clientReferenceId: await getRewardfulReferralId(),
+   *     metadata: { campaign: 'spring-sale' },
+   *     subscriptionMetadata: { affiliateId: 'aff-123' },
+   *   })}
+   * >
+   * ```
+   */
+  getCheckoutStripeParams?: GetCheckoutStripeParams;
 }
 
 /**
@@ -179,7 +198,7 @@ const validateProps = (serverUrl: string, version: ApiVersion, orgId: string): v
 };
 
 const SaaSOSProviderInner: React.FC<SaaSOSProviderProps> = React.memo(
-  ({ serverUrl, version, orgId, auth, locale, defaultPermissions, children }) => {
+  ({ serverUrl, version, orgId, auth, locale, defaultPermissions, getCheckoutStripeParams, children }) => {
     // Validate props synchronously - throws are caught by the parent SDKErrorBoundary
     validateProps(serverUrl, version, orgId);
 
@@ -219,17 +238,19 @@ const SaaSOSProviderInner: React.FC<SaaSOSProviderProps> = React.memo(
           <AuthProviderWrapper callbacks={memoizedCallbacks}>
             <PortalProvider>
               <ContextConfigProvider config={config} auth={auth}>
-                <PermissionConfigProvider appPermissions={defaultPermissions}>
-                  <UserProvider>
-                    <SubscriptionContextProvider>
-                      <QuotaUsageContextProvider>
-                        <PushNotificationProvider>
-                          <WorkspaceSettingsProvider>{children}</WorkspaceSettingsProvider>
-                        </PushNotificationProvider>
-                      </QuotaUsageContextProvider>
-                    </SubscriptionContextProvider>
-                  </UserProvider>
-                </PermissionConfigProvider>
+                <CheckoutConfigProvider getCheckoutStripeParams={getCheckoutStripeParams}>
+                  <PermissionConfigProvider appPermissions={defaultPermissions}>
+                    <UserProvider>
+                      <SubscriptionContextProvider>
+                        <QuotaUsageContextProvider>
+                          <PushNotificationProvider>
+                            <WorkspaceSettingsProvider>{children}</WorkspaceSettingsProvider>
+                          </PushNotificationProvider>
+                        </QuotaUsageContextProvider>
+                      </SubscriptionContextProvider>
+                    </UserProvider>
+                  </PermissionConfigProvider>
+                </CheckoutConfigProvider>
               </ContextConfigProvider>
             </PortalProvider>
           </AuthProviderWrapper>
