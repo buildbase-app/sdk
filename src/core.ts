@@ -142,6 +142,7 @@ export type { OnWorkspaceChangeParams } from './providers/auth/types';
 export type {
   BillingInterval,
   CheckoutResult,
+  GetCheckoutStripeParams,
   IAllQuotaUsageResponse,
   IBasePricing,
   ICheckoutSessionRequest,

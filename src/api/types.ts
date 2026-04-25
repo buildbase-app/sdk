@@ -397,6 +397,20 @@ export interface ICheckoutStripeOptions {
   subscriptionMetadata?: Record<string, string>;
 }
 
+/**
+ * Async callback called before every checkout session is created.
+ * Use it to return Stripe-level options (metadata, affiliate IDs, etc.)
+ * that should be forwarded to the Stripe checkout session.
+ *
+ * Return an `ICheckoutStripeOptions` object to merge into the request,
+ * or `undefined`/`void` to proceed without extra options.
+ *
+ * @param request - The checkout request about to be sent (read-only).
+ */
+export type GetCheckoutStripeParams = (
+  request: Readonly<ICheckoutSessionRequest>
+) => Promise<ICheckoutStripeOptions | void> | ICheckoutStripeOptions | void;
+
 /** Request body for POST .../workspaces/:id/subscription/checkout. */
 export interface ICheckoutSessionRequest {
   planVersionId: string;
