@@ -155,9 +155,11 @@ const WorkspaceSettingsUsage: React.FC = () => {
     return map;
   }, [subResponse, quotas]);
 
-  // Billing period info — only show when Stripe provides the period end date
+  // Usage reset period — quotas reset monthly (usageCurrentPeriodEnd), falls back to Stripe period
   const billingPeriod = useMemo(() => {
-    const periodEnd = subResponse?.subscription?.stripeCurrentPeriodEnd;
+    const periodEnd =
+      subResponse?.subscription?.usageCurrentPeriodEnd ||
+      subResponse?.subscription?.stripeCurrentPeriodEnd;
     if (!periodEnd) return null;
 
     const endFormatted = formatDate(periodEnd, formattingLocale);

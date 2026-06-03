@@ -32,6 +32,40 @@
 /** The single URL param name used by the SDK */
 export const BB_PARAM = 'bb';
 
+/** BB param action values */
+export const BBAction = {
+  Checkout: 'checkout',
+  Billing: 'billing',
+  SelectPlan: 'selectPlan',
+  CreditPurchase: 'creditPurchase',
+  OpenCreditStore: 'openCreditStore',
+  Invite: 'invite',
+} as const;
+export type BBActionType = (typeof BBAction)[keyof typeof BBAction];
+
+/** BB param status values */
+export const BBStatus = {
+  Success: 'success',
+  Cancel: 'cancel',
+  Error: 'error',
+} as const;
+export type BBStatusType = (typeof BBStatus)[keyof typeof BBStatus];
+
+/** BB param screen values (mirrors SettingsScreen but avoids cross-layer import) */
+export const BBScreen = {
+  Subscription: 'subscription',
+  Credits: 'credits',
+  Usage: 'usage',
+  Users: 'users',
+  Profile: 'profile',
+  General: 'general',
+  Features: 'features',
+  Notifications: 'notifications',
+  Permissions: 'permissions',
+  Danger: 'danger',
+} as const;
+export type BBScreenType = (typeof BBScreen)[keyof typeof BBScreen];
+
 // ─── Encode / Decode ───────────────────────────────────────────────────────────
 
 /**
@@ -110,11 +144,52 @@ export function createCheckoutRedirectUrls(
   const base = baseUrl || (typeof window !== 'undefined' ? window.location.href : undefined);
   return {
     successUrl: createBBUrl(
-      { action: 'checkout', status: 'success', ws: workspaceId, screen: 'subscription' },
+      {
+        action: BBAction.Checkout,
+        status: BBStatus.Success,
+        ws: workspaceId,
+        screen: BBScreen.Subscription,
+      },
       base
     ),
     cancelUrl: createBBUrl(
-      { action: 'checkout', status: 'cancel', ws: workspaceId, screen: 'subscription' },
+      {
+        action: BBAction.Checkout,
+        status: BBStatus.Cancel,
+        ws: workspaceId,
+        screen: BBScreen.Subscription,
+      },
+      base
+    ),
+  };
+}
+
+/**
+ * Build success + cancel URL pair for credit purchase checkout redirects.
+ * Both include the workspace ID and screen:credits.
+ */
+export function createCreditPurchaseRedirectUrls(
+  workspaceId: string,
+  baseUrl?: string
+): { successUrl: string; cancelUrl: string } {
+  const base = baseUrl || (typeof window !== 'undefined' ? window.location.href : undefined);
+  return {
+    successUrl: createBBUrl(
+      {
+        action: BBAction.CreditPurchase,
+        status: BBStatus.Success,
+        ws: workspaceId,
+        screen: BBScreen.Credits,
+      },
+      base
+    ),
+    cancelUrl: createBBUrl(
+      {
+        action: BBAction.CreditPurchase,
+        status: BBStatus.Cancel,
+        ws: workspaceId,
+        screen: BBScreen.Credits,
+      },
       base
     ),
   };

@@ -16,6 +16,7 @@ import WorkspaceSettingsGeneral from './SettingsGeneral';
 import WorkspaceSettingsNotifications from './SettingsNotifications';
 import WorkspaceSettingsPermissions from './SettingsPermissions';
 import WorkspaceSettingsProfile from './SettingsProfile';
+import WorkspaceSettingsCredits from './SettingsCredits';
 import WorkspaceSettingsSubscription from './SettingsSubscription';
 import WorkspaceSettingsUsage from './SettingsUsage';
 import WorkspaceSettingsUsers from './SettingsUsers';
@@ -27,6 +28,7 @@ export const SettingsScreen = {
   Users: 'users',
   Subscription: 'subscription',
   Usage: 'usage',
+  Credits: 'credits',
   Features: 'features',
   Notifications: 'notifications',
   Permissions: 'permissions',
@@ -45,6 +47,7 @@ const SCREEN_TITLE_KEYS: Record<WorkspaceSettingsSection, TranslationKey> = {
   [SettingsScreen.Users]: 'settings.titles.users',
   [SettingsScreen.Subscription]: 'settings.titles.subscription',
   [SettingsScreen.Usage]: 'settings.titles.usage',
+  [SettingsScreen.Credits]: 'settings.titles.credits',
   [SettingsScreen.Features]: 'settings.titles.features',
   [SettingsScreen.Notifications]: 'settings.titles.notifications',
   [SettingsScreen.Permissions]: 'settings.titles.permissions',
@@ -127,6 +130,9 @@ const WorkspaceSettingsDialog: React.FC<WorkspaceSettingsDialogProps> = ({
               <WorkspaceSettingsSubscription workspace={workspace} />
             )}
             {section === SettingsScreen.Usage && <WorkspaceSettingsUsage />}
+            {section === SettingsScreen.Credits && (
+              <WorkspaceSettingsCredits workspace={workspace} />
+            )}
             {section === SettingsScreen.Features && (
               <WorkspaceSettingsFeatures workspaceId={workspace._id?.toString()} />
             )}

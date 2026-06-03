@@ -5,6 +5,7 @@ import { SDKErrorBoundary } from '../components/ErrorBoundary';
 import { SDKContextProvider } from '../contexts';
 
 import { PermissionConfigProvider } from '../contexts/PermissionContext';
+import { CreditBalanceContextProvider } from '../contexts/CreditBalanceContext';
 import { QuotaUsageContextProvider } from '../contexts/QuotaUsageContext';
 import { SubscriptionContextProvider } from '../contexts/SubscriptionContext';
 import type { GetCheckoutStripeParams } from '../api/types';
@@ -243,9 +244,11 @@ const SaaSOSProviderInner: React.FC<SaaSOSProviderProps> = React.memo(
                     <UserProvider>
                       <SubscriptionContextProvider>
                         <QuotaUsageContextProvider>
-                          <PushNotificationProvider>
-                            <WorkspaceSettingsProvider>{children}</WorkspaceSettingsProvider>
-                          </PushNotificationProvider>
+                          <CreditBalanceContextProvider>
+                            <PushNotificationProvider>
+                              <WorkspaceSettingsProvider>{children}</WorkspaceSettingsProvider>
+                            </PushNotificationProvider>
+                          </CreditBalanceContextProvider>
                         </QuotaUsageContextProvider>
                       </SubscriptionContextProvider>
                     </UserProvider>

@@ -59,6 +59,21 @@ export {
   WhenQuotaThreshold,
 } from './components/quota';
 
+// ─── Credit Components ────────────────────────────────────────────────────────
+export {
+  CreditActionsProvider,
+  CreditBalance,
+  CreditStorePage,
+  WhenCreditsAvailable,
+  WhenCreditsExhausted,
+  WhenCreditsLow,
+} from './components/credit';
+export type {
+  CreditActionsDetails,
+  CreditBalanceDetails,
+  CreditStorePageDetails,
+} from './components/credit';
+
 // ─── Context Providers ─────────────────────────────────────────────────────────
 export {
   SubscriptionContextProvider,
@@ -68,6 +83,12 @@ export type { SubscriptionContextValue } from './contexts/SubscriptionContext';
 
 export { QuotaUsageContextProvider, useQuotaUsageContext } from './contexts/QuotaUsageContext';
 export type { QuotaUsageContextValue } from './contexts/QuotaUsageContext';
+
+export {
+  CreditBalanceContextProvider,
+  useCreditBalanceContext,
+} from './contexts/CreditBalanceContext';
+export type { CreditBalanceContextValue } from './contexts/CreditBalanceContext';
 
 // ─── Hooks ─────────────────────────────────────────────────────────────────────
 export { useSaaSOs, useSaaSSettings } from './providers/os/hooks';
@@ -93,6 +114,16 @@ export {
   useUpdateSubscription,
   useUsageLogs,
 } from './providers/workspace/subscription-hooks';
+
+export {
+  useConsumeCredits,
+  useCreditBalance,
+  useCreditPackages,
+  useCreditTransactions,
+  useExpiringCredits,
+  usePublicCreditPackages,
+  usePurchaseCredits,
+} from './providers/workspace/credit-hooks';
 
 export { useTrialStatus } from './hooks/use-trial-status';
 export type { TrialStatus } from './hooks/use-trial-status';

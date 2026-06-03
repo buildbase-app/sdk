@@ -50,6 +50,7 @@ export type {
 
 // ─── Invalidation ──────────────────────────────────────────────────────────────
 
+export { invalidateCreditBalance } from './lib/credit-balance-invalidation';
 export { invalidateQuotaUsage } from './lib/quota-usage-invalidation';
 export { invalidateSubscription } from './lib/subscription-invalidation';
 
@@ -57,11 +58,16 @@ export { invalidateSubscription } from './lib/subscription-invalidation';
 
 export {
   BB_PARAM,
+  BBAction,
+  BBScreen,
+  BBStatus,
   cleanBBParams,
   createBBUrl,
   createCheckoutRedirectUrls,
+  createCreditPurchaseRedirectUrls,
   readBBParams,
 } from './lib/url-params';
+export type { BBActionType, BBScreenType, BBStatusType } from './lib/url-params';
 
 // ─── Security ──────────────────────────────────────────────────────────────────
 
@@ -148,7 +154,23 @@ export type {
   ICheckoutSessionRequest,
   ICheckoutSessionResponse,
   ICheckoutStripeOptions,
+  IConsumeCreditsRequest,
+  IConsumeCreditsResponse,
+  ICreditBalance,
+  ICreditBucket,
+  ICreditBucketsQuery,
+  ICreditBucketsResponse,
+  ICreditPackage,
+  ICreditPackagePricingVariant,
+  ICreditPurchaseRequest,
+  ICreditPurchaseResponse,
+  ICreditTransaction,
+  ICreditTransactionsQuery,
+  ICreditTransactionsResponse,
+  IExpiringCreditsResponse,
   IInvoice,
+  IPublicCreditPackage,
+  IPublicCreditPackagesResponse,
   IInvoiceListResponse,
   IInvoiceResponse,
   IPlan,
@@ -187,15 +209,29 @@ export type {
   InvoiceStatus,
 } from './api/types';
 
+export type {
+  CreditBucketSourceType,
+  CreditBucketStatusType,
+  CreditTransactionTypeValue,
+} from './api/types';
+
 // ─── Constants ─────────────────────────────────────────────────────────────────
 
 export {
   BillingIntervals,
+  CreditBucketSource,
+  CreditBucketStatus,
+  CreditTransactionType,
   DunningState,
   InvoiceStatuses,
   SubscriptionItemType,
   SubscriptionStatus,
 } from './api/types';
-export type { SubscriptionStatusType } from './api/types';
+export type {
+  DunningStateType,
+  InvoiceStatusType,
+  SubscriptionItemTypeValue,
+  SubscriptionStatusType,
+} from './api/types';
 
 export { SDKEvent } from './providers/events/types';

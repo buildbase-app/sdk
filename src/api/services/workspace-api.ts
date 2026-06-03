@@ -4,7 +4,19 @@ import {
   IAllQuotaUsageResponse,
   ICheckoutSessionRequest,
   ICheckoutSessionResponse,
+  IConsumeCreditsRequest,
+  IConsumeCreditsResponse,
+  ICreditBalance,
+  ICreditBucketsQuery,
+  ICreditBucketsResponse,
+  ICreditPackage,
+  ICreditPurchaseRequest,
+  ICreditPurchaseResponse,
+  ICreditTransactionsQuery,
+  ICreditTransactionsResponse,
+  IExpiringCreditsResponse,
   IInvoiceListResponse,
+  IPublicCreditPackagesResponse,
   IInvoiceResponse,
   IPlanGroupResponse,
   IPlanGroupVersion,
@@ -414,6 +426,33 @@ export class WorkspaceApi extends BaseApi {
     const result = await response.json();
     if (result.success !== undefined && !result.success) {
       throw new Error(result.message || 'Failed to fetch plans');
+    }
+    return result.data ?? result;
+  }
+
+  /**
+   * Get credit packages (public, no auth required).
+   * Returns active credit packages for the org with pricing info.
+   * Use this for public credit store pages.
+   *
+   * @returns Credit packages with pricing variants
+   */
+  async getPublicCreditPackages(): Promise<IPublicCreditPackagesResponse> {
+    if (!this.orgId) throw new Error('orgId is required for getPublicCreditPackages');
+    const response = await this.fetchResponse(`${this.orgId}/credit-packages`);
+    if (!response.ok) {
+      let errorMessage = 'Failed to fetch credit packages';
+      try {
+        const error = await response.json();
+        errorMessage = error.message || errorMessage;
+      } catch {
+        errorMessage = `Failed to fetch credit packages (${response.status}: ${response.statusText})`;
+      }
+      throw new Error(errorMessage);
+    }
+    const result = await response.json();
+    if (result.success !== undefined && !result.success) {
+      throw new Error(result.message || 'Failed to fetch credit packages');
     }
     return result.data ?? result;
   }
@@ -1050,5 +1089,261 @@ export class WorkspaceApi extends BaseApi {
       'Failed to update notification preferences'
     );
     return result.notificationPreferences ?? {};
+  }
+
+  // ── Credit Methods ──────────────────────────────────────────────────────────
+
+  /**
+   * Get credit balance for a workspace.
+   * @param workspaceId - The workspace ID
+   * @returns Credit balance with available, totalGranted, totalConsumed, totalExpired, totalRefunded
+   */
+  async getCreditBalance(workspaceId: string): Promise<ICreditBalance> {
+    const response = await this.fetchResponse(`workspaces/${workspaceId}/credits`);
+    if (!response.ok) {
+      let errorMessage = 'Failed to fetch credit balance';
+      try {
+        const error = await response.json();
+        errorMessage = error.message || errorMessage;
+      } catch {
+        if (response.status === 404) {
+          errorMessage = 'Workspace not found';
+        } else if (response.status === 401) {
+          errorMessage = 'Unauthorized - Please check your session';
+        } else {
+          errorMessage = `Failed to fetch credit balance (${response.status}: ${response.statusText})`;
+        }
+      }
+      throw new Error(errorMessage);
+    }
+    const result = await response.json();
+    if (result.success !== undefined) {
+      if (!result.success) {
+        throw new Error(result.message || 'Failed to fetch credit balance');
+      }
+      return result.data || result;
+    }
+    return result;
+  }
+
+  /**
+   * Consume credits from a workspace balance.
+   * Throws an error with `code: 'INSUFFICIENT_CREDITS'` and `available`/`requested` fields on 402.
+   * @param workspaceId - The workspace ID
+   * @param request - Consume request with amount, optional description, idempotencyKey, metadata
+   * @returns Consume result with consumed amount and balanceAfter
+   */
+  async consumeCredits(
+    workspaceId: string,
+    request: IConsumeCreditsRequest
+  ): Promise<IConsumeCreditsResponse> {
+    const response = await this.fetchResponse(`workspaces/${workspaceId}/credits/consume`, {
+      method: 'POST',
+      body: JSON.stringify(request),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      if (response.status === 402) {
+        const err = new Error(
+          errorData.message || 'Insufficient credits'
+        ) as any;
+        err.available = errorData.available;
+        err.requested = errorData.requested;
+        err.code = 'INSUFFICIENT_CREDITS';
+        throw err;
+      }
+      throw new Error(
+        errorData.message || `Failed to consume credits (${response.status}: ${response.statusText})`
+      );
+    }
+
+    const result = await response.json();
+    if (result.success !== undefined) {
+      if (!result.success) {
+        throw new Error(result.message || 'Failed to consume credits');
+      }
+      return result.data || result;
+    }
+    return result;
+  }
+
+  /**
+   * Create a Stripe checkout session for purchasing a credit package.
+   * Returns a checkout URL to redirect the user to.
+   * @param workspaceId - The workspace ID
+   * @param request - Purchase request with creditPackageId, successUrl, cancelUrl, optional currency
+   * @returns Checkout session ID and URL
+   */
+  async purchaseCredits(
+    workspaceId: string,
+    request: ICreditPurchaseRequest
+  ): Promise<ICreditPurchaseResponse> {
+    const response = await this.fetchResponse(`workspaces/${workspaceId}/credits/purchase`, {
+      method: 'POST',
+      body: JSON.stringify(request),
+    });
+
+    if (!response.ok) {
+      let errorMessage = 'Failed to create credit purchase checkout';
+      try {
+        const error = await response.json();
+        errorMessage = error.message || errorMessage;
+      } catch {
+        errorMessage = `Failed to create credit purchase checkout (${response.status}: ${response.statusText})`;
+      }
+      throw new Error(errorMessage);
+    }
+
+    const result = await response.json();
+    if (result.success !== undefined) {
+      if (!result.success) {
+        throw new Error(result.message || 'Failed to create credit purchase checkout');
+      }
+      return result.data || result;
+    }
+    return result;
+  }
+
+  /**
+   * List available credit packages for purchase.
+   * Returns active, non-archived packages sorted by sortOrder then creditAmount.
+   * @param workspaceId - The workspace ID
+   * @returns Array of credit packages
+   */
+  async getCreditPackages(workspaceId: string): Promise<ICreditPackage[]> {
+    const response = await this.fetchResponse(`workspaces/${workspaceId}/credits/packages`);
+    if (!response.ok) {
+      let errorMessage = 'Failed to fetch credit packages';
+      try {
+        const error = await response.json();
+        errorMessage = error.message || errorMessage;
+      } catch {
+        errorMessage = `Failed to fetch credit packages (${response.status}: ${response.statusText})`;
+      }
+      throw new Error(errorMessage);
+    }
+    const result = await response.json();
+    if (result.success !== undefined) {
+      if (!result.success) {
+        throw new Error(result.message || 'Failed to fetch credit packages');
+      }
+      const data = result.data || result;
+      return data.docs ?? data;
+    }
+    return result.docs ?? result;
+  }
+
+  /**
+   * Get paginated credit transaction history.
+   * @param workspaceId - The workspace ID
+   * @param query - Optional filters: type, page, limit
+   * @returns Paginated credit transactions
+   */
+  async getCreditTransactions(
+    workspaceId: string,
+    query?: ICreditTransactionsQuery
+  ): Promise<ICreditTransactionsResponse> {
+    const params = new URLSearchParams();
+    if (query?.type) params.append('type', query.type);
+    if (query?.page) params.append('page', query.page.toString());
+    if (query?.limit) params.append('limit', query.limit.toString());
+
+    const queryString = params.toString();
+    const url = `workspaces/${workspaceId}/credits/transactions${queryString ? `?${queryString}` : ''}`;
+
+    const response = await this.fetchResponse(url);
+    if (!response.ok) {
+      let errorMessage = 'Failed to fetch credit transactions';
+      try {
+        const error = await response.json();
+        errorMessage = error.message || errorMessage;
+      } catch {
+        errorMessage = `Failed to fetch credit transactions (${response.status}: ${response.statusText})`;
+      }
+      throw new Error(errorMessage);
+    }
+    const result = await response.json();
+    if (result.success !== undefined) {
+      if (!result.success) {
+        throw new Error(result.message || 'Failed to fetch credit transactions');
+      }
+      return result.data || result;
+    }
+    return result;
+  }
+
+  /**
+   * Get paginated credit buckets.
+   * @param workspaceId - The workspace ID
+   * @param query - Optional filters: status, source, page, limit
+   * @returns Paginated credit buckets
+   */
+  async getCreditBuckets(
+    workspaceId: string,
+    query?: ICreditBucketsQuery
+  ): Promise<ICreditBucketsResponse> {
+    const params = new URLSearchParams();
+    if (query?.status) params.append('status', query.status);
+    if (query?.source) params.append('source', query.source);
+    if (query?.page) params.append('page', query.page.toString());
+    if (query?.limit) params.append('limit', query.limit.toString());
+
+    const queryString = params.toString();
+    const url = `workspaces/${workspaceId}/credits/buckets${queryString ? `?${queryString}` : ''}`;
+
+    const response = await this.fetchResponse(url);
+    if (!response.ok) {
+      let errorMessage = 'Failed to fetch credit buckets';
+      try {
+        const error = await response.json();
+        errorMessage = error.message || errorMessage;
+      } catch {
+        errorMessage = `Failed to fetch credit buckets (${response.status}: ${response.statusText})`;
+      }
+      throw new Error(errorMessage);
+    }
+    const result = await response.json();
+    if (result.success !== undefined) {
+      if (!result.success) {
+        throw new Error(result.message || 'Failed to fetch credit buckets');
+      }
+      return result.data || result;
+    }
+    return result;
+  }
+
+  /**
+   * Get credits expiring within N days.
+   * @param workspaceId - The workspace ID
+   * @param days - Look-ahead window in days (1-90, default 7)
+   * @returns Expiring credits summary with bucket list
+   */
+  async getExpiringCredits(
+    workspaceId: string,
+    days?: number
+  ): Promise<IExpiringCreditsResponse> {
+    const params = days ? `?days=${days}` : '';
+    const response = await this.fetchResponse(
+      `workspaces/${workspaceId}/credits/expiring${params}`
+    );
+    if (!response.ok) {
+      let errorMessage = 'Failed to fetch expiring credits';
+      try {
+        const error = await response.json();
+        errorMessage = error.message || errorMessage;
+      } catch {
+        errorMessage = `Failed to fetch expiring credits (${response.status}: ${response.statusText})`;
+      }
+      throw new Error(errorMessage);
+    }
+    const result = await response.json();
+    if (result.success !== undefined) {
+      if (!result.success) {
+        throw new Error(result.message || 'Failed to fetch expiring credits');
+      }
+      return result.data || result;
+    }
+    return result;
   }
 }

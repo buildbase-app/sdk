@@ -39,7 +39,7 @@ import { usePermissions } from '../../../hooks/usePermissions';
 import { useTranslation } from '../../../i18n';
 import { Permission } from '../../../lib/permissions';
 import { safeRedirect } from '../../../lib/security';
-import { createCheckoutRedirectUrls } from '../../../lib/url-params';
+import { BBAction, createCheckoutRedirectUrls } from '../../../lib/url-params';
 import { useSaaSSettings } from '../../os/hooks';
 import { WorkspaceModes } from '../../types';
 import { workspaceSettingsManager } from '../settings-manager';
@@ -209,7 +209,7 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
     if (subscriptionLoading || !plansToShow || plansToShow.length === 0) return;
 
     const settingsState = workspaceSettingsManager.getState();
-    const isSelectPlan = settingsState.params?.action === 'selectPlan';
+    const isSelectPlan = settingsState.params?.action === BBAction.SelectPlan;
 
     if (!subscription?.subscription || isSelectPlan) {
       autoOpenedRef.current = true;
@@ -1072,7 +1072,9 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                                         className="flex items-center justify-between text-sm"
                                       >
                                         <span className="text-gray-600">{item.name}</span>
-                                        <span className="font-medium text-gray-900">{fmtNum(value)}</span>
+                                        <span className="font-medium text-gray-900">
+                                          {fmtNum(value)}
+                                        </span>
                                       </li>
                                     ))}
                                   </ul>
@@ -1171,6 +1173,49 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                                   </div>
                                 </div>
                               )}
+
+                              {/* Credits */}
+                              {subscription.planVersion?.creditGrant?.enabled &&
+                                typeof subscription.planVersion.creditGrant.creditPackage ===
+                                  'object' &&
+                                subscription.planVersion.creditGrant.creditPackage !== null && (
+                                  <div>
+                                    <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                                      {t('subscription.items.credits')}
+                                    </h4>
+                                    <div className="bg-purple-50 rounded-lg p-3 space-y-1.5">
+                                      <div className="flex items-center justify-between text-sm">
+                                        <span className="text-gray-600">
+                                          {subscription.planVersion.creditGrant
+                                            .renewOnPeriod
+                                            ? t('subscription.items.creditsPerMonth')
+                                            : t('subscription.items.creditsOneTime')}
+                                        </span>
+                                        <span className="font-semibold text-purple-700">
+                                          {fmtNum(
+                                            (
+                                              subscription.planVersion.creditGrant
+                                                .creditPackage as any
+                                            ).creditAmount ?? 0
+                                          )}
+                                        </span>
+                                      </div>
+                                      <div className="flex items-center justify-between text-sm">
+                                        <span className="text-gray-600">
+                                          {t('subscription.items.creditRenewal')}
+                                        </span>
+                                        <span className="font-medium text-gray-900">
+                                          {!subscription.planVersion.creditGrant
+                                            .renewOnPeriod
+                                            ? t('subscription.items.creditModeLifetime')
+                                            : subscription.planVersion.creditGrant.mode === 'reset'
+                                              ? t('subscription.items.creditModeReset')
+                                              : t('subscription.items.creditModeTopup')}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
                             </div>
                           </div>
                         );
