@@ -26,6 +26,7 @@ export type {
   BuildBaseConfig,
   BuildBaseResult,
   BuildBaseSession,
+  CreditActions,
   FeatureActions,
   InvoiceActions,
   PermissionActions,

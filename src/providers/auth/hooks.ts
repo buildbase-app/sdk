@@ -7,8 +7,9 @@ import { handleError } from '../../lib/error-handler';
 import { safeRedirect } from '../../lib/security';
 import { useSaaSOs } from '../os/hooks';
 import { useSaaSWorkspaces } from '../workspace/hooks';
+import { BBAction } from '../../lib/url-params';
 import { workspaceSettingsManager } from '../workspace/settings-manager';
-import { WorkspaceSettingsSection } from '../workspace/ui/SettingsDialog';
+import { SettingsScreen, WorkspaceSettingsSection } from '../workspace/ui/SettingsDialog';
 import { getAuthFlags } from './types';
 import { removeSession } from './utils';
 
@@ -161,6 +162,32 @@ export function useSaaSAuth() {
     [currentWorkspace]
   );
 
+  const openCreditStore = useCallback(() => {
+    if (!currentWorkspace) {
+      handleError(new Error('Cannot open credit store: No current workspace'), {
+        component: 'useSaaSAuth',
+        action: 'openCreditStore',
+      });
+      return;
+    }
+    workspaceSettingsManager.openWorkspaceSettings(SettingsScreen.Credits, {
+      action: BBAction.OpenCreditStore,
+    });
+  }, [currentWorkspace]);
+
+  const openPlanPicker = useCallback(() => {
+    if (!currentWorkspace) {
+      handleError(new Error('Cannot open plan picker: No current workspace'), {
+        component: 'useSaaSAuth',
+        action: 'openPlanPicker',
+      });
+      return;
+    }
+    workspaceSettingsManager.openWorkspaceSettings(SettingsScreen.Subscription, {
+      action: BBAction.SelectPlan,
+    });
+  }, [currentWorkspace]);
+
   const flags = useMemo(() => getAuthFlags(auth.status), [auth.status]);
 
   return useMemo(
@@ -172,7 +199,9 @@ export function useSaaSAuth() {
       signIn,
       signOut,
       openWorkspaceSettings,
+      openCreditStore,
+      openPlanPicker,
     }),
-    [auth.session, auth.status, flags, signIn, signOut, openWorkspaceSettings]
+    [auth.session, auth.status, flags, signIn, signOut, openWorkspaceSettings, openCreditStore, openPlanPicker]
   );
 }

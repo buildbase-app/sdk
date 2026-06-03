@@ -2,6 +2,7 @@ import {
   AlertTriangle,
   BarChart3,
   Bell,
+  Coins,
   CreditCard,
   SettingsIcon,
   Shield,
@@ -119,6 +120,15 @@ const Sidebar: React.FC<Props> = ({ workspace, section, setSection }) => {
             label={t('settings.sidebar.usage')}
             section={SettingsScreen.Usage}
             onClick={() => setSection(SettingsScreen.Usage)}
+          />
+        )}
+        {can(Permission.WORKSPACE_BILLING_VIEW) && (
+          <SidebarItem
+            activeSection={section}
+            icon={<Coins className="h-3.5 w-3.5" />}
+            label={t('settings.sidebar.credits')}
+            section={SettingsScreen.Credits}
+            onClick={() => setSection(SettingsScreen.Credits)}
           />
         )}
         {can(Permission.WORKSPACE_FEATURES_VIEW) && (

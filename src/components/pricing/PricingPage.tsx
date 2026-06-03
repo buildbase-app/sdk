@@ -5,6 +5,7 @@ import type { BillingInterval, IPublicPlanItem, IPublicPlanVersion } from '../..
 import { createBBUrl } from '../../lib/url-params';
 import { useSaaSAuth } from '../../providers/auth/hooks';
 import { workspaceSettingsManager } from '../../providers/workspace/settings-manager';
+import { SettingsScreen } from '../../providers/workspace/ui/SettingsDialog';
 import { usePublicPlans } from '../../providers/workspace/subscription-hooks';
 import { Skeleton } from '../ui/skeleton';
 
@@ -102,7 +103,7 @@ export function PricingPage({
   const selectPlan = useCallback(
     (planVersionId: string, interval: BillingInterval, currency: string) => {
       if (isAuthenticated) {
-        workspaceSettingsManager.openWorkspaceSettings('subscription', {
+        workspaceSettingsManager.openWorkspaceSettings(SettingsScreen.Subscription, {
           action: 'selectPlan',
           plan: planVersionId,
           interval,

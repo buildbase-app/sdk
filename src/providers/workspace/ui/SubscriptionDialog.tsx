@@ -388,7 +388,9 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
     if (item.type === SubscriptionItemType.Feature) {
       return value === true ? '✓' : '—';
     } else if (item.type === SubscriptionItemType.Limit) {
-      return value !== null && value !== undefined && typeof value === 'number' ? fmtNum(value) : '—';
+      return value !== null && value !== undefined && typeof value === 'number'
+        ? fmtNum(value)
+        : '—';
     } else if (item.type === SubscriptionItemType.Quota) {
       const quotaValue =
         typeof value === 'object' && value !== null && 'included' in value ? value : null;
@@ -731,6 +733,41 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                             </div>
                           </div>
                         )}
+
+                        {/* Credits */}
+                        {planVersion.creditGrant?.enabled &&
+                          typeof planVersion.creditGrant.creditPackage === 'object' &&
+                          planVersion.creditGrant.creditPackage !== null && (
+                            <div className="mb-3">
+                              <div className="text-xs font-semibold text-purple-600 uppercase tracking-wider mb-1.5">
+                                {t('subscription.items.credits')}
+                              </div>
+                              <div className="space-y-1 text-sm">
+                                <div className="flex justify-between">
+                                  <span className="text-slate-600">
+                                    {planVersion.creditGrant.renewOnPeriod
+                                      ? t('subscription.items.creditsPerMonth')
+                                      : t('subscription.items.creditsOneTime')}
+                                  </span>
+                                  <span className="font-semibold text-purple-700">
+                                    {fmtNum(planVersion.creditGrant.creditPackage.creditAmount)}
+                                  </span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-slate-600">
+                                    {t('subscription.items.creditRenewal')}
+                                  </span>
+                                  <span className="font-medium text-slate-700">
+                                    {!planVersion.creditGrant.renewOnPeriod
+                                      ? t('subscription.items.creditModeLifetime')
+                                      : planVersion.creditGrant.mode === 'reset'
+                                        ? t('subscription.items.creditModeReset')
+                                        : t('subscription.items.creditModeTopup')}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          )}
 
                         {/* Action button */}
                         <Button
@@ -1211,6 +1248,91 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                           )}
                         </>
                       )}
+
+                    {/* Credits Section */}
+                    {sortedPlans.some(
+                      pv =>
+                        pv.creditGrant?.enabled &&
+                        typeof pv.creditGrant.creditPackage === 'object' &&
+                        pv.creditGrant.creditPackage !== null
+                    ) && (
+                      <>
+                        <tr>
+                          <td className="sticky start-0 z-10 border-t border-purple-200 bg-purple-50 px-4 py-2.5 font-semibold text-xs uppercase tracking-wider text-purple-700 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.06)]">
+                            {t('subscription.items.credits')}
+                          </td>
+                          <td
+                            colSpan={sortedPlans.length}
+                            className="border-t border-purple-200 bg-purple-50"
+                          />
+                        </tr>
+                        {/* Credits per month row */}
+                        <tr className="group hover:bg-slate-50/50">
+                          <td className="sticky start-0 z-10 border-t border-slate-100 bg-white p-4 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.06)] group-hover:bg-slate-50/80">
+                            <div className="font-medium text-sm text-slate-900">
+                              {sortedPlans.every(
+                                v =>
+                                  !v.creditGrant?.enabled || !v.creditGrant.renewOnPeriod
+                              )
+                                ? t('subscription.items.creditsOneTime')
+                                : t('subscription.items.creditsPerMonth')}
+                            </div>
+                          </td>
+                          {sortedPlans.map(planVersion => {
+                            const cg = planVersion.creditGrant;
+                            const pkg =
+                              cg?.enabled &&
+                              typeof cg.creditPackage === 'object' &&
+                              cg.creditPackage !== null
+                                ? cg.creditPackage
+                                : null;
+                            return (
+                              <td
+                                key={planVersion._id}
+                                className={`border-t border-slate-100 p-4 text-center align-middle ${planVersion._id === currentPlanVersionId ? 'bg-blue-50/50' : 'bg-white'}`}
+                              >
+                                {pkg ? (
+                                  <span className="text-sm font-semibold text-purple-700">
+                                    {fmtNum(pkg.creditAmount)}
+                                  </span>
+                                ) : (
+                                  <span className="text-sm text-slate-400">—</span>
+                                )}
+                              </td>
+                            );
+                          })}
+                        </tr>
+                        {/* Credit renewal row */}
+                        <tr className="group hover:bg-slate-50/50">
+                          <td className="sticky start-0 z-10 border-t border-slate-100 bg-white p-4 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.06)] group-hover:bg-slate-50/80">
+                            <div className="font-medium text-sm text-slate-900">
+                              {t('subscription.items.creditRenewal')}
+                            </div>
+                          </td>
+                          {sortedPlans.map(planVersion => {
+                            const cg = planVersion.creditGrant;
+                            return (
+                              <td
+                                key={planVersion._id}
+                                className={`border-t border-slate-100 p-4 text-center align-middle ${planVersion._id === currentPlanVersionId ? 'bg-blue-50/50' : 'bg-white'}`}
+                              >
+                                {cg?.enabled ? (
+                                  <span className="text-sm font-medium text-slate-700">
+                                    {!cg.renewOnPeriod
+                                      ? t('subscription.items.creditModeLifetime')
+                                      : cg.mode === 'reset'
+                                        ? t('subscription.items.creditModeReset')
+                                        : t('subscription.items.creditModeTopup')}
+                                  </span>
+                                ) : (
+                                  <span className="text-sm text-slate-400">—</span>
+                                )}
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      </>
+                    )}
                   </tbody>
                 </table>
               </div>

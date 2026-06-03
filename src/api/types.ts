@@ -89,6 +89,7 @@ export const InvoiceStatuses = {
   Uncollectible: 'uncollectible',
   Void: 'void',
 } as const;
+export type InvoiceStatusType = (typeof InvoiceStatuses)[keyof typeof InvoiceStatuses];
 
 /** Subscription item type constants */
 export const SubscriptionItemType = {
@@ -96,6 +97,8 @@ export const SubscriptionItemType = {
   Limit: 'limit',
   Quota: 'quota',
 } as const;
+export type SubscriptionItemTypeValue =
+  (typeof SubscriptionItemType)[keyof typeof SubscriptionItemType];
 
 /** Dunning state constants */
 export const DunningState = {
@@ -105,12 +108,15 @@ export const DunningState = {
   Final: 'final',
   Suspended: 'suspended',
 } as const;
+export type DunningStateType = (typeof DunningState)[keyof typeof DunningState];
 
 export interface ISubscription {
   _id: string;
   subscriptionStatus: SubscriptionStatusType;
   stripePriceId?: string;
   stripeCurrentPeriodEnd?: string; // ISO date string for when current billing period ends
+  /** When the current monthly usage period ends (quotas reset on this date). */
+  usageCurrentPeriodEnd?: string;
   cancelAtPeriodEnd: boolean;
   billingInterval?: BillingInterval;
   /** Trial start date (ISO string). Set when subscription is in trial. */
@@ -236,6 +242,21 @@ export interface IPlanVersion {
     enabled: boolean;
     durationDays: number;
     requireCard: boolean;
+  };
+  /** Credit grant configuration. When enabled, credits are granted to workspaces on this plan. */
+  creditGrant?: {
+    enabled: boolean;
+    /** Linked credit package (populated with name, slug, creditAmount). */
+    creditPackage?: {
+      _id: string;
+      name: string;
+      slug: string;
+      creditAmount: number;
+    } | string;
+    /** How unused plan credits are handled on renewal: 'reset' = expire old, 'topup' = add to existing. */
+    mode: 'reset' | 'topup';
+    /** true = credits given fresh every month, false = one-time lifetime grant (default). */
+    renewOnPeriod?: boolean;
   };
   isCurrent?: boolean;
   isLegacy?: boolean;
@@ -532,6 +553,15 @@ export interface IPublicPlanVersion {
     durationDays: number;
     requireCard: boolean;
   };
+  /** Credit grant config. Only present when the plan grants credits. */
+  creditGrant?: {
+    enabled: boolean;
+    creditAmount: number | null;
+    packageName: string | null;
+    mode: 'reset' | 'topup';
+    /** true = credits given fresh every month, false = one-time lifetime grant. */
+    renewOnPeriod: boolean;
+  };
 }
 
 export interface IPublicPlansResponse {
@@ -642,4 +672,186 @@ export interface IUsageLogsResponse {
   totalPages: number;
   hasNextPage: boolean;
   hasPrevPage: boolean;
+}
+
+// ── Credit System Types ──────────────────────────────────────────────────────
+
+/** Credit bucket source (how credits entered the workspace) */
+export const CreditBucketSource = {
+  PlanGrant: 'plan_grant',
+  CreditPackPurchase: 'credit_pack_purchase',
+  AdminGrant: 'admin_grant',
+  Refund: 'refund',
+} as const;
+export type CreditBucketSourceType = (typeof CreditBucketSource)[keyof typeof CreditBucketSource];
+
+/** Credit bucket status */
+export const CreditBucketStatus = {
+  Pending: 'pending',
+  Active: 'active',
+  Expired: 'expired',
+  Consumed: 'consumed',
+} as const;
+export type CreditBucketStatusType = (typeof CreditBucketStatus)[keyof typeof CreditBucketStatus];
+
+/** Credit transaction type */
+export const CreditTransactionType = {
+  PlanGrant: 'plan_grant',
+  PackPurchased: 'pack_purchased',
+  Consumed: 'consumed',
+  Expired: 'expired',
+  AdminGrant: 'admin_grant',
+  AdminRevoke: 'admin_revoke',
+  Refund: 'refund',
+} as const;
+export type CreditTransactionTypeValue =
+  (typeof CreditTransactionType)[keyof typeof CreditTransactionType];
+
+/** Credit balance for a workspace */
+export interface ICreditBalance {
+  available: number;
+  totalGranted: number;
+  totalConsumed: number;
+  totalExpired: number;
+  totalRefunded: number;
+}
+
+/** Pricing variant for a credit package */
+export interface ICreditPackagePricingVariant {
+  currency: string;
+  /** Price in smallest currency unit (cents) */
+  amount: number;
+  stripePriceId?: string;
+}
+
+/** Admin-defined purchasable credit package */
+export interface ICreditPackage extends IDocument {
+  name: string;
+  slug: string;
+  description?: string;
+  creditAmount: number;
+  pricingVariants: ICreditPackagePricingVariant[];
+  validityDays?: number;
+  isActive: boolean;
+  sortOrder: number;
+  archived: boolean;
+}
+
+/** A single credit transaction (user-facing event history) */
+export interface ICreditTransaction extends IDocument {
+  workspace: string;
+  type: CreditTransactionTypeValue;
+  /** Positive for grants, negative for consume/expire/revoke */
+  amount: number;
+  balanceAfter: number;
+  description?: string;
+  bucket?: string;
+  creditPackage?: string;
+  actor?: string;
+  metadata?: Record<string, any>;
+}
+
+/** A credit bucket (per-grant allocation with expiry) */
+export interface ICreditBucket extends IDocument {
+  workspace: string;
+  source: CreditBucketSourceType;
+  status: CreditBucketStatusType;
+  creditAmount: number;
+  remaining: number;
+  expiresAt?: string;
+  activatedAt?: string;
+  creditPackage?: string | ICreditPackage;
+  grantedBy?: string;
+  metadata?: Record<string, any>;
+}
+
+/** Request body for POST .../credits/consume */
+export interface IConsumeCreditsRequest {
+  amount: number;
+  description?: string;
+  idempotencyKey?: string;
+  metadata?: Record<string, any>;
+}
+
+/** Response from POST .../credits/consume */
+export interface IConsumeCreditsResponse {
+  success: boolean;
+  consumed: number;
+  balanceAfter: number;
+}
+
+/** Request body for POST .../credits/purchase */
+export interface ICreditPurchaseRequest {
+  creditPackageId: string;
+  currency?: string;
+  successUrl: string;
+  cancelUrl: string;
+}
+
+/** Response from POST .../credits/purchase */
+export interface ICreditPurchaseResponse {
+  sessionId: string;
+  url: string;
+}
+
+/** Query params for GET .../credits/transactions */
+export interface ICreditTransactionsQuery {
+  type?: CreditTransactionTypeValue;
+  page?: number;
+  limit?: number;
+}
+
+/** Paginated response from GET .../credits/transactions */
+export interface ICreditTransactionsResponse {
+  docs: ICreditTransaction[];
+  totalDocs: number;
+  limit: number;
+  page: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
+}
+
+/** Query params for GET .../credits/buckets */
+export interface ICreditBucketsQuery {
+  status?: CreditBucketStatusType;
+  source?: CreditBucketSourceType;
+  page?: number;
+  limit?: number;
+}
+
+/** Paginated response from GET .../credits/buckets */
+export interface ICreditBucketsResponse {
+  docs: ICreditBucket[];
+  totalDocs: number;
+  limit: number;
+  page: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
+}
+
+/** Response from GET .../credits/expiring */
+export interface IExpiringCreditsResponse {
+  days: number;
+  expiringCredits: number;
+  buckets: ICreditBucket[];
+}
+
+/** Public credit package (from public endpoint, no auth) */
+export interface IPublicCreditPackage {
+  _id: string;
+  name: string;
+  slug: string;
+  description: string;
+  creditAmount: number;
+  pricingVariants: ICreditPackagePricingVariant[];
+  validityDays: number | null;
+  sortOrder: number;
+}
+
+/** Response from GET /:orgId/credit-packages (public, no auth) */
+export interface IPublicCreditPackagesResponse {
+  packages: IPublicCreditPackage[];
+  notes?: string;
 }

@@ -54,7 +54,19 @@ import type {
   IAllQuotaUsageResponse,
   ICheckoutSessionRequest,
   ICheckoutSessionResponse,
+  IConsumeCreditsRequest,
+  IConsumeCreditsResponse,
+  ICreditBalance,
+  ICreditBucketsQuery,
+  ICreditBucketsResponse,
+  ICreditPackage,
+  ICreditPurchaseRequest,
+  ICreditPurchaseResponse,
+  ICreditTransactionsQuery,
+  ICreditTransactionsResponse,
+  IExpiringCreditsResponse,
   IInvoiceListResponse,
+  IPublicCreditPackagesResponse,
   IInvoiceResponse,
   IPlanGroupResponse,
   IPlanGroupVersion,
@@ -299,6 +311,37 @@ export interface NotificationActions {
   ): Promise<import('../api/services/workspace-api').NotificationResult>;
 }
 
+export interface CreditActions {
+  /** Get workspace credit balance */
+  getBalance(workspaceId: string): Promise<ICreditBalance>;
+  /** Consume credits from workspace. Throws with code 'INSUFFICIENT_CREDITS' on 402. */
+  consume(
+    workspaceId: string,
+    request: IConsumeCreditsRequest
+  ): Promise<IConsumeCreditsResponse>;
+  /** Create Stripe checkout session for purchasing a credit package */
+  purchase(
+    workspaceId: string,
+    request: ICreditPurchaseRequest
+  ): Promise<ICreditPurchaseResponse>;
+  /** List available credit packages for purchase */
+  getPackages(workspaceId: string): Promise<ICreditPackage[]>;
+  /** Get paginated credit transaction history */
+  getTransactions(
+    workspaceId: string,
+    query?: ICreditTransactionsQuery
+  ): Promise<ICreditTransactionsResponse>;
+  /** Get paginated credit buckets */
+  getBuckets(
+    workspaceId: string,
+    query?: ICreditBucketsQuery
+  ): Promise<ICreditBucketsResponse>;
+  /** Get credits expiring within N days (default 7) */
+  getExpiring(workspaceId: string, days?: number): Promise<IExpiringCreditsResponse>;
+  /** Get credit packages publicly (no auth required) */
+  getPublicPackages(): Promise<IPublicCreditPackagesResponse>;
+}
+
 // ─── Scoped actions (bound to a session) ───────────────────────────────────────
 
 /** All action modules bound to a specific session. Returned by `withSession()`. */
@@ -313,6 +356,7 @@ export interface ScopedActions {
   features: FeatureActions;
   permissions: PermissionActions;
   notification: NotificationActions;
+  credits: CreditActions;
 }
 
 // ─── BuildBase Result ──────────────────────────────────────────────────────────
@@ -472,6 +516,17 @@ export default function BuildBase(config: BuildBaseConfig): BuildBaseResult {
     notification: {
       send: async (wid, event, uid, data?) =>
         (await getApi()).workspace.sendNotification(wid, event, uid, data),
+    },
+
+    credits: {
+      getBalance: async wid => (await getApi()).workspace.getCreditBalance(wid),
+      consume: async (wid, req) => (await getApi()).workspace.consumeCredits(wid, req),
+      purchase: async (wid, req) => (await getApi()).workspace.purchaseCredits(wid, req),
+      getPackages: async wid => (await getApi()).workspace.getCreditPackages(wid),
+      getTransactions: async (wid, q?) => (await getApi()).workspace.getCreditTransactions(wid, q),
+      getBuckets: async (wid, q?) => (await getApi()).workspace.getCreditBuckets(wid, q),
+      getExpiring: async (wid, d?) => (await getApi()).workspace.getExpiringCredits(wid, d),
+      getPublicPackages: () => publicApi.getPublicCreditPackages(),
     },
 
     permissions: {

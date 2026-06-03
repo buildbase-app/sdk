@@ -11,6 +11,7 @@ export interface SDKMessages {
       users: string;
       subscription: string;
       usage: string;
+      credits: string;
       features: string;
       notifications: string;
       permissions: string;
@@ -24,6 +25,7 @@ export interface SDKMessages {
       users: string;
       subscription: string;
       usage: string;
+      credits: string;
       features: string;
       notifications: string;
       permissions: string;
@@ -124,6 +126,17 @@ export interface SDKMessages {
       features: string;
       limits: string;
       quotas: string;
+      credits: string;
+      creditsPerMonth: string;
+      creditsOneTime: string;
+      creditRenewal: string;
+      creditModeReset: string;
+      creditModeTopup: string;
+      creditModeLifetime: string;
+      /** @deprecated */
+      creditsPerPeriod: string;
+      /** @deprecated */
+      creditRollover: string;
     };
     checkout: {
       upgrade: string;
@@ -469,6 +482,50 @@ export interface SDKMessages {
     saving: string;
     saveSuccess: string;
   };
+  credits: {
+    title: string;
+    description: string;
+    balance: string;
+    available: string;
+    totalGranted: string;
+    totalConsumed: string;
+    totalExpired: string;
+    noCredits: string;
+    noCreditsHint: string;
+    buyCredits: string;
+    buyAmount: string;
+    purchasing: string;
+    packages: string;
+    noPackages: string;
+    creditsAmount: string;
+    validityDays: string;
+    validityUnlimited: string;
+    transactions: string;
+    noTransactions: string;
+    loadMore: string;
+    viewAll: string;
+    expiringSoon: string;
+    expiringInDays: string;
+    noExpiring: string;
+    type: {
+      plan_grant: string;
+      pack_purchased: string;
+      consumed: string;
+      expired: string;
+      admin_grant: string;
+      admin_revoke: string;
+      refund: string;
+    };
+    dialogTitle: string;
+    dialogDescription: string;
+    dialogDescriptionWorkspace: string;
+    perCredit: string;
+    purchaseSuccess: string;
+    purchaseCanceled: string;
+    purchaseFailed: string;
+    errorLoading: string;
+    insufficientCredits: string;
+  };
   errors: {
     networkError: string;
     unauthorized: string;
@@ -490,6 +547,12 @@ export interface SDKMessages {
     fetchQuotaUsage: string;
     fetchAllQuotaUsage: string;
     fetchUsageLogs: string;
+    fetchCreditBalance: string;
+    consumeCredits: string;
+    purchaseCredits: string;
+    fetchCreditPackages: string;
+    fetchCreditTransactions: string;
+    fetchExpiringCredits: string;
   };
 }
 

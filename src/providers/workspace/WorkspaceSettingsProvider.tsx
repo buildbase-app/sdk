@@ -1,7 +1,7 @@
 'use client';
 
 import React, { lazy, Suspense, useEffect, useRef, useState } from 'react';
-import { cleanBBParams, readBBParams } from '../../lib/url-params';
+import { BBAction, cleanBBParams, readBBParams } from '../../lib/url-params';
 import { useSaaSWorkspaces } from './hooks';
 import { workspaceSettingsManager } from './settings-manager';
 import {
@@ -23,10 +23,12 @@ function resolveSection(params: Record<string, string>): WorkspaceSettingsSectio
     return params.screen as WorkspaceSettingsSection;
   }
   switch (params.action) {
-    case 'checkout':
-    case 'billing':
-    case 'selectPlan':
+    case BBAction.Checkout:
+    case BBAction.Billing:
+    case BBAction.SelectPlan:
       return SettingsScreen.Subscription;
+    case BBAction.CreditPurchase:
+      return SettingsScreen.Credits;
     default:
       return null;
   }
