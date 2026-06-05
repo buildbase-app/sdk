@@ -24,6 +24,8 @@ Also works server-side (Next.js API routes, Express, Hono) — see [Server-Side 
 - [Multi-Currency & Pricing Utilities](#-multi-currency--pricing-utilities)
 - [Quota Usage Tracking](#-quota-usage-tracking)
 - [Quota Gates](#-quota-gates)
+- [Credit System](#-credit-system)
+- [Credit Gates](#-credit-gates)
 - [Beta Form Component](#-beta-form-component)
 - [Event System](#-event-system)
 - [Error Handling](#️-error-handling)
@@ -54,6 +56,7 @@ Also works server-side (Next.js API routes, Express, Hono) — see [Server-Side 
 - **📝 Beta Form** - Pre-built signup/waitlist form component
 - **📡 Event System** - Subscribe to user and workspace events
 - **🛡️ Error Handling** - Centralized error handling with error boundaries
+- **💳 Credit System** - Prepaid credit balances with consume, credit gate components, and built-in workspace settings for purchasing and transaction history
 - **🖥️ Server-Side SDK** - `BuildBase()` factory for API routes, background jobs, Express, Hono — zero React dependency
 - **🌐 Internationalization (i18n)** - 8 locales (en, es, fr, de, ja, zh, hi, ar), ICU MessageFormat, RTL support, native numerals
 - **🏠 Workspace Modes** - Personal (solo B2C) or Platform (multi-user B2B), configured from admin dashboard
@@ -155,7 +158,7 @@ export default function RootLayout({ children }) {
 }
 ```
 
-### 4. Workspace Management
+### 4. Workspace Switcher
 
 The WorkspaceSwitcher component uses a render prop pattern, giving you full control over the UI. Configure `onWorkspaceChange` in `auth.callbacks` (SaaSOSProvider) to handle workspace switches—used when clicking "Switch to" and when restoring from storage on page refresh. The callback receives `{ workspace, user, role }` so you don't need to look up the user's role:
 
@@ -516,7 +519,7 @@ function SubscriptionStatus() {
 | `loading`  | `boolean`                       | True while subscription is being fetched               |
 | `refetch`  | `() => Promise<void>`           | Manually refetch subscription (e.g. after plan change) |
 
-**When subscription refetches**
+#### When subscription refetches
 
 - When the current workspace changes (automatic).
 - When subscription is updated via SDK (e.g. `useUpdateSubscription`, cancel, resume) — refetch is triggered automatically.
@@ -857,7 +860,7 @@ import { SaaSOSProvider } from '@buildbase/sdk/react';
 // - Per-event email/push toggles (only user-manageable custom events)
 ```
 
-### Types
+### Notification Types
 
 ```ts
 import type { NotificationData, NotificationResult, NotificationEvent } from '@buildbase/sdk';
@@ -1683,6 +1686,236 @@ function QuotaDebug() {
 - When usage is recorded via `useRecordUsage` — refetch is triggered automatically.
 - When you call `refetch()` manually.
 
+## 💳 Credit System
+
+Manage prepaid credit balances for your workspace — purchase credit packages, consume credits for actions, and track transactions. Credit data is loaded once per workspace via `CreditBalanceContextProvider` (included in `SaaSOSProvider` by default) and refetched automatically after consuming or purchasing credits.
+
+### Credit Hooks
+
+#### useCreditBalance
+
+```tsx
+import { useCreditBalance, useSaaSWorkspaces } from '@buildbase/sdk/react';
+
+function CreditDisplay() {
+  const { currentWorkspace } = useSaaSWorkspaces();
+  const { balance, loading, error, refetch } = useCreditBalance(currentWorkspace?._id);
+
+  if (loading) return <Spinner />;
+  if (!balance) return <p>No credit data</p>;
+
+  return (
+    <div>
+      <p>Available: {balance.available} credits</p>
+      <button onClick={refetch}>Refresh</button>
+    </div>
+  );
+}
+```
+
+#### useConsumeCredits
+
+Consume credits for an action. Throws with `code: 'INSUFFICIENT_CREDITS'` on 402 response. Automatically invalidates the credit balance cache on success.
+
+```tsx
+import { useConsumeCredits, useSaaSWorkspaces } from '@buildbase/sdk/react';
+
+function GenerateButton() {
+  const { currentWorkspace } = useSaaSWorkspaces();
+  const { consumeCredits, loading, error } = useConsumeCredits(currentWorkspace?._id);
+
+  const handleGenerate = async () => {
+    try {
+      const result = await consumeCredits({
+        quantity: 5,
+        metadata: { action: 'image-generation' },
+        idempotencyKey: 'gen-abc-123', // optional: prevent duplicate consumption
+      });
+      console.log(`Remaining: ${result.remaining}`);
+    } catch (err: any) {
+      if (err.code === 'INSUFFICIENT_CREDITS') {
+        console.warn(`Need ${err.requested}, only ${err.available} available`);
+      }
+    }
+  };
+
+  return (
+    <button onClick={handleGenerate} disabled={loading}>
+      Generate (5 credits)
+    </button>
+  );
+}
+```
+
+#### usePublicCreditPackages
+
+Fetch credit packages publicly (no authentication required) — for marketing/pricing pages:
+
+```tsx
+import { usePublicCreditPackages } from '@buildbase/sdk/react';
+
+function PublicCreditsPage() {
+  const { packages, notes, loading } = usePublicCreditPackages();
+
+  if (loading) return <Spinner />;
+
+  return (
+    <div>
+      {notes && <p>{notes}</p>}
+      {packages.map(pkg => (
+        <div key={pkg._id}>
+          {pkg.name}: {pkg.credits} credits
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+### Credit Components
+
+#### CreditBalance
+
+Render-prop component for displaying credit balance:
+
+```tsx
+import { CreditBalance } from '@buildbase/sdk/react';
+
+function MyCredits() {
+  return (
+    <CreditBalance>
+      {({ balance, loading, refetch }) => {
+        if (loading) return <Spinner />;
+        if (!balance) return null;
+        return <p>{balance.available} credits available</p>;
+      }}
+    </CreditBalance>
+  );
+}
+```
+
+#### CreditActionsProvider
+
+Render-prop component that combines balance, packages, consume, and purchase in one:
+
+```tsx
+import { CreditActionsProvider } from '@buildbase/sdk/react';
+
+function CreditDashboard() {
+  return (
+    <CreditActionsProvider>
+      {({ balance, packages, consume, consuming, purchase, purchasing, error }) => (
+        <div>
+          <p>Balance: {balance?.available ?? 0} credits</p>
+
+          <button onClick={() => consume({ quantity: 1 })} disabled={consuming}>
+            Use 1 Credit
+          </button>
+
+          <h3>Buy More</h3>
+          {packages.map(pkg => (
+            <button key={pkg._id} onClick={() => purchase(pkg)} disabled={purchasing}>
+              {pkg.name} — {pkg.credits} credits
+            </button>
+          ))}
+
+          {error && <p className="text-red-500">{error}</p>}
+        </div>
+      )}
+    </CreditActionsProvider>
+  );
+}
+```
+
+### Credit Hooks Summary
+
+| Hook                             | Purpose                                        |
+| -------------------------------- | ---------------------------------------------- |
+| `useCreditBalance(workspaceId)`  | Get current credit balance (auto-fetches)      |
+| `useConsumeCredits(workspaceId)` | Consume credits (mutation)                     |
+| `usePublicCreditPackages()`      | List public credit packages (no auth required) |
+
+> **Note:** Credit purchasing, packages, transactions, and expiring credits are managed automatically by the built-in workspace settings dialog.
+
+### Server-Side Credits
+
+```ts
+import { credits } from '@/lib/buildbase';
+
+// Get balance
+const balance = await credits.getBalance(workspaceId);
+
+// Consume credits
+const result = await credits.consume(workspaceId, {
+  quantity: 10,
+  metadata: { action: 'generate-report' },
+});
+
+// Public packages (no auth required)
+const publicPackages = await credits.getPublicPackages();
+```
+
+## 🔖 Credit Gates
+
+Control UI visibility based on credit balance. Credit data is loaded via `CreditBalanceContextProvider` (included in `SaaSOSProvider` by default).
+
+### Credit Gate Components
+
+```tsx
+import { WhenCreditsAvailable, WhenCreditsExhausted, WhenCreditsLow } from '@buildbase/sdk/react';
+
+function CreditGatedUI() {
+  return (
+    <div>
+      {/* Show when credits are available (default: min 1) */}
+      <WhenCreditsAvailable>
+        <GenerateButton />
+      </WhenCreditsAvailable>
+
+      {/* Show when at least 10 credits are available */}
+      <WhenCreditsAvailable min={10}>
+        <BulkGenerateButton />
+      </WhenCreditsAvailable>
+
+      {/* Show when credits are fully exhausted */}
+      <WhenCreditsExhausted>
+        <p>No credits remaining. Purchase more to continue.</p>
+      </WhenCreditsExhausted>
+
+      {/* Show when credits fall below a threshold */}
+      <WhenCreditsLow threshold={50}>
+        <p>Running low on credits — only {balance} left.</p>
+      </WhenCreditsLow>
+    </div>
+  );
+}
+```
+
+### Credit Gates with Loading and Fallback
+
+```tsx
+<WhenCreditsAvailable
+  loadingComponent={<Skeleton className="h-10" />}
+  fallbackComponent={
+    <p>
+      No credits available. <a href="/buy">Buy credits</a>
+    </p>
+  }
+>
+  <ActionButton />
+</WhenCreditsAvailable>
+```
+
+### Credit Gate Components Reference
+
+| Component              | Renders children when                  | Props                                                                         |
+| ---------------------- | -------------------------------------- | ----------------------------------------------------------------------------- |
+| `WhenCreditsAvailable` | `balance.available >= min` (default 1) | `min?`, `children`, `loadingComponent?`, `fallbackComponent?`                 |
+| `WhenCreditsExhausted` | `balance.available === 0`              | `children`, `loadingComponent?`, `fallbackComponent?`                         |
+| `WhenCreditsLow`       | `balance.available <= threshold`       | `threshold` (required), `children`, `loadingComponent?`, `fallbackComponent?` |
+
+All gates must be used inside `CreditBalanceContextProvider` (included in `SaaSOSProvider`). By default they return `null` while loading or when the condition is not met.
+
 ## 📝 Beta Form Component
 
 Use the pre-built `BetaForm` component for signup/waitlist forms:
@@ -1786,12 +2019,15 @@ All SDK API clients extend a shared base class and are exported from the package
 
 ### Components
 
-| Component                                                           | Purpose                                                             |
-| ------------------------------------------------------------------- | ------------------------------------------------------------------- |
-| `SubscriptionContextProvider`                                       | Provides subscription data to children (included in SaaSOSProvider) |
-| `WhenSubscription`, `WhenNoSubscription`, `WhenSubscriptionToPlans` | Subscription gate components                                        |
-| `WhenTrialing`, `WhenNotTrialing`, `WhenTrialEnding`                | Trial gate components                                               |
-| `WhenQuotaAvailable`, `WhenQuotaExhausted`, `WhenQuotaOverage`      | Quota gate components                                               |
+| Component                                                           | Purpose                                                               |
+| ------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| `SubscriptionContextProvider`                                       | Provides subscription data to children (included in SaaSOSProvider)   |
+| `WhenSubscription`, `WhenNoSubscription`, `WhenSubscriptionToPlans` | Subscription gate components                                          |
+| `WhenTrialing`, `WhenNotTrialing`, `WhenTrialEnding`                | Trial gate components                                                 |
+| `WhenQuotaAvailable`, `WhenQuotaExhausted`, `WhenQuotaOverage`      | Quota gate components                                                 |
+| `CreditBalanceContextProvider`                                      | Provides credit balance data to children (included in SaaSOSProvider) |
+| `WhenCreditsAvailable`, `WhenCreditsExhausted`, `WhenCreditsLow`    | Credit gate components                                                |
+| `CreditBalance`, `CreditActionsProvider`                            | Credit display and action components (render-prop pattern)            |
 
 ### Currency, pricing variant & quota utilities
 
@@ -1835,7 +2071,7 @@ Prefer these SDK hooks for state and operations instead of `useAppSelector`:
 | `useQuotaUsageContext()`    | Quota usage for current workspace (quotas, loading, refetch); use inside QuotaUsageContextProvider                                                                                                                                                                        |
 | Quota usage hooks           | `useRecordUsage`, `useQuotaUsageStatus`, `useAllQuotaUsage`, `useUsageLogs`                                                                                                                                                                                               |
 | `useCreditBalanceContext()` | Credit balance for current workspace (balance, loading, refetch); use inside CreditBalanceContextProvider                                                                                                                                                                 |
-| Credit hooks                | `useCreditBalance`, `useCreditPackages`, `useCreditTransactions`, `useExpiringCredits`, `useConsumeCredits`, `usePurchaseCredits`, `usePublicCreditPackages`                                                                                                              |
+| Credit hooks                | `useCreditBalance`, `useConsumeCredits`, `usePublicCreditPackages`                                                                                                                                                                                                        |
 | Invalidation helpers        | `invalidateSubscription()`, `invalidateQuotaUsage()`, `invalidateCreditBalance()` — trigger context refetch after server-side mutations                                                                                                                                   |
 
 Using hooks keeps your code stable if internal state shape changes and avoids direct Redux/context coupling.
@@ -2418,7 +2654,7 @@ await fetchWorkspaces();
 
 The SDK also works on the server — API routes, background jobs, webhooks, cron tasks. Zero React dependency.
 
-```
+```text
 @buildbase/sdk        Server: BuildBase() factory, API classes, types, utilities
 @buildbase/sdk/react  Client: React hooks, providers, gate components (documented above)
 ```
@@ -2437,6 +2673,7 @@ export const {
   workspace,
   subscription,
   usage,
+  credits,
   plans,
   invoices,
   users,
@@ -2526,18 +2763,19 @@ const sub = await bb.subscription.get(workspaceId);
 
 ### Server-Side Actions Reference
 
-| Module         | Methods                                                                  |
-| -------------- | ------------------------------------------------------------------------ |
-| `workspace`    | `list`, `get`, `create`, `update`, `delete`                              |
-| `users`        | `list`, `invite`, `remove`, `updateRole`, `getProfile`, `updateProfile`  |
-| `subscription` | `get`, `checkout`, `update`, `cancel`, `resume`, `getBillingPortalUrl`   |
-| `plans`        | `getGroup`, `getVersions`, `getPublic`, `getVersion`                     |
-| `invoices`     | `list`, `get`                                                            |
-| `usage`        | `record`, `recordBatch`, `getQuota`, `getAll`, `getLogs`                 |
-| `settings`     | `get`                                                                    |
-| `features`     | `list`, `update`                                                         |
-| `notification` | `send(workspaceId, event, userId?, data?)`                               |
-| `permissions`  | `check(workspaceId, userId, permission)`, `resolve(workspaceId, userId)` |
+| Module         | Methods                                                                                                                 |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `workspace`    | `list`, `get`, `create`, `update`, `delete`                                                                             |
+| `users`        | `list`, `invite`, `remove`, `updateRole`, `getProfile`, `updateProfile`                                                 |
+| `subscription` | `get`, `checkout`, `update`, `cancel`, `resume`, `getBillingPortalUrl`                                                  |
+| `plans`        | `getGroup`, `getVersions`, `getPublic`, `getVersion`                                                                    |
+| `invoices`     | `list`, `get`                                                                                                           |
+| `usage`        | `record`, `recordBatch`, `getQuota`, `getAll`, `getLogs`                                                                |
+| `credits`      | `getBalance`, `consume`, `purchase`, `getPackages`, `getTransactions`, `getExpiring`, `getBuckets`, `getPublicPackages` |
+| `settings`     | `get`                                                                                                                   |
+| `features`     | `list`, `update`                                                                                                        |
+| `notification` | `send(workspaceId, event, userId?, data?)`                                                                              |
+| `permissions`  | `check(workspaceId, userId, permission)`, `resolve(workspaceId, userId)`                                                |
 
 ### BuildBase Config Options
 
