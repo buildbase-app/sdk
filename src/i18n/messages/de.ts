@@ -578,6 +578,13 @@ export const de: SDKMessages = {
     errorLoading: 'Guthabendaten konnten nicht geladen werden',
     insufficientCredits: 'Nicht genügend Guthaben',
   },
+  loading: {
+    restoringSession: 'Sitzung wird wiederhergestellt...',
+    redirecting: 'Weiterleitung...',
+    signingIn: 'Anmeldung läuft...',
+    verifyingAccount: 'Konto wird überprüft...',
+    almostThere: 'Fast geschafft...',
+  },
   errors: {
     networkError: 'Netzwerkfehler: Bitte überprüfe deine Internetverbindung',
     unauthorized: 'Nicht autorisiert — Bitte überprüfe deine Sitzung',

@@ -552,6 +552,13 @@ export const zh: SDKMessages = {
     errorLoading: '加载积分数据失败',
     insufficientCredits: '积分不足',
   },
+  loading: {
+    restoringSession: '正在恢复会话...',
+    redirecting: '正在跳转...',
+    signingIn: '正在登录...',
+    verifyingAccount: '正在验证您的账户...',
+    almostThere: '即将完成...',
+  },
   errors: {
     networkError: '网络错误：请检查您的网络连接',
     unauthorized: '未授权 — 请检查您的会话',

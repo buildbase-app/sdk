@@ -13,6 +13,7 @@ import { SubscriptionContextProvider } from '../contexts/SubscriptionContext';
 import type { SDKLocale } from '../i18n';
 import { TranslationProvider } from '../i18n';
 import '../styles/globals.css';
+import { FullScreenLoaderProvider } from '../contexts/FullScreenLoaderContext';
 import { AuthProviderWrapper } from './auth/provider';
 import { ContextConfigProvider } from './ContextConfigProvider';
 import { eventEmitter } from './events';
@@ -60,6 +61,41 @@ export interface SaaSOSProviderProps extends IOsState {
    * ```
    */
   getCheckoutStripeParams?: GetCheckoutStripeParams;
+  /**
+   * Custom content or render function for the full-screen loading overlay.
+   * Used during auth code exchange, and available to any SDK feature via `useFullScreenLoader()`.
+   * The SDK handles the full-screen white backdrop, centering, and messages — you just render.
+   *
+   * - Pass a `ReactNode` for static content (logo, spinner).
+   * - Pass a function to receive `{ message }` — the SDK manages which message to show.
+   *
+   * If not provided, a default spinner with status message is shown.
+   *
+   * @example Static content
+   * ```tsx
+   * <SaaSOSProvider
+   *   loadingComponent={
+   *     <>
+   *       <img src="/logo.svg" alt="Logo" />
+   *       <p>Signing you in...</p>
+   *     </>
+   *   }
+   * >
+   * ```
+   *
+   * @example Render function with message
+   * ```tsx
+   * <SaaSOSProvider
+   *   loadingComponent={({ message }) => (
+   *     <>
+   *       <img src="/logo.svg" alt="Logo" />
+   *       <p>{message}</p>
+   *     </>
+   *   )}
+   * >
+   * ```
+   */
+  loadingComponent?: React.ReactNode | ((props: import('../contexts/FullScreenLoaderContext').LoadingProps) => React.ReactNode);
 }
 
 /**
@@ -207,6 +243,7 @@ const SaaSOSProviderInner: React.FC<SaaSOSProviderProps> = React.memo(
     locale,
     defaultPermissions,
     getCheckoutStripeParams,
+    loadingComponent,
     children,
   }) => {
     // Validate props synchronously - throws are caught by the parent SDKErrorBoundary
@@ -247,27 +284,29 @@ const SaaSOSProviderInner: React.FC<SaaSOSProviderProps> = React.memo(
     return (
       <TranslationProvider locale={locale}>
         <SDKContextProvider>
-          <AuthProviderWrapper callbacks={memoizedCallbacks}>
-            <PortalProvider>
-              <ContextConfigProvider config={config} auth={auth}>
-                <CheckoutConfigProvider getCheckoutStripeParams={getCheckoutStripeParams}>
-                  <PermissionConfigProvider appPermissions={defaultPermissions}>
-                    <UserProvider>
-                      <SubscriptionContextProvider>
-                        <QuotaUsageContextProvider>
-                          <CreditBalanceContextProvider>
-                            <PushNotificationProvider>
-                              <WorkspaceSettingsProvider>{children}</WorkspaceSettingsProvider>
-                            </PushNotificationProvider>
-                          </CreditBalanceContextProvider>
-                        </QuotaUsageContextProvider>
-                      </SubscriptionContextProvider>
-                    </UserProvider>
-                  </PermissionConfigProvider>
-                </CheckoutConfigProvider>
-              </ContextConfigProvider>
-            </PortalProvider>
-          </AuthProviderWrapper>
+          <FullScreenLoaderProvider loadingComponent={loadingComponent}>
+            <AuthProviderWrapper callbacks={memoizedCallbacks}>
+              <PortalProvider>
+                <ContextConfigProvider config={config} auth={auth}>
+                  <CheckoutConfigProvider getCheckoutStripeParams={getCheckoutStripeParams}>
+                    <PermissionConfigProvider appPermissions={defaultPermissions}>
+                      <UserProvider>
+                        <SubscriptionContextProvider>
+                          <QuotaUsageContextProvider>
+                            <CreditBalanceContextProvider>
+                              <PushNotificationProvider>
+                                <WorkspaceSettingsProvider>{children}</WorkspaceSettingsProvider>
+                              </PushNotificationProvider>
+                            </CreditBalanceContextProvider>
+                          </QuotaUsageContextProvider>
+                        </SubscriptionContextProvider>
+                      </UserProvider>
+                    </PermissionConfigProvider>
+                  </CheckoutConfigProvider>
+                </ContextConfigProvider>
+              </PortalProvider>
+            </AuthProviderWrapper>
+          </FullScreenLoaderProvider>
         </SDKContextProvider>
       </TranslationProvider>
     );

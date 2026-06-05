@@ -25,6 +25,8 @@ export type { SaaSOSProviderProps } from './providers/SaaSOSProvider';
 // ─── Auth Hooks & Gate Components ──────────────────────────────────────────────
 export { WhenAuthenticated, WhenUnauthenticated } from './components/user/auth';
 export { useSaaSAuth } from './providers/auth/hooks';
+export { useFullScreenLoader } from './contexts/FullScreenLoaderContext';
+export type { LoadingProps } from './contexts/FullScreenLoaderContext';
 
 // ─── Role Gate Components ──────────────────────────────────────────────────────
 export { WhenRoles, WhenWorkspaceRoles } from './components/user/role';
@@ -132,6 +134,8 @@ export { useSeatStatus } from './hooks/use-seat-status';
 export type { SeatStatus } from './hooks/use-seat-status';
 
 // ─── UI Components ─────────────────────────────────────────────────────────────
+export { FullScreenLoader } from './components/ui/full-screen-loader';
+export type { FullScreenLoaderProps } from './components/ui/full-screen-loader';
 export { BetaForm } from './components/beta/BetaForm';
 export { PricingPage } from './components/pricing';
 export type { PricingPageDetails, PricingPageProps } from './components/pricing';

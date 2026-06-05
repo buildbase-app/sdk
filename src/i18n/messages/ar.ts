@@ -568,6 +568,13 @@ export const ar: SDKMessages = {
     errorLoading: 'فشل في تحميل بيانات الرصيد',
     insufficientCredits: 'رصيد غير كافٍ',
   },
+  loading: {
+    restoringSession: 'جارٍ استعادة الجلسة...',
+    redirecting: 'جارٍ إعادة التوجيه...',
+    signingIn: 'جارٍ تسجيل الدخول...',
+    verifyingAccount: 'جارٍ التحقق من حسابك...',
+    almostThere: 'أوشكنا على الانتهاء...',
+  },
   errors: {
     networkError: 'خطأ في الشبكة: يرجى التحقق من اتصالك بالإنترنت',
     unauthorized: 'غير مصرح - يرجى التحقق من جلستك',

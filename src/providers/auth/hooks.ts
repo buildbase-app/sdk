@@ -1,6 +1,7 @@
 import { useCallback, useMemo } from 'react';
 import { AuthApi } from '../../api/services/auth-api';
 import { authActions, useAppDispatch, useAppSelector } from '../../contexts';
+import { useFullScreenLoader } from '../../contexts/FullScreenLoaderContext';
 import { useTranslation } from '../../i18n';
 import { saveAuthIntent } from '../../lib/auth-intent';
 import { handleError } from '../../lib/error-handler';
@@ -87,6 +88,7 @@ export function useSaaSAuth() {
   const os = useSaaSOs();
   const { serverUrl, orgId, auth: authConfig } = os;
   const { resetCurrentWorkspace, currentWorkspace } = useSaaSWorkspaces();
+  const loader = useFullScreenLoader();
 
   const authApi = useMemo(
     () => new AuthApi({ serverUrl, version: os.version }),
@@ -97,6 +99,7 @@ export function useSaaSAuth() {
     async (returnUrl?: string) => {
       saveAuthIntent(returnUrl || window.location.href);
       dispatch.auth(authActions.authenticationStarted());
+      loader.show(t('loading.redirecting'));
       try {
         const response = await authApi.requestAuth({
           orgId,
@@ -109,11 +112,14 @@ export function useSaaSAuth() {
 
         if (response.success) {
           safeRedirect(response.data.redirectUrl);
+          // Keep loader visible — user is navigating away
         } else {
+          loader.hide();
           dispatch.auth(authActions.authenticationFailed());
           throw new Error(response.message || t('errors.generic'));
         }
       } catch (error) {
+        loader.hide();
         dispatch.auth(authActions.authenticationFailed());
         handleError(error, {
           component: 'useSaaSAuth',
@@ -122,7 +128,7 @@ export function useSaaSAuth() {
         throw error;
       }
     },
-    [authApi, orgId, authConfig, dispatch]
+    [authApi, orgId, authConfig, dispatch, loader, t]
   );
 
   const signOut = useCallback(async () => {

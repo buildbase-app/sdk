@@ -529,6 +529,13 @@ export interface SDKMessages {
     errorLoading: string;
     insufficientCredits: string;
   };
+  loading: {
+    restoringSession: string;
+    redirecting: string;
+    signingIn: string;
+    verifyingAccount: string;
+    almostThere: string;
+  };
   errors: {
     networkError: string;
     unauthorized: string;
