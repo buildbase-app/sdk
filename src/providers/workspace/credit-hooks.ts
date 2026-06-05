@@ -11,20 +11,11 @@ import type {
   IExpiringCreditsResponse,
   IPublicCreditPackage,
 } from '../../api/types';
+import { useTranslation } from '../../i18n';
 import { invalidateCreditBalance } from '../../lib/credit-balance-invalidation';
-import { useTranslation, type TranslationKey } from '../../i18n';
-import { handleError } from '../../lib/error-handler';
+import { getHookErrorMessage, handleError } from '../../lib/error-handler';
 import { isOsConfigReady } from '../os/types';
 import { useWorkspaceApiWithOs } from './use-workspace-api';
-
-/** Extract error message from catch block, falling back to a translated key */
-function getErrorMessage(
-  err: unknown,
-  fallbackKey: string,
-  t: (key: TranslationKey) => string
-): string {
-  return err instanceof Error ? err.message : t(fallbackKey as TranslationKey);
-}
 
 // ── useCreditBalance ──────────────────────────────────────────────────────────
 
@@ -67,7 +58,7 @@ export const useCreditBalance = (workspaceId: string | null | undefined) => {
       const data = await api.getCreditBalance(workspaceId);
       setBalance(data);
     } catch (err) {
-      const errorMessage = getErrorMessage(err, 'errors.fetchCreditBalance', t);
+      const errorMessage = getHookErrorMessage(err, 'errors.fetchCreditBalance', t);
       setError(errorMessage);
       handleError(err, {
         component: 'useCreditBalance',
@@ -141,7 +132,7 @@ export const useConsumeCredits = (workspaceId: string | null | undefined) => {
         const errorMessage =
           err.code === 'INSUFFICIENT_CREDITS'
             ? `Insufficient credits. Available: ${err.available}, requested: ${err.requested}`
-            : getErrorMessage(err, 'errors.consumeCredits', t);
+            : getHookErrorMessage(err, 'errors.consumeCredits', t);
         setError(errorMessage);
         handleError(err, {
           component: 'useConsumeCredits',
@@ -204,7 +195,7 @@ export const usePurchaseCredits = (workspaceId: string | null | undefined) => {
         const result = await api.purchaseCredits(workspaceId, request);
         return result;
       } catch (err) {
-        const errorMessage = getErrorMessage(err, 'errors.purchaseCredits', t);
+        const errorMessage = getHookErrorMessage(err, 'errors.purchaseCredits', t);
         setError(errorMessage);
         handleError(err, {
           component: 'usePurchaseCredits',
@@ -271,7 +262,7 @@ export const useCreditPackages = (workspaceId: string | null | undefined) => {
       const data = await api.getCreditPackages(workspaceId);
       setPackages(data);
     } catch (err) {
-      const errorMessage = getErrorMessage(err, 'errors.fetchCreditPackages', t);
+      const errorMessage = getHookErrorMessage(err, 'errors.fetchCreditPackages', t);
       setError(errorMessage);
       handleError(err, {
         component: 'useCreditPackages',
@@ -365,7 +356,7 @@ export const useCreditTransactions = (
       setHasNextPage(data.hasNextPage || false);
       setHasPrevPage(data.hasPrevPage || false);
     } catch (err) {
-      const errorMessage = getErrorMessage(err, 'errors.fetchCreditTransactions', t);
+      const errorMessage = getHookErrorMessage(err, 'errors.fetchCreditTransactions', t);
       setError(errorMessage);
       handleError(err, {
         component: 'useCreditTransactions',
@@ -416,10 +407,7 @@ export const useCreditTransactions = (
  * }
  * ```
  */
-export const useExpiringCredits = (
-  workspaceId: string | null | undefined,
-  days?: number
-) => {
+export const useExpiringCredits = (workspaceId: string | null | undefined, days?: number) => {
   const { t } = useTranslation();
   const { api } = useWorkspaceApiWithOs();
 
@@ -438,7 +426,7 @@ export const useExpiringCredits = (
       const result = await api.getExpiringCredits(workspaceId, days);
       setData(result);
     } catch (err) {
-      const errorMessage = getErrorMessage(err, 'errors.fetchExpiringCredits', t);
+      const errorMessage = getHookErrorMessage(err, 'errors.fetchExpiringCredits', t);
       setError(errorMessage);
       handleError(err, {
         component: 'useExpiringCredits',
@@ -514,7 +502,7 @@ export const usePublicCreditPackages = () => {
       setPackages(result.packages || []);
       setNotes(result.notes);
     } catch (err) {
-      const errorMessage = getErrorMessage(err, 'errors.fetchCreditPackages', t);
+      const errorMessage = getHookErrorMessage(err, 'errors.fetchCreditPackages', t);
       setError(errorMessage);
       handleError(err, {
         component: 'usePublicCreditPackages',

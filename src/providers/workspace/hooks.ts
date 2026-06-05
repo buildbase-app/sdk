@@ -193,6 +193,11 @@ export const useSaaSWorkspaces = () => {
     [dispatch, os.auth?.callbacks?.onWorkspaceChange, setCurrentWorkspaceWithStorage, currentUser]
   );
 
+  // Keep a ref to switchToWorkspace so the init effect doesn't re-trigger
+  // when currentWorkspace (and therefore switchToWorkspace) changes.
+  const switchToWorkspaceRef = React.useRef(switchToWorkspace);
+  switchToWorkspaceRef.current = switchToWorkspace;
+
   // Load saved workspace ID on initialization (e.g. Redux persist rehydration)
   useEffect(() => {
     if (!workspace.isInitialized) {
@@ -201,19 +206,18 @@ export const useSaaSWorkspaces = () => {
       if (savedWorkspaceId) {
         const savedWorkspace = workspace.workspaces.find(ws => ws._id === savedWorkspaceId);
         if (savedWorkspace) {
-          switchToWorkspace(savedWorkspace, { forceEmit: true }).catch(() => {
-            // onWorkspaceChange rejected - don't set workspace
+          switchToWorkspaceRef.current(savedWorkspace, { forceEmit: true }).catch(err => {
+            // onWorkspaceChange callback rejected — don't set workspace, but log for debugging
+            handleError(err, {
+              component: 'useSaaSWorkspaces',
+              action: 'initWorkspaceSwitch',
+              metadata: { savedWorkspaceId },
+            });
           });
         }
       }
     }
-  }, [
-    workspace.isInitialized,
-    workspace.workspaces,
-    workspace.currentWorkspace,
-    dispatch,
-    switchToWorkspace,
-  ]);
+  }, [workspace.isInitialized, workspace.workspaces, dispatch]);
 
   const resetCurrentWorkspaceWithStorage = useCallback(() => {
     workspaceStorage.clearCurrentWorkspace();
@@ -392,8 +396,12 @@ export const useSaaSWorkspaces = () => {
       if (workspace.workspaces.length > 0) {
         const firstWorkspace = workspace.workspaces[0];
         if (firstWorkspace._id !== currentId) {
-          switchToWorkspace(firstWorkspace).catch(() => {
-            // onWorkspaceChange rejected - don't set workspace
+          switchToWorkspace(firstWorkspace).catch(err => {
+            handleError(err, {
+              component: 'useSaaSWorkspaces',
+              action: 'fallbackWorkspaceSwitch',
+              metadata: { workspaceId: firstWorkspace._id },
+            });
           });
         }
       }
@@ -446,7 +454,9 @@ export const useSaaSWorkspaces = () => {
         });
       }
       // Refresh workspace data so users array + seat counts update
-      refreshWorkspaces().catch(() => {});
+      refreshWorkspaces().catch(err => {
+        handleError(err, { component: 'useSaaSWorkspaces', action: 'refreshAfterAddUser' });
+      });
       invalidateSubscription();
       return data;
     },
@@ -483,7 +493,9 @@ export const useSaaSWorkspaces = () => {
         });
       }
       // Refresh workspace data so users array + seat counts update
-      refreshWorkspaces().catch(() => {});
+      refreshWorkspaces().catch(err => {
+        handleError(err, { component: 'useSaaSWorkspaces', action: 'refreshAfterRemoveUser' });
+      });
       invalidateSubscription();
       return data;
     },

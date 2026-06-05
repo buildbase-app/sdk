@@ -276,7 +276,7 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
 
       // Free plan selection
       if (targetPlan?.plan?.isFreemium) {
-        const hasStripe = !!(subscription?.subscription as any)?.subscriptionId;
+        const hasStripe = !!subscription?.subscription?.subscriptionId;
         if (hasStripe) {
           // Downgrade from paid → free: show cancel dialog (cancel at period end)
           // After subscription expires, user picks free plan from plan picker
@@ -612,14 +612,12 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                         billingInterval
                       )
                     : null;
-                const memberCount = Array.isArray((workspace as any)?.users)
-                  ? (workspace as any).users.length
-                  : 1;
+                const memberCount = Array.isArray(workspace?.users) ? workspace.users.length : 1;
                 const includedSeats = seatPricingConfig?.includedSeats ?? 0;
                 const billableSeats = Math.max(0, memberCount - includedSeats);
 
                 // Show base price only — Stripe calculates the actual total with proration
-                const isFreemiumPlan = !!(subscription.plan as any)?.isFreemium;
+                const isFreemiumPlan = !!subscription.plan?.isFreemium;
                 const formattedPrice =
                   currentPrice !== null && currentPrice !== undefined
                     ? currentPrice === 0
@@ -839,7 +837,7 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                           <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-4 pt-4 border-t border-gray-200">
                             {subscription.subscription &&
                               canManageBilling &&
-                              (subscription.subscription as any).subscriptionId && (
+                              subscription.subscription?.subscriptionId && (
                                 <Button
                                   variant="outline"
                                   size="sm"
@@ -853,7 +851,7 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                                 </Button>
                               )}
                             {canManageBilling &&
-                              (subscription.subscription as any).subscriptionId &&
+                              subscription.subscription?.subscriptionId &&
                               (subscription.subscription.subscriptionStatus ===
                                 SubscriptionStatus.Active ||
                                 subscription.subscription.subscriptionStatus ===
@@ -1160,13 +1158,13 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                                         </span>
                                       </div>
                                     )}
-                                    {(seatPricingConfig as any).maxSeats > 0 && (
+                                    {(seatPricingConfig?.maxSeats ?? 0) > 0 && (
                                       <div className="flex items-center justify-between text-sm">
                                         <span className="text-gray-600">
                                           {t('subscription.seats.limit')}
                                         </span>
                                         <span className="text-gray-900">
-                                          {fmtNum((seatPricingConfig as any).maxSeats)}
+                                          {fmtNum(seatPricingConfig!.maxSeats!)}
                                         </span>
                                       </div>
                                     )}
@@ -1186,17 +1184,17 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                                     <div className="bg-purple-50 rounded-lg p-3 space-y-1.5">
                                       <div className="flex items-center justify-between text-sm">
                                         <span className="text-gray-600">
-                                          {subscription.planVersion.creditGrant
-                                            .renewOnPeriod
+                                          {subscription.planVersion.creditGrant.renewOnPeriod
                                             ? t('subscription.items.creditsPerMonth')
                                             : t('subscription.items.creditsOneTime')}
                                         </span>
                                         <span className="font-semibold text-purple-700">
                                           {fmtNum(
-                                            (
-                                              subscription.planVersion.creditGrant
-                                                .creditPackage as any
-                                            ).creditAmount ?? 0
+                                            typeof subscription.planVersion.creditGrant
+                                              .creditPackage === 'object'
+                                              ? subscription.planVersion.creditGrant.creditPackage
+                                                  .creditAmount
+                                              : 0
                                           )}
                                         </span>
                                       </div>
@@ -1205,8 +1203,7 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                                           {t('subscription.items.creditRenewal')}
                                         </span>
                                         <span className="font-medium text-gray-900">
-                                          {!subscription.planVersion.creditGrant
-                                            .renewOnPeriod
+                                          {!subscription.planVersion.creditGrant.renewOnPeriod
                                             ? t('subscription.items.creditModeLifetime')
                                             : subscription.planVersion.creditGrant.mode === 'reset'
                                               ? t('subscription.items.creditModeReset')
@@ -1310,7 +1307,7 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
             initialInterval={selectPlanParamsRef.current?.interval as BillingInterval | undefined}
             initialCurrency={selectPlanParamsRef.current?.currency}
             currentMemberCount={
-              Array.isArray((workspace as any)?.users) ? (workspace as any).users.length : undefined
+              Array.isArray(workspace?.users) ? workspace.users.length : undefined
             }
             onSelectPlan={handlePlanChange}
             loading={updating || loading}

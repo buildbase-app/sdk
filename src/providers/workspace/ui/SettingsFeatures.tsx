@@ -1,12 +1,14 @@
 import { Loader2 } from 'lucide-react';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Switch } from '../../../components/ui/switch';
 import { usePermissions } from '../../../hooks/usePermissions';
+import { useSuccessMessage } from '../../../hooks/useSuccessMessage';
 import { useTranslation } from '../../../i18n';
 import { handleError } from '../../../lib/error-handler';
 import { Permission } from '../../../lib/permissions';
 import { useSaaSWorkspaces } from '../hooks';
 import { IWorkspace } from '../types';
+import NoPermission from './NoPermission';
 import SettingSkeleton from './Skeleton';
 
 const WorkspaceSettingsFeatures: React.FC<{ workspaceId: string }> = ({ workspaceId }) => {
@@ -14,15 +16,8 @@ const WorkspaceSettingsFeatures: React.FC<{ workspaceId: string }> = ({ workspac
   const { allFeatures, updateFeature, getWorkspace } = useSaaSWorkspaces();
   const { can } = usePermissions();
   const [updatingFeatures, setUpdatingFeatures] = useState<Record<string, boolean | null>>({});
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const success = useSuccessMessage();
   const [workspace, setWorkspace] = useState<IWorkspace | null>(null);
-  const successTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
-
-  useEffect(() => {
-    return () => {
-      if (successTimerRef.current) clearTimeout(successTimerRef.current);
-    };
-  }, []);
 
   useEffect(() => {
     getWorkspace(workspaceId).then(setWorkspace);
@@ -31,19 +26,13 @@ const WorkspaceSettingsFeatures: React.FC<{ workspaceId: string }> = ({ workspac
   async function _updateFeature(key: string, value: boolean) {
     if (!workspace) return;
     setUpdatingFeatures(prev => ({ ...prev, [key]: value }));
-    setSuccessMessage(null);
+    success.clear();
     try {
       const data = await updateFeature(workspace._id, key, value);
       setWorkspace(data);
       const feature = allFeatures.find(f => f.slug === key);
       const featureName = feature?.name || 'Feature';
-      setSuccessMessage(
-        t('features.updateSuccess', { feature: featureName, enabled: String(value) })
-      );
-      if (successTimerRef.current) clearTimeout(successTimerRef.current);
-      successTimerRef.current = setTimeout(() => {
-        setSuccessMessage(null);
-      }, 5000);
+      success.show(t('features.updateSuccess', { feature: featureName, enabled: String(value) }));
     } catch (error) {
       handleError(error, {
         component: 'WorkspaceSettingsFeatures',
@@ -63,14 +52,14 @@ const WorkspaceSettingsFeatures: React.FC<{ workspaceId: string }> = ({ workspac
 
   return (
     <div>
-      {successMessage && (
+      {success.message && (
         <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded mb-4">
           <p className="font-medium">{t('settings.common.success')}</p>
-          <p className="text-sm">{successMessage}</p>
+          <p className="text-sm">{success.message}</p>
         </div>
       )}
       <div className="flex flex-col gap-y-3.5 pe-4">
-        {!canEditFeatures && <div className="text-red-500">{t('features.ownerOnly')}</div>}
+        {!canEditFeatures && <NoPermission descriptionKey="features.ownerOnly" />}
         {!allFeatures.length && (
           <div className="text-muted-foreground">{t('features.noFeatures')}</div>
         )}

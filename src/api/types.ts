@@ -113,6 +113,8 @@ export type DunningStateType = (typeof DunningState)[keyof typeof DunningState];
 export interface ISubscription {
   _id: string;
   subscriptionStatus: SubscriptionStatusType;
+  /** Stripe Subscription ID (e.g. 'sub_...'). Present when linked to Stripe. */
+  subscriptionId?: string;
   stripePriceId?: string;
   stripeCurrentPeriodEnd?: string; // ISO date string for when current billing period ends
   /** When the current monthly usage period ends (quotas reset on this date). */
@@ -247,12 +249,14 @@ export interface IPlanVersion {
   creditGrant?: {
     enabled: boolean;
     /** Linked credit package (populated with name, slug, creditAmount). */
-    creditPackage?: {
-      _id: string;
-      name: string;
-      slug: string;
-      creditAmount: number;
-    } | string;
+    creditPackage?:
+      | {
+          _id: string;
+          name: string;
+          slug: string;
+          creditAmount: number;
+        }
+      | string;
     /** How unused plan credits are handled on renewal: 'reset' = expire old, 'topup' = add to existing. */
     mode: 'reset' | 'topup';
     /** true = credits given fresh every month, false = one-time lifetime grant (default). */
@@ -590,13 +594,11 @@ export interface IInvoice {
 }
 
 export interface IInvoiceListResponse {
-  success: boolean;
   invoices: IInvoice[];
   has_more: boolean;
 }
 
 export interface IInvoiceResponse {
-  success: boolean;
   invoice: IInvoice;
 }
 

@@ -43,6 +43,11 @@ export const fr: SDKMessages = {
       error: 'Erreur',
       refreshAction: '{loading, select, true {Actualisation...} other {Actualiser}}',
       retryAction: '{loading, select, true {Nouvelle tentative...} other {Réessayer}}',
+      noPermissionTitle: 'Accès restreint',
+      noPermissionDescription:
+        "Vous n'avez pas la permission d'accéder à cette section. Contactez un administrateur de l'espace de travail si vous avez besoin d'un accès.",
+      billingManageOnly:
+        'Seuls les utilisateurs disposant des autorisations de gestion de la facturation peuvent effectuer cette action.',
     },
   },
   subscription: {
@@ -534,14 +539,16 @@ export const fr: SDKMessages = {
   },
   credits: {
     title: 'Crédits',
-    description: 'Les crédits peuvent être utilisés pour des actions premium comme la génération par IA.',
+    description:
+      'Les crédits peuvent être utilisés pour des actions premium comme la génération par IA.',
     balance: 'Solde de crédits',
     available: 'Disponible',
     totalGranted: 'Total accordé',
     totalConsumed: 'Total consommé',
     totalExpired: 'Total expiré',
     noCredits: 'Pas encore de crédits',
-    noCreditsHint: 'Les crédits apparaîtront ici lorsqu\'ils seront accordés par votre plan ou achetés.',
+    noCreditsHint:
+      "Les crédits apparaîtront ici lorsqu'ils seront accordés par votre plan ou achetés.",
     buyCredits: 'Acheter des crédits',
     buyAmount: 'Buy {count} Credits',
     purchasing: 'Redirection...',
@@ -556,7 +563,7 @@ export const fr: SDKMessages = {
     viewAll: 'Tout voir',
     expiringSoon: 'Expiration imminente',
     expiringInDays: '{count} crédits expirent dans {days} jours',
-    noExpiring: 'Aucun crédit n\'expire prochainement.',
+    noExpiring: "Aucun crédit n'expire prochainement.",
     type: {
       plan_grant: 'Octroi du plan',
       pack_purchased: 'Acheté',

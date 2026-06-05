@@ -1,13 +1,10 @@
 'use client';
 
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect } from 'react';
 import { osActions, useAppDispatch } from '../contexts';
-import { handleError } from '../lib/error-handler';
-import { useAsyncEffect } from '../lib/useAsyncEffect';
 import type { IAuthConfig } from './auth/types';
-import { SettingsApi } from './os/api';
 import { useSaaSOs } from './os/hooks';
-import { isOsConfigReady, type IOsState } from './os/types';
+import type { IOsState } from './os/types';
 
 interface ContextConfigProviderProps {
   config: IOsState;
@@ -17,8 +14,9 @@ interface ContextConfigProviderProps {
 
 /**
  * Context Config Provider
- * Initializes OS configuration in Context API mode
- * Similar to SaaSConfigProvider but for Context API
+ * Initializes OS configuration in Context API mode.
+ * Only sets config — settings are fetched by useSaaSSettings() which has
+ * built-in deduplication via module-level promise guard.
  */
 export const ContextConfigProvider: React.FC<ContextConfigProviderProps> = React.memo(
   ({ config, auth, children }) => {
@@ -33,10 +31,12 @@ export const ContextConfigProvider: React.FC<ContextConfigProviderProps> = React
         redirectUrl: auth?.redirectUrl || '',
         callbacks: auth?.callbacks,
       }),
+      // Depend on individual values — survives parent creating new auth object with same values
+      // eslint-disable-next-line react-hooks/exhaustive-deps
       [auth?.clientId, auth?.redirectUrl, auth?.callbacks]
     );
 
-    // Set OS config
+    // Set OS config — settings are fetched separately by useSaaSSettings()
     useEffect(() => {
       dispatch.os(
         osActions.setSaaSOSConfig({
@@ -45,33 +45,6 @@ export const ContextConfigProvider: React.FC<ContextConfigProviderProps> = React
         })
       );
     }, [config, authConfig, dispatch]);
-
-    // Automatically fetch settings when OS is loaded (via centralized SettingsApi)
-    const settingsApi = useMemo(
-      () => (isOsConfigReady(os) ? new SettingsApi(os) : null),
-      [os.serverUrl, os.version, os.orgId]
-    );
-
-    useAsyncEffect(
-      async signal => {
-        if (!settingsApi || os.settings) return;
-        const data = await settingsApi.getSettings(signal);
-        dispatch.os(osActions.setSettings(data));
-      },
-      [settingsApi, os.settings, dispatch],
-      {
-        onError: err =>
-          handleError(err, {
-            component: 'ContextConfigProvider',
-            action: 'fetchSettings',
-            metadata: {
-              serverUrl: os.serverUrl,
-              version: os.version,
-              orgId: os.orgId,
-            },
-          }),
-      }
-    );
 
     return <>{children}</>;
   }

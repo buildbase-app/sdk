@@ -46,6 +46,9 @@ export interface SDKMessages {
       error: string;
       refreshAction: string;
       retryAction: string;
+      noPermissionTitle: string;
+      noPermissionDescription: string;
+      billingManageOnly: string;
     };
   };
   subscription: {

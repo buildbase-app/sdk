@@ -43,6 +43,11 @@ export const de: SDKMessages = {
       error: 'Fehler',
       refreshAction: '{loading, select, true {Wird aktualisiert...} other {Aktualisieren}}',
       retryAction: '{loading, select, true {Wird erneut versucht...} other {Erneut versuchen}}',
+      noPermissionTitle: 'Zugriff eingeschränkt',
+      noPermissionDescription:
+        'Sie haben keine Berechtigung, auf diesen Bereich zuzugreifen. Kontaktieren Sie einen Workspace-Administrator, wenn Sie Zugriff benötigen.',
+      billingManageOnly:
+        'Nur Benutzer mit Abrechnungsverwaltungsberechtigungen können diese Aktion durchführen.',
     },
   },
   subscription: {
@@ -536,7 +541,8 @@ export const de: SDKMessages = {
     totalConsumed: 'Gesamt verbraucht',
     totalExpired: 'Gesamt abgelaufen',
     noCredits: 'Noch kein Guthaben',
-    noCreditsHint: 'Guthaben wird hier angezeigt, wenn es durch deinen Plan gewährt oder gekauft wurde.',
+    noCreditsHint:
+      'Guthaben wird hier angezeigt, wenn es durch deinen Plan gewährt oder gekauft wurde.',
     buyCredits: 'Guthaben kaufen',
     buyAmount: 'Buy {count} Credits',
     purchasing: 'Weiterleitung...',
@@ -567,7 +573,8 @@ export const de: SDKMessages = {
     perCredit: '{price} per credit',
     purchaseSuccess: 'Guthaben erfolgreich gekauft! Dein Kontostand wurde aktualisiert.',
     purchaseCanceled: 'Guthabenkauf wurde abgebrochen. Es wurden keine Gebühren erhoben.',
-    purchaseFailed: 'Guthabenkauf fehlgeschlagen. Bitte versuche es erneut oder kontaktiere den Support.',
+    purchaseFailed:
+      'Guthabenkauf fehlgeschlagen. Bitte versuche es erneut oder kontaktiere den Support.',
     errorLoading: 'Guthabendaten konnten nicht geladen werden',
     insufficientCredits: 'Nicht genügend Guthaben',
   },

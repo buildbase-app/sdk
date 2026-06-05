@@ -7,8 +7,8 @@ import type {
   ICreditPackage,
 } from '../../api/types';
 import { useCreditBalanceContext } from '../../contexts/CreditBalanceContext';
-import { createCreditPurchaseRedirectUrls } from '../../lib/url-params';
 import { safeRedirect } from '../../lib/security';
+import { createCreditPurchaseRedirectUrls } from '../../lib/url-params';
 import {
   useConsumeCredits,
   useCreditPackages,
@@ -95,8 +95,16 @@ export const CreditActionsProvider = ({ children }: CreditActionsProviderProps) 
   const workspaceId = currentWorkspace?._id;
   const { balance, loading, error: balanceError, refetch } = useCreditBalanceContext();
   const { packages, loading: packagesLoading } = useCreditPackages(workspaceId);
-  const { consumeCredits, loading: consuming, error: consumeError } = useConsumeCredits(workspaceId);
-  const { purchaseCredits, loading: purchasing, error: purchaseError } = usePurchaseCredits(workspaceId);
+  const {
+    consumeCredits,
+    loading: consuming,
+    error: consumeError,
+  } = useConsumeCredits(workspaceId);
+  const {
+    purchaseCredits,
+    loading: purchasing,
+    error: purchaseError,
+  } = usePurchaseCredits(workspaceId);
 
   const purchase = async (pkg: ICreditPackage) => {
     if (!workspaceId) throw new Error('No workspace selected');

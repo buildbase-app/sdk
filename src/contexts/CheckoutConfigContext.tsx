@@ -14,13 +14,8 @@ export const CheckoutConfigProvider: React.FC<{
   getCheckoutStripeParams?: GetCheckoutStripeParams;
   children: ReactNode;
 }> = React.memo(({ getCheckoutStripeParams, children }) => {
-  const value = React.useMemo(
-    () => ({ getCheckoutStripeParams }),
-    [getCheckoutStripeParams]
-  );
-  return (
-    <CheckoutConfigContext.Provider value={value}>{children}</CheckoutConfigContext.Provider>
-  );
+  const value = React.useMemo(() => ({ getCheckoutStripeParams }), [getCheckoutStripeParams]);
+  return <CheckoutConfigContext.Provider value={value}>{children}</CheckoutConfigContext.Provider>;
 });
 
 CheckoutConfigProvider.displayName = 'CheckoutConfigProvider';

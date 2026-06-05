@@ -4,12 +4,12 @@ import React, { useEffect } from 'react';
 import { SDKErrorBoundary } from '../components/ErrorBoundary';
 import { SDKContextProvider } from '../contexts';
 
-import { PermissionConfigProvider } from '../contexts/PermissionContext';
-import { CreditBalanceContextProvider } from '../contexts/CreditBalanceContext';
-import { QuotaUsageContextProvider } from '../contexts/QuotaUsageContext';
-import { SubscriptionContextProvider } from '../contexts/SubscriptionContext';
 import type { GetCheckoutStripeParams } from '../api/types';
 import { CheckoutConfigProvider } from '../contexts/CheckoutConfigContext';
+import { CreditBalanceContextProvider } from '../contexts/CreditBalanceContext';
+import { PermissionConfigProvider } from '../contexts/PermissionContext';
+import { QuotaUsageContextProvider } from '../contexts/QuotaUsageContext';
+import { SubscriptionContextProvider } from '../contexts/SubscriptionContext';
 import type { SDKLocale } from '../i18n';
 import { TranslationProvider } from '../i18n';
 import '../styles/globals.css';
@@ -199,7 +199,16 @@ const validateProps = (serverUrl: string, version: ApiVersion, orgId: string): v
 };
 
 const SaaSOSProviderInner: React.FC<SaaSOSProviderProps> = React.memo(
-  ({ serverUrl, version, orgId, auth, locale, defaultPermissions, getCheckoutStripeParams, children }) => {
+  ({
+    serverUrl,
+    version,
+    orgId,
+    auth,
+    locale,
+    defaultPermissions,
+    getCheckoutStripeParams,
+    children,
+  }) => {
     // Validate props synchronously - throws are caught by the parent SDKErrorBoundary
     validateProps(serverUrl, version, orgId);
 
@@ -217,6 +226,8 @@ const SaaSOSProviderInner: React.FC<SaaSOSProviderProps> = React.memo(
       [
         auth?.callbacks?.handleAuthentication,
         auth?.callbacks?.onSignOut,
+        auth?.callbacks?.getSession,
+        auth?.callbacks?.onSessionExpired,
         auth?.callbacks?.handleEvent,
         auth?.callbacks?.onWorkspaceChange,
       ]

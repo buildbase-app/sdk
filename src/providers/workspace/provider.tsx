@@ -125,7 +125,9 @@ export function WorkspaceSwitcher(props: {
   // In single-workspace modes (showSwitcher: false), auto-select the only workspace
   useEffect(() => {
     if (!showSwitcher && workspaces.length > 0 && !currentWorkspace) {
-      switchToWorkspace(workspaces[0]).catch(() => {});
+      switchToWorkspace(workspaces[0]).catch(err => {
+        handleError(err, { component: 'WorkspaceProvider', action: 'autoSelectWorkspace' });
+      });
     }
   }, [showSwitcher, workspaces, currentWorkspace]);
 

@@ -66,11 +66,11 @@ import type {
   ICreditTransactionsResponse,
   IExpiringCreditsResponse,
   IInvoiceListResponse,
-  IPublicCreditPackagesResponse,
   IInvoiceResponse,
   IPlanGroupResponse,
   IPlanGroupVersion,
   IPlanGroupVersionsResponse,
+  IPublicCreditPackagesResponse,
   IPublicPlansResponse,
   IQuotaUsageStatusResponse,
   IRecordUsageRequest,
@@ -315,15 +315,9 @@ export interface CreditActions {
   /** Get workspace credit balance */
   getBalance(workspaceId: string): Promise<ICreditBalance>;
   /** Consume credits from workspace. Throws with code 'INSUFFICIENT_CREDITS' on 402. */
-  consume(
-    workspaceId: string,
-    request: IConsumeCreditsRequest
-  ): Promise<IConsumeCreditsResponse>;
+  consume(workspaceId: string, request: IConsumeCreditsRequest): Promise<IConsumeCreditsResponse>;
   /** Create Stripe checkout session for purchasing a credit package */
-  purchase(
-    workspaceId: string,
-    request: ICreditPurchaseRequest
-  ): Promise<ICreditPurchaseResponse>;
+  purchase(workspaceId: string, request: ICreditPurchaseRequest): Promise<ICreditPurchaseResponse>;
   /** List available credit packages for purchase */
   getPackages(workspaceId: string): Promise<ICreditPackage[]>;
   /** Get paginated credit transaction history */
@@ -332,10 +326,7 @@ export interface CreditActions {
     query?: ICreditTransactionsQuery
   ): Promise<ICreditTransactionsResponse>;
   /** Get paginated credit buckets */
-  getBuckets(
-    workspaceId: string,
-    query?: ICreditBucketsQuery
-  ): Promise<ICreditBucketsResponse>;
+  getBuckets(workspaceId: string, query?: ICreditBucketsQuery): Promise<ICreditBucketsResponse>;
   /** Get credits expiring within N days (default 7) */
   getExpiring(workspaceId: string, days?: number): Promise<IExpiringCreditsResponse>;
   /** Get credit packages publicly (no auth required) */

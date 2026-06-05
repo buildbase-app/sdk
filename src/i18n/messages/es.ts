@@ -43,6 +43,11 @@ export const es: SDKMessages = {
       error: 'Error',
       refreshAction: '{loading, select, true {Actualizando...} other {Actualizar}}',
       retryAction: '{loading, select, true {Reintentando...} other {Reintentar}}',
+      noPermissionTitle: 'Acceso restringido',
+      noPermissionDescription:
+        'No tienes permiso para acceder a esta sección. Contacta a un administrador del espacio de trabajo si necesitas acceso.',
+      billingManageOnly:
+        'Solo los usuarios con permisos de gestión de facturación pueden realizar esta acción.',
     },
   },
   subscription: {
@@ -565,7 +570,8 @@ export const es: SDKMessages = {
     perCredit: '{price} per credit',
     purchaseSuccess: '¡Créditos comprados correctamente! Tu saldo ha sido actualizado.',
     purchaseCanceled: 'La compra de créditos fue cancelada. No se realizaron cargos.',
-    purchaseFailed: 'La compra de créditos falló. Por favor, inténtalo de nuevo o contacta a soporte.',
+    purchaseFailed:
+      'La compra de créditos falló. Por favor, inténtalo de nuevo o contacta a soporte.',
     errorLoading: 'Error al cargar los datos de créditos',
     insufficientCredits: 'Créditos insuficientes',
   },

@@ -20,9 +20,9 @@ self.addEventListener('push', function(event) {
   if (!event.data) return;
 
   try {
-    var payload = event.data.json();
-    var title = payload.title || 'Notification';
-    var options = {
+    const payload = event.data.json();
+    const title = payload.title || 'Notification';
+    const options = {
       body: payload.body || '',
       icon: payload.icon || undefined,
       badge: payload.icon || undefined,
@@ -41,12 +41,12 @@ self.addEventListener('push', function(event) {
 self.addEventListener('notificationclick', function(event) {
   event.notification.close();
 
-  var url = event.notification.data && event.notification.data.url;
+  const url = event.notification.data && event.notification.data.url;
   if (url) {
     event.waitUntil(
       clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(clientList) {
-        for (var i = 0; i < clientList.length; i++) {
-          var client = clientList[i];
+        for (let i = 0; i < clientList.length; i++) {
+          const client = clientList[i];
           if (client.url === url && 'focus' in client) {
             return client.focus();
           }

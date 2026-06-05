@@ -10,13 +10,13 @@ import {
 } from '../../../components/ui/dialog';
 import { useTranslation, type TranslationKey } from '../../../i18n';
 import { IWorkspace } from '../types';
+import WorkspaceSettingsCredits from './SettingsCredits';
 import WorkspaceSettingsDanger from './SettingsDanger';
 import WorkspaceSettingsFeatures from './SettingsFeatures';
 import WorkspaceSettingsGeneral from './SettingsGeneral';
 import WorkspaceSettingsNotifications from './SettingsNotifications';
 import WorkspaceSettingsPermissions from './SettingsPermissions';
 import WorkspaceSettingsProfile from './SettingsProfile';
-import WorkspaceSettingsCredits from './SettingsCredits';
 import WorkspaceSettingsSubscription from './SettingsSubscription';
 import WorkspaceSettingsUsage from './SettingsUsage';
 import WorkspaceSettingsUsers from './SettingsUsers';

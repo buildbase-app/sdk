@@ -47,6 +47,8 @@ export interface IBaseApiConfig {
   headers?: Record<string, string>;
   /** Error callback — called before error is thrown. */
   onError?: (error: Error, context: { method: string; path: string }) => void;
+  /** Called when any request receives a 401 response (session expired mid-use). */
+  onUnauthorized?: () => void;
   /** Custom fetch implementation. */
   fetch?: typeof globalThis.fetch;
 }
@@ -73,6 +75,7 @@ export abstract class BaseApi {
   private readonly _debug: boolean;
   private readonly _customHeaders: Record<string, string>;
   private readonly _onError?: (error: Error, context: { method: string; path: string }) => void;
+  private readonly _onUnauthorized?: () => void;
   private readonly _fetch: typeof globalThis.fetch;
 
   constructor(config: IBaseApiConfig) {
@@ -87,6 +90,7 @@ export abstract class BaseApi {
     this._debug = config.debug ?? false;
     this._customHeaders = config.headers ?? {};
     this._onError = config.onError;
+    this._onUnauthorized = config.onUnauthorized;
     this._fetch = config.fetch ?? globalThis.fetch;
   }
 
@@ -166,6 +170,11 @@ export abstract class BaseApi {
 
         if (this._debug) {
           console.log(`[BuildBase] ${method} ${fullUrl} → ${response.status}`);
+        }
+
+        // Notify caller on 401 (session expired mid-use)
+        if (response.status === 401 && this._onUnauthorized) {
+          this._onUnauthorized();
         }
 
         // Retry on 5xx (server errors) if retries remaining
@@ -249,5 +258,35 @@ export abstract class BaseApi {
   protected async fetchResponse(path: string, init: RequestInit = {}): Promise<Response> {
     this.ensureReady();
     return this.executeFetch(path, init);
+  }
+
+  /**
+   * Throw an error from a failed response.
+   * Tries to parse JSON error body; falls back to status-based message.
+   */
+  protected async throwResponseError(response: Response, defaultMsg: string): Promise<never> {
+    let errorMessage = defaultMsg;
+    try {
+      const error = await response.json();
+      errorMessage = error.message || errorMessage;
+    } catch {
+      errorMessage = `${defaultMsg} (${response.status}: ${response.statusText})`;
+    }
+    throw new Error(errorMessage);
+  }
+
+  /**
+   * Parse JSON and unwrap `{ success, data }` envelope if present.
+   * Throws if `success` is explicitly `false`.
+   */
+  protected async unwrapResponse<T>(response: Response, defaultMsg: string): Promise<T> {
+    const result = await response.json();
+    if (result.success !== undefined) {
+      if (!result.success) {
+        throw new Error(result.message || defaultMsg);
+      }
+      return (result.data || result) as T;
+    }
+    return result as T;
   }
 }

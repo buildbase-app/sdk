@@ -253,7 +253,14 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
     }
   };
 
-  const getPlanButtonState = (planVersion: IPlanVersionWithPlan) => {
+  const getPlanButtonState = (
+    planVersion: IPlanVersionWithPlan
+  ): {
+    labelKey: string;
+    dynamicLabel?: string;
+    variant: 'default' | 'outline';
+    disabled: boolean;
+  } => {
     const isSamePlan = planVersion._id === currentPlanVersionId;
     const isSameInterval = currentBillingInterval === selectedInterval;
 
@@ -703,8 +710,8 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                                   {t('subscription.seats.maxSeats')}
                                 </span>
                                 <span className="font-medium">
-                                  {(sp as any).maxSeats > 0
-                                    ? fmtNum((sp as any).maxSeats)
+                                  {(sp?.maxSeats ?? 0) > 0
+                                    ? fmtNum(sp!.maxSeats!)
                                     : t('subscription.seats.unlimited')}
                                 </span>
                               </div>
@@ -781,7 +788,7 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                             ? t('pricing.processing')
                             : !hasVariant
                               ? t('pricing.unavailable')
-                              : ((buttonState as any).dynamicLabel ??
+                              : (buttonState.dynamicLabel ??
                                 t(buttonState.labelKey as TranslationKey))}
                         </Button>
                       </div>
@@ -933,7 +940,7 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                                   ? t('pricing.processing')
                                   : !hasVariant
                                     ? t('pricing.unavailable')
-                                    : ((buttonState as any).dynamicLabel ??
+                                    : (buttonState.dynamicLabel ??
                                       t(buttonState.labelKey as TranslationKey))}
                               </Button>
                             </div>
@@ -1161,8 +1168,8 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                                 >
                                   <span className="text-sm font-medium text-slate-700">
                                     {sp?.enabled
-                                      ? (sp as any).maxSeats > 0
-                                        ? fmtNum((sp as any).maxSeats)
+                                      ? (sp?.maxSeats ?? 0) > 0
+                                        ? fmtNum(sp!.maxSeats!)
                                         : t('subscription.seats.unlimited')
                                       : '—'}
                                   </span>
@@ -1271,8 +1278,7 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                           <td className="sticky start-0 z-10 border-t border-slate-100 bg-white p-4 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.06)] group-hover:bg-slate-50/80">
                             <div className="font-medium text-sm text-slate-900">
                               {sortedPlans.every(
-                                v =>
-                                  !v.creditGrant?.enabled || !v.creditGrant.renewOnPeriod
+                                v => !v.creditGrant?.enabled || !v.creditGrant.renewOnPeriod
                               )
                                 ? t('subscription.items.creditsOneTime')
                                 : t('subscription.items.creditsPerMonth')}

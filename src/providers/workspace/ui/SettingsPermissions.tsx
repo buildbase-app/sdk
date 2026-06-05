@@ -1,20 +1,22 @@
 'use client';
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Button } from '../../../components/ui/button';
 import { Switch } from '../../../components/ui/switch';
 import { usePermissionConfig } from '../../../contexts/PermissionContext';
 import { usePermissions } from '../../../hooks/usePermissions';
+import { useSuccessMessage } from '../../../hooks/useSuccessMessage';
 import { useTranslation } from '../../../i18n';
 import { handleError } from '../../../lib/error-handler';
 import { useSaaSSettings } from '../../os/hooks';
 import { useSaaSWorkspaces } from '../hooks';
 import { IWorkspace } from '../types';
+import NoPermission from './NoPermission';
 import SettingSkeleton from './Skeleton';
 
 /**
  * Permissions editor for the SDK settings dialog.
- * Shows app permissions defined by the developer (via SaaSOSProvider `permissions` prop).
+ * Shows app permissions defined by the developer (via SaaSOSProvider `defaultPermissions` prop).
  * Workspace owners can customize which roles get which permissions — saved to backend.
  *
  * Merge order: workspace.permissions (backend) > developer defaults (prop)
@@ -26,14 +28,7 @@ const WorkspaceSettingsPermissions: React.FC<{ workspace: IWorkspace }> = ({ wor
   const { appPermissions } = usePermissionConfig();
   const { updateWorkspacePermissions } = useSaaSWorkspaces();
   const [isSaving, setIsSaving] = useState(false);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const successTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
-
-  useEffect(() => {
-    return () => {
-      if (successTimerRef.current) clearTimeout(successTimerRef.current);
-    };
-  }, []);
+  const success = useSuccessMessage();
 
   const roles = useMemo(
     () => settings?.workspace?.roles ?? workspace.roles ?? [],
@@ -90,7 +85,7 @@ const WorkspaceSettingsPermissions: React.FC<{ workspace: IWorkspace }> = ({ wor
 
   const handleSave = async () => {
     setIsSaving(true);
-    setSuccessMessage(null);
+    success.clear();
     try {
       // Merge app permissions with existing platform permissions (workspace:* prefixed)
       // so we don't wipe platform overrides set via the admin dashboard
@@ -103,9 +98,7 @@ const WorkspaceSettingsPermissions: React.FC<{ workspace: IWorkspace }> = ({ wor
         merged[role] = [...existingPlatform, ...newApp];
       }
       await updateWorkspacePermissions(workspace._id, merged);
-      setSuccessMessage(t('permissions.saveSuccess'));
-      if (successTimerRef.current) clearTimeout(successTimerRef.current);
-      successTimerRef.current = setTimeout(() => setSuccessMessage(null), 5000);
+      success.show(t('permissions.saveSuccess'));
     } catch (error) {
       handleError(error, {
         component: 'WorkspaceSettingsPermissions',
@@ -119,14 +112,14 @@ const WorkspaceSettingsPermissions: React.FC<{ workspace: IWorkspace }> = ({ wor
 
   return (
     <div>
-      {successMessage && (
+      {success.message && (
         <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded mb-4">
           <p className="font-medium">{t('settings.common.success')}</p>
-          <p className="text-sm">{successMessage}</p>
+          <p className="text-sm">{success.message}</p>
         </div>
       )}
 
-      {!isOwner && <div className="text-red-500 mb-4">{t('permissions.ownerOnly')}</div>}
+      {!isOwner && <NoPermission descriptionKey="permissions.ownerOnly" />}
 
       <p className="text-sm text-muted-foreground mb-4">{t('permissions.description')}</p>
 

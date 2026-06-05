@@ -26,7 +26,8 @@ export function mapIUserToAuthUser(userData: IUser, orgId: string, clientId: str
     name: userData.name || '',
     org: orgId,
     email: userData.email,
-    emailVerified: true,
+    emailVerified:
+      (userData as unknown as Record<string, unknown>).emailVerified === false ? false : true,
     clientId,
     role: userData.role || '',
     image: userData.image,

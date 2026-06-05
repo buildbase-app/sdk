@@ -19,6 +19,7 @@ import { Permission } from '../../../lib/permissions';
 import { useSaaSSettings } from '../../os/hooks';
 import { useSaaSWorkspaces } from '../hooks';
 import { IWorkspace } from '../types';
+import NoPermission from './NoPermission';
 import SettingSkeleton from './Skeleton';
 
 const WorkspaceSettingsDanger: React.FC<{ workspace: IWorkspace }> = ({ workspace }) => {
@@ -58,11 +59,7 @@ const WorkspaceSettingsDanger: React.FC<{ workspace: IWorkspace }> = ({ workspac
   };
 
   if (!canDelete) {
-    return (
-      <div className="space-y-4">
-        <div className="text-red-500">{t('danger.adminOnly')}</div>
-      </div>
-    );
+    return <NoPermission descriptionKey="danger.adminOnly" />;
   }
 
   return (

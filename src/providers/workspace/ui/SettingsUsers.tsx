@@ -18,6 +18,7 @@ import { WorkspaceModes } from '../../types';
 import { useSaaSWorkspaces } from '../hooks';
 import { IWorkspace, IWorkspaceUser } from '../types';
 import { isWorkspaceOwner } from '../utils';
+import NoPermission from './NoPermission';
 import SettingSkeleton from './Skeleton';
 
 const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace }) => {
@@ -55,7 +56,7 @@ const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace
       .finally(() => {
         setLoading(false);
       });
-  }, [workspace, refreshCounter]);
+  }, [workspace, refreshCounter, getUsers]);
 
   const refresh = () => {
     setRefreshCounter(prev => prev + 1);
@@ -157,7 +158,7 @@ const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace
   return (
     <div>
       {!canInviteMembers && !canRemoveMembers && !canChangeRoles && (
-        <div className="text-red-500">{t('users.adminOnly')}</div>
+        <NoPermission descriptionKey="users.adminOnly" />
       )}
 
       {canInviteMembers && (

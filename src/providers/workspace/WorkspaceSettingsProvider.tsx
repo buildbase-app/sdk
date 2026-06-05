@@ -1,6 +1,8 @@
 'use client';
 
 import React, { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { SDKErrorBoundary } from '../../components/ErrorBoundary';
+import { handleError } from '../../lib/error-handler';
 import { BBAction, cleanBBParams, readBBParams } from '../../lib/url-params';
 import { useSaaSWorkspaces } from './hooks';
 import { workspaceSettingsManager } from './settings-manager';
@@ -87,7 +89,12 @@ export const WorkspaceSettingsProvider: React.FC<{ children: React.ReactNode }> 
     if (targetWs && targetWs !== currentWorkspace._id) {
       const found = workspaces.find(ws => ws._id === targetWs);
       if (found) {
-        switchToWorkspace(found).catch(() => {
+        switchToWorkspace(found).catch(err => {
+          handleError(err, {
+            component: 'WorkspaceSettingsProvider',
+            action: 'switchWorkspaceFromUrl',
+            metadata: { targetWs },
+          });
           urlHandledRef.current = true;
           cleanBBParams();
         });
@@ -108,22 +115,24 @@ export const WorkspaceSettingsProvider: React.FC<{ children: React.ReactNode }> 
     <>
       {children}
       {currentWorkspace && open && (
-        <Suspense fallback={null}>
-          <WorkspaceSettingsDialog
-            workspace={currentWorkspace}
-            open={open}
-            onOpenChange={isOpen => {
-              if (!isOpen) {
-                workspaceSettingsManager.closeSettings();
-              }
-            }}
-            section={section}
-            onSectionChange={newSection => {
-              workspaceSettingsManager.setSection(newSection);
-            }}
-            showTrigger={false}
-          />
-        </Suspense>
+        <SDKErrorBoundary fallback={null}>
+          <Suspense fallback={null}>
+            <WorkspaceSettingsDialog
+              workspace={currentWorkspace}
+              open={open}
+              onOpenChange={isOpen => {
+                if (!isOpen) {
+                  workspaceSettingsManager.closeSettings();
+                }
+              }}
+              section={section}
+              onSectionChange={newSection => {
+                workspaceSettingsManager.setSection(newSection);
+              }}
+              showTrigger={false}
+            />
+          </Suspense>
+        </SDKErrorBoundary>
       )}
     </>
   );

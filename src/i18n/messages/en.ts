@@ -43,6 +43,10 @@ export const en: SDKMessages = {
       error: 'Error',
       refreshAction: '{loading, select, true {Refreshing...} other {Refresh}}',
       retryAction: '{loading, select, true {Retrying...} other {Retry}}',
+      noPermissionTitle: 'Access Restricted',
+      noPermissionDescription:
+        "You don't have permission to access this section. Contact a workspace admin if you need access.",
+      billingManageOnly: 'Only users with billing management permissions can perform this action.',
     },
   },
   subscription: {

@@ -31,7 +31,8 @@ export class AuthApi extends BaseApi {
 
   /**
    * Initiate OAuth sign-in flow. Returns redirect URL to the auth provider.
-   * Uses /api/v1/auth/request (no 'public' prefix — auth endpoints are at the root).
+   * Uses /api/v1/auth/request — auth endpoints sit outside the /public basePath,
+   * so we build the URL directly instead of using fetchResponse.
    */
   async requestAuth(params: AuthRequestParams): Promise<AuthRequestResponse> {
     const url = `${this.serverUrl}/api/${this.version}/auth/request`;
@@ -40,18 +41,8 @@ export class AuthApi extends BaseApi {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(params),
     });
-
-    if (!response.ok) {
-      let errorMessage = 'Failed to initiate authentication';
-      try {
-        const error = await response.json();
-        errorMessage = error.message || errorMessage;
-      } catch {
-        errorMessage = `Failed to initiate authentication (${response.status}: ${response.statusText})`;
-      }
-      throw new Error(errorMessage);
-    }
-
+    if (!response.ok) await this.throwResponseError(response, 'Failed to initiate authentication');
+    // Return full envelope — caller checks response.success and reads response.data.redirectUrl
     return response.json();
   }
 

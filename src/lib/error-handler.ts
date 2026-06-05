@@ -1,3 +1,4 @@
+import type { TranslationKey } from '../i18n/types';
 import { isAbortError } from './api-utils';
 import { configureLogger, sdkError as logInternalError, sdkLogError } from './logger';
 
@@ -240,4 +241,17 @@ export function createSDKError(
   originalError?: Error
 ): SDKError {
   return new SDKError(message, code, context, originalError);
+}
+
+/**
+ * Extract a user-facing error message from a caught error.
+ * Returns `err.message` for Error instances, or a translated fallback key otherwise.
+ * Used by query/mutation hooks to surface API errors to the UI.
+ */
+export function getHookErrorMessage(
+  err: unknown,
+  fallbackKey: string,
+  t: (key: TranslationKey) => string
+): string {
+  return err instanceof Error ? err.message : t(fallbackKey as TranslationKey);
 }

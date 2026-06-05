@@ -1,9 +1,9 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useMemo, type ReactNode } from 'react';
+import { subscribeCreditBalanceInvalidate } from '../../lib/credit-balance-invalidation';
 import { useCreditBalance } from '../../providers/workspace/credit-hooks';
 import { useAppSelector } from '../shared/useAppSelector';
-import { subscribeCreditBalanceInvalidate } from '../../lib/credit-balance-invalidation';
 import type { CreditBalanceContextValue } from './types';
 
 const CreditBalanceCtx = createContext<CreditBalanceContextValue | null>(null);

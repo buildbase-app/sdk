@@ -1,20 +1,20 @@
 import { CheckCircle2, Coins, Loader2, RefreshCw, ShoppingCart } from 'lucide-react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import {
-  CreditTransactionType,
-} from '../../../api/types';
 import type {
+  CreditTransactionTypeValue,
   ICreditPackage,
   ICreditTransaction,
-  CreditTransactionTypeValue,
 } from '../../../api/types';
+import { CreditTransactionType } from '../../../api/types';
 import { Button } from '../../../components/ui/button';
 import { useCreditBalanceContext } from '../../../contexts/CreditBalanceContext';
+import { usePermissions } from '../../../hooks/usePermissions';
 import { useTranslation, type TranslationKey } from '../../../i18n';
 import { invalidateCreditBalance } from '../../../lib/credit-balance-invalidation';
-import { cn } from '../../../lib/utils';
+import { Permission } from '../../../lib/permissions';
 import { safeRedirect } from '../../../lib/security';
 import { BBAction, BBStatus, createCreditPurchaseRedirectUrls } from '../../../lib/url-params';
+import { cn } from '../../../lib/utils';
 import {
   useCreditPackages,
   useCreditTransactions,
@@ -24,23 +24,10 @@ import {
 import { workspaceSettingsManager } from '../settings-manager';
 import type { IWorkspace } from '../types';
 import CreditPackagesDialog from './CreditPackagesDialog';
+import NoPermission from './NoPermission';
 import SettingSkeleton from './Skeleton';
 
-function formatDate(isoDate: string, locale = 'en-US'): string {
-  try {
-    const date = new Date(isoDate);
-    if (isNaN(date.getTime())) return '';
-    return new Intl.DateTimeFormat(locale, {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    }).format(date);
-  } catch {
-    return '';
-  }
-}
+import { formatDateTime as formatDate } from '../../../lib/format-utils';
 
 const TX_TYPE_KEY: Record<string, TranslationKey> = {
   [CreditTransactionType.PlanGrant]: 'credits.type.plan_grant',
@@ -73,6 +60,9 @@ function getTxBadgeColor(type: CreditTransactionTypeValue): string {
 const WorkspaceSettingsCredits: React.FC<{ workspace: IWorkspace }> = ({ workspace }) => {
   const workspaceId = workspace._id?.toString();
   const { t, fmtNum } = useTranslation();
+  const { can } = usePermissions();
+  const canViewBilling = can(Permission.WORKSPACE_BILLING_VIEW);
+  const canManageBilling = can(Permission.WORKSPACE_BILLING_MANAGE);
   const {
     balance,
     loading: balanceLoading,
@@ -190,6 +180,8 @@ const WorkspaceSettingsCredits: React.FC<{ workspace: IWorkspace }> = ({ workspa
 
   if (loading) return <SettingSkeleton />;
 
+  if (!canViewBilling) return <NoPermission />;
+
   if (!workspaceId) {
     return (
       <div className="border rounded-lg p-4 text-center text-gray-500">
@@ -206,7 +198,7 @@ const WorkspaceSettingsCredits: React.FC<{ workspace: IWorkspace }> = ({ workspa
       <div className="space-y-3">
         <p className="text-sm text-gray-600">{t('credits.description')}</p>
         <div className="flex flex-wrap items-center gap-2">
-          {hasPackages && (
+          {hasPackages && canManageBilling && (
             <Button size="sm" onClick={() => setDialogOpen(true)}>
               <ShoppingCart className="h-3.5 w-3.5 me-1.5" />
               {t('credits.buyCredits')}
@@ -318,7 +310,7 @@ const WorkspaceSettingsCredits: React.FC<{ workspace: IWorkspace }> = ({ workspa
               <Coins className="h-10 w-10 text-gray-300 mx-auto mb-2" />
               <p className="text-sm text-gray-600">{t('credits.noCredits')}</p>
               <p className="text-xs text-gray-500 mt-1">{t('credits.noCreditsHint')}</p>
-              {hasPackages && (
+              {hasPackages && canManageBilling && (
                 <Button size="sm" className="mt-3" onClick={() => setDialogOpen(true)}>
                   <ShoppingCart className="h-3.5 w-3.5 me-1.5" />
                   {t('credits.buyCredits')}
@@ -373,7 +365,7 @@ const WorkspaceSettingsCredits: React.FC<{ workspace: IWorkspace }> = ({ workspa
       </div>
 
       {/* Credit Packages Dialog */}
-      {hasPackages && (
+      {hasPackages && canManageBilling && (
         <CreditPackagesDialog
           open={dialogOpen}
           onOpenChange={setDialogOpen}
@@ -409,9 +401,7 @@ function TransactionRow({ tx }: { tx: ICreditTransaction }) {
             >
               {t(typeKey)}
             </span>
-            {tx.description && (
-              <p className="text-sm text-gray-700 truncate">{tx.description}</p>
-            )}
+            {tx.description && <p className="text-sm text-gray-700 truncate">{tx.description}</p>}
           </div>
           <p className="text-xs text-gray-400">{formatDate(tx.createdAt, formattingLocale)}</p>
         </div>

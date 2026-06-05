@@ -16,11 +16,11 @@ import {
   ICreditTransactionsResponse,
   IExpiringCreditsResponse,
   IInvoiceListResponse,
-  IPublicCreditPackagesResponse,
   IInvoiceResponse,
   IPlanGroupResponse,
   IPlanGroupVersion,
   IPlanGroupVersionsResponse,
+  IPublicCreditPackagesResponse,
   IPublicPlansResponse,
   IQuotaUsageStatusResponse,
   IRecordUsageRequest,
@@ -115,7 +115,7 @@ export interface NotificationEvent {
 }
 
 export class WorkspaceApi extends BaseApi {
-  constructor(config: IOsConfig & { sessionId?: string }) {
+  constructor(config: IOsConfig & { sessionId?: string; onUnauthorized?: () => void }) {
     super({ ...config, requireOrgId: true });
   }
 
@@ -251,33 +251,8 @@ export class WorkspaceApi extends BaseApi {
    */
   async getCurrentSubscription(workspaceId: string): Promise<ISubscriptionResponse> {
     const response = await this.fetchResponse(`workspaces/${workspaceId}/subscription`);
-    if (!response.ok) {
-      let errorMessage = 'Failed to fetch subscription';
-      try {
-        const error = await response.json();
-        errorMessage = error.message || errorMessage;
-      } catch {
-        // If response is not JSON, use status text
-        if (response.status === 404) {
-          errorMessage = 'Workspace not found or no subscription available';
-        } else if (response.status === 401) {
-          errorMessage = 'Unauthorized - Please check your session';
-        } else {
-          errorMessage = `Failed to fetch subscription (${response.status}: ${response.statusText})`;
-        }
-      }
-      throw new Error(errorMessage);
-    }
-    const result = await response.json();
-    // Handle both wrapped and direct response formats
-    if (result.success !== undefined) {
-      if (!result.success) {
-        throw new Error(result.message || 'Failed to fetch subscription');
-      }
-      return result.data || result;
-    }
-    // If no success field, assume the response is the data directly
-    return result;
+    if (!response.ok) await this.throwResponseError(response, 'Failed to fetch subscription');
+    return this.unwrapResponse<ISubscriptionResponse>(response, 'Failed to fetch subscription');
   }
 
   /**
@@ -287,33 +262,8 @@ export class WorkspaceApi extends BaseApi {
    */
   async getPlanGroup(workspaceId: string): Promise<IPlanGroupResponse> {
     const response = await this.fetchResponse(`workspaces/${workspaceId}/subscription/plan-group`);
-    if (!response.ok) {
-      let errorMessage = 'Failed to fetch plan group';
-      try {
-        const error = await response.json();
-        errorMessage = error.message || errorMessage;
-      } catch {
-        // If response is not JSON, use status text
-        if (response.status === 404) {
-          errorMessage = 'No plan group found for this workspace';
-        } else if (response.status === 401) {
-          errorMessage = 'Unauthorized - Please check your session';
-        } else {
-          errorMessage = `Failed to fetch plan group (${response.status}: ${response.statusText})`;
-        }
-      }
-      throw new Error(errorMessage);
-    }
-    const result = await response.json();
-    // Handle both wrapped and direct response formats
-    if (result.success !== undefined) {
-      if (!result.success) {
-        throw new Error(result.message || 'Failed to fetch plan group');
-      }
-      return result.data || result;
-    }
-    // If no success field, assume the response is the data directly
-    return result;
+    if (!response.ok) await this.throwResponseError(response, 'Failed to fetch plan group');
+    return this.unwrapResponse<IPlanGroupResponse>(response, 'Failed to fetch plan group');
   }
 
   /**
@@ -329,32 +279,8 @@ export class WorkspaceApi extends BaseApi {
     const response = await this.fetchResponse(
       `workspaces/${workspaceId}/subscription/plan-group?groupVersionId=${encodeURIComponent(groupVersionId)}`
     );
-    if (!response.ok) {
-      let errorMessage = 'Failed to fetch plan group version';
-      try {
-        const error = await response.json();
-        errorMessage = error.message || errorMessage;
-      } catch {
-        if (response.status === 404) {
-          errorMessage = 'Plan group version not found';
-        } else if (response.status === 401) {
-          errorMessage = 'Unauthorized - Please check your session';
-        } else {
-          errorMessage = `Failed to fetch plan group version (${response.status}: ${response.statusText})`;
-        }
-      }
-      throw new Error(errorMessage);
-    }
-    const result = await response.json();
-    // Handle both wrapped and direct response formats
-    if (result.success !== undefined) {
-      if (!result.success) {
-        throw new Error(result.message || 'Failed to fetch plan group version');
-      }
-      return result.data || result;
-    }
-    // If no success field, assume the response is the data directly
-    return result;
+    if (!response.ok) await this.throwResponseError(response, 'Failed to fetch plan group version');
+    return this.unwrapResponse<IPlanGroupResponse>(response, 'Failed to fetch plan group version');
   }
 
   /**
@@ -370,32 +296,12 @@ export class WorkspaceApi extends BaseApi {
     const response = await this.fetchResponse(
       `workspaces/${workspaceId}/subscription/plan-group/versions`
     );
-    if (!response.ok) {
-      let errorMessage = 'Failed to fetch plan group versions';
-      try {
-        const error = await response.json();
-        errorMessage = error.message || errorMessage;
-      } catch {
-        if (response.status === 404) {
-          errorMessage = 'No plan group versions found';
-        } else if (response.status === 401) {
-          errorMessage = 'Unauthorized - Please check your session';
-        } else {
-          errorMessage = `Failed to fetch plan group versions (${response.status}: ${response.statusText})`;
-        }
-      }
-      throw new Error(errorMessage);
-    }
-    const result = await response.json();
-    // Handle both wrapped and direct response formats
-    if (result.success !== undefined) {
-      if (!result.success) {
-        throw new Error(result.message || 'Failed to fetch plan group versions');
-      }
-      return result.data || result;
-    }
-    // If no success field, assume the response is the data directly
-    return result;
+    if (!response.ok)
+      await this.throwResponseError(response, 'Failed to fetch plan group versions');
+    return this.unwrapResponse<IPlanGroupVersionsResponse>(
+      response,
+      'Failed to fetch plan group versions'
+    );
   }
 
   /**
@@ -409,25 +315,8 @@ export class WorkspaceApi extends BaseApi {
   async getPublicPlans(slug: string): Promise<IPublicPlansResponse> {
     if (!this.orgId) throw new Error('orgId is required for getPublicPlans');
     const response = await this.fetchResponse(`${this.orgId}/plans/${encodeURIComponent(slug)}`);
-    if (!response.ok) {
-      let errorMessage = 'Failed to fetch plans';
-      try {
-        const error = await response.json();
-        errorMessage = error.message || errorMessage;
-      } catch {
-        if (response.status === 404) {
-          errorMessage = `Plans "${slug}" not found`;
-        } else {
-          errorMessage = `Failed to fetch plans (${response.status}: ${response.statusText})`;
-        }
-      }
-      throw new Error(errorMessage);
-    }
-    const result = await response.json();
-    if (result.success !== undefined && !result.success) {
-      throw new Error(result.message || 'Failed to fetch plans');
-    }
-    return result.data ?? result;
+    if (!response.ok) await this.throwResponseError(response, 'Failed to fetch plans');
+    return this.unwrapResponse<IPublicPlansResponse>(response, 'Failed to fetch plans');
   }
 
   /**
@@ -440,21 +329,11 @@ export class WorkspaceApi extends BaseApi {
   async getPublicCreditPackages(): Promise<IPublicCreditPackagesResponse> {
     if (!this.orgId) throw new Error('orgId is required for getPublicCreditPackages');
     const response = await this.fetchResponse(`${this.orgId}/credit-packages`);
-    if (!response.ok) {
-      let errorMessage = 'Failed to fetch credit packages';
-      try {
-        const error = await response.json();
-        errorMessage = error.message || errorMessage;
-      } catch {
-        errorMessage = `Failed to fetch credit packages (${response.status}: ${response.statusText})`;
-      }
-      throw new Error(errorMessage);
-    }
-    const result = await response.json();
-    if (result.success !== undefined && !result.success) {
-      throw new Error(result.message || 'Failed to fetch credit packages');
-    }
-    return result.data ?? result;
+    if (!response.ok) await this.throwResponseError(response, 'Failed to fetch credit packages');
+    return this.unwrapResponse<IPublicCreditPackagesResponse>(
+      response,
+      'Failed to fetch credit packages'
+    );
   }
 
   /**
@@ -467,32 +346,8 @@ export class WorkspaceApi extends BaseApi {
    */
   async getPlanGroupVersion(groupVersionId: string): Promise<IPlanGroupVersion> {
     const response = await this.fetchResponse(`plan-group-versions/${groupVersionId}`);
-    if (!response.ok) {
-      let errorMessage = 'Failed to fetch plan group version';
-      try {
-        const error = await response.json();
-        errorMessage = error.message || errorMessage;
-      } catch {
-        if (response.status === 404) {
-          errorMessage = 'Plan group version not found';
-        } else if (response.status === 401) {
-          errorMessage = 'Unauthorized - Please check your session';
-        } else {
-          errorMessage = `Failed to fetch plan group version (${response.status}: ${response.statusText})`;
-        }
-      }
-      throw new Error(errorMessage);
-    }
-    const result = await response.json();
-    // Handle both wrapped and direct response formats
-    if (result.success !== undefined) {
-      if (!result.success) {
-        throw new Error(result.message || 'Failed to fetch plan group version');
-      }
-      return result.data || result;
-    }
-    // If no success field, assume the response is the data directly
-    return result;
+    if (!response.ok) await this.throwResponseError(response, 'Failed to fetch plan group version');
+    return this.unwrapResponse<IPlanGroupVersion>(response, 'Failed to fetch plan group version');
   }
 
   /**
@@ -509,28 +364,8 @@ export class WorkspaceApi extends BaseApi {
       method: 'POST',
       body: JSON.stringify(request),
     });
-
-    if (!response.ok) {
-      let errorMessage = 'Failed to create checkout session';
-      try {
-        const error = await response.json();
-        errorMessage = error.message || errorMessage;
-      } catch {
-        errorMessage = `Failed to create checkout session (${response.status}: ${response.statusText})`;
-      }
-      throw new Error(errorMessage);
-    }
-
-    const result = await response.json();
-    // Handle both wrapped and direct response formats
-    if (result.success !== undefined) {
-      if (!result.success) {
-        throw new Error(result.message || 'Failed to create checkout session');
-      }
-      return result.data || result;
-    }
-    // If no success field, assume the response is the data directly
-    return result;
+    if (!response.ok) await this.throwResponseError(response, 'Failed to create checkout session');
+    return this.unwrapResponse<CheckoutResult>(response, 'Failed to create checkout session');
   }
 
   async selectFreePlan(
@@ -544,20 +379,9 @@ export class WorkspaceApi extends BaseApi {
         body: JSON.stringify({ planVersionId }),
       }
     );
-
-    if (!response.ok) {
-      let errorMessage = 'Failed to select free plan';
-      try {
-        const error = await response.json();
-        errorMessage = error.message || errorMessage;
-      } catch {
-        errorMessage = `Failed to select free plan (${response.status}: ${response.statusText})`;
-      }
-      throw new Error(errorMessage);
-    }
-
-    const result = await response.json();
-    return result.data || result;
+    if (!response.ok) await this.throwResponseError(response, 'Failed to select free plan');
+    // Return full response — type includes success/message which callers may use
+    return response.json();
   }
 
   /**
@@ -573,36 +397,11 @@ export class WorkspaceApi extends BaseApi {
       method: 'PATCH',
       body: JSON.stringify(request),
     });
-
-    if (!response.ok) {
-      let errorMessage = 'Failed to update subscription';
-      try {
-        const error = await response.json();
-        errorMessage = error.message || errorMessage;
-      } catch {
-        errorMessage = `Failed to update subscription (${response.status}: ${response.statusText})`;
-      }
-      throw new Error(errorMessage);
-    }
-
-    const result = await response.json();
-    // Handle both wrapped and direct response formats
-    if (result.success !== undefined) {
-      if (!result.success) {
-        throw new Error(result.message || 'Failed to update subscription');
-      }
-      // Check if response contains checkoutUrl (checkout session) or subscription data
-      if (result.data?.checkoutUrl || result.checkoutUrl) {
-        return result.data || result;
-      }
-      return result.data || result;
-    }
-    // If no success field, check if it's a checkout session response
-    if (result.checkoutUrl) {
-      return result;
-    }
-    // Otherwise assume it's the subscription update response
-    return result;
+    if (!response.ok) await this.throwResponseError(response, 'Failed to update subscription');
+    return this.unwrapResponse<ISubscriptionUpdateResponse | ICheckoutSessionResponse>(
+      response,
+      'Failed to update subscription'
+    );
   }
 
   /**
@@ -638,37 +437,10 @@ export class WorkspaceApi extends BaseApi {
     }
 
     const response = await this.fetchResponse(
-      `workspaces/${workspaceId}/subscription/invoices?${params.toString()}`,
-      {}
+      `workspaces/${workspaceId}/subscription/invoices?${params.toString()}`
     );
-
-    if (!response.ok) {
-      let errorMessage = 'Failed to fetch invoices';
-      try {
-        const error = await response.json();
-        errorMessage = error.message || errorMessage;
-      } catch {
-        if (response.status === 404) {
-          errorMessage = 'Workspace not found or no invoices available';
-        } else if (response.status === 401) {
-          errorMessage = 'Unauthorized - Please check your session';
-        } else {
-          errorMessage = `Failed to fetch invoices (${response.status}: ${response.statusText})`;
-        }
-      }
-      throw new Error(errorMessage);
-    }
-
-    const result = await response.json();
-    // Handle both wrapped and direct response formats
-    if (result.success !== undefined) {
-      if (!result.success) {
-        throw new Error(result.message || 'Failed to fetch invoices');
-      }
-      return result;
-    }
-    // If no success field, assume the response is the data directly
-    return result;
+    if (!response.ok) await this.throwResponseError(response, 'Failed to fetch invoices');
+    return this.unwrapResponse<IInvoiceListResponse>(response, 'Failed to fetch invoices');
   }
 
   /**
@@ -679,37 +451,10 @@ export class WorkspaceApi extends BaseApi {
    */
   async getInvoice(workspaceId: string, invoiceId: string): Promise<IInvoiceResponse> {
     const response = await this.fetchResponse(
-      `workspaces/${workspaceId}/subscription/invoices/${invoiceId}`,
-      {}
+      `workspaces/${workspaceId}/subscription/invoices/${invoiceId}`
     );
-
-    if (!response.ok) {
-      let errorMessage = 'Failed to fetch invoice';
-      try {
-        const error = await response.json();
-        errorMessage = error.message || errorMessage;
-      } catch {
-        if (response.status === 404) {
-          errorMessage = 'Invoice not found';
-        } else if (response.status === 401) {
-          errorMessage = 'Unauthorized - Please check your session';
-        } else {
-          errorMessage = `Failed to fetch invoice (${response.status}: ${response.statusText})`;
-        }
-      }
-      throw new Error(errorMessage);
-    }
-
-    const result = await response.json();
-    // Handle both wrapped and direct response formats
-    if (result.success !== undefined) {
-      if (!result.success) {
-        throw new Error(result.message || 'Failed to fetch invoice');
-      }
-      return result;
-    }
-    // If no success field, assume the response is the data directly
-    return result;
+    if (!response.ok) await this.throwResponseError(response, 'Failed to fetch invoice');
+    return this.unwrapResponse<IInvoiceResponse>(response, 'Failed to fetch invoice');
   }
 
   /**
@@ -723,33 +468,8 @@ export class WorkspaceApi extends BaseApi {
       `workspaces/${workspaceId}/subscription/cancel-at-period-end`,
       { method: 'POST' }
     );
-
-    if (!response.ok) {
-      let errorMessage = 'Failed to cancel subscription';
-      try {
-        const error = await response.json();
-        errorMessage = error.message || errorMessage;
-      } catch {
-        if (response.status === 404) {
-          errorMessage = 'Subscription not found';
-        } else if (response.status === 401) {
-          errorMessage = 'Unauthorized - Please check your session';
-        } else {
-          errorMessage = `Failed to cancel subscription (${response.status}: ${response.statusText})`;
-        }
-      }
-      throw new Error(errorMessage);
-    }
-
-    const result = await response.json();
-    // Handle both wrapped and direct response formats
-    if (result.success !== undefined) {
-      if (!result.success) {
-        throw new Error(result.message || 'Failed to cancel subscription');
-      }
-      return result.data || result;
-    }
-    return result;
+    if (!response.ok) await this.throwResponseError(response, 'Failed to cancel subscription');
+    return this.unwrapResponse<ISubscriptionResponse>(response, 'Failed to cancel subscription');
   }
 
   /**
@@ -762,33 +482,8 @@ export class WorkspaceApi extends BaseApi {
     const response = await this.fetchResponse(`workspaces/${workspaceId}/subscription/resume`, {
       method: 'POST',
     });
-
-    if (!response.ok) {
-      let errorMessage = 'Failed to resume subscription';
-      try {
-        const error = await response.json();
-        errorMessage = error.message || errorMessage;
-      } catch {
-        if (response.status === 404) {
-          errorMessage = 'Subscription not found';
-        } else if (response.status === 401) {
-          errorMessage = 'Unauthorized - Please check your session';
-        } else {
-          errorMessage = `Failed to resume subscription (${response.status}: ${response.statusText})`;
-        }
-      }
-      throw new Error(errorMessage);
-    }
-
-    const result = await response.json();
-    // Handle both wrapped and direct response formats
-    if (result.success !== undefined) {
-      if (!result.success) {
-        throw new Error(result.message || 'Failed to resume subscription');
-      }
-      return result.data || result;
-    }
-    return result;
+    if (!response.ok) await this.throwResponseError(response, 'Failed to resume subscription');
+    return this.unwrapResponse<ISubscriptionResponse>(response, 'Failed to resume subscription');
   }
 
   // Quota Usage Methods
@@ -807,26 +502,8 @@ export class WorkspaceApi extends BaseApi {
       method: 'POST',
       body: JSON.stringify(request),
     });
-
-    if (!response.ok) {
-      let errorMessage = 'Failed to record usage';
-      try {
-        const error = await response.json();
-        errorMessage = error.message || errorMessage;
-      } catch {
-        errorMessage = `Failed to record usage (${response.status}: ${response.statusText})`;
-      }
-      throw new Error(errorMessage);
-    }
-
-    const result = await response.json();
-    if (result.success !== undefined) {
-      if (!result.success) {
-        throw new Error(result.message || 'Failed to record usage');
-      }
-      return result.data || result;
-    }
-    return result;
+    if (!response.ok) await this.throwResponseError(response, 'Failed to record usage');
+    return this.unwrapResponse<IRecordUsageResponse>(response, 'Failed to record usage');
   }
 
   /**
@@ -869,20 +546,8 @@ export class WorkspaceApi extends BaseApi {
         body: JSON.stringify(request),
       }
     );
-
-    if (!response.ok) {
-      let errorMessage = 'Failed to record batch usage';
-      try {
-        const error = await response.json();
-        errorMessage = error.message || errorMessage;
-      } catch {
-        errorMessage = `Failed to record batch usage (${response.status}: ${response.statusText})`;
-      }
-      throw new Error(errorMessage);
-    }
-
-    const result = await response.json();
-    return result.data || result;
+    if (!response.ok) await this.throwResponseError(response, 'Failed to record batch usage');
+    return this.unwrapResponse(response, 'Failed to record batch usage');
   }
 
   /**
@@ -898,32 +563,11 @@ export class WorkspaceApi extends BaseApi {
     const response = await this.fetchResponse(
       `workspaces/${workspaceId}/subscription/usage/status?quotaSlug=${encodeURIComponent(quotaSlug)}`
     );
-
-    if (!response.ok) {
-      let errorMessage = 'Failed to fetch quota usage status';
-      try {
-        const error = await response.json();
-        errorMessage = error.message || errorMessage;
-      } catch {
-        if (response.status === 404) {
-          errorMessage = 'Workspace not found or no subscription available';
-        } else if (response.status === 401) {
-          errorMessage = 'Unauthorized - Please check your session';
-        } else {
-          errorMessage = `Failed to fetch quota usage status (${response.status}: ${response.statusText})`;
-        }
-      }
-      throw new Error(errorMessage);
-    }
-
-    const result = await response.json();
-    if (result.success !== undefined) {
-      if (!result.success) {
-        throw new Error(result.message || 'Failed to fetch quota usage status');
-      }
-      return result.data || result;
-    }
-    return result;
+    if (!response.ok) await this.throwResponseError(response, 'Failed to fetch quota usage status');
+    return this.unwrapResponse<IQuotaUsageStatusResponse>(
+      response,
+      'Failed to fetch quota usage status'
+    );
   }
 
   /**
@@ -933,32 +577,8 @@ export class WorkspaceApi extends BaseApi {
    */
   async getAllQuotaUsage(workspaceId: string): Promise<IAllQuotaUsageResponse> {
     const response = await this.fetchResponse(`workspaces/${workspaceId}/subscription/usage/all`);
-
-    if (!response.ok) {
-      let errorMessage = 'Failed to fetch all quota usage';
-      try {
-        const error = await response.json();
-        errorMessage = error.message || errorMessage;
-      } catch {
-        if (response.status === 404) {
-          errorMessage = 'Workspace not found or no subscription available';
-        } else if (response.status === 401) {
-          errorMessage = 'Unauthorized - Please check your session';
-        } else {
-          errorMessage = `Failed to fetch all quota usage (${response.status}: ${response.statusText})`;
-        }
-      }
-      throw new Error(errorMessage);
-    }
-
-    const result = await response.json();
-    if (result.success !== undefined) {
-      if (!result.success) {
-        throw new Error(result.message || 'Failed to fetch all quota usage');
-      }
-      return result.data || result;
-    }
-    return result;
+    if (!response.ok) await this.throwResponseError(response, 'Failed to fetch all quota usage');
+    return this.unwrapResponse<IAllQuotaUsageResponse>(response, 'Failed to fetch all quota usage');
   }
 
   /**
@@ -980,32 +600,8 @@ export class WorkspaceApi extends BaseApi {
     const url = `workspaces/${workspaceId}/subscription/usage/logs${queryString ? `?${queryString}` : ''}`;
 
     const response = await this.fetchResponse(url);
-
-    if (!response.ok) {
-      let errorMessage = 'Failed to fetch usage logs';
-      try {
-        const error = await response.json();
-        errorMessage = error.message || errorMessage;
-      } catch {
-        if (response.status === 404) {
-          errorMessage = 'Workspace not found';
-        } else if (response.status === 401) {
-          errorMessage = 'Unauthorized - Please check your session';
-        } else {
-          errorMessage = `Failed to fetch usage logs (${response.status}: ${response.statusText})`;
-        }
-      }
-      throw new Error(errorMessage);
-    }
-
-    const result = await response.json();
-    if (result.success !== undefined) {
-      if (!result.success) {
-        throw new Error(result.message || 'Failed to fetch usage logs');
-      }
-      return result.data || result;
-    }
-    return result;
+    if (!response.ok) await this.throwResponseError(response, 'Failed to fetch usage logs');
+    return this.unwrapResponse<IUsageLogsResponse>(response, 'Failed to fetch usage logs');
   }
 
   // Notification Preferences
@@ -1100,30 +696,8 @@ export class WorkspaceApi extends BaseApi {
    */
   async getCreditBalance(workspaceId: string): Promise<ICreditBalance> {
     const response = await this.fetchResponse(`workspaces/${workspaceId}/credits`);
-    if (!response.ok) {
-      let errorMessage = 'Failed to fetch credit balance';
-      try {
-        const error = await response.json();
-        errorMessage = error.message || errorMessage;
-      } catch {
-        if (response.status === 404) {
-          errorMessage = 'Workspace not found';
-        } else if (response.status === 401) {
-          errorMessage = 'Unauthorized - Please check your session';
-        } else {
-          errorMessage = `Failed to fetch credit balance (${response.status}: ${response.statusText})`;
-        }
-      }
-      throw new Error(errorMessage);
-    }
-    const result = await response.json();
-    if (result.success !== undefined) {
-      if (!result.success) {
-        throw new Error(result.message || 'Failed to fetch credit balance');
-      }
-      return result.data || result;
-    }
-    return result;
+    if (!response.ok) await this.throwResponseError(response, 'Failed to fetch credit balance');
+    return this.unwrapResponse<ICreditBalance>(response, 'Failed to fetch credit balance');
   }
 
   /**
@@ -1143,29 +717,19 @@ export class WorkspaceApi extends BaseApi {
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
       if (response.status === 402) {
-        const err = new Error(
+        const errorData = await response.json().catch(() => ({}));
+        const err: Error & { available?: number; requested?: number; code?: string } = new Error(
           errorData.message || 'Insufficient credits'
-        ) as any;
+        );
         err.available = errorData.available;
         err.requested = errorData.requested;
         err.code = 'INSUFFICIENT_CREDITS';
         throw err;
       }
-      throw new Error(
-        errorData.message || `Failed to consume credits (${response.status}: ${response.statusText})`
-      );
+      await this.throwResponseError(response, 'Failed to consume credits');
     }
-
-    const result = await response.json();
-    if (result.success !== undefined) {
-      if (!result.success) {
-        throw new Error(result.message || 'Failed to consume credits');
-      }
-      return result.data || result;
-    }
-    return result;
+    return this.unwrapResponse<IConsumeCreditsResponse>(response, 'Failed to consume credits');
   }
 
   /**
@@ -1184,25 +748,12 @@ export class WorkspaceApi extends BaseApi {
       body: JSON.stringify(request),
     });
 
-    if (!response.ok) {
-      let errorMessage = 'Failed to create credit purchase checkout';
-      try {
-        const error = await response.json();
-        errorMessage = error.message || errorMessage;
-      } catch {
-        errorMessage = `Failed to create credit purchase checkout (${response.status}: ${response.statusText})`;
-      }
-      throw new Error(errorMessage);
-    }
-
-    const result = await response.json();
-    if (result.success !== undefined) {
-      if (!result.success) {
-        throw new Error(result.message || 'Failed to create credit purchase checkout');
-      }
-      return result.data || result;
-    }
-    return result;
+    if (!response.ok)
+      await this.throwResponseError(response, 'Failed to create credit purchase checkout');
+    return this.unwrapResponse<ICreditPurchaseResponse>(
+      response,
+      'Failed to create credit purchase checkout'
+    );
   }
 
   /**
@@ -1213,25 +764,9 @@ export class WorkspaceApi extends BaseApi {
    */
   async getCreditPackages(workspaceId: string): Promise<ICreditPackage[]> {
     const response = await this.fetchResponse(`workspaces/${workspaceId}/credits/packages`);
-    if (!response.ok) {
-      let errorMessage = 'Failed to fetch credit packages';
-      try {
-        const error = await response.json();
-        errorMessage = error.message || errorMessage;
-      } catch {
-        errorMessage = `Failed to fetch credit packages (${response.status}: ${response.statusText})`;
-      }
-      throw new Error(errorMessage);
-    }
-    const result = await response.json();
-    if (result.success !== undefined) {
-      if (!result.success) {
-        throw new Error(result.message || 'Failed to fetch credit packages');
-      }
-      const data = result.data || result;
-      return data.docs ?? data;
-    }
-    return result.docs ?? result;
+    if (!response.ok) await this.throwResponseError(response, 'Failed to fetch credit packages');
+    const data = await this.unwrapResponse<any>(response, 'Failed to fetch credit packages');
+    return data.docs ?? data;
   }
 
   /**
@@ -1253,24 +788,12 @@ export class WorkspaceApi extends BaseApi {
     const url = `workspaces/${workspaceId}/credits/transactions${queryString ? `?${queryString}` : ''}`;
 
     const response = await this.fetchResponse(url);
-    if (!response.ok) {
-      let errorMessage = 'Failed to fetch credit transactions';
-      try {
-        const error = await response.json();
-        errorMessage = error.message || errorMessage;
-      } catch {
-        errorMessage = `Failed to fetch credit transactions (${response.status}: ${response.statusText})`;
-      }
-      throw new Error(errorMessage);
-    }
-    const result = await response.json();
-    if (result.success !== undefined) {
-      if (!result.success) {
-        throw new Error(result.message || 'Failed to fetch credit transactions');
-      }
-      return result.data || result;
-    }
-    return result;
+    if (!response.ok)
+      await this.throwResponseError(response, 'Failed to fetch credit transactions');
+    return this.unwrapResponse<ICreditTransactionsResponse>(
+      response,
+      'Failed to fetch credit transactions'
+    );
   }
 
   /**
@@ -1293,24 +816,8 @@ export class WorkspaceApi extends BaseApi {
     const url = `workspaces/${workspaceId}/credits/buckets${queryString ? `?${queryString}` : ''}`;
 
     const response = await this.fetchResponse(url);
-    if (!response.ok) {
-      let errorMessage = 'Failed to fetch credit buckets';
-      try {
-        const error = await response.json();
-        errorMessage = error.message || errorMessage;
-      } catch {
-        errorMessage = `Failed to fetch credit buckets (${response.status}: ${response.statusText})`;
-      }
-      throw new Error(errorMessage);
-    }
-    const result = await response.json();
-    if (result.success !== undefined) {
-      if (!result.success) {
-        throw new Error(result.message || 'Failed to fetch credit buckets');
-      }
-      return result.data || result;
-    }
-    return result;
+    if (!response.ok) await this.throwResponseError(response, 'Failed to fetch credit buckets');
+    return this.unwrapResponse<ICreditBucketsResponse>(response, 'Failed to fetch credit buckets');
   }
 
   /**
@@ -1319,31 +826,15 @@ export class WorkspaceApi extends BaseApi {
    * @param days - Look-ahead window in days (1-90, default 7)
    * @returns Expiring credits summary with bucket list
    */
-  async getExpiringCredits(
-    workspaceId: string,
-    days?: number
-  ): Promise<IExpiringCreditsResponse> {
+  async getExpiringCredits(workspaceId: string, days?: number): Promise<IExpiringCreditsResponse> {
     const params = days ? `?days=${days}` : '';
     const response = await this.fetchResponse(
       `workspaces/${workspaceId}/credits/expiring${params}`
     );
-    if (!response.ok) {
-      let errorMessage = 'Failed to fetch expiring credits';
-      try {
-        const error = await response.json();
-        errorMessage = error.message || errorMessage;
-      } catch {
-        errorMessage = `Failed to fetch expiring credits (${response.status}: ${response.statusText})`;
-      }
-      throw new Error(errorMessage);
-    }
-    const result = await response.json();
-    if (result.success !== undefined) {
-      if (!result.success) {
-        throw new Error(result.message || 'Failed to fetch expiring credits');
-      }
-      return result.data || result;
-    }
-    return result;
+    if (!response.ok) await this.throwResponseError(response, 'Failed to fetch expiring credits');
+    return this.unwrapResponse<IExpiringCreditsResponse>(
+      response,
+      'Failed to fetch expiring credits'
+    );
   }
 }
