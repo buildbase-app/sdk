@@ -43,6 +43,10 @@ export const hi: SDKMessages = {
       error: 'त्रुटि',
       refreshAction: '{loading, select, true {रीफ़्रेश हो रहा है...} other {रीफ़्रेश}}',
       retryAction: '{loading, select, true {पुनः प्रयास हो रहा है...} other {पुनः प्रयास}}',
+      noPermissionTitle: 'पहुँच प्रतिबंधित',
+      noPermissionDescription:
+        'आपके पास इस अनुभाग तक पहुँचने की अनुमति नहीं है। यदि आपको पहुँच की आवश्यकता है तो कार्यक्षेत्र व्यवस्थापक से संपर्क करें।',
+      billingManageOnly: 'केवल बिलिंग प्रबंधन अनुमतियों वाले उपयोगकर्ता ही यह कार्य कर सकते हैं।',
     },
   },
   subscription: {
@@ -532,7 +536,8 @@ export const hi: SDKMessages = {
     totalConsumed: 'कुल उपभोग किया गया',
     totalExpired: 'कुल समाप्त हुआ',
     noCredits: 'अभी कोई क्रेडिट नहीं',
-    noCreditsHint: 'जब आपके प्लान द्वारा प्रदान किया जाएगा या खरीदा जाएगा तो क्रेडिट यहाँ दिखाई देंगे।',
+    noCreditsHint:
+      'जब आपके प्लान द्वारा प्रदान किया जाएगा या खरीदा जाएगा तो क्रेडिट यहाँ दिखाई देंगे।',
     buyCredits: 'क्रेडिट खरीदें',
     buyAmount: 'Buy {count} Credits',
     purchasing: 'रीडायरेक्ट हो रहा है...',

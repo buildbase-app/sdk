@@ -2,8 +2,11 @@ import { Download, ExternalLink, FileText } from 'lucide-react';
 import React from 'react';
 import { IInvoice, InvoiceStatuses } from '../../../api/types';
 import { Button } from '../../../components/ui/button';
+import { usePermissions } from '../../../hooks/usePermissions';
 import { useTranslation, type TranslationKey } from '../../../i18n';
+import { Permission } from '../../../lib/permissions';
 import { useInvoices } from '../subscription-hooks';
+import NoPermission from './NoPermission';
 import SettingSkeleton from './Skeleton';
 
 // Helper function to format currency amount. Caller must pass currency and locale.
@@ -17,15 +20,7 @@ const formatCurrency = (amount: number, currency: string, locale = 'en-US'): str
   }).format(amount / 100);
 };
 
-// Helper function to format date
-const formatDate = (timestamp: number | null, locale = 'en-US'): string => {
-  if (!timestamp) return '';
-  return new Date(timestamp * 1000).toLocaleDateString(locale, {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  });
-};
+import { formatUnixDate as formatDate } from '../../../lib/format-utils';
 
 // Helper function to get invoice action button text and status color
 const getInvoiceAction = (invoice: IInvoice) => {
@@ -78,12 +73,16 @@ const SettingsInvoices: React.FC<SettingsInvoicesProps> = ({
   limit = 20,
 }) => {
   const { t, formattingLocale } = useTranslation();
+  const { can } = usePermissions();
+  const canViewBilling = can(Permission.WORKSPACE_BILLING_VIEW);
   const {
     invoices,
     loading: invoicesLoading,
     error: invoicesError,
     refetch: refetchInvoices,
   } = useInvoices(workspaceId, limit);
+
+  if (!canViewBilling) return <NoPermission />;
 
   const hasInvoices = invoices.length > 0;
 

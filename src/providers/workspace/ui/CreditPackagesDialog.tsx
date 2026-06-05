@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from 'react';
 import { Coins } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
 import { getCurrencySymbol } from '../../../api/billing/currency-utils';
 import type { ICreditPackage } from '../../../api/types';
 import { Button } from '../../../components/ui/button';
@@ -118,9 +118,8 @@ const CreditPackagesDialog: React.FC<CreditPackagesDialogProps> = ({
             <div className="max-w-2xl mx-auto px-4 py-6 sm:px-6 space-y-4">
               {packages.map(pkg => {
                 const variant =
-                  pkg.pricingVariants?.find(
-                    v => v.currency?.toLowerCase() === effectiveCurrency
-                  ) ?? pkg.pricingVariants?.[0];
+                  pkg.pricingVariants?.find(v => v.currency?.toLowerCase() === effectiveCurrency) ??
+                  pkg.pricingVariants?.[0];
                 const price = variant?.amount;
                 const variantCurrency = variant?.currency ?? effectiveCurrency;
                 const isPurchasing = purchasingPackageId === pkg._id;

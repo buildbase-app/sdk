@@ -4,7 +4,6 @@
  */
 
 import { BaseApi } from '../../lib/api-base';
-import { getErrorMessage } from '../../lib/api-utils';
 import type { IUser } from '../types';
 import type { IOsConfig } from './shared-types';
 
@@ -15,10 +14,11 @@ export class UserApi extends BaseApi {
 
   async getAttributes(signal?: AbortSignal): Promise<Record<string, string | number | boolean>> {
     const response = await this.fetchResponse('users/attributes', { signal });
-    if (!response.ok) {
-      throw new Error(await getErrorMessage(response, 'Failed to fetch user attributes'));
-    }
-    const data = await response.json();
+    if (!response.ok) await this.throwResponseError(response, 'Failed to fetch user attributes');
+    const data = await this.unwrapResponse<Record<string, unknown>>(
+      response,
+      'Failed to fetch user attributes'
+    );
     if (data && typeof data === 'object' && !Array.isArray(data)) {
       return data as Record<string, string | number | boolean>;
     }
@@ -49,10 +49,11 @@ export class UserApi extends BaseApi {
 
   async getFeatures(signal?: AbortSignal): Promise<Record<string, boolean>> {
     const response = await this.fetchResponse('users/features', { signal });
-    if (!response.ok) {
-      throw new Error(await getErrorMessage(response, 'Failed to fetch user features'));
-    }
-    const data = await response.json();
+    if (!response.ok) await this.throwResponseError(response, 'Failed to fetch user features');
+    const data = await this.unwrapResponse<Record<string, unknown>>(
+      response,
+      'Failed to fetch user features'
+    );
     if (typeof data === 'object' && data !== null) {
       return data as Record<string, boolean>;
     }

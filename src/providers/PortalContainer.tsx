@@ -17,12 +17,9 @@ const PortalProvider = React.memo(({ children }: { children: React.ReactNode }) 
   // Memoize context value to prevent unnecessary re-renders
   const contextValue = React.useMemo(() => ({ container, setContainer }), [container]);
 
-  // Memoize children to prevent unnecessary re-renders
-  const memoizedChildren = React.useMemo(() => children, [children]);
-
   return (
     <PortalContext.Provider value={contextValue}>
-      {memoizedChildren}
+      {children}
       <div
         ref={setContainer}
         id="saas-os-portal"

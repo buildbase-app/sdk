@@ -43,6 +43,9 @@ export const zh: SDKMessages = {
       error: '错误',
       refreshAction: '{loading, select, true {正在刷新...} other {刷新}}',
       retryAction: '{loading, select, true {正在重试...} other {重试}}',
+      noPermissionTitle: '访问受限',
+      noPermissionDescription: '您没有权限访问此部分。如需访问权限，请联系工作区管理员。',
+      billingManageOnly: '只有具有账单管理权限的用户才能执行此操作。',
     },
   },
   subscription: {

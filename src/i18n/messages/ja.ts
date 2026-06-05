@@ -43,6 +43,10 @@ export const ja: SDKMessages = {
       error: 'エラー',
       refreshAction: '{loading, select, true {更新中...} other {更新}}',
       retryAction: '{loading, select, true {再試行中...} other {再試行}}',
+      noPermissionTitle: 'アクセス制限',
+      noPermissionDescription:
+        'このセクションにアクセスする権限がありません。アクセスが必要な場合は、ワークスペース管理者にお問い合わせください。',
+      billingManageOnly: '請求管理権限を持つユーザーのみがこの操作を実行できます。',
     },
   },
   subscription: {
@@ -561,7 +565,8 @@ export const ja: SDKMessages = {
     perCredit: '{price} per credit',
     purchaseSuccess: 'クレジットの購入が完了しました！残高が更新されました。',
     purchaseCanceled: 'クレジットの購入がキャンセルされました。課金は発生していません。',
-    purchaseFailed: 'クレジットの購入に失敗しました。再度お試しいただくか、サポートにお問い合わせください。',
+    purchaseFailed:
+      'クレジットの購入に失敗しました。再度お試しいただくか、サポートにお問い合わせください。',
     errorLoading: 'クレジットデータの読み込みに失敗しました',
     insufficientCredits: 'クレジットが不足しています',
   },

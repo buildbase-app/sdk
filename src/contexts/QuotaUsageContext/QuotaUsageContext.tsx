@@ -1,8 +1,8 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useMemo, type ReactNode } from 'react';
-import { useSaaSWorkspaces } from '../../providers/workspace/hooks';
 import { useAllQuotaUsage } from '../../providers/workspace/subscription-hooks';
+import { useAppSelector } from '../shared/useAppSelector';
 import { subscribeQuotaUsageInvalidate } from './quotaUsageInvalidation';
 import type { QuotaUsageContextValue } from './types';
 
@@ -24,7 +24,8 @@ const CONTEXT_ERROR =
  */
 export const QuotaUsageContextProvider: React.FC<{ children: ReactNode }> = React.memo(
   function QuotaUsageContextProvider({ children }) {
-    const { currentWorkspace } = useSaaSWorkspaces();
+    // Read workspace directly from context (not from useSaaSWorkspaces) to avoid circular dependency
+    const currentWorkspace = useAppSelector(state => state.workspaces.currentWorkspace);
     const { quotas, loading, error, refetch } = useAllQuotaUsage(currentWorkspace?._id);
 
     useEffect(() => {

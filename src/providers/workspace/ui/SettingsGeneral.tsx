@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ImageIcon, Smile } from 'lucide-react';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { getCurrencyFlag } from '../../../api/billing/currency-utils';
@@ -19,11 +19,13 @@ import { Label } from '../../../components/ui/label';
 import { RadioGroup, RadioGroupItem } from '../../../components/ui/radio-group';
 import { ScrollArea } from '../../../components/ui/scroll-area';
 import { usePermissions } from '../../../hooks/usePermissions';
+import { useSuccessMessage } from '../../../hooks/useSuccessMessage';
 import { useTranslation } from '../../../i18n';
 import { handleError } from '../../../lib/error-handler';
 import { Permission } from '../../../lib/permissions';
 import { useSaaSWorkspaces } from '../hooks';
 import { IWorkspace } from '../types';
+import NoPermission from './NoPermission';
 import SettingSkeleton from './Skeleton';
 import { getSvgImage, workspaceEmojis } from './utils';
 
@@ -34,14 +36,7 @@ const WorkspaceSettingsGeneral: React.FC<{ workspace: IWorkspace }> = ({ workspa
   const [isUpdating, setIsUpdating] = useState(false);
   const [imageType, setImageType] = useState<'emoji' | 'url'>('emoji');
   const [selectedEmoji, setSelectedEmoji] = useState<string>();
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const successTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
-
-  useEffect(() => {
-    return () => {
-      if (successTimerRef.current) clearTimeout(successTimerRef.current);
-    };
-  }, []);
+  const success = useSuccessMessage();
 
   const formSchema = z.object({
     name: z.string().min(2, {
@@ -60,14 +55,10 @@ const WorkspaceSettingsGeneral: React.FC<{ workspace: IWorkspace }> = ({ workspa
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsUpdating(true);
-    setSuccessMessage(null);
+    success.clear();
     try {
       await updateWorkspace(workspace, values);
-      setSuccessMessage(t('general.success'));
-      if (successTimerRef.current) clearTimeout(successTimerRef.current);
-      successTimerRef.current = setTimeout(() => {
-        setSuccessMessage(null);
-      }, 5000);
+      success.show(t('general.success'));
     } catch (error) {
       handleError(error, {
         component: 'WorkspaceSettingsGeneral',
@@ -91,13 +82,13 @@ const WorkspaceSettingsGeneral: React.FC<{ workspace: IWorkspace }> = ({ workspa
 
   return (
     <div>
-      {successMessage && (
+      {success.message && (
         <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded mb-4">
           <p className="font-medium">{t('settings.common.success')}</p>
-          <p className="text-sm">{successMessage}</p>
+          <p className="text-sm">{success.message}</p>
         </div>
       )}
-      {!canEdit && <div className="text-red-500">{t('general.ownerOnly')}</div>}
+      {!canEdit && <NoPermission descriptionKey="general.ownerOnly" />}
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <FormField

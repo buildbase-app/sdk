@@ -314,7 +314,7 @@ Pass affiliate/referral data to Stripe checkout sessions via the `getCheckoutStr
   version={ApiVersion.V1}
   orgId="your-org-id"
   auth={authConfig}
-  getCheckoutStripeParams={async (request) => {
+  getCheckoutStripeParams={async request => {
     // Rewardful, FirstPromoter, PartnerStack — read client_reference_id
     const referralId = await getRewardfulReferralId();
 
@@ -1820,21 +1820,23 @@ const workspaceApi = new WorkspaceApi({
 
 Prefer these SDK hooks for state and operations instead of `useAppSelector`:
 
-| Hook                       | Purpose                                                                                                                                                                                                                                                                   |
-| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `useSaaSAuth()`            | Auth state (user, session, status), signIn(returnUrl?), signOut, openWorkspaceSettings                                                                                                                                                                                    |
-| `useSaaSWorkspaces()`      | Workspaces, currentWorkspace, loading, switching/switchingToId, CRUD and switch actions                                                                                                                                                                                   |
-| `useSaaSOs()`              | OS config (serverUrl, version, orgId, auth, settings) when you need the full config object                                                                                                                                                                                |
-| `useSaaSSettings()`        | Organization settings and getSettings (prefer this when you only need settings)                                                                                                                                                                                           |
-| `useUserAttributes()`      | User attributes and update/refresh                                                                                                                                                                                                                                        |
-| `useUserFeatures()`        | User feature flags                                                                                                                                                                                                                                                        |
-| `useSubscriptionContext()` | Subscription for current workspace (response, loading, refetch); use inside SubscriptionContextProvider                                                                                                                                                                   |
-| `useTrialStatus()`         | Trial state: `isTrialing`, `daysRemaining`, `trialEndsAt`, `isTrialEnding`                                                                                                                                                                                                |
-| `usePushNotifications()`   | Push notification state and actions: `isSubscribed`, `subscribe()`, `unsubscribe()`                                                                                                                                                                                       |
-| Subscription hooks         | `usePublicPlans`, `useSubscription`, `useSubscriptionManagement`, `usePlanGroup`, `usePlanGroupVersions`, `usePublicPlanGroupVersion`, `useCreateCheckoutSession`, `useUpdateSubscription`, `useCancelSubscription`, `useResumeSubscription`, `useInvoices`, `useInvoice` |
-| `useQuotaUsageContext()`   | Quota usage for current workspace (quotas, loading, refetch); use inside QuotaUsageContextProvider                                                                                                                                                                        |
-| Quota usage hooks          | `useRecordUsage`, `useQuotaUsageStatus`, `useAllQuotaUsage`, `useUsageLogs`                                                                                                                                                                                               |
-| Invalidation helpers       | `invalidateSubscription()`, `invalidateQuotaUsage()` — trigger context refetch after server-side mutations                                                                                                                                                                |
+| Hook                        | Purpose                                                                                                                                                                                                                                                                   |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `useSaaSAuth()`             | Auth state (user, session, status), signIn(returnUrl?), signOut, openWorkspaceSettings                                                                                                                                                                                    |
+| `useSaaSWorkspaces()`       | Workspaces, currentWorkspace, loading, switching/switchingToId, CRUD and switch actions                                                                                                                                                                                   |
+| `useSaaSOs()`               | OS config (serverUrl, version, orgId, auth, settings) when you need the full config object                                                                                                                                                                                |
+| `useSaaSSettings()`         | Organization settings and getSettings (prefer this when you only need settings)                                                                                                                                                                                           |
+| `useUserAttributes()`       | User attributes and update/refresh                                                                                                                                                                                                                                        |
+| `useUserFeatures()`         | User feature flags                                                                                                                                                                                                                                                        |
+| `useSubscriptionContext()`  | Subscription for current workspace (response, loading, refetch); use inside SubscriptionContextProvider                                                                                                                                                                   |
+| `useTrialStatus()`          | Trial state: `isTrialing`, `daysRemaining`, `trialEndsAt`, `isTrialEnding`                                                                                                                                                                                                |
+| `usePushNotifications()`    | Push notification state and actions: `isSubscribed`, `subscribe()`, `unsubscribe()`                                                                                                                                                                                       |
+| Subscription hooks          | `usePublicPlans`, `useSubscription`, `useSubscriptionManagement`, `usePlanGroup`, `usePlanGroupVersions`, `usePublicPlanGroupVersion`, `useCreateCheckoutSession`, `useUpdateSubscription`, `useCancelSubscription`, `useResumeSubscription`, `useInvoices`, `useInvoice` |
+| `useQuotaUsageContext()`    | Quota usage for current workspace (quotas, loading, refetch); use inside QuotaUsageContextProvider                                                                                                                                                                        |
+| Quota usage hooks           | `useRecordUsage`, `useQuotaUsageStatus`, `useAllQuotaUsage`, `useUsageLogs`                                                                                                                                                                                               |
+| `useCreditBalanceContext()` | Credit balance for current workspace (balance, loading, refetch); use inside CreditBalanceContextProvider                                                                                                                                                                 |
+| Credit hooks                | `useCreditBalance`, `useCreditPackages`, `useCreditTransactions`, `useExpiringCredits`, `useConsumeCredits`, `usePurchaseCredits`, `usePublicCreditPackages`                                                                                                              |
+| Invalidation helpers        | `invalidateSubscription()`, `invalidateQuotaUsage()`, `invalidateCreditBalance()` — trigger context refetch after server-side mutations                                                                                                                                   |
 
 Using hooks keeps your code stable if internal state shape changes and avoids direct Redux/context coupling.
 
@@ -1856,16 +1858,16 @@ All TypeScript types are exported for type safety. See the [TypeScript definitio
 
 ### SaaSOSProvider Props
 
-| Prop                       | Type                        | Required | Description                                                                                      |
-| -------------------------- | --------------------------- | -------- | ------------------------------------------------------------------------------------------------ |
-| `serverUrl`                | `string`                    | ✅       | API server URL (must be valid URL)                                                               |
-| `version`                  | `ApiVersion`                | ✅       | API version (currently only `'v1'`)                                                              |
-| `orgId`                    | `string`                    | ✅       | Organization ID (must be valid MongoDB ObjectId - 24 hex characters)                             |
-| `auth`                     | `IAuthConfig`               | ❌       | Authentication configuration                                                                     |
-| `locale`                   | `SDKLocale`                 | ❌       | SDK UI language (`'en'`, `'es'`, `'fr'`, `'de'`, `'ja'`, `'zh'`, `'hi'`, `'ar'`)                |
-| `defaultPermissions`       | `Record<string, string[]>`  | ❌       | Default app permissions per role                                                                 |
-| `getCheckoutStripeParams`  | `GetCheckoutStripeParams`   | ❌       | Async callback called before every Stripe checkout to return metadata, referral IDs, etc.        |
-| `children`                 | `ReactNode`                 | ✅       | React children                                                                                   |
+| Prop                      | Type                       | Required | Description                                                                               |
+| ------------------------- | -------------------------- | -------- | ----------------------------------------------------------------------------------------- |
+| `serverUrl`               | `string`                   | ✅       | API server URL (must be valid URL)                                                        |
+| `version`                 | `ApiVersion`               | ✅       | API version (currently only `'v1'`)                                                       |
+| `orgId`                   | `string`                   | ✅       | Organization ID (must be valid MongoDB ObjectId - 24 hex characters)                      |
+| `auth`                    | `IAuthConfig`              | ❌       | Authentication configuration                                                              |
+| `locale`                  | `SDKLocale`                | ❌       | SDK UI language (`'en'`, `'es'`, `'fr'`, `'de'`, `'ja'`, `'zh'`, `'hi'`, `'ar'`)          |
+| `defaultPermissions`      | `Record<string, string[]>` | ❌       | Default app permissions per role                                                          |
+| `getCheckoutStripeParams` | `GetCheckoutStripeParams`  | ❌       | Async callback called before every Stripe checkout to return metadata, referral IDs, etc. |
+| `children`                | `ReactNode`                | ✅       | React children                                                                            |
 
 ### Auth Configuration
 
@@ -1880,6 +1882,8 @@ interface IAuthConfig {
     handleAuthentication: (code: string) => Promise<{ sessionId: string }>;
     // Required: clear session on sign out (clears httpOnly cookie on server)
     onSignOut: () => Promise<void>;
+    // Optional: called when session is missing, expired, or invalid
+    onSessionExpired?: (reason: 'missing' | 'expired' | 'invalid') => void;
     // Optional: listen to SDK events
     handleEvent?: (eventType: EventType, data: EventData) => void | Promise<void>;
     // Optional: called before workspace switch

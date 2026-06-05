@@ -14,13 +14,19 @@ The SDK uses a nested provider structure:
 
 ```
 SaaSOSProvider (root)
+  ├── TranslationProvider (i18n)
   ├── SDKContextProvider (context management)
   ├── AuthProviderWrapper (authentication)
   ├── PortalProvider (portal rendering)
   ├── ContextConfigProvider (OS configuration)
+  ├── CheckoutConfigProvider (Stripe checkout params)
+  ├── PermissionConfigProvider (app permissions)
   ├── UserProvider (user attributes/features)
-  ├── WorkspaceSettingsProvider (workspace settings UI)
-  └── SubscriptionContextProvider (subscription for current workspace; powers subscription gates)
+  ├── SubscriptionContextProvider (subscription for current workspace; powers subscription gates)
+  ├── QuotaUsageContextProvider (quota usage; powers quota gates)
+  ├── CreditBalanceContextProvider (credit balance; powers credit gates)
+  ├── PushNotificationProvider (browser push)
+  └── WorkspaceSettingsProvider (workspace settings UI)
 ```
 
 **Design Decision**: Nested providers allow for:
@@ -75,8 +81,8 @@ The SDK uses a **central base class + domain APIs** pattern. All domain API clas
 #### BaseApi (`src/lib/api-base.ts`)
 
 - **Purpose**: Abstract base for all SDK API clients
-- **Provides**: `baseUrl`, `getAuthHeaders()`, `url(path)`, `fetchJson<T>()`, `fetchResponse()`
-- **Config**: `IBaseApiConfig` (serverUrl, version, optional orgId)
+- **Provides**: `baseUrl`, `getAuthHeaders()`, `url(path)`, `fetchJson<T>()`, `fetchResponse()`, `throwResponseError()`, `unwrapResponse<T>()`
+- **Config**: `IBaseApiConfig` (serverUrl, version, optional orgId, onUnauthorized, timeout, maxRetries, debug, onError)
 
 #### Domain APIs (extend BaseApi)
 
@@ -92,6 +98,7 @@ All are exported from the package; consumers typically use the high-level hooks 
 
 - **Location**: `src/lib/api-utils.ts`
 - **Functions**: `safeFetch`, `handleApiResponse`, `getErrorMessage`, `isAbortError`, `fetchWithTimeout`
+- **Error helpers** (`src/lib/error-handler.ts`): `handleError`, `getHookErrorMessage`, `createSDKError`
 
 #### Currency, pricing variant & quota utilities
 
@@ -242,16 +249,17 @@ const flags = getAuthFlags(auth.status);
 
 ### Session Management
 
-- **Storage**: localStorage (key: `buildbase_session`)
-- **Hydration**: On mount, SDK checks localStorage for session
-- **Validation**: Session validated by fetching user profile
-- **Expiration**: Handled by server (401 response triggers sign-out)
+- **Source of truth**: httpOnly cookie (set by your server, not readable by JS)
+- **Hydration**: On mount, SDK calls `getSession()` callback to restore the session from your server endpoint
+- **Validation**: Session validated by fetching user profile with the sessionId
+- **Expiration**: 401 responses trigger `onSessionExpired` callback (during hydration and mid-session via `onUnauthorized` interceptor in BaseApi)
+- **Guards**: Component-scoped refs prevent duplicate hydration across mount/remount cycles
 
-**Design Decision**: localStorage for session:
+**Design Decision**: httpOnly cookie + callback pattern (similar to next-auth):
 
-- Persists across page reloads
-- Accessible to SDK on mount
-- Simple implementation
+- Secure: session token not accessible to JS (XSS-safe)
+- Flexible: server controls cookie lifetime, httpOnly, secure flags
+- Framework-agnostic: works with any server (Next.js, Express, Hono)
 
 ### Workspace Switching
 

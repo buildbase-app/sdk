@@ -4,9 +4,9 @@ import { ReactNode, useCallback } from 'react';
 import type { IPublicCreditPackage } from '../../api/types';
 import { BBAction, createBBUrl } from '../../lib/url-params';
 import { useSaaSAuth } from '../../providers/auth/hooks';
+import { usePublicCreditPackages } from '../../providers/workspace/credit-hooks';
 import { workspaceSettingsManager } from '../../providers/workspace/settings-manager';
 import { SettingsScreen } from '../../providers/workspace/ui/SettingsDialog';
-import { usePublicCreditPackages } from '../../providers/workspace/credit-hooks';
 import { Skeleton } from '../ui/skeleton';
 
 export interface CreditStorePageDetails {

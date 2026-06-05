@@ -57,10 +57,10 @@ export { invalidateSubscription } from './lib/subscription-invalidation';
 // ─── URL Params ────────────────────────────────────────────────────────────────
 
 export {
-  BB_PARAM,
   BBAction,
   BBScreen,
   BBStatus,
+  BB_PARAM,
   cleanBBParams,
   createBBUrl,
   createCheckoutRedirectUrls,
@@ -169,8 +169,6 @@ export type {
   ICreditTransactionsResponse,
   IExpiringCreditsResponse,
   IInvoice,
-  IPublicCreditPackage,
-  IPublicCreditPackagesResponse,
   IInvoiceListResponse,
   IInvoiceResponse,
   IPlan,
@@ -185,6 +183,8 @@ export type {
   IPlanVersionSummary,
   IPlanVersionWithPlan,
   IPricingVariant,
+  IPublicCreditPackage,
+  IPublicCreditPackagesResponse,
   IPublicPlanItem,
   IPublicPlanItemCategory,
   IPublicPlanVersion,

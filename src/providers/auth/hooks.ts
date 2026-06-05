@@ -5,9 +5,9 @@ import { useTranslation } from '../../i18n';
 import { saveAuthIntent } from '../../lib/auth-intent';
 import { handleError } from '../../lib/error-handler';
 import { safeRedirect } from '../../lib/security';
+import { BBAction } from '../../lib/url-params';
 import { useSaaSOs } from '../os/hooks';
 import { useSaaSWorkspaces } from '../workspace/hooks';
-import { BBAction } from '../../lib/url-params';
 import { workspaceSettingsManager } from '../workspace/settings-manager';
 import { SettingsScreen, WorkspaceSettingsSection } from '../workspace/ui/SettingsDialog';
 import { getAuthFlags } from './types';
@@ -202,6 +202,15 @@ export function useSaaSAuth() {
       openCreditStore,
       openPlanPicker,
     }),
-    [auth.session, auth.status, flags, signIn, signOut, openWorkspaceSettings, openCreditStore, openPlanPicker]
+    [
+      auth.session,
+      auth.status,
+      flags,
+      signIn,
+      signOut,
+      openWorkspaceSettings,
+      openCreditStore,
+      openPlanPicker,
+    ]
   );
 }

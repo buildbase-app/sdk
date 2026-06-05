@@ -43,6 +43,11 @@ export const ar: SDKMessages = {
       error: 'خطأ',
       refreshAction: '{loading, select, true {جارٍ التحديث...} other {تحديث}}',
       retryAction: '{loading, select, true {جارٍ إعادة المحاولة...} other {إعادة المحاولة}}',
+      noPermissionTitle: 'الوصول مقيد',
+      noPermissionDescription:
+        'ليس لديك إذن للوصول إلى هذا القسم. تواصل مع مسؤول مساحة العمل إذا كنت بحاجة إلى الوصول.',
+      billingManageOnly:
+        'فقط المستخدمون الذين لديهم أذونات إدارة الفواتير يمكنهم تنفيذ هذا الإجراء.',
     },
   },
   subscription: {

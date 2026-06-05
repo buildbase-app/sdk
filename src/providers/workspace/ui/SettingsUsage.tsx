@@ -75,19 +75,7 @@ function formatCost(amount: number, symbol: string, locale?: string): string {
   );
 }
 
-function formatDate(isoDate: string, locale = 'en-US'): string {
-  try {
-    const date = new Date(isoDate);
-    if (isNaN(date.getTime())) return '';
-    return new Intl.DateTimeFormat(locale, {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    }).format(date);
-  } catch {
-    return '';
-  }
-}
+import { formatDate } from '../../../lib/format-utils';
 
 function getDaysRemaining(isoDate: string): number | null {
   try {

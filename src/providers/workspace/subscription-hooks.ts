@@ -22,19 +22,10 @@ import {
 import { useCheckoutConfig } from '../../contexts/CheckoutConfigContext';
 import { invalidateQuotaUsage } from '../../contexts/QuotaUsageContext/quotaUsageInvalidation';
 import { invalidateSubscription } from '../../contexts/SubscriptionContext/subscriptionInvalidation';
-import { useTranslation, type TranslationKey } from '../../i18n';
-import { handleError } from '../../lib/error-handler';
+import { useTranslation } from '../../i18n';
+import { getHookErrorMessage, handleError } from '../../lib/error-handler';
 import { isOsConfigReady } from '../os/types';
 import { useWorkspaceApiWithOs } from './use-workspace-api';
-
-/** Extract error message from catch block, falling back to a translated key */
-function getErrorMessage(
-  err: unknown,
-  fallbackKey: string,
-  t: (key: TranslationKey) => string
-): string {
-  return err instanceof Error ? err.message : t(fallbackKey as TranslationKey);
-}
 
 /**
  * Hook to get public plans by slug (no auth required).
@@ -64,7 +55,7 @@ export const usePublicPlans = (slug: string) => {
       const result = await api.getPublicPlans(slug);
       setData(result);
     } catch (err) {
-      const errorMessage = getErrorMessage(err, 'errors.fetchPlans', t);
+      const errorMessage = getHookErrorMessage(err, 'errors.fetchPlans', t);
       setError(errorMessage);
       handleError(err, {
         component: 'usePublicPlans',
@@ -145,7 +136,7 @@ export const usePublicPlanGroupVersion = (groupVersionId: string | null | undefi
       const data = await api.getPlanGroupVersion(groupVersionId);
       setPlanGroupVersion(data);
     } catch (err) {
-      const errorMessage = getErrorMessage(err, 'errors.fetchPlanGroupVersion', t);
+      const errorMessage = getHookErrorMessage(err, 'errors.fetchPlanGroupVersion', t);
       setError(errorMessage);
       handleError(err, {
         component: 'usePublicPlanGroupVersion',
@@ -226,7 +217,7 @@ export const useSubscription = (workspaceId: string | null | undefined) => {
       const data = await api.getCurrentSubscription(workspaceId);
       setSubscription(data);
     } catch (err) {
-      const errorMessage = getErrorMessage(err, 'errors.fetchSubscription', t);
+      const errorMessage = getHookErrorMessage(err, 'errors.fetchSubscription', t);
       setError(errorMessage);
       handleError(err, {
         component: 'useSubscription',
@@ -321,7 +312,7 @@ export const usePlanGroup = (
         : await api.getPlanGroup(workspaceId);
       setPlanGroup(data);
     } catch (err) {
-      const errorMessage = getErrorMessage(err, 'errors.fetchPlanGroup', t);
+      const errorMessage = getHookErrorMessage(err, 'errors.fetchPlanGroup', t);
       setError(errorMessage);
       handleError(err, {
         component: 'usePlanGroup',
@@ -397,7 +388,7 @@ export const usePlanGroupVersions = (workspaceId: string | null | undefined) => 
       const data = await api.getPlanGroupVersions(workspaceId);
       setVersions(data);
     } catch (err) {
-      const errorMessage = getErrorMessage(err, 'errors.fetchPlanGroupVersions', t);
+      const errorMessage = getHookErrorMessage(err, 'errors.fetchPlanGroupVersions', t);
       setError(errorMessage);
       handleError(err, {
         component: 'usePlanGroupVersions',
@@ -526,7 +517,7 @@ export const useCreateCheckoutSession = (workspaceId: string | null | undefined)
 
         return result;
       } catch (err) {
-        const errorMessage = getErrorMessage(err, 'errors.createCheckout', t);
+        const errorMessage = getHookErrorMessage(err, 'errors.createCheckout', t);
         setError(errorMessage);
         handleError(err, {
           component: 'useCreateCheckoutSession',
@@ -646,7 +637,7 @@ export const useUpdateSubscription = (workspaceId: string | null | undefined) =>
         invalidateSubscription();
         return result;
       } catch (err) {
-        const errorMessage = getErrorMessage(err, 'errors.updateSubscription', t);
+        const errorMessage = getHookErrorMessage(err, 'errors.updateSubscription', t);
         setError(errorMessage);
         handleError(err, {
           component: 'useUpdateSubscription',
@@ -754,7 +745,7 @@ export const useSubscriptionManagement = (
  *   return (
  *     <div>
  *       {invoices.map(invoice => (
- *         <InvoiceCard key={invoice._id} invoice={invoice} />
+ *         <InvoiceCard key={invoice.id} invoice={invoice} />
  *       ))}
  *       {hasMore && <button onClick={() => refetch()}>Load More</button>}
  *     </div>
@@ -782,7 +773,7 @@ export const useSubscriptionManagement = (
  *
  *   return (
  *     <div>
- *       {invoices.map(invoice => <InvoiceCard key={invoice._id} invoice={invoice} />)}
+ *       {invoices.map(invoice => <InvoiceCard key={invoice.id} invoice={invoice} />)}
  *       {hasMore && <button onClick={loadMore}>Load More</button>}
  *     </div>
  *   );
@@ -816,7 +807,7 @@ export const useInvoices = (
       setInvoices(data.invoices || []);
       setHasMore(data.has_more || false);
     } catch (err) {
-      const errorMessage = getErrorMessage(err, 'errors.fetchInvoices', t);
+      const errorMessage = getHookErrorMessage(err, 'errors.fetchInvoices', t);
       setError(errorMessage);
       handleError(err, {
         component: 'useInvoices',
@@ -872,7 +863,7 @@ export const useBillingPortal = (workspaceId: string | null | undefined) => {
         }
         return result;
       } catch (err) {
-        const errorMessage = getErrorMessage(err, 'errors.openBillingPortal', t);
+        const errorMessage = getHookErrorMessage(err, 'errors.openBillingPortal', t);
         setError(errorMessage);
         handleError(err, {
           component: 'useBillingPortal',
@@ -945,7 +936,7 @@ export const useInvoice = (
       const data = await api.getInvoice(workspaceId, invoiceId);
       setInvoice(data.invoice);
     } catch (err) {
-      const errorMessage = getErrorMessage(err, 'errors.fetchInvoice', t);
+      const errorMessage = getHookErrorMessage(err, 'errors.fetchInvoice', t);
       setError(errorMessage);
       handleError(err, {
         component: 'useInvoice',
@@ -1021,7 +1012,7 @@ export const useCancelSubscription = (workspaceId: string | null | undefined) =>
       invalidateSubscription();
       return result;
     } catch (err) {
-      const errorMessage = getErrorMessage(err, 'errors.cancelSubscription', t);
+      const errorMessage = getHookErrorMessage(err, 'errors.cancelSubscription', t);
       setError(errorMessage);
       handleError(err, {
         component: 'useCancelSubscription',
@@ -1093,7 +1084,7 @@ export const useResumeSubscription = (workspaceId: string | null | undefined) =>
       invalidateSubscription();
       return result;
     } catch (err) {
-      const errorMessage = getErrorMessage(err, 'errors.resumeSubscription', t);
+      const errorMessage = getHookErrorMessage(err, 'errors.resumeSubscription', t);
       setError(errorMessage);
       handleError(err, {
         component: 'useResumeSubscription',
@@ -1170,7 +1161,7 @@ export const useRecordUsage = (workspaceId: string | null | undefined) => {
         invalidateQuotaUsage();
         return result;
       } catch (err) {
-        const errorMessage = getErrorMessage(err, 'errors.recordUsage', t);
+        const errorMessage = getHookErrorMessage(err, 'errors.recordUsage', t);
         setError(errorMessage);
         handleError(err, {
           component: 'useRecordUsage',
@@ -1246,7 +1237,7 @@ export const useQuotaUsageStatus = (
       const data = await api.getQuotaUsageStatus(workspaceId, quotaSlug);
       setStatus(data);
     } catch (err) {
-      const errorMessage = getErrorMessage(err, 'errors.fetchQuotaUsage', t);
+      const errorMessage = getHookErrorMessage(err, 'errors.fetchQuotaUsage', t);
       setError(errorMessage);
       handleError(err, {
         component: 'useQuotaUsageStatus',
@@ -1323,7 +1314,7 @@ export const useAllQuotaUsage = (workspaceId: string | null | undefined) => {
       const data = await api.getAllQuotaUsage(workspaceId);
       setQuotas(data.quotas);
     } catch (err) {
-      const errorMessage = getErrorMessage(err, 'errors.fetchAllQuotaUsage', t);
+      const errorMessage = getHookErrorMessage(err, 'errors.fetchAllQuotaUsage', t);
       setError(errorMessage);
       handleError(err, {
         component: 'useAllQuotaUsage',
@@ -1443,7 +1434,7 @@ export const useUsageLogs = (
       setHasNextPage(data.hasNextPage || false);
       setHasPrevPage(data.hasPrevPage || false);
     } catch (err) {
-      const errorMessage = getErrorMessage(err, 'errors.fetchUsageLogs', t);
+      const errorMessage = getHookErrorMessage(err, 'errors.fetchUsageLogs', t);
       setError(errorMessage);
       handleError(err, {
         component: 'useUsageLogs',

@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { IUser } from '../../../api/types';
@@ -17,6 +17,7 @@ import {
   FormMessage,
 } from '../../../components/ui/form';
 import { Input } from '../../../components/ui/input';
+import { useSuccessMessage } from '../../../hooks/useSuccessMessage';
 import { useTranslation } from '../../../i18n';
 import { handleError } from '../../../lib/error-handler';
 import { useSaaSWorkspaces } from '../hooks';
@@ -29,14 +30,7 @@ const WorkspaceSettingsProfile: React.FC<{ workspace: IWorkspace }> = ({ workspa
   const [isSaving, setIsSaving] = useState(false);
   const [user, setUser] = useState<IUser>();
   const [reloadCounter, setReloadCounter] = useState(0);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const successTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
-
-  useEffect(() => {
-    return () => {
-      if (successTimerRef.current) clearTimeout(successTimerRef.current);
-    };
-  }, []);
+  const success = useSuccessMessage();
 
   const formSchema = z.object({
     name: z.string().min(2, {
@@ -76,7 +70,7 @@ const WorkspaceSettingsProfile: React.FC<{ workspace: IWorkspace }> = ({ workspa
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSaving(true);
-    setSuccessMessage(null);
+    success.clear();
     try {
       await updateUserProfile({
         name: values.name,
@@ -85,11 +79,7 @@ const WorkspaceSettingsProfile: React.FC<{ workspace: IWorkspace }> = ({ workspa
         language: values.language,
         currency: values.currency,
       });
-      setSuccessMessage(t('profile.success'));
-      if (successTimerRef.current) clearTimeout(successTimerRef.current);
-      successTimerRef.current = setTimeout(() => {
-        setSuccessMessage(null);
-      }, 5000);
+      success.show(t('profile.success'));
     } catch (error) {
       handleError(error, {
         component: 'WorkspaceSettingsProfile',
@@ -107,10 +97,10 @@ const WorkspaceSettingsProfile: React.FC<{ workspace: IWorkspace }> = ({ workspa
 
   return (
     <div>
-      {successMessage && (
+      {success.message && (
         <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded mb-4">
           <p className="font-medium">{t('settings.common.success')}</p>
-          <p className="text-sm">{successMessage}</p>
+          <p className="text-sm">{success.message}</p>
         </div>
       )}
       <div className="space-y-4">
