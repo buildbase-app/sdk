@@ -572,6 +572,13 @@ export const hi: SDKMessages = {
     errorLoading: 'क्रेडिट डेटा लोड करने में विफल',
     insufficientCredits: 'पर्याप्त क्रेडिट नहीं',
   },
+  loading: {
+    restoringSession: 'सत्र पुनर्स्थापित हो रहा है...',
+    redirecting: 'रीडायरेक्ट हो रहा है...',
+    signingIn: 'साइन इन हो रहा है...',
+    verifyingAccount: 'आपका खाता सत्यापित हो रहा है...',
+    almostThere: 'लगभग हो गया...',
+  },
   errors: {
     networkError: 'नेटवर्क त्रुटि: कृपया अपना इंटरनेट कनेक्शन जाँचें',
     unauthorized: 'अनधिकृत - कृपया अपना सत्र जाँचें',

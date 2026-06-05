@@ -583,6 +583,13 @@ export const fr: SDKMessages = {
     errorLoading: 'Échec du chargement des données de crédits',
     insufficientCredits: 'Crédits insuffisants',
   },
+  loading: {
+    restoringSession: 'Restauration de votre session...',
+    redirecting: 'Redirection...',
+    signingIn: 'Connexion en cours...',
+    verifyingAccount: 'Vérification de votre compte...',
+    almostThere: 'Presque terminé...',
+  },
   errors: {
     networkError: 'Erreur réseau : Veuillez vérifier votre connexion Internet',
     unauthorized: 'Non autorisé — Veuillez vérifier votre session',

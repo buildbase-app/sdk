@@ -575,6 +575,13 @@ export const es: SDKMessages = {
     errorLoading: 'Error al cargar los datos de créditos',
     insufficientCredits: 'Créditos insuficientes',
   },
+  loading: {
+    restoringSession: 'Restaurando tu sesión...',
+    redirecting: 'Redirigiendo...',
+    signingIn: 'Iniciando sesión...',
+    verifyingAccount: 'Verificando tu cuenta...',
+    almostThere: 'Ya casi...',
+  },
   errors: {
     networkError: 'Error de red: Por favor, verifica tu conexión a internet',
     unauthorized: 'No autorizado — Por favor, verifica tu sesión',

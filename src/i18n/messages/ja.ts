@@ -570,6 +570,13 @@ export const ja: SDKMessages = {
     errorLoading: 'クレジットデータの読み込みに失敗しました',
     insufficientCredits: 'クレジットが不足しています',
   },
+  loading: {
+    restoringSession: 'セッションを復元中...',
+    redirecting: 'リダイレクト中...',
+    signingIn: 'サインイン中...',
+    verifyingAccount: 'アカウントを確認中...',
+    almostThere: 'もう少しです...',
+  },
   errors: {
     networkError: 'ネットワークエラー：インターネット接続を確認してください',
     unauthorized: '認証エラー — セッションを確認してください',

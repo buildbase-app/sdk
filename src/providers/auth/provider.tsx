@@ -2,6 +2,8 @@
 
 import React, { ReactNode, useCallback, useEffect } from 'react';
 import { authActions, useAppDispatch } from '../../contexts';
+import { useFullScreenLoader } from '../../contexts/FullScreenLoaderContext';
+import { useTranslation } from '../../i18n';
 import { consumeAuthIntent, saveAuthIntent } from '../../lib/auth-intent';
 import { handleError } from '../../lib/error-handler';
 import { safeRedirect } from '../../lib/security';
@@ -26,15 +28,21 @@ interface IProps {
 /**
  * AuthProvider — next-auth style session management.
  *
+ * Shows a full-screen loader during all auth transitions:
+ * - Session hydration (page refresh)
+ * - OAuth code exchange (returning from login)
+ *
  * The `getSession` callback (e.g. reading httpOnly cookie via server endpoint) is the
  * source of truth for hydration. The returned sessionId is stored in localStorage for
  * subsequent API calls (x-session-id header). Session user data lives in React context.
  */
 export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) => {
+  const { t } = useTranslation();
   const dispatch = useAppDispatch();
   const authState = useAuthState();
   const osState = useSaaSOs();
   const isAuthenticated = getAuthFlags(authState.status).isAuthenticated;
+  const loader = useFullScreenLoader();
 
   const processingAuthRedirectRef = React.useRef(false);
   const processedCodeRef = React.useRef<string | null>(null);
@@ -44,10 +52,12 @@ export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) 
   const hydrationDoneRef = React.useRef(false);
   const hydrationInFlightRef = React.useRef<Promise<void> | null>(null);
 
+  // ─── OAuth code exchange ────────────────────────────────────────────────────
   const handleAuthRedirect = useCallback(
     async (code: string) => {
       try {
         if (callbacks?.handleAuthentication) {
+          loader.show(t('loading.signingIn'));
           const { sessionId } = await callbacks.handleAuthentication(code);
 
           if (!sessionId || typeof sessionId !== 'string' || sessionId.trim() === '') {
@@ -60,11 +70,13 @@ export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) 
           }
           const { serverUrl, version, orgId } = currentOsState;
 
+          loader.show(t('loading.verifyingAccount'));
           const authApi = new AuthApi({ serverUrl, version });
           const userData = await authApi.getProfile(sessionId);
           const authUser = mapIUserToAuthUser(userData, orgId, currentOsState.auth?.clientId || '');
           const session = createSession(authUser, sessionId);
 
+          loader.show(t('loading.almostThere'));
           // Store in localStorage for client-side API calls (x-session-id header)
           setSessionId(session.sessionId);
           dispatch.auth(authActions.setSession(session));
@@ -75,8 +87,11 @@ export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) 
           if (returnUrl && returnUrl !== window.location.href) {
             safeRedirect(returnUrl);
           }
+
+          loader.hide();
         }
       } catch (error) {
+        loader.hide();
         // Clear stale auth intent so next login doesn't redirect to wrong page
         consumeAuthIntent();
         handleError(error, {
@@ -88,21 +103,10 @@ export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) 
         throw error;
       }
     },
-    [dispatch, callbacks, osState]
+    [dispatch, callbacks, osState, loader, t]
   );
 
-  /**
-   * Session hydration on page refresh.
-   *
-   * Like next-auth's SessionProvider:
-   * 1. Call `getSession()` callback to get sessionId (reads httpOnly cookie via server endpoint).
-   * 2. Fetch user profile with that sessionId to verify + get user data.
-   * 3. If valid → store sessionId in localStorage (for API auth headers) and set session in context.
-   *    If invalid → unauthenticated, call onSessionExpired.
-   */
-  // Session hydration — runs once on mount when OS config is ready.
-  // Does NOT use useAsyncEffect's signal because the hydration must survive
-  // StrictMode unmount/remount cycles (signal would be aborted).
+  // ─── Session hydration on page refresh ──────────────────────────────────────
   React.useEffect(() => {
     if (typeof window === 'undefined') return;
     if (isAuthenticated) return;
@@ -124,6 +128,8 @@ export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) 
     const clientId = osState.auth?.clientId || '';
 
     hydrationInFlightRef.current = (async () => {
+      loader.show(t('loading.restoringSession'));
+
       let sessionId: string | null = null;
       try {
         sessionId = await getSessionFn();
@@ -137,6 +143,7 @@ export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) 
       if (!sessionId) {
         hydrationDoneRef.current = true;
         dispatch.auth(authActions.authenticationFailed());
+        loader.hide();
         // Save current URL so user returns here after re-login
         if (typeof window !== 'undefined') saveAuthIntent(window.location.href);
         callbacks?.onSessionExpired?.('missing');
@@ -144,6 +151,7 @@ export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) 
       }
 
       try {
+        loader.show(t('loading.verifyingAccount'));
         const authApi = new AuthApi({ serverUrl, version });
         const userData = await authApi.getProfile(sessionId);
         const authUser = mapIUserToAuthUser(userData, orgId, clientId);
@@ -152,6 +160,7 @@ export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) 
         setSessionId(session.sessionId);
         hydrationDoneRef.current = true;
         dispatch.auth(authActions.setSession(session));
+        loader.hide();
 
         // Redirect to the URL the user was on before login (if saved)
         const returnUrl = consumeAuthIntent();
@@ -165,6 +174,7 @@ export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) 
         });
         hydrationDoneRef.current = true;
         dispatch.auth(authActions.authenticationFailed());
+        loader.hide();
         // Session exists but profile fetch failed — session is invalid/expired
         // Save current URL so user returns here after re-login
         if (typeof window !== 'undefined') saveAuthIntent(window.location.href);
@@ -175,9 +185,7 @@ export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) 
     })();
   }, [isAuthenticated, dispatch, osState, callbacks]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  /**
-   * Handle OAuth redirect: user returns with ?code=... in URL.
-   */
+  // ─── OAuth redirect: user returns with ?code=... in URL ─────────────────────
   useEffect(() => {
     const code = getTokenFromUrl();
     if (!code) return;

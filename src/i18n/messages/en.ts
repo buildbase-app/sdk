@@ -572,6 +572,13 @@ export const en: SDKMessages = {
     errorLoading: 'Failed to load credit data',
     insufficientCredits: 'Not enough credits',
   },
+  loading: {
+    restoringSession: 'Restoring your session...',
+    redirecting: 'Redirecting...',
+    signingIn: 'Signing you in...',
+    verifyingAccount: 'Verifying your account...',
+    almostThere: 'Almost there...',
+  },
   errors: {
     networkError: 'Network error: Please check your internet connection',
     unauthorized: 'Unauthorized - Please check your session',
