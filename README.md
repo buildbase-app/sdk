@@ -88,7 +88,7 @@ import { ApiVersion } from '@buildbase/sdk';
 export default function SaaSProvider({ children }: { children: React.ReactNode }) {
   return (
     <SaaSOSProvider
-      serverUrl="https://your-api-server.com"
+      serverUrl="https://api.buildbase.app"
       version={ApiVersion.V1}
       orgId="your-org-id"
       auth={{
@@ -313,7 +313,7 @@ Pass affiliate/referral data to Stripe checkout sessions via the `getCheckoutStr
 
 ```tsx
 <SaaSOSProvider
-  serverUrl="https://your-api-server.com"
+  serverUrl="https://api.buildbase.app"
   version={ApiVersion.V1}
   orgId="your-org-id"
   auth={authConfig}

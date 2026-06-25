@@ -32,7 +32,8 @@
   },
   "files": [
     "dist",
-    "README.md"
+    "README.md",
+    "LICENSE"
   ],
   "sideEffects": [
     "**/*.css"
@@ -129,8 +130,16 @@
     "next-js",
     "express"
   ],
-  "author": "Buildbase",
+  "author": "buildbase <support@buildbase.app> (https://www.buildbase.app)",
   "license": "MIT",
+  "homepage": "https://www.buildbase.app",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/buildbase-app/sdk.git"
+  },
+  "bugs": {
+    "url": "https://github.com/buildbase-app/sdk/issues"
+  },
   "engines": {
     "node": ">=18.0.0"
   },
