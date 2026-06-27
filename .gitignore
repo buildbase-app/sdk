@@ -43,4 +43,10 @@ coverage/
 yalc.lock
 
 # TypeScript
-*.tsbuildinfo 
+*.tsbuildinfo
+
+# AI IDE rule files
+CLAUDE.md
+.cursorrules
+.windsurfrules
+.github/copilot-instructions.md
