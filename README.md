@@ -2795,6 +2795,93 @@ BuildBase({
 })
 ```
 
+## 🚀 Publishing a Release
+
+> **Requires:** repo admin access on GitHub. Only admins can push `v*` tags — the tag push triggers the full CI → npm publish → GitHub Release pipeline automatically.
+
+### Step-by-step
+
+**1. Make sure `main` is in the state you want to release**
+
+All changes must be merged to `main` via PR before tagging.
+
+**2. Bump the version in `package.json`**
+
+```bash
+# Patch release (0.0.47 → 0.0.48) — bug fixes
+npm version patch
+
+# Minor release (0.0.47 → 0.1.0) — new features, backward-compatible
+npm version minor
+
+# Major release (0.0.47 → 1.0.0) — breaking changes
+npm version major
+```
+
+`npm version` automatically updates `package.json`, commits the change, and creates a local git tag (`v0.0.48`).
+
+**3. Push the commit to `main`**
+
+```bash
+git push origin main
+```
+
+**4. Push the tag — this triggers the release pipeline**
+
+```bash
+git push origin v0.0.48   # use the tag npm version created
+```
+
+### What happens automatically
+
+Once the tag is pushed, GitHub Actions runs three jobs in sequence:
+
+```
+Build  ──→  Publish to npm  ──→  Create GitHub Release
+```
+
+| Job | What it does |
+|-----|-------------|
+| **Build** | Installs deps, builds all bundles, verifies server bundle has no React and React bundle has `"use client"` directive, uploads dist artifact |
+| **Publish to npm** | Downloads verified artifact, publishes `@buildbase/sdk` to npm with SLSA provenance attestation |
+| **Create GitHub Release** | Creates a GitHub Release with changelog notes and dist zip attached — only runs if npm publish succeeded |
+
+If npm publish fails, the GitHub Release is **not** created. Fix the issue and re-push the same tag after deleting it:
+
+```bash
+git tag -d v0.0.48              # delete local tag
+git push origin :refs/tags/v0.0.48  # delete remote tag
+# fix the issue, then:
+git tag v0.0.48
+git push origin v0.0.48
+```
+
+### Beta releases
+
+To publish a pre-release version without affecting the `latest` tag on npm:
+
+```bash
+# Bump to a prerelease version
+npm version prerelease --preid=beta   # e.g. 0.0.48-beta.0
+
+# Push commit + tag
+git push origin main
+git push origin v0.0.48-beta.0
+```
+
+> **Note:** The current workflow publishes with `--access public` (no `--tag beta`). To publish a true npm beta tag, update the `npm publish` command in `.github/workflows/main.yml` to include `--tag beta` for prerelease versions.
+
+### Tag naming convention
+
+Always use the `v` prefix followed by semver:
+
+```
+v1.0.0    ✅
+v0.1.0    ✅
+v0.0.48   ✅
+1.0.0     ❌  (no v prefix — won't trigger the workflow)
+```
+
 ## 🤝 Contributing
 
 We welcome bug fixes, documentation improvements, and feature contributions. See [CONTRIBUTING.md](CONTRIBUTING.md) for dev setup, branch guidelines, commit style, and how to report bugs.
