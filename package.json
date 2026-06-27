@@ -135,7 +135,7 @@
   "homepage": "https://www.buildbase.app",
   "repository": {
     "type": "git",
-    "url": "https://github.com/buildbase-app/sdk.git"
+    "url": "git+https://github.com/buildbase-app/sdk.git"
   },
   "bugs": {
     "url": "https://github.com/buildbase-app/sdk/issues"
