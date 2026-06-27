@@ -4,7 +4,7 @@
 
 **Do not report security vulnerabilities through public GitHub issues.**
 
-Email **security@buildbase.app** with:
+Email **support@buildbase.app** with:
 
 - Description of the vulnerability
 - Steps to reproduce

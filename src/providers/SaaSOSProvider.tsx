@@ -119,7 +119,7 @@ export interface SaaSOSProviderProps extends IOsState {
  * function App() {
  *   return (
  *     <SaaSOSProvider
- *       serverUrl="https://api.buildbase.app"
+ *       serverUrl="https://api.console.buildbase.app"
  *       version="v1"
  *       orgId="507f1f77bcf86cd799439011"
  *       auth={{
@@ -139,7 +139,7 @@ export interface SaaSOSProviderProps extends IOsState {
  * function App() {
  *   return (
  *     <SaaSOSProvider
- *       serverUrl="https://api.buildbase.app"
+ *       serverUrl="https://api.console.buildbase.app"
  *       version="v1"
  *       orgId="507f1f77bcf86cd799439011"
  *       auth={{
