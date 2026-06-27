@@ -3,23 +3,21 @@ name: Build and Release
 on:
   push:
     tags:
-      - 'v*'
-      - '[0-9]+.[0-9]+.[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+'
   workflow_dispatch:
-
-permissions:
-  contents: write
-  packages: write
 
 jobs:
   build:
+    name: Build
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      version: ${{ steps.tag_version.outputs.version }}
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
@@ -27,96 +25,71 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Extract version from tag
+        id: tag_version
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          TAG_NAME=${GITHUB_REF#refs/tags/}
+          echo "version=${TAG_NAME#v}" >> $GITHUB_OUTPUT
+
+      - name: Verify version matches package.json
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          PACKAGE_VERSION=$(node -p "require('./package.json').version")
+          TAG_VERSION="${{ steps.tag_version.outputs.version }}"
+          if [ "$PACKAGE_VERSION" != "$TAG_VERSION" ]; then
+            echo "Error: package.json version ($PACKAGE_VERSION) does not match tag ($TAG_VERSION)"
+            exit 1
+          fi
+          echo "✓ Version $PACKAGE_VERSION matches tag"
+
       - name: Build package
         run: npm run build
 
-      - name: Upload build artifacts
+      - name: Verify build output
+        run: |
+          MISSING=""
+          for f in dist/index.js dist/index.mjs dist/index.d.ts \
+                   dist/react/index.js dist/react/index.mjs dist/react/index.d.ts \
+                   dist/css/styles.css; do
+            [ ! -f "$f" ] && MISSING="$MISSING $f"
+          done
+          if [ -n "$MISSING" ]; then
+            echo "Error: Missing build output:$MISSING"
+            exit 1
+          fi
+          REACT_REFS=$(grep -c 'react' dist/index.mjs || true)
+          if [ "$REACT_REFS" -gt 0 ]; then
+            echo "Error: Server bundle contains React references ($REACT_REFS)"
+            exit 1
+          fi
+          HEAD=$(head -c 14 dist/react/index.mjs)
+          if [ "$HEAD" != '"use client";' ]; then
+            echo "Error: React bundle missing 'use client' directive"
+            exit 1
+          fi
+          echo "✓ Build verified"
+
+      - name: Upload dist artifact
         uses: actions/upload-artifact@v4
         with:
           name: dist-files
           path: dist/
-          retention-days: 30
-
-  release:
-    needs: build
-    runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/')
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build package
-        run: npm run build
-
-      - name: Extract version from tag
-        id: tag_version
-        run: |
-          # Remove refs/tags/ prefix
-          TAG_NAME=${GITHUB_REF#refs/tags/}
-          # Remove 'v' prefix if present
-          if [[ "$TAG_NAME" == v* ]]; then
-            TAG_VERSION=${TAG_NAME#v}
-          else
-            TAG_VERSION=$TAG_NAME
-          fi
-          echo "version=$TAG_VERSION" >> $GITHUB_OUTPUT
-          echo "Tag name: $TAG_NAME"
-          echo "Extracted version: $TAG_VERSION"
-
-      - name: Verify version matches package.json
-        run: |
-          PACKAGE_VERSION=$(node -p "require('./package.json').version")
-          TAG_VERSION=${{ steps.tag_version.outputs.version }}
-          if [ "$PACKAGE_VERSION" != "$TAG_VERSION" ]; then
-            echo "Error: Package version ($PACKAGE_VERSION) doesn't match tag version ($TAG_VERSION)"
-            exit 1
-          fi
-          echo "✓ Version verified: $PACKAGE_VERSION"
-
-      - name: Extract release notes from CHANGELOG
-        id: changelog
-        run: |
-          VERSION=${{ steps.tag_version.outputs.version }}
-          # Extract changelog entry for this version
-          awk "/^## \[$VERSION\]/,/^## \[/" CHANGELOG.md | sed '$d' > release_notes.md || \
-          awk "/^## \[$VERSION\]/,/^$/" CHANGELOG.md > release_notes.md
-          echo "notes<<EOF" >> $GITHUB_OUTPUT
-          cat release_notes.md >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-
-      - name: Create dist zip
-        run: |
-          cd dist
-          zip -r ../buildbase-sdk-${{ github.ref_name }}.zip .
-
-      - name: Create Release
-        run: |
-          gh release create ${{ github.ref_name }} \
-            --title "Release ${{ github.ref_name }}" \
-            --notes "${{ steps.changelog.outputs.notes }}" \
-            ./buildbase-sdk-${{ github.ref_name }}.zip
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          retention-days: 7
+          if-no-files-found: error
 
   publish-npm:
+    name: Publish to npm
     needs: build
-    runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '20'
           registry-url: https://registry.npmjs.org/
@@ -125,64 +98,50 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Extract version from tag
-        id: tag_version
-        run: |
-          # Remove refs/tags/ prefix
-          TAG_NAME=${GITHUB_REF#refs/tags/}
-          # Remove 'v' prefix if present
-          if [[ "$TAG_NAME" == v* ]]; then
-            TAG_VERSION=${TAG_NAME#v}
-          else
-            TAG_VERSION=$TAG_NAME
-          fi
-          echo "version=$TAG_VERSION" >> $GITHUB_OUTPUT
-          echo "Tag name: $TAG_NAME"
-          echo "Extracted version: $TAG_VERSION"
-
-      - name: Verify version matches package.json
-        run: |
-          PACKAGE_VERSION=$(node -p "require('./package.json').version")
-          TAG_VERSION=${{ steps.tag_version.outputs.version }}
-          if [ "$PACKAGE_VERSION" != "$TAG_VERSION" ]; then
-            echo "Error: Package version ($PACKAGE_VERSION) doesn't match tag version ($TAG_VERSION)"
-            exit 1
-          fi
-          echo "✓ Version verified: $PACKAGE_VERSION"
-
-      - name: Build package
-        run: npm run build
-
-      - name: Verify build output
-        run: |
-          echo "Checking build output..."
-          MISSING=""
-          for f in dist/index.js dist/index.mjs dist/index.d.ts \
-                   dist/react/index.js dist/react/index.mjs dist/react/index.d.ts \
-                   dist/css/styles.css; do
-            if [ ! -f "$f" ]; then
-              MISSING="$MISSING $f"
-            fi
-          done
-          if [ -n "$MISSING" ]; then
-            echo "Error: Missing build output files:$MISSING"
-            exit 1
-          fi
-          # Verify server bundle has no React
-          REACT_REFS=$(grep -c 'react' dist/index.mjs || true)
-          if [ "$REACT_REFS" -gt 0 ]; then
-            echo "Error: Server bundle contains React references ($REACT_REFS)"
-            exit 1
-          fi
-          # Verify react bundle has "use client" directive
-          HEAD=$(head -c 14 dist/react/index.mjs)
-          if [ "$HEAD" != '"use client";' ]; then
-            echo "Error: React bundle missing 'use client' directive"
-            exit 1
-          fi
-          echo "✓ Build output verified (server: no React, react: has 'use client')"
+      - name: Download dist artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: dist-files
+          path: dist/
 
       - name: Publish to npm
-        run: npm publish --access public
+        run: npm publish --access public --provenance --ignore-scripts
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  release:
+    name: Create GitHub Release
+    needs: [build, publish-npm]
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download dist artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: dist-files
+          path: dist/
+
+      - name: Extract release notes from CHANGELOG
+        id: changelog
+        run: |
+          VERSION="${{ needs.build.outputs.version }}"
+          awk "/^## \[$VERSION\]/,/^## \[/" CHANGELOG.md | sed '$d' > release_notes.md 2>/dev/null || true
+          if [ ! -s release_notes.md ]; then
+            echo "See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for details." > release_notes.md
+          fi
+
+      - name: Create dist zip
+        run: zip -r buildbase-sdk-${{ github.ref_name }}.zip dist/
+
+      - name: Create GitHub Release
+        run: |
+          gh release create ${{ github.ref_name }} \
+            --title "Release ${{ github.ref_name }}" \
+            --notes-file release_notes.md \
+            ./buildbase-sdk-${{ github.ref_name }}.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

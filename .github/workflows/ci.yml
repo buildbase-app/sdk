@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build package
+        run: npm run build
+
+      - name: Verify build output
+        run: |
+          MISSING=""
+          for f in dist/index.js dist/index.mjs dist/index.d.ts \
+                   dist/react/index.js dist/react/index.mjs dist/react/index.d.ts \
+                   dist/css/styles.css; do
+            [ ! -f "$f" ] && MISSING="$MISSING $f"
+          done
+          if [ -n "$MISSING" ]; then
+            echo "Error: Missing build output:$MISSING"
+            exit 1
+          fi
+          REACT_REFS=$(grep -c 'react' dist/index.mjs || true)
+          if [ "$REACT_REFS" -gt 0 ]; then
+            echo "Error: Server bundle contains React references ($REACT_REFS)"
+            exit 1
+          fi
+          HEAD=$(head -c 14 dist/react/index.mjs)
+          if [ "$HEAD" != '"use client";' ]; then
+            echo "Error: React bundle missing 'use client' directive"
+            exit 1
+          fi
+          echo "✓ Build verified"
