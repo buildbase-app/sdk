@@ -148,7 +148,6 @@
     "registry": "https://registry.npmjs.org/"
   },
   "overrides": {
-    "serialize-javascript": "^6.0.2",
-    "brace-expansion": "^2.0.1"
+    "serialize-javascript": "^6.0.2"
   }
 }
