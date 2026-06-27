@@ -90,7 +90,7 @@
     "@rollup/plugin-commonjs": "^28.0.6",
     "@rollup/plugin-json": "^6.1.0",
     "@rollup/plugin-node-resolve": "^16.0.1",
-    "@rollup/plugin-terser": "^0.4.0",
+    "@rollup/plugin-terser": "^1.0.0",
     "@rollup/plugin-typescript": "^12.1.4",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
@@ -146,5 +146,9 @@
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/"
+  },
+  "overrides": {
+    "serialize-javascript": "^6.0.2",
+    "brace-expansion": "^2.0.1"
   }
 }
