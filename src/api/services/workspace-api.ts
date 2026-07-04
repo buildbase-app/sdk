@@ -17,6 +17,7 @@ import {
   IExpiringCreditsResponse,
   IInvoiceListResponse,
   IInvoiceResponse,
+  IPasskeySummary,
   IPlanGroupResponse,
   IPlanGroupVersion,
   IPlanGroupVersionsResponse,
@@ -241,6 +242,31 @@ export class WorkspaceApi extends BaseApi {
       { method: 'PATCH', body: JSON.stringify(config) },
       'Failed to update user profile'
     );
+  }
+
+  // Passkey Management Methods
+  // Registration is not available here: WebAuthn credentials are bound to the
+  // hosted auth domain, so enrollment happens during sign-in on that domain.
+
+  async getPasskeys(): Promise<IPasskeySummary[]> {
+    const data = await this.fetchJson<{ passkeys: IPasskeySummary[] }>(
+      'passkeys',
+      {},
+      'Failed to fetch passkeys'
+    );
+    return data?.passkeys ?? [];
+  }
+
+  async renamePasskey(passkeyId: string, name: string): Promise<void> {
+    await this.fetchJson(
+      `passkeys/${passkeyId}`,
+      { method: 'PATCH', body: JSON.stringify({ name }) },
+      'Failed to rename passkey'
+    );
+  }
+
+  async deletePasskey(passkeyId: string): Promise<void> {
+    await this.fetchJson(`passkeys/${passkeyId}`, { method: 'DELETE' }, 'Failed to remove passkey');
   }
 
   // Subscription Management Methods

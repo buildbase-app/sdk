@@ -4,6 +4,7 @@ import {
   Bell,
   Coins,
   CreditCard,
+  KeyRound,
   SettingsIcon,
   Shield,
   ToggleRight,
@@ -83,6 +84,13 @@ const Sidebar: React.FC<Props> = ({ workspace, section, setSection }) => {
           label={t('settings.sidebar.profile')}
           section={SettingsScreen.Profile}
           onClick={() => setSection(SettingsScreen.Profile)}
+        />
+        <SidebarItem
+          activeSection={section}
+          icon={<KeyRound className="h-3.5 w-3.5" />}
+          label={t('settings.sidebar.security')}
+          section={SettingsScreen.Security}
+          onClick={() => setSection(SettingsScreen.Security)}
         />
       </SidebarSection>
       <SidebarSection title={t('settings.sidebar.workspace')}>

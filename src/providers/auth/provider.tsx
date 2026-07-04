@@ -5,6 +5,7 @@ import { authActions, useAppDispatch } from '../../contexts';
 import { useFullScreenLoader } from '../../contexts/FullScreenLoaderContext';
 import { useTranslation } from '../../i18n';
 import { consumeAuthIntent, saveAuthIntent } from '../../lib/auth-intent';
+import { clearOAuthState, validateOAuthState } from '../../lib/auth-state';
 import { handleError } from '../../lib/error-handler';
 import { safeRedirect } from '../../lib/security';
 import { useSaaSOs } from '../os/hooks';
@@ -14,6 +15,7 @@ import { useAuthState } from './hooks';
 import { getAuthFlags, IAuthCallbacks } from './types';
 import {
   createSession,
+  getStateFromUrl,
   getTokenFromUrl,
   mapIUserToAuthUser,
   removeTokenFromUrl,
@@ -193,6 +195,21 @@ export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) 
     if (processingAuthRedirectRef.current || processedCodeRef.current === code) return;
     if (!isOsConfigReady(osState)) return;
 
+    // Validate CSRF state parameter — if a state was sent, it must match
+    const returnedState = getStateFromUrl();
+    if (returnedState && !validateOAuthState(returnedState)) {
+      clearOAuthState();
+      removeTokenFromUrl();
+      handleError(new Error('OAuth state mismatch — possible CSRF attack'), {
+        component: 'AuthProviderWrapper',
+        action: 'validateOAuthState',
+      });
+      dispatch.auth(authActions.authenticationFailed());
+      return;
+    }
+    // Clear state even if validation passed (single use)
+    clearOAuthState();
+
     processingAuthRedirectRef.current = true;
     processedCodeRef.current = code;
 
@@ -212,6 +229,9 @@ export const AuthProviderWrapper = React.memo(({ children, callbacks }: IProps) 
           action: 'handleAuthRedirectEffect',
           metadata: { hasCode: true },
         });
+        // Remove the dead code/state from the URL: the code is consumed and
+        // the CSRF nonce is spent, so a re-run would misfire the state check.
+        removeTokenFromUrl();
         processedCodeRef.current = null;
       })
       .finally(() => {

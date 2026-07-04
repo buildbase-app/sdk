@@ -7,13 +7,13 @@ import { SDKContextProvider } from '../contexts';
 import type { GetCheckoutStripeParams } from '../api/types';
 import { CheckoutConfigProvider } from '../contexts/CheckoutConfigContext';
 import { CreditBalanceContextProvider } from '../contexts/CreditBalanceContext';
+import { FullScreenLoaderProvider } from '../contexts/FullScreenLoaderContext';
 import { PermissionConfigProvider } from '../contexts/PermissionContext';
 import { QuotaUsageContextProvider } from '../contexts/QuotaUsageContext';
 import { SubscriptionContextProvider } from '../contexts/SubscriptionContext';
 import type { SDKLocale } from '../i18n';
 import { TranslationProvider } from '../i18n';
 import '../styles/globals.css';
-import { FullScreenLoaderProvider } from '../contexts/FullScreenLoaderContext';
 import { AuthProviderWrapper } from './auth/provider';
 import { ContextConfigProvider } from './ContextConfigProvider';
 import { eventEmitter } from './events';
@@ -95,7 +95,9 @@ export interface SaaSOSProviderProps extends IOsState {
    * >
    * ```
    */
-  loadingComponent?: React.ReactNode | ((props: import('../contexts/FullScreenLoaderContext').LoadingProps) => React.ReactNode);
+  loadingComponent?:
+    | React.ReactNode
+    | ((props: import('../contexts/FullScreenLoaderContext').LoadingProps) => React.ReactNode);
 }
 
 /**

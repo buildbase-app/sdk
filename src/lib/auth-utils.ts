@@ -9,6 +9,7 @@ import { getStorageItem, removeStorageItem, setStorageItem } from './storage';
 
 const AUTH_SESSION_ID_KEY = 'saas-session-id';
 const AUTH_TOKEN_PARAM = 'code';
+const AUTH_STATE_PARAM = 'state';
 
 // ─── Session Management ────────────────────────────────────────────────────────
 
@@ -66,11 +67,27 @@ export function getTokenFromUrl(): string | null {
   }
 }
 
+export function getStateFromUrl(): string | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get(AUTH_STATE_PARAM);
+  } catch (e) {
+    handleError(e, {
+      component: 'auth-utils',
+      action: 'getStateFromUrl',
+      metadata: { param: AUTH_STATE_PARAM },
+    });
+    return null;
+  }
+}
+
 export function removeTokenFromUrl(): void {
   if (typeof window === 'undefined') return;
   try {
     const newUrl = new URL(window.location.href);
     newUrl.searchParams.delete(AUTH_TOKEN_PARAM);
+    newUrl.searchParams.delete(AUTH_STATE_PARAM);
     window.history.replaceState({}, '', newUrl.toString());
   } catch (e) {
     handleError(e, {
@@ -82,4 +99,4 @@ export function removeTokenFromUrl(): void {
 }
 
 // Re-export constants for backward compat
-export { AUTH_SESSION_ID_KEY, AUTH_TOKEN_PARAM };
+export { AUTH_SESSION_ID_KEY, AUTH_STATE_PARAM, AUTH_TOKEN_PARAM };

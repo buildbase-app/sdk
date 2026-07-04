@@ -4,6 +4,7 @@ export const es: SDKMessages = {
   settings: {
     titles: {
       profile: 'Cuenta',
+      security: 'Seguridad',
       general: 'Configuración del espacio de trabajo',
       users: 'Miembros del espacio de trabajo',
       subscription: 'Plan y facturación',
@@ -18,6 +19,7 @@ export const es: SDKMessages = {
       account: 'Cuenta',
       workspace: 'Espacio de trabajo',
       profile: 'Cuenta',
+      security: 'Seguridad',
       general: 'Configuración',
       users: 'Miembros',
       subscription: 'Plan y facturación',
@@ -609,5 +611,23 @@ export const es: SDKMessages = {
     fetchCreditPackages: 'Error al obtener los paquetes de créditos',
     fetchCreditTransactions: 'Error al obtener las transacciones de créditos',
     fetchExpiringCredits: 'Error al obtener los créditos próximos a expirar',
+  },
+  security: {
+    inactive: 'Inactiva',
+    inactiveHint:
+      'Registrada en un dominio de inicio de sesión anterior y ya no se puede usar. Puede eliminarla.',
+    passkeysTitle: 'Llaves de acceso',
+    passkeysDescription:
+      'Las llaves de acceso permiten iniciar sesión con su huella, rostro o PIN del dispositivo.',
+    noPasskeys: 'No hay llaves de acceso registradas',
+    addHint:
+      'Para añadir una llave de acceso, elija "Añadir una llave de acceso" la próxima vez que inicie sesión en el dispositivo que desee usar.',
+    rename: 'Renombrar',
+    remove: 'Eliminar',
+    removeTitle: 'Eliminar llave de acceso',
+    removeDescription: 'Ya no podrá iniciar sesión con esta llave de acceso.',
+    renamePlaceholder: 'Nombre de la llave',
+    lastUsed: 'Último uso',
+    added: 'Añadida',
   },
 };

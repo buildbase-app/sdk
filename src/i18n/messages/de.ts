@@ -4,6 +4,7 @@ export const de: SDKMessages = {
   settings: {
     titles: {
       profile: 'Konto',
+      security: 'Sicherheit',
       general: 'Arbeitsbereich-Einstellungen',
       users: 'Arbeitsbereich-Mitglieder',
       subscription: 'Plan & Abrechnung',
@@ -18,6 +19,7 @@ export const de: SDKMessages = {
       account: 'Konto',
       workspace: 'Arbeitsbereich',
       profile: 'Konto',
+      security: 'Sicherheit',
       general: 'Einstellungen',
       users: 'Mitglieder',
       subscription: 'Plan & Abrechnung',
@@ -612,5 +614,23 @@ export const de: SDKMessages = {
     fetchCreditPackages: 'Guthabenpakete konnten nicht abgerufen werden',
     fetchCreditTransactions: 'Guthabentransaktionen konnten nicht abgerufen werden',
     fetchExpiringCredits: 'Ablaufendes Guthaben konnte nicht abgerufen werden',
+  },
+  security: {
+    inactive: 'Inaktiv',
+    inactiveHint:
+      'Auf einer früheren Anmeldedomain registriert und nicht mehr verwendbar. Sie können ihn entfernen.',
+    passkeysTitle: 'Passkeys',
+    passkeysDescription:
+      'Mit Passkeys melden Sie sich per Fingerabdruck, Gesicht oder Geräte-PIN an.',
+    noPasskeys: 'Keine Passkeys registriert',
+    addHint:
+      'Um einen Passkey hinzuzufügen, wählen Sie bei der nächsten Anmeldung auf dem gewünschten Gerät "Passkey hinzufügen".',
+    rename: 'Umbenennen',
+    remove: 'Entfernen',
+    removeTitle: 'Passkey entfernen',
+    removeDescription: 'Sie können sich mit diesem Passkey nicht mehr anmelden.',
+    renamePlaceholder: 'Passkey-Name',
+    lastUsed: 'Zuletzt verwendet',
+    added: 'Hinzugefügt',
   },
 };

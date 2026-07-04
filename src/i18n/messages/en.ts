@@ -4,6 +4,7 @@ export const en: SDKMessages = {
   settings: {
     titles: {
       profile: 'Account',
+      security: 'Security',
       general: 'Workspace Settings',
       users: 'Workspace Members',
       subscription: 'Plan & Billing',
@@ -18,6 +19,7 @@ export const en: SDKMessages = {
       account: 'Account',
       workspace: 'Workspace',
       profile: 'Account',
+      security: 'Security',
       general: 'Settings',
       users: 'Members',
       subscription: 'Plan & Billing',
@@ -606,5 +608,22 @@ export const en: SDKMessages = {
     fetchCreditPackages: 'Failed to fetch credit packages',
     fetchCreditTransactions: 'Failed to fetch credit transactions',
     fetchExpiringCredits: 'Failed to fetch expiring credits',
+  },
+  security: {
+    inactive: 'Inactive',
+    inactiveHint:
+      'Registered on a previous sign-in domain and can no longer be used. You can remove it.',
+    passkeysTitle: 'Passkeys',
+    passkeysDescription: 'Passkeys let you sign in with your fingerprint, face, or device PIN.',
+    noPasskeys: 'No passkeys registered',
+    addHint:
+      'To add a passkey, choose "Add a passkey" the next time you sign in on the device you want to use.',
+    rename: 'Rename',
+    remove: 'Remove',
+    removeTitle: 'Remove passkey',
+    removeDescription: 'You will no longer be able to sign in with this passkey.',
+    renamePlaceholder: 'Passkey name',
+    lastUsed: 'Last used',
+    added: 'Added',
   },
 };

@@ -4,6 +4,7 @@ export const fr: SDKMessages = {
   settings: {
     titles: {
       profile: 'Compte',
+      security: 'Sécurité',
       general: "Paramètres de l'espace de travail",
       users: "Membres de l'espace de travail",
       subscription: 'Plan et facturation',
@@ -18,6 +19,7 @@ export const fr: SDKMessages = {
       account: 'Compte',
       workspace: 'Espace de travail',
       profile: 'Compte',
+      security: 'Sécurité',
       general: 'Paramètres',
       users: 'Membres',
       subscription: 'Plan et facturation',
@@ -617,5 +619,23 @@ export const fr: SDKMessages = {
     fetchCreditPackages: 'Échec de la récupération des packs de crédits',
     fetchCreditTransactions: 'Échec de la récupération des transactions de crédits',
     fetchExpiringCredits: 'Échec de la récupération des crédits expirant bientôt',
+  },
+  security: {
+    inactive: 'Inactive',
+    inactiveHint:
+      'Enregistrée sur un ancien domaine de connexion et ne peut plus être utilisée. Vous pouvez la supprimer.',
+    passkeysTitle: "Clés d'accès",
+    passkeysDescription:
+      "Les clés d'accès permettent de se connecter avec votre empreinte, votre visage ou le code PIN de l'appareil.",
+    noPasskeys: "Aucune clé d'accès enregistrée",
+    addHint:
+      "Pour ajouter une clé d'accès, choisissez « Ajouter une clé d'accès » lors de votre prochaine connexion sur l'appareil souhaité.",
+    rename: 'Renommer',
+    remove: 'Supprimer',
+    removeTitle: "Supprimer la clé d'accès",
+    removeDescription: "Vous ne pourrez plus vous connecter avec cette clé d'accès.",
+    renamePlaceholder: 'Nom de la clé',
+    lastUsed: 'Dernière utilisation',
+    added: 'Ajoutée',
   },
 };

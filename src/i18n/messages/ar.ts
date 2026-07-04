@@ -4,6 +4,7 @@ export const ar: SDKMessages = {
   settings: {
     titles: {
       profile: 'الحساب',
+      security: 'الأمان',
       general: 'إعدادات مساحة العمل',
       users: 'أعضاء مساحة العمل',
       subscription: 'الخطة والفوترة',
@@ -18,6 +19,7 @@ export const ar: SDKMessages = {
       account: 'الحساب',
       workspace: 'مساحة العمل',
       profile: 'الحساب',
+      security: 'الأمان',
       general: 'الإعدادات',
       users: 'الأعضاء',
       subscription: 'الخطة والفوترة',
@@ -602,5 +604,21 @@ export const ar: SDKMessages = {
     fetchCreditPackages: 'فشل في جلب حزم الرصيد',
     fetchCreditTransactions: 'فشل في جلب معاملات الرصيد',
     fetchExpiringCredits: 'فشل في جلب الرصيد المنتهي قريباً',
+  },
+  security: {
+    inactive: 'غير نشط',
+    inactiveHint: 'سُجّل على نطاق تسجيل دخول سابق ولم يعد قابلاً للاستخدام. يمكنك إزالته.',
+    passkeysTitle: 'مفاتيح المرور',
+    passkeysDescription: 'تتيح مفاتيح المرور تسجيل الدخول ببصمة الإصبع أو الوجه أو رمز PIN للجهاز.',
+    noPasskeys: 'لا توجد مفاتيح مرور مسجلة',
+    addHint:
+      'لإضافة مفتاح مرور، اختر "إضافة مفتاح مرور" عند تسجيل الدخول التالي على الجهاز الذي تريد استخدامه.',
+    rename: 'إعادة تسمية',
+    remove: 'إزالة',
+    removeTitle: 'إزالة مفتاح المرور',
+    removeDescription: 'لن تتمكن من تسجيل الدخول بمفتاح المرور هذا بعد الآن.',
+    renamePlaceholder: 'اسم مفتاح المرور',
+    lastUsed: 'آخر استخدام',
+    added: 'أُضيف',
   },
 };

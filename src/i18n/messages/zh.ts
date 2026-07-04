@@ -4,6 +4,7 @@ export const zh: SDKMessages = {
   settings: {
     titles: {
       profile: '账户',
+      security: '安全',
       general: '工作区设置',
       users: '工作区成员',
       subscription: '套餐与账单',
@@ -18,6 +19,7 @@ export const zh: SDKMessages = {
       account: '账户',
       workspace: '工作区',
       profile: '账户',
+      security: '安全',
       general: '设置',
       users: '成员',
       subscription: '套餐与账单',
@@ -586,5 +588,20 @@ export const zh: SDKMessages = {
     fetchCreditPackages: '获取积分套餐包失败',
     fetchCreditTransactions: '获取积分交易记录失败',
     fetchExpiringCredits: '获取即将过期的积分失败',
+  },
+  security: {
+    inactive: '已失效',
+    inactiveHint: '注册于之前的登录域名，已无法使用。您可以将其移除。',
+    passkeysTitle: '通行密钥',
+    passkeysDescription: '通行密钥支持使用指纹、面容或设备 PIN 登录。',
+    noPasskeys: '未注册通行密钥',
+    addHint: '要添加通行密钥，请在需要使用的设备上下次登录时选择"添加通行密钥"。',
+    rename: '重命名',
+    remove: '移除',
+    removeTitle: '移除通行密钥',
+    removeDescription: '您将无法再使用此通行密钥登录。',
+    renamePlaceholder: '通行密钥名称',
+    lastUsed: '上次使用',
+    added: '添加时间',
   },
 };

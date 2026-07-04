@@ -4,6 +4,7 @@ export const ja: SDKMessages = {
   settings: {
     titles: {
       profile: 'アカウント',
+      security: 'セキュリティ',
       general: 'ワークスペース設定',
       users: 'ワークスペースメンバー',
       subscription: 'プランと請求',
@@ -18,6 +19,7 @@ export const ja: SDKMessages = {
       account: 'アカウント',
       workspace: 'ワークスペース',
       profile: 'アカウント',
+      security: 'セキュリティ',
       general: '設定',
       users: 'メンバー',
       subscription: 'プランと請求',
@@ -604,5 +606,21 @@ export const ja: SDKMessages = {
     fetchCreditPackages: 'クレジットパッケージの取得に失敗しました',
     fetchCreditTransactions: 'クレジット取引履歴の取得に失敗しました',
     fetchExpiringCredits: '期限切れ間近のクレジットの取得に失敗しました',
+  },
+  security: {
+    inactive: '無効',
+    inactiveHint: '以前のサインインドメインで登録されたため使用できません。削除できます。',
+    passkeysTitle: 'パスキー',
+    passkeysDescription: 'パスキーを使うと、指紋、顔、またはデバイスのPINでサインインできます。',
+    noPasskeys: '登録されたパスキーはありません',
+    addHint:
+      'パスキーを追加するには、使用したいデバイスで次回サインイン時に「パスキーを追加」を選択してください。',
+    rename: '名前を変更',
+    remove: '削除',
+    removeTitle: 'パスキーを削除',
+    removeDescription: 'このパスキーではサインインできなくなります。',
+    renamePlaceholder: 'パスキー名',
+    lastUsed: '最終使用',
+    added: '追加日',
   },
 };

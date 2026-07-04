@@ -4,9 +4,25 @@
  */
 
 export interface SDKMessages {
+  security: {
+    inactive: string;
+    inactiveHint: string;
+    passkeysTitle: string;
+    passkeysDescription: string;
+    noPasskeys: string;
+    addHint: string;
+    rename: string;
+    remove: string;
+    removeTitle: string;
+    removeDescription: string;
+    renamePlaceholder: string;
+    lastUsed: string;
+    added: string;
+  };
   settings: {
     titles: {
       profile: string;
+      security: string;
       general: string;
       users: string;
       subscription: string;
@@ -21,6 +37,7 @@ export interface SDKMessages {
       account: string;
       workspace: string;
       profile: string;
+      security: string;
       general: string;
       users: string;
       subscription: string;

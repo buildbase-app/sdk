@@ -4,6 +4,7 @@ import { authActions, useAppDispatch, useAppSelector } from '../../contexts';
 import { useFullScreenLoader } from '../../contexts/FullScreenLoaderContext';
 import { useTranslation } from '../../i18n';
 import { saveAuthIntent } from '../../lib/auth-intent';
+import { generateOAuthState } from '../../lib/auth-state';
 import { handleError } from '../../lib/error-handler';
 import { safeRedirect } from '../../lib/security';
 import { BBAction } from '../../lib/url-params';
@@ -101,6 +102,7 @@ export function useSaaSAuth() {
       dispatch.auth(authActions.authenticationStarted());
       loader.show(t('loading.redirecting'));
       try {
+        const state = generateOAuthState();
         const response = await authApi.requestAuth({
           orgId,
           clientId: authConfig?.clientId ?? '',
@@ -108,6 +110,7 @@ export function useSaaSAuth() {
             success: authConfig?.redirectUrl || window.location.href,
             error: authConfig?.redirectUrl || window.location.href,
           },
+          state,
         });
 
         if (response.success) {

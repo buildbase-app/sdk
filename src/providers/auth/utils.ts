@@ -3,6 +3,7 @@ export {
   getAccessToken,
   getAuthHeaders,
   getSessionId,
+  getStateFromUrl,
   getTokenFromUrl,
   removeSession,
   removeTokenFromUrl,

@@ -148,8 +148,17 @@ export abstract class BaseApi {
 
   /** Execute fetch with timeout, retries, debug logging, and error callback. */
   private async executeFetch(path: string, init: RequestInit): Promise<Response> {
-    const fullUrl = this.url(path);
+    return this.executeFetchUrl(this.url(path), init, path);
+  }
+
+  /** Internal: execute fetch against a resolved URL with timeout, retries, debug logging, and error callback. */
+  private async executeFetchUrl(
+    fullUrl: string,
+    init: RequestInit,
+    path?: string
+  ): Promise<Response> {
     const method = (init.method ?? 'GET').toUpperCase();
+    const logPath = path ?? fullUrl;
     const headers = this.buildHeaders(init);
     const fetchOptions: RequestInit = { ...init, headers };
 
@@ -195,9 +204,9 @@ export abstract class BaseApi {
         if (error instanceof Error && error.name === 'AbortError') {
           if (timeoutId !== undefined) {
             const timeoutError = new Error(
-              `Request timeout after ${this._timeout}ms: ${method} ${path}`
+              `Request timeout after ${this._timeout}ms: ${method} ${logPath}`
             );
-            this._onError?.(timeoutError, { method, path });
+            this._onError?.(timeoutError, { method, path: logPath });
             throw timeoutError;
           }
           throw error;
@@ -217,7 +226,7 @@ export abstract class BaseApi {
 
         // Call onError callback
         if (error instanceof Error) {
-          this._onError?.(error, { method, path });
+          this._onError?.(error, { method, path: logPath });
         }
         throw error;
       }
@@ -258,6 +267,16 @@ export abstract class BaseApi {
   protected async fetchResponse(path: string, init: RequestInit = {}): Promise<Response> {
     this.ensureReady();
     return this.executeFetch(path, init);
+  }
+
+  /**
+   * Execute request against an absolute URL (bypasses baseUrl).
+   * Useful for endpoints outside the default basePath (e.g. /auth vs /public).
+   * Gets the same timeout, retry, header-merge, and error-callback handling as fetchResponse.
+   */
+  protected async fetchAbsoluteUrl(absoluteUrl: string, init: RequestInit = {}): Promise<Response> {
+    this.ensureReady();
+    return this.executeFetchUrl(absoluteUrl, init);
   }
 
   /**

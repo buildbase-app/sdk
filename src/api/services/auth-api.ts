@@ -14,6 +14,7 @@ export interface AuthRequestParams {
     success: string;
     error: string;
   };
+  state?: string;
 }
 
 export interface AuthRequestResponse {
@@ -31,18 +32,16 @@ export class AuthApi extends BaseApi {
 
   /**
    * Initiate OAuth sign-in flow. Returns redirect URL to the auth provider.
-   * Uses /api/v1/auth/request — auth endpoints sit outside the /public basePath,
-   * so we build the URL directly instead of using fetchResponse.
+   * Auth endpoints sit at /api/v1/auth/ (outside the /public basePath),
+   * so we use fetchAbsoluteUrl to get timeout, retry, and error handling via BaseApi.
    */
   async requestAuth(params: AuthRequestParams): Promise<AuthRequestResponse> {
     const url = `${this.serverUrl}/api/${this.version}/auth/request`;
-    const response = await fetch(url, {
+    const response = await this.fetchAbsoluteUrl(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(params),
     });
     if (!response.ok) await this.throwResponseError(response, 'Failed to initiate authentication');
-    // Return full envelope — caller checks response.success and reads response.data.redirectUrl
     return response.json();
   }
 

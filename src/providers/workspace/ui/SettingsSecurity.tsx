@@ -1,0 +1,212 @@
+import { Check, KeyRound, Pencil, Trash2, X } from 'lucide-react';
+import React, { useCallback, useEffect, useState } from 'react';
+import { IPasskeySummary } from '../../../api/types';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '../../../components/ui/alert-dialog';
+import { Button } from '../../../components/ui/button';
+import { Input } from '../../../components/ui/input';
+import { useTranslation } from '../../../i18n';
+import { handleError } from '../../../lib/error-handler';
+import { useWorkspaceApiWithOs } from '../use-workspace-api';
+import SettingSkeleton from './Skeleton';
+
+const formatDate = (isoDate: string, locale: string): string => {
+  const date = new Date(isoDate);
+  if (Number.isNaN(date.getTime())) return '';
+  return new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(date);
+};
+
+const WorkspaceSettingsSecurity: React.FC = () => {
+  const { t, formattingLocale } = useTranslation();
+  const { api } = useWorkspaceApiWithOs();
+  const [loading, setLoading] = useState(true);
+  const [passkeys, setPasskeys] = useState<IPasskeySummary[]>([]);
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState('');
+
+  const load = useCallback(async () => {
+    try {
+      const list = await api.getPasskeys();
+      setPasskeys(list);
+    } catch (error) {
+      handleError(error, { component: 'WorkspaceSettingsSecurity' });
+    } finally {
+      setLoading(false);
+    }
+  }, [api]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  async function rename(id: string) {
+    const name = editingName.trim();
+    if (!name) return;
+    setBusyId(id);
+    try {
+      await api.renamePasskey(id, name);
+      setPasskeys(prev => prev.map(p => (p.id === id ? { ...p, name } : p)));
+      setEditingId(null);
+    } catch (error) {
+      handleError(error, { component: 'WorkspaceSettingsSecurity' });
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function remove(id: string) {
+    setBusyId(id);
+    try {
+      await api.deletePasskey(id);
+      setPasskeys(prev => prev.filter(p => p.id !== id));
+    } catch (error) {
+      handleError(error, { component: 'WorkspaceSettingsSecurity' });
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  if (loading) {
+    return <SettingSkeleton />;
+  }
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <h3 className="text-sm font-medium">{t('security.passkeysTitle')}</h3>
+        <p className="text-sm text-muted-foreground">{t('security.passkeysDescription')}</p>
+      </div>
+
+      {passkeys.length === 0 ? (
+        <div className="flex flex-col items-center gap-2 rounded-md border border-dashed p-6 text-center">
+          <KeyRound className="h-5 w-5 text-muted-foreground" />
+          <p className="text-sm text-muted-foreground">{t('security.noPasskeys')}</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {passkeys.map(passkey => (
+            <div
+              key={passkey.id}
+              className={`flex items-center justify-between gap-3 rounded-md border p-3 ${
+                passkey.active === false ? 'opacity-70' : ''
+              }`}
+            >
+              <div className="flex min-w-0 items-center gap-3">
+                <KeyRound className="h-4 w-4 shrink-0 text-muted-foreground" />
+                <div className="min-w-0">
+                  {editingId === passkey.id ? (
+                    <div className="flex items-center gap-2">
+                      <Input
+                        value={editingName}
+                        onChange={e => setEditingName(e.target.value)}
+                        placeholder={t('security.renamePlaceholder')}
+                        className="h-8"
+                      />
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-8 w-8 shrink-0"
+                        disabled={busyId === passkey.id}
+                        onClick={() => rename(passkey.id)}
+                      >
+                        <Check className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-8 w-8 shrink-0"
+                        onClick={() => setEditingId(null)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-2">
+                        <p className="truncate text-sm font-medium">{passkey.name}</p>
+                        {passkey.active === false && (
+                          <span
+                            className="shrink-0 rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-700"
+                            title={t('security.inactiveHint')}
+                          >
+                            {t('security.inactive')}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {passkey.active === false
+                          ? t('security.inactiveHint')
+                          : passkey.lastUsedAt
+                            ? `${t('security.lastUsed')}: ${formatDate(passkey.lastUsedAt, formattingLocale)}`
+                            : passkey.createdAt
+                              ? `${t('security.added')}: ${formatDate(passkey.createdAt, formattingLocale)}`
+                              : null}
+                      </p>
+                    </>
+                  )}
+                </div>
+              </div>
+              {editingId !== passkey.id && (
+                <div className="flex shrink-0 items-center gap-1">
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-8 w-8"
+                    aria-label={t('security.rename')}
+                    onClick={() => {
+                      setEditingId(passkey.id);
+                      setEditingName(passkey.name);
+                    }}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-8 w-8 text-destructive"
+                        aria-label={t('security.remove')}
+                        disabled={busyId === passkey.id}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>{t('security.removeTitle')}</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          {t('security.removeDescription')}
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>{t('settings.common.cancel')}</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => remove(passkey.id)}>
+                          {t('security.remove')}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      <p className="text-xs text-muted-foreground">{t('security.addHint')}</p>
+    </div>
+  );
+};
+
+export default WorkspaceSettingsSecurity;

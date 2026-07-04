@@ -1,6 +1,14 @@
 'use client';
 
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { FullScreenLoader } from '../components/ui/full-screen-loader';
 import { handleError } from '../lib/error-handler';
 
@@ -97,9 +105,7 @@ export const FullScreenLoaderProvider = ({
   return (
     <FullScreenLoaderContext.Provider value={value}>
       {children}
-      {state.visible && (
-        <FullScreenLoader message={state.message}>{content}</FullScreenLoader>
-      )}
+      {state.visible && <FullScreenLoader message={state.message}>{content}</FullScreenLoader>}
     </FullScreenLoaderContext.Provider>
   );
 };

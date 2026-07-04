@@ -30,6 +30,20 @@ export interface IUser extends IDocument {
   attributes?: Record<string, string | number | boolean>;
 }
 
+/** A registered passkey (WebAuthn credential) — no key material exposed. */
+export interface IPasskeySummary {
+  id: string;
+  name: string;
+  deviceType?: string;
+  backedUp?: boolean;
+  lastUsedAt?: string;
+  createdAt?: string;
+  /** Auth domain the credential is bound to */
+  rpId?: string;
+  /** False when the org's auth domain changed and this credential can no longer be used to sign in */
+  active?: boolean;
+}
+
 export interface IAsset extends IDocument {
   _id: string;
   createdAt: string;

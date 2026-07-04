@@ -17,6 +17,7 @@ import WorkspaceSettingsGeneral from './SettingsGeneral';
 import WorkspaceSettingsNotifications from './SettingsNotifications';
 import WorkspaceSettingsPermissions from './SettingsPermissions';
 import WorkspaceSettingsProfile from './SettingsProfile';
+import WorkspaceSettingsSecurity from './SettingsSecurity';
 import WorkspaceSettingsSubscription from './SettingsSubscription';
 import WorkspaceSettingsUsage from './SettingsUsage';
 import WorkspaceSettingsUsers from './SettingsUsers';
@@ -24,6 +25,7 @@ import WorkspaceSettingsSidebar from './Sidebar';
 
 export const SettingsScreen = {
   Profile: 'profile',
+  Security: 'security',
   General: 'general',
   Users: 'users',
   Subscription: 'subscription',
@@ -43,6 +45,7 @@ export const SETTINGS_SCREENS = new Set<WorkspaceSettingsSection>(Object.values(
 /** Translation key for each screen title */
 const SCREEN_TITLE_KEYS: Record<WorkspaceSettingsSection, TranslationKey> = {
   [SettingsScreen.Profile]: 'settings.titles.profile',
+  [SettingsScreen.Security]: 'settings.titles.security',
   [SettingsScreen.General]: 'settings.titles.general',
   [SettingsScreen.Users]: 'settings.titles.users',
   [SettingsScreen.Subscription]: 'settings.titles.subscription',
@@ -122,6 +125,7 @@ const WorkspaceSettingsDialog: React.FC<WorkspaceSettingsDialogProps> = ({
             {section === SettingsScreen.Profile && (
               <WorkspaceSettingsProfile workspace={workspace} />
             )}
+            {section === SettingsScreen.Security && <WorkspaceSettingsSecurity />}
             {section === SettingsScreen.General && (
               <WorkspaceSettingsGeneral workspace={workspace} />
             )}

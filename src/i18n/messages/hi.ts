@@ -4,6 +4,7 @@ export const hi: SDKMessages = {
   settings: {
     titles: {
       profile: 'खाता',
+      security: 'सुरक्षा',
       general: 'वर्कस्पेस सेटिंग्स',
       users: 'वर्कस्पेस सदस्य',
       subscription: 'प्लान और बिलिंग',
@@ -18,6 +19,7 @@ export const hi: SDKMessages = {
       account: 'खाता',
       workspace: 'वर्कस्पेस',
       profile: 'खाता',
+      security: 'सुरक्षा',
       general: 'सेटिंग्स',
       users: 'सदस्य',
       subscription: 'प्लान और बिलिंग',
@@ -606,5 +608,21 @@ export const hi: SDKMessages = {
     fetchCreditPackages: 'क्रेडिट पैकेज लाने में विफल',
     fetchCreditTransactions: 'क्रेडिट लेनदेन लाने में विफल',
     fetchExpiringCredits: 'समाप्त होने वाले क्रेडिट लाने में विफल',
+  },
+  security: {
+    inactive: 'निष्क्रिय',
+    inactiveHint:
+      'पिछले साइन-इन डोमेन पर पंजीकृत और अब उपयोग नहीं की जा सकती। आप इसे हटा सकते हैं।',
+    passkeysTitle: 'पासकी',
+    passkeysDescription: 'पासकी से आप फिंगरप्रिंट, चेहरे या डिवाइस PIN से साइन इन कर सकते हैं।',
+    noPasskeys: 'कोई पासकी पंजीकृत नहीं',
+    addHint: 'पासकी जोड़ने के लिए, अगली बार उस डिवाइस पर साइन इन करते समय "पासकी जोड़ें" चुनें।',
+    rename: 'नाम बदलें',
+    remove: 'हटाएं',
+    removeTitle: 'पासकी हटाएं',
+    removeDescription: 'आप इस पासकी से साइन इन नहीं कर पाएंगे।',
+    renamePlaceholder: 'पासकी का नाम',
+    lastUsed: 'अंतिम उपयोग',
+    added: 'जोड़ी गई',
   },
 };
