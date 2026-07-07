@@ -1,12 +1,13 @@
-/* eslint-disable @typescript-eslint/no-var-requires */
-declare const require: (id: string) => any;
-declare const Buffer: { from(str: string, encoding: string): { length: number } };
+import { hexToBytes, hmacSha256, timingSafeEqualBytes, utf8Bytes } from './sha256';
 
 /**
  * Verify that a webhook request came from BuildBase.
  *
  * Uses HMAC-SHA256 signature verification with timing-safe comparison
- * to prevent timing attacks. Node.js only (uses `crypto` module).
+ * to prevent timing attacks. Runtime-agnostic: the HMAC is a dependency-free
+ * pure-JS implementation (shared with the OAuth app-bridge), so it behaves
+ * identically under CJS, ESM, bundlers, edge runtimes, Deno, Bun, and browsers —
+ * no Node `crypto`/`require`/`Buffer`.
  *
  * @example
  * ```ts
@@ -58,23 +59,13 @@ export function verifyWebhookSignature(options: {
     if (age > maxAgeSeconds) return false;
   }
 
-  // Node.js crypto (require at runtime to avoid browser bundling issues)
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const crypto = require('crypto');
-    const expected = crypto
-      .createHmac('sha256', secret)
-      .update(`${timestamp}.${body}`)
-      .digest('hex');
-
-    // Timing-safe comparison
-    const sigBuf = Buffer.from(signatureHex, 'hex');
-    const expBuf = Buffer.from(expected, 'hex');
-    if (sigBuf.length !== expBuf.length) return false;
-    return crypto.timingSafeEqual(sigBuf, expBuf);
-  } catch {
-    return false;
-  }
+  // Dependency-free pure-JS HMAC-SHA256 — works on every JS runtime.
+  const provided = hexToBytes(signatureHex);
+  if (!provided) return false; // malformed (non-hex) signature
+  const expected = hmacSha256(utf8Bytes(secret), utf8Bytes(`${timestamp}.${body}`));
+  // Guard against length mismatch before the constant-time compare.
+  if (provided.length !== expected.length) return false;
+  return timingSafeEqualBytes(provided, expected);
 }
 
 /**

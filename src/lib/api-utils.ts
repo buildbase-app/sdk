@@ -5,6 +5,36 @@
 import { sdkLog } from './logger';
 import { isDevelopment } from './utils';
 
+/**
+ * Combine two AbortSignals into one that aborts when either does.
+ *
+ * Prefers the native `AbortSignal.any` (Node ≥18.17, Deno ≥1.39, modern
+ * browsers). On runtimes without it, falls back to a manual composite so
+ * request cancellation + timeouts still work on older Node/browsers/Deno.
+ */
+export function combineAbortSignals(a: AbortSignal, b: AbortSignal): AbortSignal {
+  const anyFn = (
+    AbortSignal as unknown as { any?: (signals: AbortSignal[]) => AbortSignal }
+  ).any;
+  if (typeof anyFn === 'function') {
+    return anyFn([a, b]);
+  }
+
+  const controller = new AbortController();
+  const onAbort = (source: AbortSignal) => {
+    if (controller.signal.aborted) return;
+    controller.abort((source as { reason?: unknown }).reason);
+  };
+  for (const sig of [a, b]) {
+    if (sig.aborted) {
+      onAbort(sig);
+      break;
+    }
+    sig.addEventListener('abort', () => onAbort(sig), { once: true });
+  }
+  return controller.signal;
+}
+
 /** Redact sensitive keys in objects used for dev logging */
 function redactForLog(obj: unknown): unknown {
   if (obj === null || obj === undefined) return obj;
@@ -337,7 +367,7 @@ export function fetchWithTimeout(
   const mergedOptions: RequestInit = {
     ...options,
     signal: options.signal
-      ? AbortSignal.any([options.signal, controller.signal])
+      ? combineAbortSignals(options.signal, controller.signal)
       : controller.signal,
   };
 

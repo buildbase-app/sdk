@@ -102,6 +102,38 @@ export interface AgentSkill {
   type?: 'skill-md' | 'archive';
 }
 
+/** One API described in an API Catalog (RFC 9727 / RFC 9264 linkset). */
+export interface ApiCatalogApi {
+  /** Anchor URL identifying the API, e.g. `https://api.imejis.io`. */
+  anchor: string;
+  /** OpenAPI / machine-readable description URL (link rel `service-desc`). */
+  serviceDesc?: string;
+  /** Human documentation URL (link rel `service-doc`). */
+  serviceDoc?: string;
+  /** Health / status endpoint URL (link rel `status`). */
+  status?: string;
+  /** Optional human title for the API. */
+  title?: string;
+}
+
+/** MCP Server Card (SEP-1649 / SEP-2127), advertising a live MCP server. */
+export interface McpServerCard {
+  /** Server name. */
+  name: string;
+  /** Server version. */
+  version: string;
+  /** MCP transport endpoint URL the agent connects to. */
+  endpoint: string;
+  /** Transport type. Defaults to `"streamable-http"`. */
+  transport?: string;
+  /** Capabilities object, e.g. `{ tools: {}, resources: {} }`. */
+  capabilities?: Record<string, unknown>;
+  /** Optional human description. */
+  description?: string;
+  /** Documentation URL. */
+  documentationUrl?: string;
+}
+
 /** Configuration for the agent-readiness discovery layer. */
 export interface AgentReadyConfig {
   /** BuildBase server base URL, e.g. `https://api.buildbase.app` (no trailing slash needed). */
@@ -135,6 +167,22 @@ export interface AgentReadyConfig {
     /** Security policy URL. */
     policy?: string;
   };
+  /**
+   * API Catalog entries (RFC 9727), served at `/.well-known/api-catalog` as
+   * `application/linkset+json`. Omit to skip.
+   */
+  apiCatalog?: ApiCatalogApi[];
+  /**
+   * MCP Server Card (SEP-1649), served at `/.well-known/mcp/server-card.json`.
+   * Only set this when you actually run an MCP server — the card advertises a
+   * live transport endpoint. Omit to skip.
+   */
+  mcpServerCard?: McpServerCard;
+  /**
+   * Raw `/auth.md` content (agent registration/auth instructions). If omitted,
+   * `buildAuthMd` generates one from the OAuth metadata + site config.
+   */
+  authMd?: string;
   /** TTL (seconds) for cached platform fetches. Default 300 (5 min). */
   cacheTtlSeconds?: number;
   /** Injectable fetch, mainly for testing. Defaults to the global `fetch`. */
@@ -154,7 +202,11 @@ export interface DiscoveryDocument {
 const DEFAULT_CACHE_TTL = 300;
 const PROTECTED_RESOURCE_PREFIX = '/.well-known/oauth-protected-resource';
 const AGENT_SKILLS_PREFIX = '/.well-known/agent-skills';
+const API_CATALOG_PATH = '/.well-known/api-catalog';
+const MCP_CARD_PATH = '/.well-known/mcp/server-card.json';
 const JSON_CT = 'application/json';
+const LINKSET_CT = 'application/linkset+json';
+const MARKDOWN_CT = 'text/markdown; charset=utf-8';
 const TEXT_CT = 'text/plain; charset=utf-8';
 
 // ─── Small utilities ──────────────────────────────────────────────────────────
@@ -245,8 +297,18 @@ export function buildAgentCard(
   if (bundle.authorizationServer?.metadataUrl) {
     capabilities.oauth_authorization_server = bundle.authorizationServer.metadataUrl;
   }
+  // /auth.md exists whenever there's an authorization server (or an override).
+  if (bundle.authorizationServer || config.authMd) {
+    capabilities.auth = '/auth.md';
+  }
   if (config.skills?.length) {
     capabilities.agent_skills = `${AGENT_SKILLS_PREFIX}/index.json`;
+  }
+  if (config.apiCatalog?.length) {
+    capabilities.api_catalog = API_CATALOG_PATH;
+  }
+  if (config.mcpServerCard) {
+    capabilities.mcp_server_card = MCP_CARD_PATH;
   }
 
   const card = {
@@ -379,6 +441,109 @@ export function buildLlmsTxt(
   };
 }
 
+/**
+ * API Catalog (RFC 9727) as a `linkset+json` document for
+ * `/.well-known/api-catalog`. Returns null when no APIs are configured.
+ */
+export function buildApiCatalog(
+  config: AgentReadyConfig
+): DiscoveryDocument | null {
+  const apis = config.apiCatalog ?? [];
+  if (!apis.length) return null;
+  const linkset = apis.map((api) => ({
+    anchor: api.anchor,
+    ...(api.title ? { title: api.title } : {}),
+    ...(api.serviceDesc ? { 'service-desc': [{ href: api.serviceDesc }] } : {}),
+    ...(api.serviceDoc ? { 'service-doc': [{ href: api.serviceDoc }] } : {}),
+    ...(api.status ? { status: [{ href: api.status }] } : {}),
+  }));
+  return {
+    status: 200,
+    contentType: LINKSET_CT,
+    body: JSON.stringify({ linkset }, null, 2),
+    cacheControl: cacheHeader(config.cacheTtlSeconds ?? DEFAULT_CACHE_TTL),
+  };
+}
+
+/**
+ * MCP Server Card (SEP-1649) for `/.well-known/mcp/server-card.json`. Returns
+ * null when no card is configured (i.e. no MCP server is running).
+ */
+export function buildMcpServerCard(
+  config: AgentReadyConfig
+): DiscoveryDocument | null {
+  const card = config.mcpServerCard;
+  if (!card) return null;
+  return jsonDoc(
+    {
+      schema_version: '2024-11-05',
+      serverInfo: { name: card.name, version: card.version },
+      ...(card.description ? { description: card.description } : {}),
+      transport: {
+        type: card.transport ?? 'streamable-http',
+        endpoint: card.endpoint,
+      },
+      capabilities: card.capabilities ?? { tools: {} },
+      ...(card.documentationUrl
+        ? { documentation_url: card.documentationUrl }
+        : {}),
+    },
+    config
+  );
+}
+
+/**
+ * The `/auth.md` document (agent registration + authentication instructions).
+ * Uses `config.authMd` verbatim when provided; otherwise generates one from the
+ * OAuth authorization-server metadata + site config. Returns null only when
+ * there is nothing to describe (no authorizationServer and no override).
+ */
+export function buildAuthMd(
+  config: AgentReadyConfig,
+  bundle: AgentReadinessBundle
+): DiscoveryDocument | null {
+  const cache = cacheHeader(config.cacheTtlSeconds ?? DEFAULT_CACHE_TTL);
+  if (config.authMd) {
+    return { status: 200, contentType: MARKDOWN_CT, body: config.authMd, cacheControl: cache };
+  }
+  const as = bundle.authorizationServer;
+  if (!as) return null;
+  const resources = (bundle.protectedResources ?? [])
+    .map((r) => `- \`${r.resource}\``)
+    .join('\n');
+  const scopes = Array.from(
+    new Set(
+      (bundle.protectedResources ?? []).flatMap(
+        (r) => (r.metadata?.scopes_supported as string[] | undefined) ?? []
+      )
+    )
+  );
+  const body = `# Agent Authentication
+
+${config.site.name} supports AI-agent access via OAuth 2.0 (authorization code + PKCE).
+
+## Authorization server
+- Issuer: \`${as.issuer}\`
+- Metadata (RFC 8414): ${as.metadataUrl}
+
+Fetch the metadata document above for the \`authorization_endpoint\`, \`token_endpoint\`, and supported grant types / PKCE methods.
+
+## Protected resources (RFC 9728)
+${resources || '- See `/.well-known/oauth-protected-resource`'}
+
+Each resource publishes its metadata at \`/.well-known/oauth-protected-resource\`, listing the authorization server(s) that can issue tokens for it.
+${scopes.length ? `\n## Scopes\n${scopes.map((s) => `- \`${s}\``).join('\n')}\n` : ''}
+## How an agent authenticates
+1. Discover this document and \`/.well-known/oauth-protected-resource\`.
+2. Fetch the authorization-server metadata for the endpoints.
+3. Run the authorization-code flow with PKCE (S256), requesting the scopes above and the target \`resource\`.
+4. Exchange the code for an access token and call the API with \`Authorization: Bearer <token>\`.
+
+Documentation: ${config.site.documentationUrl ?? config.siteUrl}
+`;
+  return { status: 200, contentType: MARKDOWN_CT, body, cacheControl: cache };
+}
+
 function jsonDoc(value: unknown, config: AgentReadyConfig): DiscoveryDocument {
   return {
     status: 200,
@@ -396,7 +561,10 @@ function jsonDoc(value: unknown, config: AgentReadyConfig): DiscoveryDocument {
  *
  * Handles: agent.json, oauth-protected-resource (+ per-resource paths),
  * oauth-authorization-server (pointer), agent-skills index + SKILL.md,
- * security.txt.
+ * security.txt, api-catalog (RFC 9727), and the MCP server card.
+ *
+ * Root-level docs are served via their own builders (they aren't under
+ * `.well-known`): `buildLlmsTxt` for `/llms.txt` and `buildAuthMd` for `/auth.md`.
  */
 export async function resolveWellKnown(
   requestPath: string,
@@ -437,12 +605,45 @@ export async function resolveWellKnown(
     );
   }
 
+  if (path === API_CATALOG_PATH) {
+    return buildApiCatalog(config);
+  }
+
+  if (path === MCP_CARD_PATH) {
+    return buildMcpServerCard(config);
+  }
+
   if (path.startsWith(PROTECTED_RESOURCE_PREFIX)) {
     const bundle = await fetchAgentReadiness(config);
     return buildProtectedResourceMetadata(path, config, bundle);
   }
 
   return null;
+}
+
+// ─── WebMCP (browser-side) ────────────────────────────────────────────────────
+
+/** A WebMCP tool definition exposed to in-page agents via `navigator.modelContext`. */
+export interface WebMcpTool {
+  name: string;
+  description: string;
+  /** JSON Schema for the tool's input. */
+  inputSchema: Record<string, unknown>;
+  /** Called when an agent invokes the tool. */
+  execute: (input: any) => unknown | Promise<unknown>;
+}
+
+/**
+ * Register WebMCP tools with the browser so in-page AI agents can invoke your
+ * site's actions (WebMCP `navigator.modelContext.provideContext`). Client-side
+ * only — a no-op returning `false` when the API is unavailable, so it's safe to
+ * call unconditionally in a browser effect.
+ */
+export function provideWebMcpTools(tools: WebMcpTool[]): boolean {
+  const nav = (globalThis as unknown as { navigator?: any }).navigator;
+  if (!nav?.modelContext?.provideContext) return false;
+  nav.modelContext.provideContext({ tools });
+  return true;
 }
 
 // ─── Wiring ───────────────────────────────────────────────────────────────────

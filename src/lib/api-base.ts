@@ -20,7 +20,7 @@
  */
 
 import type { ApiVersion } from '../api/services/shared-types';
-import { handleApiResponse } from './api-utils';
+import { combineAbortSignals, handleApiResponse } from './api-utils';
 import { getAuthHeaders } from './auth-utils';
 
 // Tracks errors already surfaced to the onError callback so a transport error
@@ -180,12 +180,18 @@ export abstract class BaseApi {
       const controller = new AbortController();
       timeoutId = setTimeout(() => controller.abort(), this._timeout);
       fetchOptions.signal = init.signal
-        ? AbortSignal.any([init.signal, controller.signal])
+        ? combineAbortSignals(init.signal, controller.signal)
         : controller.signal;
     }
 
     const attempt = async (retryCount: number): Promise<Response> => {
       try {
+        if (typeof this._fetch !== 'function') {
+          throw new Error(
+            'No fetch implementation available. Global fetch requires Node 18+; ' +
+              'on older runtimes pass a `fetch` in the SDK config (e.g. from `undici` or `node-fetch`).'
+          );
+        }
         const fetchFn = this._fetch.bind(globalThis);
         const response = await fetchFn(fullUrl, fetchOptions);
 

@@ -2809,7 +2809,7 @@ BuildBase({
 
 ## Webhook Verification
 
-BuildBase signs every outbound webhook with HMAC-SHA256 over `<timestamp>.<rawBody>`. Verify it before trusting the payload. **Node.js only** (uses the built-in `crypto` module).
+BuildBase signs every outbound webhook with HMAC-SHA256 over `<timestamp>.<rawBody>`. Verify it before trusting the payload. **Runtime-agnostic** — the HMAC is a dependency-free pure-JS implementation, so it behaves identically under Node (CJS or ESM), edge runtimes (Cloudflare Workers, Vercel Edge), Deno, Bun, and bundlers. No Node `crypto` required.
 
 Always verify against the **raw** request body — parse only after verification succeeds.
 
@@ -2885,7 +2885,7 @@ export async function GET(req: Request) {
 }
 ```
 
-`resolveWellKnown` handles `agent.json`, `oauth-protected-resource` (+ per-resource paths), the `oauth-authorization-server` pointer, the Agent Skills index + `SKILL.md`, and `security.txt`. Serve `llms.txt` from its own route (it lives at the site root, not under `.well-known`):
+`resolveWellKnown` handles `agent.json`, `oauth-protected-resource` (+ per-resource paths), the `oauth-authorization-server` pointer, the Agent Skills index + `SKILL.md`, `security.txt`, the **API Catalog** (RFC 9727, `/.well-known/api-catalog`), and the **MCP Server Card** (`/.well-known/mcp/server-card.json`) — the last two are served only when you set `apiCatalog` / `mcpServerCard` in the config. Serve `llms.txt` from its own route (it lives at the site root, not under `.well-known`):
 
 ```ts
 // app/llms.txt/route.ts
@@ -2901,7 +2901,12 @@ export async function GET() {
 
 `fetchAgentReadiness` is **fail-soft** — any network/HTTP/parse error resolves to `{ enabled: false }`, so a discovery route never 500s and never leaks that the platform is down; agents simply see the app as not (yet) agent-ready. Results are cached in-memory for `cacheTtlSeconds` (default 300s); call `clearAgentReadinessCache()` to reset (mainly for tests).
 
-**Functions:** `resolveWellKnown`, `fetchAgentReadiness`, `clearAgentReadinessCache`, `buildAgentCard`, `buildProtectedResourceMetadata`, `buildAgentSkillsIndex`, `buildSkillMd`, `buildSecurityTxt`, `buildLlmsTxt`, `sha256Digest`. **Types:** `AgentReadyConfig`, `AgentReadinessBundle`, `AgentSkill`, `DiscoveryDocument`.
+Two more documents live at the site root, so they get their own routes like `llms.txt`:
+
+- **`/auth.md`** — agent registration/auth instructions. `buildAuthMd(config, await fetchAgentReadiness(config))` returns one generated from your OAuth metadata (or serves `config.authMd` verbatim).
+- **WebMCP** — expose in-page actions to browser agents. In a client component, call `provideWebMcpTools([{ name, description, inputSchema, execute }])` (no-op off-browser).
+
+**Functions:** `resolveWellKnown`, `fetchAgentReadiness`, `clearAgentReadinessCache`, `buildAgentCard`, `buildProtectedResourceMetadata`, `buildAgentSkillsIndex`, `buildSkillMd`, `buildSecurityTxt`, `buildLlmsTxt`, `buildApiCatalog`, `buildMcpServerCard`, `buildAuthMd`, `provideWebMcpTools`, `sha256Digest`. **Types:** `AgentReadyConfig`, `AgentReadinessBundle`, `AgentSkill`, `ApiCatalogApi`, `McpServerCard`, `WebMcpTool`, `DiscoveryDocument`.
 
 ## OAuth2 App Bridge
 

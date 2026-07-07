@@ -36,12 +36,16 @@ export function validateRedirectUrl(url: string | null | undefined): string | nu
 /**
  * Safely redirect to a URL after validating it.
  * Falls back to fallbackUrl if the target URL is invalid.
+ *
+ * Browser-only: navigation requires `window.location`. On non-browser runtimes
+ * (Node, edge, Deno, Bun) there is nothing to navigate, so this is a no-op that
+ * returns `false`. Returns `true` when a navigation was initiated. Server code
+ * that needs the resolved target should call {@link validateRedirectUrl} and
+ * issue the redirect with its own framework (e.g. `Response.redirect`).
  */
-export function safeRedirect(url: string | null | undefined, fallbackUrl: string = '/'): void {
+export function safeRedirect(url: string | null | undefined, fallbackUrl: string = '/'): boolean {
+  if (typeof window === 'undefined' || !window.location) return false;
   const validated = validateRedirectUrl(url);
-  if (validated) {
-    window.location.href = validated;
-  } else {
-    window.location.href = fallbackUrl;
-  }
+  window.location.href = validated ?? fallbackUrl;
+  return true;
 }

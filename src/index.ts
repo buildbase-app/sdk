@@ -26,12 +26,16 @@ export { parseWebhookEvent, verifyWebhookSignature } from './lib/webhook-verific
 export {
   buildAgentCard,
   buildAgentSkillsIndex,
+  buildApiCatalog,
+  buildAuthMd,
   buildLlmsTxt,
+  buildMcpServerCard,
   buildProtectedResourceMetadata,
   buildSecurityTxt,
   buildSkillMd,
   clearAgentReadinessCache,
   fetchAgentReadiness,
+  provideWebMcpTools,
   resolveWellKnown,
   sha256Digest,
 } from './lib/agent-discovery';
@@ -39,7 +43,10 @@ export type {
   AgentReadinessBundle,
   AgentReadyConfig,
   AgentSkill,
+  ApiCatalogApi,
   DiscoveryDocument,
+  McpServerCard,
+  WebMcpTool,
 } from './lib/agent-discovery';
 
 // ─── OAuth2 app-bridge (server-side handlers for applicationTokenUrl/Revoke) ───

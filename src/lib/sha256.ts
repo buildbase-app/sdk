@@ -127,6 +127,22 @@ export function utf8Bytes(s: string): Uint8Array {
   return new TextEncoder().encode(s);
 }
 
+/**
+ * Decode a lowercase/uppercase hex string to bytes.
+ * Returns null if the input is not valid hex (odd length or non-hex chars),
+ * so callers can treat malformed signatures as a verification failure.
+ */
+export function hexToBytes(hex: string): Uint8Array | null {
+  if (hex.length % 2 !== 0) return null;
+  const out = new Uint8Array(hex.length / 2);
+  for (let i = 0; i < out.length; i++) {
+    const byte = parseInt(hex.slice(i * 2, i * 2 + 2), 16);
+    if (Number.isNaN(byte)) return null;
+    out[i] = byte;
+  }
+  return out;
+}
+
 /** Lowercase-hex SHA-256 of a byte array. */
 export function sha256Hex(msg: Uint8Array): string {
   return bytesToHex(sha256Bytes(msg));
