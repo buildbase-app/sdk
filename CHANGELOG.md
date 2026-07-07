@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.50] - 2026-07-07
+
+### Fixed
+
+- **Webhook verification now works on every JS runtime**: `verifyWebhookSignature` / `parseWebhookEvent` previously used Node's `require('crypto')`, which was bundled into the ESM output and threw (silently caught → returned `false`, rejecting valid webhooks) on ESM Node, Cloudflare Workers, Vercel Edge, Deno, and Bun. They now use the dependency-free pure-JS HMAC-SHA256 (`src/lib/sha256.ts`, shared with the OAuth app-bridge), so verification behaves identically under CJS, ESM, bundlers, edge runtimes, Deno, Bun, and browsers. Added `hexToBytes` to `sha256`.
+- **`safeRedirect` no longer throws off-browser**: it is exported from the framework-agnostic core entry but used unguarded `window`. It now guards `window` and no-ops (returns `false`) on non-browser runtimes, returning `true` only when it navigates.
+- **`AbortSignal.any` compatibility**: request cancellation + timeout composition used `AbortSignal.any`, unavailable on Node <18.17 and older browsers/Deno. A feature-detected fallback (`combineAbortSignals`) restores support on those runtimes.
+- **Clearer error when no `fetch` is available** (old Node without an injected `fetch`), instead of a cryptic `.bind` crash.
+
+### Changed
+
+- **Dependencies are no longer bundled**: the build now externalizes all runtime dependencies (`zod`, `react-hook-form`, `@radix-ui/*`, `lucide-react`, …) instead of inlining them. This removes duplicate installs and bundle bloat and fixes duplicate-instance interop bugs (e.g. `zod` schema `instanceof`, `react-hook-form`/React context sharing) where a bundled copy diverged from the consumer's copy.
+- **React entry code-splits again**: switched to multi-chunk directory output so the lazy i18n locale bundles and the Settings/Subscription dialogs load on demand (they were being inlined into a single chunk).
+- **Packaging**: added a `typesVersions` map so legacy `moduleResolution: "node"` consumers resolve types for the `/react`, `/data`, and `/css` subpaths; added a `"./package.json"` export. Webhook docs updated from "Node.js only" to runtime-agnostic.
+
 ## [0.0.49] - 2026-07-07
 
 ### Added
