@@ -60,7 +60,7 @@ export default [
     preserveEntrySignatures: 'exports-only',
     treeshake: treeshakeConfig,
     output: [
-      { file: 'dist/index.js', format: 'cjs', sourcemap: false, inlineDynamicImports: true },
+      { file: 'dist/index.cjs', format: 'cjs', sourcemap: false, inlineDynamicImports: true },
       { file: 'dist/index.mjs', format: 'esm', sourcemap: false, inlineDynamicImports: true },
     ],
     plugins: createPlugins({ declarationDir: 'dist/types' }),
@@ -73,7 +73,7 @@ export default [
     preserveEntrySignatures: 'exports-only',
     treeshake: treeshakeConfig,
     output: [
-      { file: 'dist/react/index.js', format: 'cjs', sourcemap: false, inlineDynamicImports: true },
+      { file: 'dist/react/index.cjs', format: 'cjs', sourcemap: false, inlineDynamicImports: true },
       { file: 'dist/react/index.mjs', format: 'esm', sourcemap: false, inlineDynamicImports: true },
     ],
     plugins: [
@@ -98,7 +98,7 @@ export default [
     preserveEntrySignatures: 'exports-only',
     treeshake: treeshakeConfig,
     output: [
-      { file: 'dist/data/index.js', format: 'cjs', sourcemap: false, inlineDynamicImports: true },
+      { file: 'dist/data/index.cjs', format: 'cjs', sourcemap: false, inlineDynamicImports: true },
       { file: 'dist/data/index.mjs', format: 'esm', sourcemap: false, inlineDynamicImports: true },
     ],
     plugins: createPlugins({ declarationDir: 'dist/data/types' }),

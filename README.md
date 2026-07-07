@@ -36,6 +36,9 @@ Also works server-side (Next.js API routes, Express, Hono) — see [Server-Side 
 - [API Reference](#-api-reference)
 - [Best Practices](#-best-practices)
 - [Server-Side Usage](#server-side-usage)
+- [Webhook Verification](#webhook-verification)
+- [Agent Readiness (Discovery)](#agent-readiness-discovery)
+- [OAuth2 App Bridge](#oauth2-app-bridge)
 
 ## 🚀 Features
 
@@ -2017,6 +2020,15 @@ All SDK API clients extend a shared base class and are exported from the package
 | `WorkspaceApi`   | Workspaces, subscription, invoices, quota usage, users                          |
 | `SettingsApi`    | Organization settings                                                           |
 
+Server-only toolkits (framework-agnostic, zero React) are exported from `@buildbase/sdk`:
+
+| Export group             | Purpose                                                                                                    |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------- |
+| `BuildBase()` factory    | Session-scoped server actions — see [Server-Side Usage](#server-side-usage)                                 |
+| Webhook verification     | `verifyWebhookSignature`, `parseWebhookEvent` — see [Webhook Verification](#webhook-verification)          |
+| Agent readiness          | `resolveWellKnown`, `buildAgentCard`, `buildLlmsTxt`, … — see [Agent Readiness](#agent-readiness-discovery) |
+| OAuth2 app bridge        | `handleAppTokenRequest`, `handleAppRevokeRequest`, `bearerChallenge`, … — see [OAuth2 App Bridge](#oauth2-app-bridge) |
+
 ### Components
 
 | Component                                                           | Purpose                                                               |
@@ -2794,6 +2806,192 @@ BuildBase({
   fetch: customFetch,         // Replace global fetch (testing, proxying)
 })
 ```
+
+## Webhook Verification
+
+BuildBase signs every outbound webhook with HMAC-SHA256 over `<timestamp>.<rawBody>`. Verify it before trusting the payload. **Node.js only** (uses the built-in `crypto` module).
+
+Always verify against the **raw** request body — parse only after verification succeeds.
+
+```ts
+import { parseWebhookEvent, verifyWebhookSignature } from '@buildbase/sdk';
+
+// One-step: verify + parse (returns null when invalid)
+app.post('/webhooks/buildbase', (req, res) => {
+  const event = parseWebhookEvent({
+    body: req.rawBody, // raw string, NOT the JSON-parsed object
+    signature: req.headers['x-buildbase-signature'], // "sha256=<hex>"
+    timestamp: req.headers['x-buildbase-timestamp'],
+    secret: process.env.BUILDBASE_WEBHOOK_SECRET!,
+  });
+
+  if (!event) return res.status(401).json({ error: 'Invalid webhook' });
+
+  switch (event.event) {
+    case 'subscription.created':
+      // event.data.subscription ...
+      break;
+    case 'workspace.member_added':
+      // event.data.targetUser ...
+      break;
+  }
+  res.json({ received: true });
+});
+```
+
+`verifyWebhookSignature(options)` → `boolean` — use directly when you want to control parsing yourself.
+
+| Option          | Type                | Notes                                                       |
+| --------------- | ------------------- | ----------------------------------------------------------- |
+| `body`          | `string`            | Raw request body, byte-for-byte as sent.                    |
+| `signature`     | `string \| null`    | `x-buildbase-signature` header (`sha256=<hex>`).            |
+| `timestamp`     | `string \| null`    | `x-buildbase-timestamp` header.                             |
+| `secret`        | `string`            | Your endpoint's signing secret.                             |
+| `maxAgeSeconds` | `number` (def. 300) | Replay window. Set to `0` to skip the timestamp age check.  |
+
+> **Next.js App Router:** read the raw body with `await req.text()` — do not use `req.json()`, which discards the exact bytes the signature was computed over.
+
+## Agent Readiness (Discovery)
+
+Make a consuming app [agent ready](https://isitagentready.com) by serving the standard machine-readable discovery documents an AI agent looks for — Agent Card, OAuth protected-resource metadata (RFC 9728), Agent Skills, `security.txt` (RFC 9116), and `llms.txt` — with the BuildBase server as the source of truth. Framework-agnostic and zero React: every function returns a plain `DiscoveryDocument` (`{ status, contentType, body, cacheControl }`); you wire it into your own router.
+
+```ts
+// lib/agent-ready.ts
+import type { AgentReadyConfig } from '@buildbase/sdk';
+
+export const agentConfig: AgentReadyConfig = {
+  serverUrl: process.env.BUILDBASE_URL!,
+  orgId: process.env.BUILDBASE_ORG_ID!,
+  siteUrl: 'https://imejis.io',
+  site: { name: 'Imejis', description: 'Generate images from templates via API.' },
+  // skills, security, cacheTtlSeconds are all optional
+};
+```
+
+Serve every `.well-known/*` document from one catch-all route via `resolveWellKnown`:
+
+```ts
+// app/.well-known/[...path]/route.ts  (Next.js App Router)
+import { resolveWellKnown } from '@buildbase/sdk';
+import { agentConfig } from '@/lib/agent-ready';
+
+export async function GET(req: Request) {
+  const doc = await resolveWellKnown(new URL(req.url).pathname, agentConfig);
+  if (!doc) return new Response('{"error":"not_found"}', { status: 404 });
+  return new Response(doc.body, {
+    status: doc.status,
+    headers: { 'Content-Type': doc.contentType, 'Cache-Control': doc.cacheControl },
+  });
+}
+```
+
+`resolveWellKnown` handles `agent.json`, `oauth-protected-resource` (+ per-resource paths), the `oauth-authorization-server` pointer, the Agent Skills index + `SKILL.md`, and `security.txt`. Serve `llms.txt` from its own route (it lives at the site root, not under `.well-known`):
+
+```ts
+// app/llms.txt/route.ts
+import { buildLlmsTxt, fetchAgentReadiness } from '@buildbase/sdk';
+import { agentConfig } from '@/lib/agent-ready';
+
+export async function GET() {
+  const doc = buildLlmsTxt(agentConfig, await fetchAgentReadiness(agentConfig));
+  if (!doc) return new Response('Not found', { status: 404 });
+  return new Response(doc.body, { headers: { 'Content-Type': doc.contentType } });
+}
+```
+
+`fetchAgentReadiness` is **fail-soft** — any network/HTTP/parse error resolves to `{ enabled: false }`, so a discovery route never 500s and never leaks that the platform is down; agents simply see the app as not (yet) agent-ready. Results are cached in-memory for `cacheTtlSeconds` (default 300s); call `clearAgentReadinessCache()` to reset (mainly for tests).
+
+**Functions:** `resolveWellKnown`, `fetchAgentReadiness`, `clearAgentReadinessCache`, `buildAgentCard`, `buildProtectedResourceMetadata`, `buildAgentSkillsIndex`, `buildSkillMd`, `buildSecurityTxt`, `buildLlmsTxt`, `sha256Digest`. **Types:** `AgentReadyConfig`, `AgentReadinessBundle`, `AgentSkill`, `DiscoveryDocument`.
+
+## OAuth2 App Bridge
+
+BuildBase runs the full OAuth2 authorization flow (login, consent, code, PKCE, refresh rotation) but never mints the access token itself — on the token grant it calls **your** backend to mint the token the agent will carry. It makes signed webhook-style calls to two endpoints your OAuth2 client registers:
+
+- `applicationTokenUrl` — mint an access token for a user (**required**)
+- `applicationRevokeUrl` — invalidate a user's token on revocation (optional)
+
+Both requests carry `Authorization: Bearer <JWT>`, an HS256 JWT signed with your client secret. This toolkit verifies those requests (timing-safe, no `alg` confusion) and shapes the exact response body the platform expects, so you write only the part that's yours: minting/invalidating a token in your own format.
+
+```ts
+// applicationTokenUrl handler (Next.js Pages Router)
+import { handleAppTokenRequest } from '@buildbase/sdk';
+
+export default async function handler(req, res) {
+  const { status, body } = await handleAppTokenRequest({
+    authorization: req.headers.authorization,
+    clientSecret: process.env.BUILDBASE_CLIENT_SECRET!,
+    mintToken: (user) => ({
+      token: signMyAccessToken(user, { aud: user.resource }), // your token, your format
+      expiresIn: 3600,
+    }),
+  });
+  res.status(status).json(body); // 401 + failure body when verification fails
+}
+```
+
+```ts
+// applicationRevokeUrl handler
+import { handleAppRevokeRequest } from '@buildbase/sdk';
+
+export default async function handler(req, res) {
+  const { status, body } = await handleAppRevokeRequest({
+    authorization: req.headers.authorization,
+    clientSecret: process.env.BUILDBASE_CLIENT_SECRET!,
+    onRevoke: async ({ userId, clientId, reason }) => {
+      await revokeMyTokensFor(userId, clientId);
+    },
+  });
+  res.status(status).json(body);
+}
+```
+
+When an agent calls your protected API without a valid token, reply with an RFC 9728 / RFC 6750 challenge that points it at your protected-resource metadata, bootstrapping OAuth discovery:
+
+```ts
+import { bearerChallenge } from '@buildbase/sdk';
+
+const c = bearerChallenge({
+  resourceMetadataUrl: 'https://imejis.io/.well-known/oauth-protected-resource',
+  error: 'invalid_token',
+});
+res.writeHead(c.status, c.headers).end(c.body);
+```
+
+### Serving multiple clients
+
+Each integration (an AI agent, Zapier, n8n, …) is its own BuildBase OAuth2 client with its own id/secret, but they can all share one set of endpoints: BuildBase sends the caller's `clientId` as a query param, so verify each request with the secret that matches it.
+
+```ts
+const SECRETS: Record<string, string> = {
+  [process.env.AGENT_CLIENT_ID!]:  process.env.AGENT_CLIENT_SECRET!,
+  [process.env.ZAPIER_CLIENT_ID!]: process.env.ZAPIER_CLIENT_SECRET!,
+};
+
+const clientSecret = SECRETS[String(req.query.clientId)];
+if (!clientSecret) {
+  return res.status(401).json({ success: false, token: '', message: 'unknown_client' });
+}
+const { status, body } = await handleAppTokenRequest({ authorization: req.headers.authorization, clientSecret, mintToken });
+```
+
+Adding a new integration is then just: register it in BuildBase, point its `applicationTokenUrl` at the same endpoint, and add its `id → secret` to the map. Selecting the secret by `clientId` is safe — the `clientId` is public and only *picks* the key; the HS256 signature check is still the real gate.
+
+### `applicationProfileUrl` (userinfo)
+
+If your client also registers an `applicationProfileUrl`, treat it as a userinfo / token-validation endpoint: validate the access token **you** minted (with your own verifier — *not* the client secret) and return the profile.
+
+```ts
+import { extractBearerToken } from '@buildbase/sdk';
+
+const token = extractBearerToken(req.headers.authorization);
+const claims = verifyMyAccessToken(token); // your token, your key
+if (!claims) return res.status(401).json({ error: 'invalid_token' });
+return res.json({ id: claims.id, email: claims.email /* … */ });
+```
+
+The one-call handlers cover the common path; the underlying pieces are exported for custom flows: `verifyAppTokenRequest` / `verifyAppRevokeRequest` (verify → claims), `verifyClientJwt`, `extractBearerToken`, and the response builders `appTokenSuccess` / `appTokenFailure`. Verification throws `AppBridgeError` (with a machine-readable `code` like `invalid_signature`, `token_expired`, `invalid_algorithm`). HMAC verification uses the SDK's dependency-free pure-JS HMAC-SHA256, so it behaves identically under ESM, CJS, a bundler, or bare Node.
+
+**Types:** `AppTokenRequestClaims`, `AppRevokeRequestClaims`, `AppTokenResult`, `AppTokenResponseBody`, `HandlerResult`.
 
 ## 🚀 Publishing a Release
 

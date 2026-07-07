@@ -75,7 +75,7 @@ const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace
     if (typeof user === 'string') {
       return { name: t('users.unknownUser'), email: user, id: user, role: '-' };
     }
-    return { name: user.name, email: user.email, id: user._id };
+    return { name: user.name || t('users.unknownUser'), email: user.email, id: user._id };
   };
 
   const finalUsers = workspaceUsers.map(user => ({

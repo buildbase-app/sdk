@@ -1,29 +1,29 @@
 {
   "name": "@buildbase/sdk",
-  "version": "0.0.48",
+  "version": "0.0.49",
   "type": "module",
   "description": "A SDK for Buildbase",
-  "main": "dist/index.js",
+  "main": "dist/index.cjs",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
-      "require": "./dist/index.js",
-      "default": "./dist/index.js"
+      "require": "./dist/index.cjs",
+      "default": "./dist/index.cjs"
     },
     "./react": {
       "types": "./dist/react/index.d.ts",
       "import": "./dist/react/index.mjs",
-      "require": "./dist/react/index.js",
-      "default": "./dist/react/index.js"
+      "require": "./dist/react/index.cjs",
+      "default": "./dist/react/index.cjs"
     },
     "./data": {
       "types": "./dist/data/index.d.ts",
       "import": "./dist/data/index.mjs",
-      "require": "./dist/data/index.js",
-      "default": "./dist/data/index.js"
+      "require": "./dist/data/index.cjs",
+      "default": "./dist/data/index.cjs"
     },
     "./css": {
       "types": "./dist/css/styles.d.ts",
@@ -33,7 +33,9 @@
   "files": [
     "dist",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "AGENTS.md",
+    "CHANGELOG.md"
   ],
   "sideEffects": [
     "**/*.css"

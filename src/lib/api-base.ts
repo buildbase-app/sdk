@@ -23,6 +23,11 @@ import type { ApiVersion } from '../api/services/shared-types';
 import { handleApiResponse } from './api-utils';
 import { getAuthHeaders } from './auth-utils';
 
+// Tracks errors already surfaced to the onError callback so a transport error
+// reported inside the retry loop is not reported a second time by fetchJson's
+// catch as it propagates up. Ensures onError fires at most once per failure.
+const reportedErrors = new WeakSet<Error>();
+
 export interface IBaseApiConfig {
   serverUrl: string;
   version: ApiVersion;
@@ -146,6 +151,13 @@ export abstract class BaseApi {
     return headers;
   }
 
+  /** Fire the onError callback exactly once per error, regardless of call path. */
+  private reportError(error: Error, ctx: { method: string; path: string }): void {
+    if (reportedErrors.has(error)) return;
+    reportedErrors.add(error);
+    this._onError?.(error, ctx);
+  }
+
   /** Execute fetch with timeout, retries, debug logging, and error callback. */
   private async executeFetch(path: string, init: RequestInit): Promise<Response> {
     return this.executeFetchUrl(this.url(path), init, path);
@@ -206,7 +218,7 @@ export abstract class BaseApi {
             const timeoutError = new Error(
               `Request timeout after ${this._timeout}ms: ${method} ${logPath}`
             );
-            this._onError?.(timeoutError, { method, path: logPath });
+            this.reportError(timeoutError, { method, path: logPath });
             throw timeoutError;
           }
           throw error;
@@ -226,7 +238,7 @@ export abstract class BaseApi {
 
         // Call onError callback
         if (error instanceof Error) {
-          this._onError?.(error, { method, path: logPath });
+          this.reportError(error, { method, path: logPath });
         }
         throw error;
       }
@@ -254,7 +266,7 @@ export abstract class BaseApi {
       return await handleApiResponse<T>(response, errorMessage);
     } catch (error) {
       if (error instanceof Error) {
-        this._onError?.(error, { method: (init.method ?? 'GET').toUpperCase(), path });
+        this.reportError(error, { method: (init.method ?? 'GET').toUpperCase(), path });
       }
       throw error;
     }
