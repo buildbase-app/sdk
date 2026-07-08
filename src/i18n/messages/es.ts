@@ -51,6 +51,7 @@ export const es: SDKMessages = {
       billingManageOnly:
         'Solo los usuarios con permisos de gestión de facturación pueden realizar esta acción.',
       openSettings: 'Abrir configuración',
+      back: 'Atrás',
     },
   },
   subscription: {

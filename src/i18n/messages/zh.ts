@@ -49,6 +49,7 @@ export const zh: SDKMessages = {
       noPermissionDescription: '您没有权限访问此部分。如需访问权限，请联系工作区管理员。',
       billingManageOnly: '只有具有账单管理权限的用户才能执行此操作。',
       openSettings: '打开设置',
+      back: '返回',
     },
   },
   subscription: {

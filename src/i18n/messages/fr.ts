@@ -51,6 +51,7 @@ export const fr: SDKMessages = {
       billingManageOnly:
         'Seuls les utilisateurs disposant des autorisations de gestion de la facturation peuvent effectuer cette action.',
       openSettings: 'Ouvrir les paramètres',
+      back: 'Retour',
     },
   },
   subscription: {

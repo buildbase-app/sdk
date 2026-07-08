@@ -73,6 +73,7 @@ export interface SDKMessages {
       noPermissionDescription: string;
       billingManageOnly: string;
       openSettings: string;
+      back: string;
     };
   };
   subscription: {

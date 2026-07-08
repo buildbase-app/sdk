@@ -176,7 +176,7 @@ const WorkspaceSettingsGeneral: React.FC<{ workspace: IWorkspace }> = ({ workspa
                           disabled={!canEdit}
                           aria-label={emoji}
                           aria-pressed={selectedEmoji === emoji}
-                          className={`w-8 h-8 rounded flex items-center justify-center text-lg hover:bg-muted transition-colors ${
+                          className={`w-10 h-10 sm:w-8 sm:h-8 rounded flex items-center justify-center text-lg hover:bg-muted transition-colors ${
                             selectedEmoji === emoji ? 'bg-primary text-primary-foreground' : ''
                           }`}
                         >

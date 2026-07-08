@@ -50,6 +50,17 @@ const WorkspaceSettingsX: React.FC<Props> = ({ workspace }) => {
 export default WorkspaceSettingsX;
 ```
 
+## Responsive rules
+
+Support the full range: phones (360px), tablets (768px), laptops (1280px), large monitors (1920px+). Mobile-first: base classes target phones, add `sm:`/`md:`/`xl:` upward.
+
+- **Dialogs**: full-screen on mobile (`min-w-full`), fixed widths only from `md:` up (`md:min-w-[800px]`) — never force a width at `sm:` (640–768px tablets would overflow).
+- **Sidebars/nav**: horizontal scrollable bar on mobile, vertical column from `sm:` (see `Sidebar.tsx` + `SidebarNavSection className="flex-row sm:flex-col"`).
+- **Rows with many children**: `flex-col sm:flex-row` or `flex-wrap`; text containers get `min-w-0` + `truncate`.
+- **Tables**: always inside an `overflow-x-auto` wrapper; prefer stacked cards on mobile + table from `md:` (see `SubscriptionDialog`).
+- **Large screens**: cap content width (`max-w-2xl mx-auto`) rather than letting text lines grow unbounded; dialogs may widen at `xl:`.
+- Test at 360 / 768 / 1280 / 1920 before shipping a new screen.
+
 ## Hard rules
 
 - **i18n**: no hard-coded user-facing strings. Add keys to `src/i18n/types.ts` **and all 8 locale files** in `src/i18n/messages/`. Format dates with `Intl.DateTimeFormat(formattingLocale, …)`, numbers with `fmtNum`, money with `fmtCents`.

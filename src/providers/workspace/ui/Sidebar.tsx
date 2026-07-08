@@ -50,9 +50,12 @@ const Sidebar: React.FC<Props> = ({ workspace, section, setSection }) => {
   );
 
   return (
-    <div className="w-44 sm:w-56 h-full flex flex-col space-y-4 sm:space-y-6 shrink-0">
+    // Mobile: full-width menu page (list → detail). sm+: fixed vertical sidebar.
+    <div className="w-full sm:w-56 sm:h-full flex flex-col space-y-4 sm:space-y-6 shrink-0">
       {workspace && (
-        <div className="border-b p-2 py-4">
+        // Sticky so the workspace context stays visible while the menu scrolls.
+        // pe-10 on mobile keeps the name clear of the dialog's × button.
+        <div className="sticky top-0 z-10 bg-muted border-b p-2 py-4 pe-10 sm:pe-2">
           <div className="flex items-center gap-x-2">
             {workspace.image && workspace.image.trim() && (
               <div

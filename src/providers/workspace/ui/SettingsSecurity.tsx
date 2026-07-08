@@ -117,7 +117,7 @@ const WorkspaceSettingsSecurity: React.FC = () => {
                       <Button
                         size="icon"
                         variant="ghost"
-                        className="h-8 w-8 shrink-0"
+                        className="h-10 w-10 sm:h-8 sm:w-8 shrink-0"
                         disabled={busyId === passkey.id}
                         onClick={() => rename(passkey.id)}
                       >
@@ -126,7 +126,7 @@ const WorkspaceSettingsSecurity: React.FC = () => {
                       <Button
                         size="icon"
                         variant="ghost"
-                        className="h-8 w-8 shrink-0"
+                        className="h-10 w-10 sm:h-8 sm:w-8 shrink-0"
                         onClick={() => setEditingId(null)}
                       >
                         <X className="h-4 w-4" />
@@ -163,7 +163,7 @@ const WorkspaceSettingsSecurity: React.FC = () => {
                   <Button
                     size="icon"
                     variant="ghost"
-                    className="h-8 w-8"
+                    className="h-10 w-10 sm:h-8 sm:w-8"
                     aria-label={t('security.rename')}
                     onClick={() => {
                       setEditingId(passkey.id);
@@ -177,7 +177,7 @@ const WorkspaceSettingsSecurity: React.FC = () => {
                       <Button
                         size="icon"
                         variant="ghost"
-                        className="h-8 w-8 text-destructive"
+                        className="h-10 w-10 sm:h-8 sm:w-8 text-destructive"
                         aria-label={t('security.remove')}
                         disabled={busyId === passkey.id}
                       >

@@ -24,10 +24,11 @@ const buttonVariants = cva(
         true: 'w-full',
       },
       size: {
-        default: 'h-9 py-2 px-4 text-sm',
-        sm: 'h-8 px-3 text-xs',
-        lg: 'h-10 px-6 text-base',
-        icon: 'h-9 w-9',
+        // Mobile-first: comfortable touch targets below `sm`, compact on desktop
+        default: 'h-10 sm:h-9 py-2 px-4 text-sm',
+        sm: 'h-9 sm:h-8 px-3 text-xs',
+        lg: 'h-11 sm:h-10 px-6 text-base',
+        icon: 'h-10 w-10 sm:h-9 sm:w-9',
       },
     },
     compoundVariants: [

@@ -50,6 +50,7 @@ export const ja: SDKMessages = {
         'このセクションにアクセスする権限がありません。アクセスが必要な場合は、ワークスペース管理者にお問い合わせください。',
       billingManageOnly: '請求管理権限を持つユーザーのみがこの操作を実行できます。',
       openSettings: '設定を開く',
+      back: '戻る',
     },
   },
   subscription: {

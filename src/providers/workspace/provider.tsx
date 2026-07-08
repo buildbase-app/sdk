@@ -155,7 +155,7 @@ export function WorkspaceSwitcher(props: {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger>{props.trigger?.(isLoading, currentWorkspace)}</DialogTrigger>
       {/* Dialog Content */}
-      <DialogContent dir={dir} className="max-w-2xl min-w-full sm:min-w-[800px]">
+      <DialogContent dir={dir} className="max-w-2xl min-w-full md:min-w-[800px]">
         <DialogHeader dir={dir}>
           <DialogTitle className="flex items-center gap-2">
             <Building2 className="h-5 w-5" />
@@ -514,7 +514,7 @@ function CreateWorkspaceDialog(props: { onCreated: () => void }) {
                           onClick={() => handleEmojiSelect(emoji)}
                           aria-label={emoji}
                           aria-pressed={selectedEmoji === emoji}
-                          className={`w-8 h-8 rounded flex items-center justify-center text-lg hover:bg-muted transition-colors ${
+                          className={`w-10 h-10 sm:w-8 sm:h-8 rounded flex items-center justify-center text-lg hover:bg-muted transition-colors ${
                             selectedEmoji === emoji ? 'bg-primary text-primary-foreground' : ''
                           }`}
                         >

@@ -6,6 +6,7 @@ import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
 import { Label } from '../../../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '../../../components/ui/select';
+import { StatusBanner } from '../../../components/ui/status-banner';
 import { useSubscriptionContext } from '../../../contexts/SubscriptionContext';
 import { useSeatStatus } from '../../../hooks/use-seat-status';
 import { usePermissions } from '../../../hooks/usePermissions';
@@ -355,6 +356,7 @@ const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace
                       variant="destructive"
                       size="sm"
                       startIcon={<TrashIcon />}
+                      aria-label={t('settings.common.delete')}
                       onClick={() => handleRemoveUser(member.id)}
                     ></Button>
                   )}
@@ -447,8 +449,8 @@ function InviteMember({ onInvite, workspaceId }: { onInvite: () => void; workspa
 
   return (
     <div className="flex gap-2 flex-col gap-y-2">
-      {error && <div className="text-destructive">{error}</div>}
-      {success && <div className="text-success">{success}</div>}
+      {error && <StatusBanner variant="error" message={error} />}
+      {success && <StatusBanner variant="success" message={success} />}
       <div>
         <Label>{t('users.inviteByEmail')}</Label>
         <Input

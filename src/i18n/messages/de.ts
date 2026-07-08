@@ -51,6 +51,7 @@ export const de: SDKMessages = {
       billingManageOnly:
         'Nur Benutzer mit Abrechnungsverwaltungsberechtigungen können diese Aktion durchführen.',
       openSettings: 'Einstellungen öffnen',
+      back: 'Zurück',
     },
   },
   subscription: {

@@ -69,7 +69,7 @@ function StatusBanner({
       aria-live={variant === 'error' ? 'assertive' : 'polite'}
       aria-atomic="true"
       className={cn(
-        'border px-4 py-3 rounded-lg flex items-start justify-between gap-4',
+        'border px-4 py-3 rounded-lg flex items-start justify-between gap-2 sm:gap-4',
         v.box,
         className
       )}

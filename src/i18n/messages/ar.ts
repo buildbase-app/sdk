@@ -51,6 +51,7 @@ export const ar: SDKMessages = {
       billingManageOnly:
         'فقط المستخدمون الذين لديهم أذونات إدارة الفواتير يمكنهم تنفيذ هذا الإجراء.',
       openSettings: 'فتح الإعدادات',
+      back: 'رجوع',
     },
   },
   subscription: {

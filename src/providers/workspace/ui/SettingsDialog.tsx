@@ -1,5 +1,5 @@
-import { Settings } from 'lucide-react';
-import React, { useState } from 'react';
+import { ArrowLeft, Settings } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Button } from '../../../components/ui/button';
 import {
   Dialog,
@@ -9,6 +9,7 @@ import {
   DialogTrigger,
 } from '../../../components/ui/dialog';
 import { useTranslation, type TranslationKey } from '../../../i18n';
+import { cn } from '../../../lib/utils';
 import { IWorkspace } from '../types';
 import WorkspaceSettingsConnectedAgents from './SettingsConnectedAgents';
 import WorkspaceSettingsCredits from './SettingsCredits';
@@ -80,6 +81,45 @@ const WorkspaceSettingsDialog: React.FC<WorkspaceSettingsDialogProps> = ({
   const section = controlledSection !== undefined ? controlledSection : internalSection;
   const setSection = onSectionChange || setInternalSection;
 
+  // Mobile list → detail navigation: start on the menu unless a specific
+  // section was requested (controlled usage / deep link). Desktop ignores this.
+  const startOnMenu = controlledSection === undefined && defaultSection === SettingsScreen.Profile;
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(startOnMenu);
+  const prevSectionRef = useRef(section);
+  const contentPaneRef = useRef<HTMLDivElement>(null);
+  const menuPaneRef = useRef<HTMLDivElement>(null);
+
+  // Keep keyboard/screen-reader focus sensible when panes swap on mobile —
+  // the element that had focus gets display:none, which would drop focus to <body>.
+  const prevMenuOpenRef = useRef(mobileMenuOpen);
+  useEffect(() => {
+    if (prevMenuOpenRef.current === mobileMenuOpen) return;
+    prevMenuOpenRef.current = mobileMenuOpen;
+    if (typeof window === 'undefined' || window.innerWidth >= 640) return;
+    (mobileMenuOpen ? menuPaneRef : contentPaneRef).current?.focus();
+  }, [mobileMenuOpen]);
+
+  // Externally driven section changes (e.g. settings-manager deep links) jump to content
+  useEffect(() => {
+    if (prevSectionRef.current !== section) {
+      prevSectionRef.current = section;
+      setMobileMenuOpen(false);
+    }
+  }, [section]);
+
+  // Re-opening the dialog starts fresh on the menu (mobile)
+  useEffect(() => {
+    if (open) {
+      setMobileMenuOpen(startOnMenu);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
+  const selectSection = (next: WorkspaceSettingsSection) => {
+    setSection(next);
+    setMobileMenuOpen(false);
+  };
+
   // Don't render if no current workspace
   if (!workspace) {
     return null;
@@ -103,15 +143,50 @@ const WorkspaceSettingsDialog: React.FC<WorkspaceSettingsDialogProps> = ({
       {showTrigger && <DialogTrigger asChild>{trigger || defaultTrigger}</DialogTrigger>}
       <DialogContent
         dir={dir}
-        className="flex max-w-2xl min-w-full sm:min-w-[800px] p-0 m-0 bg-muted sm:min-h-[600px] min-h-full gap-x-0 space-x-0"
+        className="flex flex-col sm:flex-row max-w-2xl min-w-full md:min-w-[800px] xl:min-w-[960px] p-0 m-0 bg-muted h-dvh max-h-dvh sm:h-auto sm:max-h-[90vh] sm:min-h-[600px] overflow-hidden gap-x-0 space-x-0"
       >
         <DialogDescription className="sr-only">{t(SCREEN_TITLE_KEYS[section])}</DialogDescription>
-        <WorkspaceSettingsSidebar workspace={workspace} section={section} setSection={setSection} />
-        <div className="flex-1 p-6 overflow-auto flex flex-col bg-background">
-          <DialogTitle className="text-xl font-semibold mb-4">
-            {t(SCREEN_TITLE_KEYS[section])}
-          </DialogTitle>
-          <div className="sm:max-h-[500px] overflow-y-auto">
+        {/* Menu pane — full page on mobile, permanent sidebar from sm up */}
+        <div
+          ref={menuPaneRef}
+          tabIndex={-1}
+          className={cn(
+            // px/pb only — no top padding, so the sticky workspace header sits flush
+            'flex-col flex-1 min-h-0 overflow-y-auto overscroll-contain px-2 pb-2 sm:p-0 sm:flex sm:flex-none focus:outline-none',
+            mobileMenuOpen ? 'flex' : 'hidden'
+          )}
+        >
+          <WorkspaceSettingsSidebar
+            workspace={workspace}
+            section={section}
+            setSection={selectSection}
+          />
+        </div>
+        {/* Content pane — hidden on mobile while the menu is open */}
+        <div
+          ref={contentPaneRef}
+          tabIndex={-1}
+          className={cn(
+            'flex-1 p-4 sm:p-6 overflow-auto flex-col bg-background sm:flex focus:outline-none',
+            mobileMenuOpen ? 'hidden' : 'flex'
+          )}
+        >
+          {/* Back + title share one row on mobile (iOS pattern); back hidden on desktop */}
+          <div className="flex items-center gap-1 mb-4 pe-10 sm:pe-0">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="sm:hidden -ms-2 shrink-0 text-muted-foreground"
+              aria-label={t('settings.common.back')}
+              onClick={() => setMobileMenuOpen(true)}
+            >
+              <ArrowLeft className="h-5 w-5 rtl:rotate-180" />
+            </Button>
+            <DialogTitle className="text-xl font-semibold min-w-0 truncate">
+              {t(SCREEN_TITLE_KEYS[section])}
+            </DialogTitle>
+          </div>
+          <div className="sm:max-h-[500px] xl:max-h-[65vh] overflow-y-auto">
             {section === SettingsScreen.Profile && (
               <WorkspaceSettingsProfile workspace={workspace} />
             )}
