@@ -49,6 +49,7 @@ export const hi: SDKMessages = {
       noPermissionDescription:
         'आपके पास इस अनुभाग तक पहुँचने की अनुमति नहीं है। यदि आपको पहुँच की आवश्यकता है तो कार्यक्षेत्र व्यवस्थापक से संपर्क करें।',
       billingManageOnly: 'केवल बिलिंग प्रबंधन अनुमतियों वाले उपयोगकर्ता ही यह कार्य कर सकते हैं।',
+      openSettings: 'सेटिंग्स खोलें',
     },
   },
   subscription: {
@@ -610,6 +611,13 @@ export const hi: SDKMessages = {
     fetchExpiringCredits: 'समाप्त होने वाले क्रेडिट लाने में विफल',
   },
   security: {
+    connectedAgentsTitle: 'कनेक्टेड एजेंट',
+    connectedAgentsDescription:
+      'AI एजेंट जिन्हें आपने अपने खाते तक पहुँच दी है। जिन्हें अब उपयोग नहीं करते उन्हें डिस्कनेक्ट करें।',
+    connectedAgentsDisconnect: 'डिस्कनेक्ट करें',
+    connectedAgentsEmpty: 'कोई कनेक्टेड एजेंट नहीं।',
+    connectedAgentsAccess: 'पहुँच',
+    connectedAgentsGranted: 'प्रदान किया गया',
     inactive: 'निष्क्रिय',
     inactiveHint:
       'पिछले साइन-इन डोमेन पर पंजीकृत और अब उपयोग नहीं की जा सकती। आप इसे हटा सकते हैं।',

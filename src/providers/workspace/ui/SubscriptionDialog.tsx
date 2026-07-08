@@ -428,9 +428,7 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
       >
         <div className="flex-shrink-0 px-4 py-4 sm:px-6 sm:py-6 border-b space-y-3 sm:space-y-4">
           <div>
-            <DialogTitle className="text-xl sm:text-2xl font-bold">
-              {t('pricing.title')}
-            </DialogTitle>
+            <DialogTitle className="text-xl font-semibold">{t('pricing.title')}</DialogTitle>
             <DialogDescription className="mt-1 text-sm">
               {t('subscription.choosePlanDescription')}
               {workspaceName && (
@@ -446,12 +444,12 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
             <div className="flex items-center gap-2">
               {!workspaceBillingCurrency?.trim() && availableCurrencies.length > 1 && (
                 <>
-                  <span className="text-sm text-slate-600">{t('pricing.currency')}</span>
+                  <span className="text-sm text-muted-foreground">{t('pricing.currency')}</span>
                   <select
                     aria-label={t('pricing.selectCurrency')}
                     value={selectedCurrency}
                     onChange={e => setSelectedCurrency(e.target.value)}
-                    className="rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                    className="rounded-md border border-border bg-background px-3 py-2 text-sm font-medium text-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-primary"
                   >
                     {availableCurrencies.map(code => {
                       const flag = getCurrencyFlag(code);
@@ -465,7 +463,7 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                 </>
               )}
               {workspaceBillingCurrency?.trim() && (
-                <span className="text-xs text-slate-500">
+                <span className="text-xs text-muted-foreground">
                   {t('subscription.billingInCurrency', {
                     currency: workspaceBillingCurrency.toUpperCase(),
                   })}
@@ -474,7 +472,7 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
             </div>
             {/* Billing interval selector */}
             <div
-              className="flex items-center gap-0.5 sm:gap-1 p-1 bg-slate-100 rounded-lg w-full sm:w-auto"
+              className="flex items-center gap-0.5 sm:gap-1 p-1 bg-muted rounded-lg w-full sm:w-auto"
               role="group"
               aria-label={t('pricing.billingInterval')}
             >
@@ -493,8 +491,8 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                     aria-pressed={selectedInterval === interval}
                     className={`flex-1 sm:flex-initial px-3 sm:px-4 py-2 text-sm font-medium rounded-md transition-all relative ${
                       selectedInterval === interval
-                        ? 'bg-white text-slate-900 shadow-sm'
-                        : 'text-slate-600 hover:text-slate-900'
+                        ? 'bg-background text-foreground shadow-sm'
+                        : 'text-muted-foreground hover:text-foreground'
                     }`}
                   >
                     <span className="flex items-center justify-center gap-1 sm:gap-1.5">
@@ -505,12 +503,12 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                       {interval === BillingIntervals.Yearly &&
                         t('subscription.billingInterval.yearly')}
                       {interval === BillingIntervals.Yearly && (
-                        <span className="text-[10px] sm:text-xs px-1 sm:px-1.5 py-0.5 bg-emerald-100 text-emerald-700 rounded-full font-semibold">
+                        <span className="text-xs px-1 sm:px-1.5 py-0.5 bg-success/15 text-success rounded-full font-semibold">
                           {t('pricing.save')}
                         </span>
                       )}
                       {isCurrentInterval && currentPlanVersionId && (
-                        <span className="hidden sm:inline text-xs px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded-full font-semibold">
+                        <span className="hidden sm:inline text-xs px-1.5 py-0.5 bg-info/15 text-info rounded-full font-semibold">
                           {t('pricing.current')}
                         </span>
                       )}
@@ -525,15 +523,17 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
         <div className="flex-1 min-h-0 flex flex-col">
           {workspaceBillingCurrency?.trim() && availableCurrencies.length === 0 ? (
             <div className="text-center py-12 px-4">
-              <p className="text-slate-600 font-medium">{t('pricing.noPlansCurrency')}</p>
-              <p className="text-slate-500 text-sm mt-2">{t('pricing.noPlansCurrencyHint')}</p>
+              <p className="text-muted-foreground font-medium">{t('pricing.noPlansCurrency')}</p>
+              <p className="text-muted-foreground text-sm mt-2">
+                {t('pricing.noPlansCurrencyHint')}
+              </p>
             </div>
           ) : sortedPlans.length === 0 ? (
-            <div className="text-center py-12 text-gray-500">
+            <div className="text-center py-12 text-muted-foreground">
               <p>{t('pricing.noPlans')}</p>
             </div>
           ) : (
-            <div className="flex-1 min-h-0 overflow-hidden bg-white">
+            <div className="flex-1 min-h-0 overflow-hidden bg-background">
               {/* ─── Mobile Layout: Stacked plan cards ─── */}
               <div
                 className="md:hidden overflow-auto h-full"
@@ -568,13 +568,13 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                     return (
                       <div
                         key={planVersion._id}
-                        className={`rounded-xl border-2 p-4 ${isCurrent ? 'border-blue-500 bg-blue-50/30' : 'border-slate-200 bg-white'}`}
+                        className={`rounded-xl border-2 p-4 ${isCurrent ? 'border-info bg-info/5' : 'border-border bg-background'}`}
                       >
                         {/* Plan header */}
                         <div className="flex items-start justify-between mb-3">
                           <div>
                             <div className="flex items-center gap-2">
-                              <h3 className="text-lg font-bold text-slate-900">
+                              <h3 className="text-lg font-bold text-foreground">
                                 {planVersion.plan.name}
                               </h3>
                               {planVersion.trial?.enabled &&
@@ -582,7 +582,7 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                                 !isCurrent &&
                                 !trialUsedAt &&
                                 !currentStripePriceId && (
-                                  <span className="shrink-0 rounded-md bg-emerald-100 text-emerald-700 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider">
+                                  <span className="shrink-0 rounded-md bg-success/15 text-success px-2 py-0.5 text-xs font-semibold uppercase tracking-wider">
                                     {t('subscription.trialBadge', {
                                       days: planVersion.trial.durationDays,
                                     })}
@@ -590,13 +590,13 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                                 )}
                             </div>
                             {planVersion.plan.description && (
-                              <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">
+                              <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
                                 {planVersion.plan.description}
                               </p>
                             )}
                           </div>
                           {isCurrent && (
-                            <span className="shrink-0 rounded-md bg-blue-600 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white">
+                            <span className="shrink-0 rounded-md bg-info px-2 py-0.5 text-xs font-semibold uppercase tracking-wider text-info-foreground">
                               {t('pricing.current')}
                             </span>
                           )}
@@ -605,7 +605,7 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                         {/* Price */}
                         <div className="mb-4">
                           <div className="flex items-baseline gap-1 whitespace-nowrap">
-                            <span className="text-2xl font-bold text-slate-900">
+                            <span className="text-2xl font-bold text-foreground">
                               {hasVariant && price !== null
                                 ? formatPrice(price, displayCurrency) || t('pricing.free')
                                 : !hasVariant
@@ -613,18 +613,18 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                                   : formatPrice(price, displayCurrency) || t('pricing.free')}
                             </span>
                             {price !== null && price > 0 && hasVariant && (
-                              <span className="text-sm text-slate-500">
+                              <span className="text-sm text-muted-foreground">
                                 {getIntervalLabel(selectedInterval)}
                               </span>
                             )}
                           </div>
                           {savings !== null && savings > 0 && hasVariant && (
-                            <span className="text-xs text-emerald-600 font-medium">
+                            <span className="text-xs text-success font-medium">
                               {t('subscription.savingsPercent', { percent: savings })}
                             </span>
                           )}
                           {sp?.enabled && perSeat && perSeat > 0 && !isPersonalMode && (
-                            <div className="text-xs text-slate-500 mt-1">
+                            <div className="text-xs text-muted-foreground mt-1">
                               {t('subscription.seatPriceDisplay', {
                                 price: fmtCents(perSeat, displayCurrency),
                                 interval: getIntervalLabel(selectedInterval),
@@ -638,7 +638,7 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                         {/* Features list */}
                         {features.length > 0 && (
                           <div className="mb-3">
-                            <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
+                            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
                               {t('subscription.items.features')}
                             </div>
                             <div className="space-y-1">
@@ -650,13 +650,17 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                                   <div key={item._id} className="flex items-center gap-2 text-sm">
                                     {item.type === SubscriptionItemType.Feature ? (
                                       isEnabled ? (
-                                        <span className="text-emerald-500 text-xs">&#10003;</span>
+                                        <span className="text-success text-xs">&#10003;</span>
                                       ) : (
-                                        <span className="text-slate-300 text-xs">&#10005;</span>
+                                        <span className="text-muted-foreground/50 text-xs">
+                                          &#10005;
+                                        </span>
                                       )
                                     ) : null}
                                     <span
-                                      className={isEnabled ? 'text-slate-700' : 'text-slate-400'}
+                                      className={
+                                        isEnabled ? 'text-foreground' : 'text-muted-foreground/70'
+                                      }
                                     >
                                       {item.name}
                                     </span>
@@ -670,7 +674,7 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                         {/* Limits */}
                         {limits.length > 0 && (
                           <div className="mb-3">
-                            <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
+                            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
                               {t('subscription.items.limits')}
                             </div>
                             <div className="space-y-1">
@@ -681,8 +685,8 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                                     key={item._id}
                                     className="flex items-center justify-between text-sm"
                                   >
-                                    <span className="text-slate-600">{item.name}</span>
-                                    <span className="font-medium text-slate-700">
+                                    <span className="text-muted-foreground">{item.name}</span>
+                                    <span className="font-medium text-foreground">
                                       {typeof value === 'number' ? fmtNum(value) : '—'}
                                     </span>
                                   </div>
@@ -695,18 +699,18 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                         {/* Seats */}
                         {sp?.enabled && !isPersonalMode && (
                           <div className="mb-3">
-                            <div className="text-xs font-semibold text-emerald-600 uppercase tracking-wider mb-1.5">
+                            <div className="text-xs font-semibold text-success uppercase tracking-wider mb-1.5">
                               {t('subscription.seats.title')}
                             </div>
                             <div className="space-y-1 text-sm">
                               <div className="flex justify-between">
-                                <span className="text-slate-600">
+                                <span className="text-muted-foreground">
                                   {t('subscription.seats.included')}
                                 </span>
                                 <span className="font-medium">{fmtNum(sp.includedSeats || 0)}</span>
                               </div>
                               <div className="flex justify-between">
-                                <span className="text-slate-600">
+                                <span className="text-muted-foreground">
                                   {t('subscription.seats.maxSeats')}
                                 </span>
                                 <span className="font-medium">
@@ -724,11 +728,11 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                                   );
                                   return (
                                     <div className="flex justify-between">
-                                      <span className="text-slate-600">
+                                      <span className="text-muted-foreground">
                                         {t('subscription.seats.billable')}
                                       </span>
                                       <span
-                                        className={`font-medium ${billable === 0 ? 'text-emerald-600' : 'text-amber-600'}`}
+                                        className={`font-medium ${billable === 0 ? 'text-success' : 'text-warning'}`}
                                       >
                                         {billable === 0
                                           ? t('subscription.seats.allIncluded')
@@ -746,25 +750,25 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                           typeof planVersion.creditGrant.creditPackage === 'object' &&
                           planVersion.creditGrant.creditPackage !== null && (
                             <div className="mb-3">
-                              <div className="text-xs font-semibold text-purple-600 uppercase tracking-wider mb-1.5">
+                              <div className="text-xs font-semibold text-info uppercase tracking-wider mb-1.5">
                                 {t('subscription.items.credits')}
                               </div>
                               <div className="space-y-1 text-sm">
                                 <div className="flex justify-between">
-                                  <span className="text-slate-600">
+                                  <span className="text-muted-foreground">
                                     {planVersion.creditGrant.renewOnPeriod
                                       ? t('subscription.items.creditsPerMonth')
                                       : t('subscription.items.creditsOneTime')}
                                   </span>
-                                  <span className="font-semibold text-purple-700">
+                                  <span className="font-semibold text-info">
                                     {fmtNum(planVersion.creditGrant.creditPackage.creditAmount)}
                                   </span>
                                 </div>
                                 <div className="flex justify-between">
-                                  <span className="text-slate-600">
+                                  <span className="text-muted-foreground">
                                     {t('subscription.items.creditRenewal')}
                                   </span>
-                                  <span className="font-medium text-slate-700">
+                                  <span className="font-medium text-foreground">
                                     {!planVersion.creditGrant.renewOnPeriod
                                       ? t('subscription.items.creditModeLifetime')
                                       : planVersion.creditGrant.mode === 'reset'
@@ -803,6 +807,7 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                 style={{ maxHeight: 'calc(100vh - 12rem)' }}
               >
                 <table
+                  aria-label={t('subscription.choosePlan')}
                   className="w-full border-separate border-spacing-0"
                   style={{
                     minWidth: `${260 + sortedPlans.length * 220}px`,
@@ -818,7 +823,7 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                   <thead>
                     {/* Sticky header row - plan cards */}
                     <tr className="align-top">
-                      <th className="sticky top-0 start-0 z-30 p-0 bg-white   text-start"></th>
+                      <th className="sticky top-0 start-0 z-30 p-0 bg-background   text-start"></th>
                       {sortedPlans.map(planVersion => {
                         const isCurrent = planVersion._id === currentPlanVersionId;
                         const buttonState = getPlanButtonState(planVersion);
@@ -846,16 +851,16 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                         return (
                           <th
                             key={planVersion._id}
-                            className={`sticky top-0 z-20 border-b border-slate-200 p-3 shadow-[0_2px_4px_-2px_rgba(0,0,0,0.06)] ${
+                            className={`sticky top-0 z-20 border-b border-border p-3 shadow-sticky-row ${
                               planVersion._id === currentPlanVersionId
-                                ? 'bg-blue-50/80'
-                                : 'bg-white'
+                                ? 'bg-info/10'
+                                : 'bg-background'
                             }`}
                           >
                             <div className="flex h-full flex-col gap-2">
                               <div className="flex items-center justify-between gap-2">
                                 <div className="flex items-center gap-2 min-w-0">
-                                  <h3 className="text-base font-bold text-slate-900 truncate">
+                                  <h3 className="text-base font-bold text-foreground truncate">
                                     {planVersion.plan.name}
                                   </h3>
                                   {planVersion.trial?.enabled &&
@@ -863,7 +868,7 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                                     !isCurrent &&
                                     !trialUsedAt &&
                                     !currentStripePriceId && (
-                                      <span className="shrink-0 rounded-md bg-emerald-100 text-emerald-700 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider">
+                                      <span className="shrink-0 rounded-md bg-success/15 text-success px-2 py-0.5 text-xs font-semibold uppercase tracking-wider">
                                         {t('subscription.trialBadge', {
                                           days: planVersion.trial.durationDays,
                                         })}
@@ -871,7 +876,7 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                                     )}
                                 </div>
                                 {isCurrent && (
-                                  <span className="shrink-0 rounded-md bg-blue-600 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white">
+                                  <span className="shrink-0 rounded-md bg-info px-2 py-0.5 text-xs font-semibold uppercase tracking-wider text-info-foreground">
                                     {t('pricing.current')}
                                   </span>
                                 )}
@@ -880,7 +885,7 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                               {/* Pricing Display */}
                               <div className="flex flex-col items-start min-h-[3rem]">
                                 <div className="flex items-baseline gap-1 flex-wrap">
-                                  <span className="text-2xl font-bold text-slate-900">
+                                  <span className="text-2xl font-bold text-foreground">
                                     {hasVariant && price !== null
                                       ? formatPrice(price, displayCurrency) || t('pricing.free')
                                       : !hasVariant
@@ -888,12 +893,12 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                                         : formatPrice(price, displayCurrency) || t('pricing.free')}
                                   </span>
                                   {price !== null && price > 0 && hasVariant && (
-                                    <span className="text-sm text-slate-500">
+                                    <span className="text-sm text-muted-foreground">
                                       {getIntervalLabel(selectedInterval)}
                                     </span>
                                   )}
                                   {savings !== null && savings > 0 && hasVariant && (
-                                    <span className="text-[10px] px-1.5 py-0.5 bg-emerald-100 text-emerald-700 rounded-full font-semibold whitespace-nowrap">
+                                    <span className="text-xs px-1.5 py-0.5 bg-success/15 text-success rounded-full font-semibold whitespace-nowrap">
                                       {t('subscription.savingsPercent', { percent: savings })}
                                     </span>
                                   )}
@@ -910,7 +915,7 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                                   );
                                   if (!perSeat || perSeat <= 0) return null;
                                   return (
-                                    <div className="text-[11px] text-slate-500 mt-1.5 border-t border-slate-100 pt-1 leading-tight">
+                                    <div className="text-xs text-muted-foreground mt-1.5 border-t border-border/60 pt-1 leading-tight">
                                       <div>
                                         {t('subscription.seatPriceDisplay', {
                                           price: fmtCents(perSeat, displayCurrency),
@@ -925,7 +930,7 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                               </div>
 
                               {planVersion.plan.description && (
-                                <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed text-start">
+                                <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed text-start">
                                   {planVersion.plan.description}
                                 </p>
                               )}
@@ -954,20 +959,20 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                     {features.length > 0 && (
                       <>
                         <tr>
-                          <td className="sticky start-0 z-10 border-t border-slate-200 bg-slate-100 px-4 py-2.5 font-semibold text-xs uppercase tracking-wider text-slate-600 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.06)]">
+                          <td className="sticky start-0 z-10 border-t border-border bg-muted px-4 py-2.5 font-semibold text-xs uppercase tracking-wider text-muted-foreground shadow-sticky-col">
                             {t('subscription.items.features')}
                           </td>
                           <td
                             colSpan={sortedPlans.length}
-                            className="border-t border-slate-200 bg-slate-100"
+                            className="border-t border-border bg-muted"
                           />
                         </tr>
                         {features.map(item => (
-                          <tr key={item._id} className="group hover:bg-slate-50/50">
-                            <td className="sticky start-0 z-10 border-t border-slate-100 bg-white p-4 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.06)] group-hover:bg-slate-50/80">
-                              <div className="font-medium text-sm text-slate-900">{item.name}</div>
+                          <tr key={item._id} className="group hover:bg-muted/30">
+                            <td className="sticky start-0 z-10 border-t border-border/60 bg-background p-4 shadow-sticky-col group-hover:bg-muted/50">
+                              <div className="font-medium text-sm text-foreground">{item.name}</div>
                               {item.description && (
-                                <div className="text-xs text-slate-500 mt-0.5">
+                                <div className="text-xs text-muted-foreground mt-0.5">
                                   {item.description}
                                 </div>
                               )}
@@ -983,19 +988,19 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                               return (
                                 <td
                                   key={planVersion._id}
-                                  className={`border-t border-slate-100 p-4 text-center align-middle ${
+                                  className={`border-t border-border/60 p-4 text-center align-middle ${
                                     planVersion._id === currentPlanVersionId
-                                      ? 'bg-blue-50/50'
-                                      : 'bg-white'
+                                      ? 'bg-info/5'
+                                      : 'bg-background'
                                   }`}
                                 >
                                   <span
                                     className={`text-sm font-medium ${
                                       isEnabled
-                                        ? 'text-emerald-600'
+                                        ? 'text-success'
                                         : formatted === '—'
-                                          ? 'text-slate-400'
-                                          : 'text-slate-700'
+                                          ? 'text-muted-foreground/70'
+                                          : 'text-foreground'
                                     }`}
                                   >
                                     {formatted}
@@ -1012,20 +1017,20 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                     {limits.length > 0 && (
                       <>
                         <tr>
-                          <td className="sticky start-0 z-10 border-t border-slate-200 bg-slate-100 px-4 py-2.5 font-semibold text-xs uppercase tracking-wider text-slate-600 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.06)]">
+                          <td className="sticky start-0 z-10 border-t border-border bg-muted px-4 py-2.5 font-semibold text-xs uppercase tracking-wider text-muted-foreground shadow-sticky-col">
                             {t('subscription.items.limits')}
                           </td>
                           <td
                             colSpan={sortedPlans.length}
-                            className="border-t border-slate-200 bg-slate-100"
+                            className="border-t border-border bg-muted"
                           />
                         </tr>
                         {limits.map(item => (
-                          <tr key={item._id} className="group hover:bg-slate-50/50">
-                            <td className="sticky start-0 z-10 border-t border-slate-100 bg-white p-4 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.06)] group-hover:bg-slate-50/80">
-                              <div className="font-medium text-sm text-slate-900">{item.name}</div>
+                          <tr key={item._id} className="group hover:bg-muted/30">
+                            <td className="sticky start-0 z-10 border-t border-border/60 bg-background p-4 shadow-sticky-col group-hover:bg-muted/50">
+                              <div className="font-medium text-sm text-foreground">{item.name}</div>
                               {item.description && (
-                                <div className="text-xs text-slate-500 mt-0.5">
+                                <div className="text-xs text-muted-foreground mt-0.5">
                                   {item.description}
                                 </div>
                               )}
@@ -1039,15 +1044,17 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                               return (
                                 <td
                                   key={planVersion._id}
-                                  className={`border-t border-slate-100 p-4 text-center align-middle ${
+                                  className={`border-t border-border/60 p-4 text-center align-middle ${
                                     planVersion._id === currentPlanVersionId
-                                      ? 'bg-blue-50/50'
-                                      : 'bg-white'
+                                      ? 'bg-info/5'
+                                      : 'bg-background'
                                   }`}
                                 >
                                   <span
                                     className={`text-sm font-medium ${
-                                      formatted === '—' ? 'text-slate-400' : 'text-slate-700'
+                                      formatted === '—'
+                                        ? 'text-muted-foreground/70'
+                                        : 'text-foreground'
                                     }`}
                                   >
                                     {formatted}
@@ -1064,20 +1071,20 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                     {quotas.length > 0 && (
                       <>
                         <tr>
-                          <td className="sticky start-0 z-10 border-t border-slate-200 bg-slate-100 px-4 py-2.5 font-semibold text-xs uppercase tracking-wider text-slate-600 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.06)]">
+                          <td className="sticky start-0 z-10 border-t border-border bg-muted px-4 py-2.5 font-semibold text-xs uppercase tracking-wider text-muted-foreground shadow-sticky-col">
                             {t('subscription.items.quotas')}
                           </td>
                           <td
                             colSpan={sortedPlans.length}
-                            className="border-t border-slate-200 bg-slate-100"
+                            className="border-t border-border bg-muted"
                           />
                         </tr>
                         {quotas.map(item => (
-                          <tr key={item._id} className="group hover:bg-slate-50/50">
-                            <td className="sticky start-0 z-10 border-t border-slate-100 bg-white p-4 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.06)] group-hover:bg-slate-50/80">
-                              <div className="font-medium text-sm text-slate-900">{item.name}</div>
+                          <tr key={item._id} className="group hover:bg-muted/30">
+                            <td className="sticky start-0 z-10 border-t border-border/60 bg-background p-4 shadow-sticky-col group-hover:bg-muted/50">
+                              <div className="font-medium text-sm text-foreground">{item.name}</div>
                               {item.description && (
-                                <div className="text-xs text-slate-500 mt-0.5">
+                                <div className="text-xs text-muted-foreground mt-0.5">
                                   {item.description}
                                 </div>
                               )}
@@ -1091,15 +1098,17 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                               return (
                                 <td
                                   key={planVersion._id}
-                                  className={`border-t border-slate-100 p-4 text-center align-middle ${
+                                  className={`border-t border-border/60 p-4 text-center align-middle ${
                                     planVersion._id === currentPlanVersionId
-                                      ? 'bg-blue-50/50'
-                                      : 'bg-white'
+                                      ? 'bg-info/5'
+                                      : 'bg-background'
                                   }`}
                                 >
                                   <span
                                     className={`text-sm font-medium ${
-                                      formatted === '—' ? 'text-slate-400' : 'text-slate-700'
+                                      formatted === '—'
+                                        ? 'text-muted-foreground/70'
+                                        : 'text-foreground'
                                     }`}
                                   >
                                     {formatted}
@@ -1120,21 +1129,21 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                       }) && (
                         <>
                           <tr>
-                            <td className="sticky start-0 z-10 border-t border-emerald-200 bg-emerald-50 px-4 py-2.5 font-semibold text-xs uppercase tracking-wider text-emerald-700 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.06)]">
+                            <td className="sticky start-0 z-10 border-t border-success/20 bg-success/10 px-4 py-2.5 font-semibold text-xs uppercase tracking-wider text-success shadow-sticky-col">
                               {t('subscription.seats.title')}
                             </td>
                             <td
                               colSpan={sortedPlans.length}
-                              className="border-t border-emerald-200 bg-emerald-50"
+                              className="border-t border-success/20 bg-success/10"
                             />
                           </tr>
                           {/* Included seats row */}
-                          <tr className="group hover:bg-slate-50/50">
-                            <td className="sticky start-0 z-10 border-t border-slate-100 bg-white p-4 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.06)] group-hover:bg-slate-50/80">
-                              <div className="font-medium text-sm text-slate-900">
+                          <tr className="group hover:bg-muted/30">
+                            <td className="sticky start-0 z-10 border-t border-border/60 bg-background p-4 shadow-sticky-col group-hover:bg-muted/50">
+                              <div className="font-medium text-sm text-foreground">
                                 {t('subscription.seats.includedSeats')}
                               </div>
-                              <div className="text-xs text-slate-500 mt-0.5">
+                              <div className="text-xs text-muted-foreground mt-0.5">
                                 {t('subscription.seats.freeWithBase')}
                               </div>
                             </td>
@@ -1143,9 +1152,9 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                               return (
                                 <td
                                   key={planVersion._id}
-                                  className={`border-t border-slate-100 p-4 text-center align-middle ${planVersion._id === currentPlanVersionId ? 'bg-blue-50/50' : 'bg-white'}`}
+                                  className={`border-t border-border/60 p-4 text-center align-middle ${planVersion._id === currentPlanVersionId ? 'bg-info/5' : 'bg-background'}`}
                                 >
-                                  <span className="text-sm font-medium text-slate-700">
+                                  <span className="text-sm font-medium text-foreground">
                                     {sp?.enabled ? fmtNum(sp.includedSeats || 0) : '—'}
                                   </span>
                                 </td>
@@ -1153,9 +1162,9 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                             })}
                           </tr>
                           {/* Max seats row */}
-                          <tr className="group hover:bg-slate-50/50">
-                            <td className="sticky start-0 z-10 border-t border-slate-100 bg-white p-4 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.06)] group-hover:bg-slate-50/80">
-                              <div className="font-medium text-sm text-slate-900">
+                          <tr className="group hover:bg-muted/30">
+                            <td className="sticky start-0 z-10 border-t border-border/60 bg-background p-4 shadow-sticky-col group-hover:bg-muted/50">
+                              <div className="font-medium text-sm text-foreground">
                                 {t('subscription.seats.maxSeats')}
                               </div>
                             </td>
@@ -1164,9 +1173,9 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                               return (
                                 <td
                                   key={planVersion._id}
-                                  className={`border-t border-slate-100 p-4 text-center align-middle ${planVersion._id === currentPlanVersionId ? 'bg-blue-50/50' : 'bg-white'}`}
+                                  className={`border-t border-border/60 p-4 text-center align-middle ${planVersion._id === currentPlanVersionId ? 'bg-info/5' : 'bg-background'}`}
                                 >
-                                  <span className="text-sm font-medium text-slate-700">
+                                  <span className="text-sm font-medium text-foreground">
                                     {sp?.enabled
                                       ? (sp?.maxSeats ?? 0) > 0
                                         ? fmtNum(sp!.maxSeats!)
@@ -1178,9 +1187,9 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                             })}
                           </tr>
                           {/* Per seat price row */}
-                          <tr className="group hover:bg-slate-50/50">
-                            <td className="sticky start-0 z-10 border-t border-slate-100 bg-white p-4 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.06)] group-hover:bg-slate-50/80">
-                              <div className="font-medium text-sm text-slate-900">
+                          <tr className="group hover:bg-muted/30">
+                            <td className="sticky start-0 z-10 border-t border-border/60 bg-background p-4 shadow-sticky-col group-hover:bg-muted/50">
+                              <div className="font-medium text-sm text-foreground">
                                 {t('subscription.seats.perExtraSeat')}
                               </div>
                             </td>
@@ -1196,9 +1205,9 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                               return (
                                 <td
                                   key={planVersion._id}
-                                  className={`border-t border-slate-100 p-4 text-center align-middle ${planVersion._id === currentPlanVersionId ? 'bg-blue-50/50' : 'bg-white'}`}
+                                  className={`border-t border-border/60 p-4 text-center align-middle ${planVersion._id === currentPlanVersionId ? 'bg-info/5' : 'bg-background'}`}
                                 >
-                                  <span className="text-sm font-medium text-slate-700">
+                                  <span className="text-sm font-medium text-foreground">
                                     {perSeat && perSeat > 0
                                       ? `${fmtCents(perSeat, displayCurrency)}${getIntervalLabel(selectedInterval)}`
                                       : '—'}
@@ -1209,12 +1218,12 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                           </tr>
                           {/* Billable seats row — only show when we know the member count */}
                           {currentMemberCount != null && currentMemberCount > 0 && (
-                            <tr className="group hover:bg-slate-50/50">
-                              <td className="sticky start-0 z-10 border-t border-slate-100 bg-white p-4 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.06)] group-hover:bg-slate-50/80">
-                                <div className="font-medium text-sm text-slate-900">
+                            <tr className="group hover:bg-muted/30">
+                              <td className="sticky start-0 z-10 border-t border-border/60 bg-background p-4 shadow-sticky-col group-hover:bg-muted/50">
+                                <div className="font-medium text-sm text-foreground">
                                   {t('subscription.seats.billable')}
                                 </div>
-                                <div className="text-xs text-slate-500 mt-0.5">
+                                <div className="text-xs text-muted-foreground mt-0.5">
                                   {t('subscription.membersInWorkspace', {
                                     count: currentMemberCount,
                                   })}
@@ -1226,9 +1235,9 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                                   return (
                                     <td
                                       key={planVersion._id}
-                                      className={`border-t border-slate-100 p-4 text-center align-middle ${planVersion._id === currentPlanVersionId ? 'bg-blue-50/50' : 'bg-white'}`}
+                                      className={`border-t border-border/60 p-4 text-center align-middle ${planVersion._id === currentPlanVersionId ? 'bg-info/5' : 'bg-background'}`}
                                     >
-                                      <span className="text-sm text-slate-400">—</span>
+                                      <span className="text-sm text-muted-foreground/70">—</span>
                                     </td>
                                   );
                                 }
@@ -1237,14 +1246,14 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                                 return (
                                   <td
                                     key={planVersion._id}
-                                    className={`border-t border-slate-100 p-4 text-center align-middle ${planVersion._id === currentPlanVersionId ? 'bg-blue-50/50' : 'bg-white'}`}
+                                    className={`border-t border-border/60 p-4 text-center align-middle ${planVersion._id === currentPlanVersionId ? 'bg-info/5' : 'bg-background'}`}
                                   >
                                     {billable === 0 ? (
-                                      <span className="text-sm font-medium text-emerald-600">
+                                      <span className="text-sm font-medium text-success">
                                         {t('subscription.seats.allIncluded')}
                                       </span>
                                     ) : (
-                                      <span className="text-sm font-medium text-amber-600">
+                                      <span className="text-sm font-medium text-warning">
                                         {fmtNum(billable)} {t('subscription.seats.extra')}
                                       </span>
                                     )}
@@ -1265,18 +1274,18 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                     ) && (
                       <>
                         <tr>
-                          <td className="sticky start-0 z-10 border-t border-purple-200 bg-purple-50 px-4 py-2.5 font-semibold text-xs uppercase tracking-wider text-purple-700 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.06)]">
+                          <td className="sticky start-0 z-10 border-t border-info/20 bg-info/10 px-4 py-2.5 font-semibold text-xs uppercase tracking-wider text-info shadow-sticky-col">
                             {t('subscription.items.credits')}
                           </td>
                           <td
                             colSpan={sortedPlans.length}
-                            className="border-t border-purple-200 bg-purple-50"
+                            className="border-t border-info/20 bg-info/10"
                           />
                         </tr>
                         {/* Credits per month row */}
-                        <tr className="group hover:bg-slate-50/50">
-                          <td className="sticky start-0 z-10 border-t border-slate-100 bg-white p-4 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.06)] group-hover:bg-slate-50/80">
-                            <div className="font-medium text-sm text-slate-900">
+                        <tr className="group hover:bg-muted/30">
+                          <td className="sticky start-0 z-10 border-t border-border/60 bg-background p-4 shadow-sticky-col group-hover:bg-muted/50">
+                            <div className="font-medium text-sm text-foreground">
                               {sortedPlans.every(
                                 v => !v.creditGrant?.enabled || !v.creditGrant.renewOnPeriod
                               )
@@ -1295,23 +1304,23 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                             return (
                               <td
                                 key={planVersion._id}
-                                className={`border-t border-slate-100 p-4 text-center align-middle ${planVersion._id === currentPlanVersionId ? 'bg-blue-50/50' : 'bg-white'}`}
+                                className={`border-t border-border/60 p-4 text-center align-middle ${planVersion._id === currentPlanVersionId ? 'bg-info/5' : 'bg-background'}`}
                               >
                                 {pkg ? (
-                                  <span className="text-sm font-semibold text-purple-700">
+                                  <span className="text-sm font-semibold text-info">
                                     {fmtNum(pkg.creditAmount)}
                                   </span>
                                 ) : (
-                                  <span className="text-sm text-slate-400">—</span>
+                                  <span className="text-sm text-muted-foreground/70">—</span>
                                 )}
                               </td>
                             );
                           })}
                         </tr>
                         {/* Credit renewal row */}
-                        <tr className="group hover:bg-slate-50/50">
-                          <td className="sticky start-0 z-10 border-t border-slate-100 bg-white p-4 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.06)] group-hover:bg-slate-50/80">
-                            <div className="font-medium text-sm text-slate-900">
+                        <tr className="group hover:bg-muted/30">
+                          <td className="sticky start-0 z-10 border-t border-border/60 bg-background p-4 shadow-sticky-col group-hover:bg-muted/50">
+                            <div className="font-medium text-sm text-foreground">
                               {t('subscription.items.creditRenewal')}
                             </div>
                           </td>
@@ -1320,10 +1329,10 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                             return (
                               <td
                                 key={planVersion._id}
-                                className={`border-t border-slate-100 p-4 text-center align-middle ${planVersion._id === currentPlanVersionId ? 'bg-blue-50/50' : 'bg-white'}`}
+                                className={`border-t border-border/60 p-4 text-center align-middle ${planVersion._id === currentPlanVersionId ? 'bg-info/5' : 'bg-background'}`}
                               >
                                 {cg?.enabled ? (
-                                  <span className="text-sm font-medium text-slate-700">
+                                  <span className="text-sm font-medium text-foreground">
                                     {!cg.renewOnPeriod
                                       ? t('subscription.items.creditModeLifetime')
                                       : cg.mode === 'reset'
@@ -1331,7 +1340,7 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                                         : t('subscription.items.creditModeTopup')}
                                   </span>
                                 ) : (
-                                  <span className="text-sm text-slate-400">—</span>
+                                  <span className="text-sm text-muted-foreground/70">—</span>
                                 )}
                               </td>
                             );

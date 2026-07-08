@@ -144,15 +144,15 @@ export class SDKErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundar
         return this.props.fallback;
       }
 
-      // Default fallback UI
+      // Default fallback UI — theme tokens with fallbacks so it works without the SDK stylesheet
       return (
         <div
           style={{
             padding: '1rem',
-            border: '1px solid #ef4444',
+            border: '1px solid hsl(var(--destructive, 0 84.2% 60.2%))',
             borderRadius: '0.5rem',
-            backgroundColor: '#fef2f2',
-            color: '#991b1b',
+            backgroundColor: 'hsl(var(--destructive, 0 84.2% 60.2%) / 0.08)',
+            color: 'hsl(var(--destructive, 0 70% 35%))',
           }}
         >
           <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1rem', fontWeight: 600 }}>
@@ -165,8 +165,8 @@ export class SDKErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundar
             onClick={this.resetError}
             style={{
               padding: '0.5rem 1rem',
-              backgroundColor: '#ef4444',
-              color: 'white',
+              backgroundColor: 'hsl(var(--destructive, 0 84.2% 60.2%))',
+              color: 'hsl(var(--destructive-foreground, 210 40% 98%))',
               border: 'none',
               borderRadius: '0.25rem',
               cursor: 'pointer',

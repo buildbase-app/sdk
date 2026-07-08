@@ -4,6 +4,8 @@ import { getCurrencySymbol } from '../../../api/billing/currency-utils';
 import { getQuotaOverageCents } from '../../../api/billing/pricing-variant-utils';
 import type { IQuotaUsageStatus } from '../../../api/types';
 import { Button } from '../../../components/ui/button';
+import { EmptyState } from '../../../components/ui/empty-state';
+import { StatusBanner } from '../../../components/ui/status-banner';
 import { useQuotaUsageContext } from '../../../contexts/QuotaUsageContext';
 import { useSubscriptionContext } from '../../../contexts/SubscriptionContext';
 import { usePermissions } from '../../../hooks/usePermissions';
@@ -38,26 +40,31 @@ function getStatusColor(
   badgeText: string;
 } {
   if (hasOverage)
-    return { bar: 'bg-red-500', bg: 'bg-red-100', badge: 'bg-red-100', badgeText: 'text-red-800' };
+    return {
+      bar: 'bg-destructive',
+      bg: 'bg-destructive/15',
+      badge: 'bg-destructive/15',
+      badgeText: 'text-destructive',
+    };
   if (percent >= 90)
     return {
-      bar: 'bg-amber-500',
-      bg: 'bg-amber-100',
-      badge: 'bg-amber-100',
-      badgeText: 'text-amber-800',
+      bar: 'bg-warning',
+      bg: 'bg-warning/15',
+      badge: 'bg-warning/15',
+      badgeText: 'text-warning',
     };
   if (percent >= 75)
     return {
-      bar: 'bg-yellow-500',
-      bg: 'bg-yellow-100',
-      badge: 'bg-yellow-100',
-      badgeText: 'text-yellow-800',
+      bar: 'bg-warning/70',
+      bg: 'bg-warning/15',
+      badge: 'bg-warning/15',
+      badgeText: 'text-warning',
     };
   return {
-    bar: 'bg-blue-500',
-    bg: 'bg-blue-100',
-    badge: 'bg-blue-100',
-    badgeText: 'text-blue-800',
+    bar: 'bg-info',
+    bg: 'bg-info/15',
+    badge: 'bg-info/15',
+    badgeText: 'text-info',
   };
 }
 
@@ -107,7 +114,6 @@ const WorkspaceSettingsUsage: React.FC = () => {
   const { quotas, loading, error, refetch } = useQuotaUsageContext();
   const { t, formattingLocale, fmtNum } = useTranslation();
   const { can } = usePermissions();
-  const fmtN = (n: number) => formatNumber(n, formattingLocale);
   const fmtCost = (amount: number, symbol: string) => formatCost(amount, symbol, formattingLocale);
   const { response: subResponse } = useSubscriptionContext();
   const [refreshing, setRefreshing] = useState(false);
@@ -173,21 +179,14 @@ const WorkspaceSettingsUsage: React.FC = () => {
 
   if (error) {
     return (
-      <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-start justify-between gap-4">
-        <div>
-          <p className="font-medium">{t('usage.errorLoading')}</p>
-          <p className="text-sm mt-1">{error}</p>
-        </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleRefresh}
-          disabled={refreshing}
-          className="flex-shrink-0 border-red-200 text-red-700 hover:bg-red-100"
-        >
-          {t('settings.common.retryAction', { loading: String(refreshing) })}
-        </Button>
-      </div>
+      <StatusBanner
+        variant="error"
+        title={t('usage.errorLoading')}
+        message={error}
+        actionLabel={t('settings.common.retryAction', { loading: String(refreshing) })}
+        onAction={handleRefresh}
+        actionDisabled={refreshing}
+      />
     );
   }
 
@@ -196,11 +195,16 @@ const WorkspaceSettingsUsage: React.FC = () => {
 
   if (entries.length === 0) {
     return (
-      <div className="border rounded-lg p-8 text-center">
-        <BarChart3 className="h-10 w-10 text-gray-300 mx-auto mb-3" />
-        <p className="text-sm text-gray-600">{t('usage.noData')}</p>
-        <p className="text-xs text-gray-500 mt-1">{t('usage.noDataHint')}</p>
-      </div>
+      <EmptyState
+        icon={<BarChart3 className="h-5 w-5 text-muted-foreground" />}
+        title={t('usage.noData')}
+        description={t('usage.noDataHint')}
+        action={
+          <Button variant="outline" size="sm" progress={refreshing} onClick={handleRefresh}>
+            {t('settings.common.refreshAction', { loading: String(refreshing) })}
+          </Button>
+        }
+      />
     );
   }
 
@@ -223,10 +227,10 @@ const WorkspaceSettingsUsage: React.FC = () => {
   const anyCurrency = Object.values(overagePricing)[0]?.currencySymbol ?? '$';
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header with refresh */}
       <div className="flex items-center justify-between">
-        <p className="text-sm text-gray-600">{t('usage.description')}</p>
+        <p className="text-sm text-muted-foreground">{t('usage.description')}</p>
         <Button variant="ghost" size="sm" onClick={handleRefresh} disabled={refreshing}>
           <RefreshCw className={cn('h-3.5 w-3.5 me-1.5', refreshing && 'animate-spin')} />
           {t('settings.common.refreshAction', { loading: String(refreshing) })}
@@ -235,18 +239,18 @@ const WorkspaceSettingsUsage: React.FC = () => {
 
       {/* Billing period */}
       {billingPeriod && (
-        <div className="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50/50 px-4 py-3 text-sm text-gray-600">
-          <Calendar className="h-4 w-4 text-gray-400 flex-shrink-0" />
+        <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+          <Calendar className="h-4 w-4 text-muted-foreground/70 flex-shrink-0" />
           <span>
             {t('usage.resetDateDisplay', { date: billingPeriod.endDate })}
             {billingPeriod.daysRemaining !== null && billingPeriod.daysRemaining > 0 && (
-              <span className="text-gray-500">
+              <span className="text-muted-foreground">
                 {' '}
                 ({t('usage.daysRemainingDisplay', { count: billingPeriod.daysRemaining })})
               </span>
             )}
             {billingPeriod.daysRemaining !== null && billingPeriod.daysRemaining <= 0 && (
-              <span className="text-amber-600 font-medium"> ({t('usage.renewingSoon')})</span>
+              <span className="text-warning font-medium"> ({t('usage.renewingSoon')})</span>
             )}
           </span>
         </div>
@@ -254,38 +258,38 @@ const WorkspaceSettingsUsage: React.FC = () => {
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
-        <div className="border border-gray-200 rounded-lg p-3 sm:p-4">
-          <p className="text-xs text-gray-500 font-medium">{t('usage.totalResources')}</p>
-          <p className="text-lg sm:text-xl font-semibold text-gray-900 mt-1">
+        <div className="border border-border rounded-lg p-3 sm:p-4">
+          <p className="text-xs text-muted-foreground font-medium">{t('usage.totalResources')}</p>
+          <p className="text-lg sm:text-xl font-semibold text-foreground mt-1">
             {fmtNum(entries.length)}
           </p>
         </div>
-        <div className="border border-gray-200 rounded-lg p-3 sm:p-4">
-          <p className="text-xs text-gray-500 font-medium">{t('usage.overallUsage')}</p>
-          <p className="text-lg sm:text-xl font-semibold text-gray-900 mt-1">
+        <div className="border border-border rounded-lg p-3 sm:p-4">
+          <p className="text-xs text-muted-foreground font-medium">{t('usage.overallUsage')}</p>
+          <p className="text-lg sm:text-xl font-semibold text-foreground mt-1">
             {fmtNum(avgUsagePercent) + '%'}
           </p>
         </div>
         <div
           className={cn(
             'border rounded-lg p-3 sm:p-4',
-            overageCount > 0 ? 'border-red-200 bg-red-50' : 'border-gray-200'
+            overageCount > 0 ? 'border-destructive/20 bg-destructive/10' : 'border-border'
           )}
         >
-          <p className="text-xs text-gray-500 font-medium">{t('usage.inOverage')}</p>
+          <p className="text-xs text-muted-foreground font-medium">{t('usage.inOverage')}</p>
           <p
             className={cn(
               'text-lg sm:text-xl font-semibold mt-1',
-              overageCount > 0 ? 'text-red-600' : 'text-gray-900'
+              overageCount > 0 ? 'text-destructive' : 'text-foreground'
             )}
           >
             {fmtNum(overageCount)}
           </p>
         </div>
         {overageCount > 0 && totalOverageCost > 0 && (
-          <div className="border border-red-200 bg-red-50 rounded-lg p-3 sm:p-4">
-            <p className="text-xs text-gray-500 font-medium">{t('usage.estOverageCost')}</p>
-            <p className="text-lg sm:text-xl font-semibold mt-1 text-red-600">
+          <div className="border border-destructive/20 bg-destructive/10 rounded-lg p-3 sm:p-4">
+            <p className="text-xs text-muted-foreground font-medium">{t('usage.estOverageCost')}</p>
+            <p className="text-lg sm:text-xl font-semibold mt-1 text-destructive">
               {fmtCost(totalOverageCost, anyCurrency)}
             </p>
           </div>
@@ -294,18 +298,18 @@ const WorkspaceSettingsUsage: React.FC = () => {
 
       {/* Overage warning */}
       {overageCount > 0 && (
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+        <div className="bg-warning/10 border border-warning/30 rounded-lg p-4">
           <div className="flex items-start gap-3">
-            <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5 hidden sm:block" />
+            <AlertTriangle className="h-5 w-5 text-warning flex-shrink-0 mt-0.5 hidden sm:block" />
             <div className="flex-1">
-              <h3 className="text-sm font-semibold text-amber-800 mb-1">
+              <h3 className="text-sm font-semibold text-warning mb-1">
                 {t('usage.overageDetected')}
               </h3>
-              <p className="text-sm text-amber-700">
+              <p className="text-sm text-warning">
                 {t('usage.overageWarning', { count: overageCount })}
               </p>
               {totalOverageCost > 0 && (
-                <p className="text-sm text-amber-700 font-medium mt-1">
+                <p className="text-sm text-warning font-medium mt-1">
                   {t('usage.estOverageCharges', { amount: fmtCost(totalOverageCost, anyCurrency) })}
                 </p>
               )}
@@ -354,10 +358,10 @@ function QuotaCard({
   const fmtN = (n: number) => formatNumber(n, formattingLocale);
   const fmtCost = (amount: number, symbol: string) => formatCost(amount, symbol, formattingLocale);
   return (
-    <div className="border border-gray-200 rounded-lg p-4 sm:p-5">
+    <div className="border border-border rounded-lg p-4 sm:p-5">
       <div className="flex flex-wrap items-center justify-between gap-y-1 mb-3">
         <div className="flex items-center gap-2 min-w-0">
-          <h3 className="text-sm font-semibold text-gray-900 truncate">{formatSlug(slug)}</h3>
+          <h3 className="text-sm font-medium text-foreground truncate">{formatSlug(slug)}</h3>
           {quota.hasOverage && (
             <span
               className={cn(
@@ -381,13 +385,20 @@ function QuotaCard({
             </span>
           )}
         </div>
-        <span className="text-sm text-gray-500 whitespace-nowrap">
+        <span className="text-sm text-muted-foreground whitespace-nowrap">
           {fmtN(quota.consumed)} / {fmtN(quota.included)}
         </span>
       </div>
 
       {/* Progress bar */}
-      <div className={cn('h-2 rounded-full w-full', colors.bg)}>
+      <div
+        role="progressbar"
+        aria-valuenow={Math.round(percent)}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label={formatSlug(slug)}
+        className={cn('h-2 rounded-full w-full', colors.bg)}
+      >
         <div
           className={cn('h-2 rounded-full transition-all duration-500', colors.bar)}
           style={{ width: `${percent}%` }}
@@ -395,7 +406,7 @@ function QuotaCard({
       </div>
 
       {/* Details row */}
-      <div className="flex items-center justify-between mt-2 text-xs text-gray-500">
+      <div className="flex items-center justify-between mt-2 text-xs text-muted-foreground">
         <span>{t('usage.percentUsed', { percent: Math.round(percent) })}</span>
         <span>
           {quota.available > 0
@@ -408,14 +419,14 @@ function QuotaCard({
 
       {/* Billable overage breakdown */}
       {quota.hasOverage && pricing && (
-        <div className="mt-3 pt-3 border-t border-gray-200 space-y-2">
+        <div className="mt-3 pt-3 border-t border-border space-y-2">
           <div className="flex items-center justify-between text-xs">
-            <span className="text-gray-500">{t('usage.overageUnits')}</span>
-            <span className="font-medium text-gray-900">{fmtN(quota.overage)}</span>
+            <span className="text-muted-foreground">{t('usage.overageUnits')}</span>
+            <span className="font-medium text-foreground">{fmtN(quota.overage)}</span>
           </div>
           <div className="flex items-center justify-between text-xs">
-            <span className="text-gray-500">{t('usage.rate')}</span>
-            <span className="font-medium text-gray-900">
+            <span className="text-muted-foreground">{t('usage.rate')}</span>
+            <span className="font-medium text-foreground">
               {t('usage.rateDisplay', {
                 rate: fmtCost(pricing.overageCents / 100, pricing.currencySymbol),
                 unitSize: pricing.unitSize,
@@ -424,15 +435,15 @@ function QuotaCard({
           </div>
           {pricing.unitSize > 1 && (
             <div className="flex items-center justify-between text-xs">
-              <span className="text-gray-500">{t('usage.billableBlocks')}</span>
-              <span className="font-medium text-gray-900">
+              <span className="text-muted-foreground">{t('usage.billableBlocks')}</span>
+              <span className="font-medium text-foreground">
                 {fmtN(Math.ceil(quota.overage / pricing.unitSize))}
               </span>
             </div>
           )}
-          <div className="flex items-center justify-between text-xs pt-2 border-t border-gray-200">
-            <span className="font-medium text-red-600">{t('usage.estimatedCharge')}</span>
-            <span className="font-semibold text-red-600">
+          <div className="flex items-center justify-between text-xs pt-2 border-t border-border">
+            <span className="font-medium text-destructive">{t('usage.estimatedCharge')}</span>
+            <span className="font-semibold text-destructive">
               {fmtCost(pricing.estimatedCost, pricing.currencySymbol)}
             </span>
           </div>
@@ -441,7 +452,7 @@ function QuotaCard({
 
       {/* Overage rate info when not yet in overage but pricing exists */}
       {!quota.hasOverage && pricing && (
-        <div className="mt-2 text-xs text-gray-500">
+        <div className="mt-2 text-xs text-muted-foreground">
           {t('usage.overageRateDisplay', {
             rate: t('usage.rateDisplay', {
               rate: fmtCost(pricing.overageCents / 100, pricing.currencySymbol),

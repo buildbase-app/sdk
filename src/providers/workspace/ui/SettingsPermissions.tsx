@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { Button } from '../../../components/ui/button';
+import { StatusBanner } from '../../../components/ui/status-banner';
 import { Switch } from '../../../components/ui/switch';
 import { usePermissionConfig } from '../../../contexts/PermissionContext';
 import { usePermissions } from '../../../hooks/usePermissions';
@@ -113,10 +114,12 @@ const WorkspaceSettingsPermissions: React.FC<{ workspace: IWorkspace }> = ({ wor
   return (
     <div>
       {success.message && (
-        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded mb-4">
-          <p className="font-medium">{t('settings.common.success')}</p>
-          <p className="text-sm">{success.message}</p>
-        </div>
+        <StatusBanner
+          variant="success"
+          title={t('settings.common.success')}
+          message={success.message}
+          className="mb-4"
+        />
       )}
 
       {!isOwner && <NoPermission descriptionKey="permissions.ownerOnly" />}
@@ -127,11 +130,11 @@ const WorkspaceSettingsPermissions: React.FC<{ workspace: IWorkspace }> = ({ wor
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b">
-              <th className="text-start py-2 pe-4 font-medium text-gray-500 min-w-[160px]"></th>
+              <th className="text-start py-2 pe-4 font-medium text-muted-foreground min-w-[160px]"></th>
               {roles.map(role => (
                 <th
                   key={role}
-                  className="text-center py-2 px-3 font-medium text-gray-700 capitalize min-w-[80px]"
+                  className="text-center py-2 px-3 font-medium text-foreground capitalize min-w-[80px]"
                 >
                   {role}
                 </th>
@@ -140,8 +143,8 @@ const WorkspaceSettingsPermissions: React.FC<{ workspace: IWorkspace }> = ({ wor
           </thead>
           <tbody>
             {allAppPermissions.map(perm => (
-              <tr key={perm} className="border-b border-gray-50 hover:bg-gray-50/50">
-                <td className="py-2 pe-4 text-gray-700 font-mono text-xs">{perm}</td>
+              <tr key={perm} className="border-b border-border/40 hover:bg-muted/30">
+                <td className="py-2 pe-4 text-foreground font-mono text-xs">{perm}</td>
                 {roles.map(role => {
                   const isAdmin = role === 'admin';
                   const checked = isAdmin || (permMap[role] ?? []).includes(perm);

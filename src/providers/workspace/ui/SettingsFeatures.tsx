@@ -1,5 +1,7 @@
-import { Loader2 } from 'lucide-react';
+import { Loader2, ToggleRight } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
+import { EmptyState } from '../../../components/ui/empty-state';
+import { StatusBanner } from '../../../components/ui/status-banner';
 import { Switch } from '../../../components/ui/switch';
 import { usePermissions } from '../../../hooks/usePermissions';
 import { useSuccessMessage } from '../../../hooks/useSuccessMessage';
@@ -20,7 +22,11 @@ const WorkspaceSettingsFeatures: React.FC<{ workspaceId: string }> = ({ workspac
   const [workspace, setWorkspace] = useState<IWorkspace | null>(null);
 
   useEffect(() => {
-    getWorkspace(workspaceId).then(setWorkspace);
+    getWorkspace(workspaceId)
+      .then(setWorkspace)
+      .catch(error => {
+        handleError(error, { component: 'WorkspaceSettingsFeatures', action: 'getWorkspace' });
+      });
   }, [workspaceId]);
 
   async function _updateFeature(key: string, value: boolean) {
@@ -53,15 +59,20 @@ const WorkspaceSettingsFeatures: React.FC<{ workspaceId: string }> = ({ workspac
   return (
     <div>
       {success.message && (
-        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded mb-4">
-          <p className="font-medium">{t('settings.common.success')}</p>
-          <p className="text-sm">{success.message}</p>
-        </div>
+        <StatusBanner
+          variant="success"
+          title={t('settings.common.success')}
+          message={success.message}
+          className="mb-4"
+        />
       )}
       <div className="flex flex-col gap-y-3.5 pe-4">
         {!canEditFeatures && <NoPermission descriptionKey="features.ownerOnly" />}
         {!allFeatures.length && (
-          <div className="text-muted-foreground">{t('features.noFeatures')}</div>
+          <EmptyState
+            icon={<ToggleRight className="h-5 w-5 text-muted-foreground" />}
+            description={t('features.noFeatures')}
+          />
         )}
         {allFeatures.length > 0 && (
           <div className="flex flex-col gap-y-3.5">
@@ -90,8 +101,8 @@ const WorkspaceSettingsFeatures: React.FC<{ workspaceId: string }> = ({ workspac
                     />
                   ) : (
                     <div className="flex items-center gap-x-1">
-                      <Loader2 className="h-4 w-4 animate-spin text-gray-500" />
-                      <span className="text-sm text-gray-600">{actionText}...</span>
+                      <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">{actionText}...</span>
                     </div>
                   )}
                 </div>

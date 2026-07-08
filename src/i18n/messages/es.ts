@@ -50,6 +50,7 @@ export const es: SDKMessages = {
         'No tienes permiso para acceder a esta sección. Contacta a un administrador del espacio de trabajo si necesitas acceso.',
       billingManageOnly:
         'Solo los usuarios con permisos de gestión de facturación pueden realizar esta acción.',
+      openSettings: 'Abrir configuración',
     },
   },
   subscription: {
@@ -613,6 +614,13 @@ export const es: SDKMessages = {
     fetchExpiringCredits: 'Error al obtener los créditos próximos a expirar',
   },
   security: {
+    connectedAgentsTitle: 'Agentes conectados',
+    connectedAgentsDescription:
+      'Agentes de IA a los que has dado acceso a tu cuenta. Desconecta los que ya no uses; el acceso se revoca de inmediato.',
+    connectedAgentsDisconnect: 'Desconectar',
+    connectedAgentsEmpty: 'No hay agentes conectados.',
+    connectedAgentsAccess: 'Acceso',
+    connectedAgentsGranted: 'Concedido',
     inactive: 'Inactiva',
     inactiveHint:
       'Registrada en un dominio de inicio de sesión anterior y ya no se puede usar. Puede eliminarla.',

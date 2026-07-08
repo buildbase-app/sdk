@@ -50,6 +50,7 @@ export const fr: SDKMessages = {
         "Vous n'avez pas la permission d'accéder à cette section. Contactez un administrateur de l'espace de travail si vous avez besoin d'un accès.",
       billingManageOnly:
         'Seuls les utilisateurs disposant des autorisations de gestion de la facturation peuvent effectuer cette action.',
+      openSettings: 'Ouvrir les paramètres',
     },
   },
   subscription: {
@@ -621,6 +622,13 @@ export const fr: SDKMessages = {
     fetchExpiringCredits: 'Échec de la récupération des crédits expirant bientôt',
   },
   security: {
+    connectedAgentsTitle: 'Agents connectés',
+    connectedAgentsDescription:
+      "Agents IA auxquels vous avez donné accès à votre compte. Déconnectez ceux que vous n'utilisez plus — l'accès est révoqué immédiatement.",
+    connectedAgentsDisconnect: 'Déconnecter',
+    connectedAgentsEmpty: 'Aucun agent connecté.',
+    connectedAgentsAccess: 'Accès',
+    connectedAgentsGranted: 'Accordé',
     inactive: 'Inactive',
     inactiveHint:
       'Enregistrée sur un ancien domaine de connexion et ne peut plus être utilisée. Vous pouvez la supprimer.',

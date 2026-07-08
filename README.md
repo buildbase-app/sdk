@@ -2022,12 +2022,12 @@ All SDK API clients extend a shared base class and are exported from the package
 
 Server-only toolkits (framework-agnostic, zero React) are exported from `@buildbase/sdk`:
 
-| Export group             | Purpose                                                                                                    |
-| ------------------------ | ---------------------------------------------------------------------------------------------------------- |
-| `BuildBase()` factory    | Session-scoped server actions — see [Server-Side Usage](#server-side-usage)                                 |
-| Webhook verification     | `verifyWebhookSignature`, `parseWebhookEvent` — see [Webhook Verification](#webhook-verification)          |
-| Agent readiness          | `resolveWellKnown`, `buildAgentCard`, `buildLlmsTxt`, … — see [Agent Readiness](#agent-readiness-discovery) |
-| OAuth2 app bridge        | `handleAppTokenRequest`, `handleAppRevokeRequest`, `bearerChallenge`, … — see [OAuth2 App Bridge](#oauth2-app-bridge) |
+| Export group          | Purpose                                                                                                               |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `BuildBase()` factory | Session-scoped server actions — see [Server-Side Usage](#server-side-usage)                                           |
+| Webhook verification  | `verifyWebhookSignature`, `parseWebhookEvent` — see [Webhook Verification](#webhook-verification)                     |
+| Agent readiness       | `resolveWellKnown`, `buildAgentCard`, `buildLlmsTxt`, … — see [Agent Readiness](#agent-readiness-discovery)           |
+| OAuth2 app bridge     | `handleAppTokenRequest`, `handleAppRevokeRequest`, `bearerChallenge`, … — see [OAuth2 App Bridge](#oauth2-app-bridge) |
 
 ### Components
 
@@ -2841,13 +2841,13 @@ app.post('/webhooks/buildbase', (req, res) => {
 
 `verifyWebhookSignature(options)` → `boolean` — use directly when you want to control parsing yourself.
 
-| Option          | Type                | Notes                                                       |
-| --------------- | ------------------- | ----------------------------------------------------------- |
-| `body`          | `string`            | Raw request body, byte-for-byte as sent.                    |
-| `signature`     | `string \| null`    | `x-buildbase-signature` header (`sha256=<hex>`).            |
-| `timestamp`     | `string \| null`    | `x-buildbase-timestamp` header.                             |
-| `secret`        | `string`            | Your endpoint's signing secret.                             |
-| `maxAgeSeconds` | `number` (def. 300) | Replay window. Set to `0` to skip the timestamp age check.  |
+| Option          | Type                | Notes                                                      |
+| --------------- | ------------------- | ---------------------------------------------------------- |
+| `body`          | `string`            | Raw request body, byte-for-byte as sent.                   |
+| `signature`     | `string \| null`    | `x-buildbase-signature` header (`sha256=<hex>`).           |
+| `timestamp`     | `string \| null`    | `x-buildbase-timestamp` header.                            |
+| `secret`        | `string`            | Your endpoint's signing secret.                            |
+| `maxAgeSeconds` | `number` (def. 300) | Replay window. Set to `0` to skip the timestamp age check. |
 
 > **Next.js App Router:** read the raw body with `await req.text()` — do not use `req.json()`, which discards the exact bytes the signature was computed over.
 
@@ -2925,7 +2925,7 @@ export default async function handler(req, res) {
   const { status, body } = await handleAppTokenRequest({
     authorization: req.headers.authorization,
     clientSecret: process.env.BUILDBASE_CLIENT_SECRET!,
-    mintToken: (user) => ({
+    mintToken: user => ({
       token: signMyAccessToken(user, { aud: user.resource }), // your token, your format
       expiresIn: 3600,
     }),
@@ -2968,7 +2968,7 @@ Each integration (an AI agent, Zapier, n8n, …) is its own BuildBase OAuth2 cli
 
 ```ts
 const SECRETS: Record<string, string> = {
-  [process.env.AGENT_CLIENT_ID!]:  process.env.AGENT_CLIENT_SECRET!,
+  [process.env.AGENT_CLIENT_ID!]: process.env.AGENT_CLIENT_SECRET!,
   [process.env.ZAPIER_CLIENT_ID!]: process.env.ZAPIER_CLIENT_SECRET!,
 };
 
@@ -2976,14 +2976,18 @@ const clientSecret = SECRETS[String(req.query.clientId)];
 if (!clientSecret) {
   return res.status(401).json({ success: false, token: '', message: 'unknown_client' });
 }
-const { status, body } = await handleAppTokenRequest({ authorization: req.headers.authorization, clientSecret, mintToken });
+const { status, body } = await handleAppTokenRequest({
+  authorization: req.headers.authorization,
+  clientSecret,
+  mintToken,
+});
 ```
 
-Adding a new integration is then just: register it in BuildBase, point its `applicationTokenUrl` at the same endpoint, and add its `id → secret` to the map. Selecting the secret by `clientId` is safe — the `clientId` is public and only *picks* the key; the HS256 signature check is still the real gate.
+Adding a new integration is then just: register it in BuildBase, point its `applicationTokenUrl` at the same endpoint, and add its `id → secret` to the map. Selecting the secret by `clientId` is safe — the `clientId` is public and only _picks_ the key; the HS256 signature check is still the real gate.
 
 ### `applicationProfileUrl` (userinfo)
 
-If your client also registers an `applicationProfileUrl`, treat it as a userinfo / token-validation endpoint: validate the access token **you** minted (with your own verifier — *not* the client secret) and return the profile.
+If your client also registers an `applicationProfileUrl`, treat it as a userinfo / token-validation endpoint: validate the access token **you** minted (with your own verifier — _not_ the client secret) and return the profile.
 
 ```ts
 import { extractBearerToken } from '@buildbase/sdk';

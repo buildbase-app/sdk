@@ -67,7 +67,7 @@ export function CommandSelect({
           <ChevronsUpDown className="ms-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="p-0 overflow-hidden text-ellipsis">
+      <PopoverContent className="p-0 overflow-hidden text-ellipsis" asChild>
         <Command>
           <CommandInput placeholder={placeholder} />
           <CommandList>
@@ -75,7 +75,7 @@ export function CommandSelect({
               {options.map(option => (
                 <CommandItem
                   className={cn('whitespace-nowrap text-start', {
-                    'text-green-500': value === option.value,
+                    'text-success': value === option.value,
                   })}
                   key={option.value}
                   value={option.value}
@@ -85,7 +85,7 @@ export function CommandSelect({
                   {value === option.value && (
                     <CheckCheck
                       className={cn(
-                        'me-2 h-4 w-4 text-green-400',
+                        'me-2 h-4 w-4 text-success',
                         value === option.value ? 'opacity-100' : 'opacity-0'
                       )}
                     />

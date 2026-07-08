@@ -11,7 +11,7 @@ import { BBAction } from '../../lib/url-params';
 import { useSaaSOs } from '../os/hooks';
 import { useSaaSWorkspaces } from '../workspace/hooks';
 import { workspaceSettingsManager } from '../workspace/settings-manager';
-import { SettingsScreen, WorkspaceSettingsSection } from '../workspace/ui/SettingsDialog';
+import { SettingsScreen, WorkspaceSettingsSection } from '../workspace/settings-screens';
 import { getAuthFlags } from './types';
 import { removeSession } from './utils';
 

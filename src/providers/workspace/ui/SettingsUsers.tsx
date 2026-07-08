@@ -166,8 +166,8 @@ const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace
           {canInvite ? (
             <div>
               <InviteMember onInvite={refresh} workspaceId={workspace._id} />
-              {willBeBilled && perSeatPriceCents && perSeatPriceCents > 0 && (
-                <div className="flex items-center gap-1.5 mt-2 text-xs text-amber-600 bg-amber-50 px-3 py-1.5 rounded-md">
+              {willBeBilled && perSeatPriceCents != null && perSeatPriceCents > 0 && (
+                <div className="flex items-center gap-1.5 mt-2 text-xs text-warning bg-warning/10 px-3 py-1.5 rounded-md">
                   <span>
                     {t('users.extraSeatCost', {
                       price: fmtCents(perSeatPriceCents, currency),
@@ -178,12 +178,12 @@ const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace
               )}
             </div>
           ) : (
-            <div className="flex items-center justify-between p-3 bg-red-50 border border-red-100 rounded-md">
+            <div className="flex items-center justify-between p-3 bg-destructive/10 border border-destructive/20 rounded-md">
               <div>
-                <p className="text-sm font-medium text-red-700">
+                <p className="text-sm font-medium text-destructive">
                   {t('users.limitReached', { reason: inviteBlockReason ?? 'member_limit_reached' })}
                 </p>
-                <p className="text-xs text-red-600 mt-0.5">
+                <p className="text-xs text-destructive mt-0.5">
                   {inviteBlockMessageKey
                     ? t(
                         inviteBlockMessageKey as TranslationKey,
@@ -198,19 +198,19 @@ const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace
       )}
       {/* Seat status card — shown for seat pricing OR plan-based limits */}
       {(hasSeatPricing || maxUsers > 0) && (
-        <div className="mb-4 rounded-lg border bg-gray-50 p-4">
+        <div className="mb-4 rounded-lg border bg-muted/50 p-4">
           <div className="flex items-center justify-between mb-2">
-            <h4 className="text-sm font-semibold text-gray-900">
+            <h4 className="text-sm font-medium text-foreground">
               {t('users.seatHeading', { hasSeatPricing: String(hasSeatPricing) })}
             </h4>
             {maxUsers > 0 && (
               <span
                 className={`text-xs font-medium px-2 py-0.5 rounded-full ${
                   currentUsersCount >= maxUsers
-                    ? 'bg-red-100 text-red-700'
+                    ? 'bg-destructive/15 text-destructive'
                     : currentUsersCount >= maxUsers * 0.8
-                      ? 'bg-amber-100 text-amber-700'
-                      : 'bg-emerald-100 text-emerald-700'
+                      ? 'bg-warning/15 text-warning'
+                      : 'bg-success/15 text-success'
                 }`}
               >
                 {fmtNum(currentUsersCount)} / {fmtNum(maxUsers)}
@@ -220,28 +220,35 @@ const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace
 
           {/* Progress bar */}
           {maxUsers > 0 && (
-            <div className="w-full h-1.5 bg-gray-200 rounded-full mb-3">
+            <div
+              role="progressbar"
+              aria-valuenow={currentUsersCount}
+              aria-valuemin={0}
+              aria-valuemax={maxUsers}
+              aria-label={t('users.seatHeading')}
+              className="w-full h-1.5 bg-muted rounded-full mb-3"
+            >
               <div
                 className={`h-1.5 rounded-full transition-all ${
                   currentUsersCount >= maxUsers
-                    ? 'bg-red-500'
+                    ? 'bg-destructive'
                     : currentUsersCount >= maxUsers * 0.8
-                      ? 'bg-amber-500'
-                      : 'bg-emerald-500'
+                      ? 'bg-warning'
+                      : 'bg-success'
                 }`}
                 style={{ width: `${Math.min(100, (currentUsersCount / maxUsers) * 100)}%` }}
               />
             </div>
           )}
 
-          <div className="flex items-center justify-between text-sm text-gray-600">
+          <div className="flex items-center justify-between text-sm text-muted-foreground">
             <div>
               {hasSeatPricing ? (
                 <>
-                  <span className="text-gray-900 font-medium">{fmtNum(includedSeats)}</span>{' '}
+                  <span className="text-foreground font-medium">{fmtNum(includedSeats)}</span>{' '}
                   {t('users.included')}
-                  {perSeatPriceCents && perSeatPriceCents > 0 && (
-                    <span className="text-gray-400">
+                  {perSeatPriceCents != null && perSeatPriceCents > 0 && (
+                    <span className="text-muted-foreground/70">
                       {' '}
                       · {fmtCents(perSeatPriceCents, currency)}
                       {t('users.perExtraSeat')}
@@ -250,7 +257,7 @@ const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace
                 </>
               ) : (
                 <span>
-                  <span className="text-gray-900 font-medium">{fmtNum(maxUsers)}</span>{' '}
+                  <span className="text-foreground font-medium">{fmtNum(maxUsers)}</span>{' '}
                   {t('users.maxMembers')}
                 </span>
               )}
@@ -260,7 +267,7 @@ const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace
                 {fmtNum(Math.max(0, maxUsers - currentUsersCount))} {t('users.available')}
               </span>
             ) : (
-              <span className="text-gray-400">{t('users.noMemberLimit')}</span>
+              <span className="text-muted-foreground/70">{t('users.noMemberLimit')}</span>
             )}
           </div>
         </div>
@@ -268,7 +275,7 @@ const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace
 
       <div className="mb-4 flex items-center justify-between">
         <div>
-          <div className="text-sm text-gray-600">
+          <div className="text-sm text-muted-foreground">
             {t('users.memberCount', { count: currentUsersCount })}
           </div>
         </div>
@@ -287,28 +294,28 @@ const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace
               : workspace.createdBy;
           const isOwner = createdBy === member.id;
           return (
-            <li key={idx} className="border rounded p-3">
+            <li key={member.id ?? idx} className="border rounded-md p-3">
               <div className="flex items-center justify-between gap-2">
                 {/* User info */}
                 <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                  <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-sm font-medium shrink-0">
+                  <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center text-sm font-medium shrink-0">
                     {member.name.charAt(0).toUpperCase()}
                   </div>
                   <div className="min-w-0">
                     <div className="font-medium text-sm truncate">{member.name}</div>
-                    <div className="text-xs text-gray-500 truncate">{member.email}</div>
+                    <div className="text-xs text-muted-foreground truncate">{member.email}</div>
                   </div>
                 </div>
 
                 {/* Badges — always visible */}
                 <div className="flex items-center gap-1 shrink-0">
                   {myself && (
-                    <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">
+                    <span className="text-xs bg-info/15 text-info px-2 py-0.5 rounded">
                       {t('users.you')}
                     </span>
                   )}
                   {isOwner && (
-                    <span className="text-xs bg-purple-100 text-purple-800 px-2 py-0.5 rounded">
+                    <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">
                       {t('users.owner')}
                     </span>
                   )}
@@ -317,7 +324,7 @@ const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace
 
               {/* Role + actions — second row on mobile, inline on desktop */}
               {canChangeRoles && (
-                <div className="flex items-center gap-2 mt-2 pt-2 border-t border-gray-100 sm:mt-0 sm:pt-0 sm:border-0">
+                <div className="flex items-center gap-2 mt-2 pt-2 border-t border-border/60 sm:mt-0 sm:pt-0 sm:border-0">
                   <div className="relative flex-1 sm:flex-initial">
                     <Select
                       disabled={
@@ -339,7 +346,7 @@ const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace
                     </Select>
                     {updatingRoleUserId === member.id && (
                       <div className="absolute end-8 top-1/2 -translate-y-1/2 pointer-events-none">
-                        <Loader2 className="h-4 w-4 animate-spin text-gray-500" />
+                        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                       </div>
                     )}
                   </div>
@@ -358,7 +365,7 @@ const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace
         })}
       </ul>
       {workspaceUsers.length === 0 && (
-        <div className="text-center py-8 text-gray-500">{t('users.noMembers')}</div>
+        <div className="text-center py-8 text-muted-foreground">{t('users.noMembers')}</div>
       )}
     </div>
   );
@@ -385,7 +392,11 @@ function InviteMember({ onInvite, workspaceId }: { onInvite: () => void; workspa
 
   useEffect(() => {
     if (!workspaceId) return;
-    getWorkspace(workspaceId).then(setWorkspace);
+    getWorkspace(workspaceId)
+      .then(setWorkspace)
+      .catch(error => {
+        handleError(error, { component: 'InviteMember', action: 'getWorkspace' });
+      });
   }, [workspaceId]);
 
   const handleInvite = async () => {
@@ -436,8 +447,8 @@ function InviteMember({ onInvite, workspaceId }: { onInvite: () => void; workspa
 
   return (
     <div className="flex gap-2 flex-col gap-y-2">
-      {error && <div className="text-red-500">{error}</div>}
-      {success && <div className="text-green-500">{success}</div>}
+      {error && <div className="text-destructive">{error}</div>}
+      {success && <div className="text-success">{success}</div>}
       <div>
         <Label>{t('users.inviteByEmail')}</Label>
         <Input

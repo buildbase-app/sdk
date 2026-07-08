@@ -13,9 +13,7 @@ import { isDevelopment } from './utils';
  * request cancellation + timeouts still work on older Node/browsers/Deno.
  */
 export function combineAbortSignals(a: AbortSignal, b: AbortSignal): AbortSignal {
-  const anyFn = (
-    AbortSignal as unknown as { any?: (signals: AbortSignal[]) => AbortSignal }
-  ).any;
+  const anyFn = (AbortSignal as unknown as { any?: (signals: AbortSignal[]) => AbortSignal }).any;
   if (typeof anyFn === 'function') {
     return anyFn([a, b]);
   }

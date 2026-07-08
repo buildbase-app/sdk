@@ -49,6 +49,7 @@ export const en: SDKMessages = {
       noPermissionDescription:
         "You don't have permission to access this section. Contact a workspace admin if you need access.",
       billingManageOnly: 'Only users with billing management permissions can perform this action.',
+      openSettings: 'Open settings',
     },
   },
   subscription: {
@@ -610,6 +611,13 @@ export const en: SDKMessages = {
     fetchExpiringCredits: 'Failed to fetch expiring credits',
   },
   security: {
+    connectedAgentsTitle: 'Connected agents',
+    connectedAgentsDescription:
+      "AI agents you've authorized to access your account. Disconnect any you no longer use — it revokes access immediately.",
+    connectedAgentsDisconnect: 'Disconnect',
+    connectedAgentsEmpty: 'No connected agents.',
+    connectedAgentsAccess: 'Access',
+    connectedAgentsGranted: 'Granted',
     inactive: 'Inactive',
     inactiveHint:
       'Registered on a previous sign-in domain and can no longer be used. You can remove it.',

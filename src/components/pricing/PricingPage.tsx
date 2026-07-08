@@ -5,8 +5,8 @@ import type { BillingInterval, IPublicPlanItem, IPublicPlanVersion } from '../..
 import { createBBUrl } from '../../lib/url-params';
 import { useSaaSAuth } from '../../providers/auth/hooks';
 import { workspaceSettingsManager } from '../../providers/workspace/settings-manager';
+import { SettingsScreen } from '../../providers/workspace/settings-screens';
 import { usePublicPlans } from '../../providers/workspace/subscription-hooks';
-import { SettingsScreen } from '../../providers/workspace/ui/SettingsDialog';
 import { Skeleton } from '../ui/skeleton';
 
 export interface PricingPageDetails {

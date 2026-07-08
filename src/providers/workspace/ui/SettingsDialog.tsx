@@ -10,6 +10,7 @@ import {
 } from '../../../components/ui/dialog';
 import { useTranslation, type TranslationKey } from '../../../i18n';
 import { IWorkspace } from '../types';
+import WorkspaceSettingsConnectedAgents from './SettingsConnectedAgents';
 import WorkspaceSettingsCredits from './SettingsCredits';
 import WorkspaceSettingsDanger from './SettingsDanger';
 import WorkspaceSettingsFeatures from './SettingsFeatures';
@@ -23,29 +24,18 @@ import WorkspaceSettingsUsage from './SettingsUsage';
 import WorkspaceSettingsUsers from './SettingsUsers';
 import WorkspaceSettingsSidebar from './Sidebar';
 
-export const SettingsScreen = {
-  Profile: 'profile',
-  Security: 'security',
-  General: 'general',
-  Users: 'users',
-  Subscription: 'subscription',
-  Usage: 'usage',
-  Credits: 'credits',
-  Features: 'features',
-  Notifications: 'notifications',
-  Permissions: 'permissions',
-  Danger: 'danger',
-} as const;
+import { SettingsScreen, type WorkspaceSettingsSection } from '../settings-screens';
 
-export type WorkspaceSettingsSection = (typeof SettingsScreen)[keyof typeof SettingsScreen];
-
-/** Set of all valid section values — used for runtime validation */
-export const SETTINGS_SCREENS = new Set<WorkspaceSettingsSection>(Object.values(SettingsScreen));
+// Re-exported for backward compatibility — prefer importing from '../settings-screens'.
+export { SETTINGS_SCREENS, SettingsScreen } from '../settings-screens';
+export type { WorkspaceSettingsSection } from '../settings-screens';
+export { WorkspaceSettingsDialog };
 
 /** Translation key for each screen title */
 const SCREEN_TITLE_KEYS: Record<WorkspaceSettingsSection, TranslationKey> = {
   [SettingsScreen.Profile]: 'settings.titles.profile',
   [SettingsScreen.Security]: 'settings.titles.security',
+  [SettingsScreen.ConnectedAgents]: 'security.connectedAgentsTitle',
   [SettingsScreen.General]: 'settings.titles.general',
   [SettingsScreen.Users]: 'settings.titles.users',
   [SettingsScreen.Subscription]: 'settings.titles.subscription',
@@ -103,7 +93,7 @@ const WorkspaceSettingsDialog: React.FC<WorkspaceSettingsDialogProps> = ({
   };
 
   const defaultTrigger = (
-    <Button variant="outline" size="icon">
+    <Button variant="outline" size="icon" aria-label={t('settings.common.openSettings')}>
       <Settings className="h-4 w-4" />
     </Button>
   );
@@ -118,7 +108,7 @@ const WorkspaceSettingsDialog: React.FC<WorkspaceSettingsDialogProps> = ({
         <DialogDescription className="sr-only">{t(SCREEN_TITLE_KEYS[section])}</DialogDescription>
         <WorkspaceSettingsSidebar workspace={workspace} section={section} setSection={setSection} />
         <div className="flex-1 p-6 overflow-auto flex flex-col bg-background">
-          <DialogTitle className="text-xl font-bold mb-4">
+          <DialogTitle className="text-xl font-semibold mb-4">
             {t(SCREEN_TITLE_KEYS[section])}
           </DialogTitle>
           <div className="sm:max-h-[500px] overflow-y-auto">
@@ -126,6 +116,7 @@ const WorkspaceSettingsDialog: React.FC<WorkspaceSettingsDialogProps> = ({
               <WorkspaceSettingsProfile workspace={workspace} />
             )}
             {section === SettingsScreen.Security && <WorkspaceSettingsSecurity />}
+            {section === SettingsScreen.ConnectedAgents && <WorkspaceSettingsConnectedAgents />}
             {section === SettingsScreen.General && (
               <WorkspaceSettingsGeneral workspace={workspace} />
             )}
@@ -155,4 +146,3 @@ const WorkspaceSettingsDialog: React.FC<WorkspaceSettingsDialogProps> = ({
 };
 
 export default WorkspaceSettingsDialog;
-export { WorkspaceSettingsDialog };

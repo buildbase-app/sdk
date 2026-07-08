@@ -1,6 +1,7 @@
 import { Bell, BellOff, Mail, ShieldAlert, Smartphone } from 'lucide-react';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '../../../components/ui/button';
+import { StatusBanner } from '../../../components/ui/status-banner';
 import { Switch } from '../../../components/ui/switch';
 import { usePermissions } from '../../../hooks/usePermissions';
 import { useTranslation, type TranslationKey } from '../../../i18n';
@@ -152,30 +153,26 @@ const WorkspaceSettingsNotifications: React.FC<{ workspace: IWorkspace }> = ({ w
   const hasEvents = events.length > 0;
 
   return (
-    <div className="space-y-6">
-      <p className="text-sm text-gray-600">{t('notifications.manageDescription')}</p>
+    <div className="space-y-4">
+      <p className="text-sm text-muted-foreground">{t('notifications.manageDescription')}</p>
 
       {/* ─── Push Notifications (browser-level) ─── */}
       {isSupported && (
         <>
           {pushError && permission !== 'denied' && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-              {pushError}
-            </div>
+            <StatusBanner variant="error" message={pushError} />
           )}
 
           {permission === 'denied' && (
-            <div className="border border-amber-200 bg-amber-50 rounded-lg p-4">
+            <div className="border border-warning/30 bg-warning/10 rounded-lg p-4">
               <div className="flex items-start gap-3">
-                <ShieldAlert className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+                <ShieldAlert className="h-5 w-5 text-warning shrink-0 mt-0.5" />
                 <div>
-                  <h4 className="text-sm font-medium text-amber-800">
-                    {t('notifications.blocked')}
-                  </h4>
-                  <p className="text-xs text-amber-700 mt-1">
+                  <h4 className="text-sm font-medium text-warning">{t('notifications.blocked')}</h4>
+                  <p className="text-xs text-warning mt-1">
                     {t('notifications.blockedDescription')}
                   </p>
-                  <ol className="text-xs text-amber-700 mt-2 space-y-1 list-decimal list-inside">
+                  <ol className="text-xs text-warning mt-2 space-y-1 list-decimal list-inside">
                     {Array.from({ length: stepCount }, (_, i) => (
                       <li key={i}>
                         {t(`notifications.unblock.${browser}.step${i + 1}` as TranslationKey)}
@@ -192,19 +189,19 @@ const WorkspaceSettingsNotifications: React.FC<{ workspace: IWorkspace }> = ({ w
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-start gap-3">
                   <div
-                    className={`mt-0.5 p-2 rounded-lg ${isSubscribed ? 'bg-green-100' : 'bg-gray-100'}`}
+                    className={`mt-0.5 p-2 rounded-lg ${isSubscribed ? 'bg-success/15' : 'bg-muted'}`}
                   >
                     {isSubscribed ? (
-                      <Bell className="h-4 w-4 text-green-600" />
+                      <Bell className="h-4 w-4 text-success" />
                     ) : (
-                      <BellOff className="h-4 w-4 text-gray-400" />
+                      <BellOff className="h-4 w-4 text-muted-foreground/70" />
                     )}
                   </div>
                   <div>
-                    <h4 className="text-sm font-medium text-gray-900">
+                    <h4 className="text-sm font-medium text-foreground">
                       {t('notifications.pushTitle')}
                     </h4>
-                    <p className="text-xs text-gray-500 mt-0.5">
+                    <p className="text-xs text-muted-foreground mt-0.5">
                       {t('notifications.pushDescription', { subscribed: String(isSubscribed) })}
                     </p>
                   </div>
@@ -224,7 +221,7 @@ const WorkspaceSettingsNotifications: React.FC<{ workspace: IWorkspace }> = ({ w
                 </Button>
               </div>
               {isSubscribed && (
-                <div className="mt-3 pt-3 border-t border-gray-100 text-xs text-gray-500">
+                <div className="mt-3 pt-3 border-t border-border/60 text-xs text-muted-foreground">
                   {t('notifications.deviceNote')}
                 </div>
               )}
@@ -235,34 +232,30 @@ const WorkspaceSettingsNotifications: React.FC<{ workspace: IWorkspace }> = ({ w
 
       {/* ─── Per-event notification preferences (only user-manageable custom events) ─── */}
       {loading && (
-        <div className="text-center text-sm text-gray-400 py-4">
+        <div className="text-center text-sm text-muted-foreground/70 py-4">
           {t('notifications.loadingPrefs')}
         </div>
       )}
 
       {!loading && hasEvents && canEdit && (
         <>
-          {successMsg && (
-            <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm">
-              {successMsg}
-            </div>
-          )}
+          {successMsg && <StatusBanner variant="success" message={successMsg} />}
 
           {grouped.map(([category, categoryEvents]) => (
             <div key={category} className="border rounded-lg overflow-hidden">
-              <div className="bg-gray-50 px-4 py-2.5 border-b">
-                <h4 className="text-sm font-medium text-gray-700 capitalize">{category}</h4>
+              <div className="bg-muted/50 px-4 py-2.5 border-b">
+                <h4 className="text-sm font-medium text-foreground capitalize">{category}</h4>
               </div>
               <div className="divide-y">
                 {/* Header row */}
-                <div className="flex items-center px-4 py-2 bg-gray-50/50">
+                <div className="flex items-center px-4 py-2 bg-muted/30">
                   <div className="flex-1" />
                   <div className="flex items-center gap-6">
                     <div className="w-12 flex justify-center">
-                      <Mail className="h-3.5 w-3.5 text-gray-400" />
+                      <Mail className="h-3.5 w-3.5 text-muted-foreground/70" />
                     </div>
                     <div className="w-12 flex justify-center">
-                      <Smartphone className="h-3.5 w-3.5 text-gray-400" />
+                      <Smartphone className="h-3.5 w-3.5 text-muted-foreground/70" />
                     </div>
                   </div>
                 </div>
@@ -275,9 +268,11 @@ const WorkspaceSettingsNotifications: React.FC<{ workspace: IWorkspace }> = ({ w
                   return (
                     <div key={event.slug} className="flex items-center px-4 py-3">
                       <div className="flex-1 min-w-0">
-                        <div className="text-sm font-medium text-gray-900">{event.name}</div>
+                        <div className="text-sm font-medium text-foreground">{event.name}</div>
                         {event.description && (
-                          <div className="text-xs text-gray-500 mt-0.5">{event.description}</div>
+                          <div className="text-xs text-muted-foreground mt-0.5">
+                            {event.description}
+                          </div>
                         )}
                       </div>
                       <div className="flex items-center gap-6 shrink-0">
@@ -289,7 +284,7 @@ const WorkspaceSettingsNotifications: React.FC<{ workspace: IWorkspace }> = ({ w
                               disabled={emailUpdating}
                             />
                           ) : (
-                            <span className="text-xs text-gray-300">—</span>
+                            <span className="text-xs text-muted-foreground/50">—</span>
                           )}
                         </div>
                         <div className="w-12 flex justify-center">
@@ -300,7 +295,7 @@ const WorkspaceSettingsNotifications: React.FC<{ workspace: IWorkspace }> = ({ w
                               disabled={pushUpdating}
                             />
                           ) : (
-                            <span className="text-xs text-gray-300">—</span>
+                            <span className="text-xs text-muted-foreground/50">—</span>
                           )}
                         </div>
                       </div>

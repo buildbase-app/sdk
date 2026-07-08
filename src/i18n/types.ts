@@ -5,6 +5,12 @@
 
 export interface SDKMessages {
   security: {
+    connectedAgentsTitle: string;
+    connectedAgentsDescription: string;
+    connectedAgentsDisconnect: string;
+    connectedAgentsEmpty: string;
+    connectedAgentsAccess: string;
+    connectedAgentsGranted: string;
     inactive: string;
     inactiveHint: string;
     passkeysTitle: string;
@@ -66,6 +72,7 @@ export interface SDKMessages {
       noPermissionTitle: string;
       noPermissionDescription: string;
       billingManageOnly: string;
+      openSettings: string;
     };
   };
   subscription: {

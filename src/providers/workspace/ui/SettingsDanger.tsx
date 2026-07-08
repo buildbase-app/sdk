@@ -12,6 +12,7 @@ import {
   AlertDialogTrigger,
 } from '../../../components/ui/alert-dialog';
 import { Button } from '../../../components/ui/button';
+import { SectionHeader } from '../../../components/ui/section-header';
 import { usePermissions } from '../../../hooks/usePermissions';
 import { useTranslation } from '../../../i18n';
 import { handleError } from '../../../lib/error-handler';
@@ -52,7 +53,6 @@ const WorkspaceSettingsDanger: React.FC<{ workspace: IWorkspace }> = ({ workspac
         action: 'handleDeleteWorkspace',
         metadata: { workspaceId: workspace._id },
       });
-      alert(error instanceof Error ? error.message : t('danger.failedToDelete'));
     } finally {
       setIsDeleting(false);
     }
@@ -64,10 +64,11 @@ const WorkspaceSettingsDanger: React.FC<{ workspace: IWorkspace }> = ({ workspac
 
   return (
     <div className="space-y-4">
-      <div>
-        <h3 className="text-lg font-semibold text-destructive">{t('danger.title')}</h3>
-        <p className="text-sm text-muted-foreground mt-2">{t('danger.deleteDescription')}</p>
-      </div>
+      <SectionHeader
+        title={t('danger.title')}
+        titleClassName="text-destructive"
+        description={t('danger.deleteDescription')}
+      />
       <AlertDialog>
         <AlertDialogTrigger asChild>
           <Button variant="destructive" disabled={isDeleting} progress={isDeleting}>

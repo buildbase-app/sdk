@@ -1,4 +1,4 @@
-import { CheckCircle2, Coins, Loader2, RefreshCw, ShoppingCart } from 'lucide-react';
+import { CheckCircle2, Coins, History, RefreshCw, ShoppingCart } from 'lucide-react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import type {
   CreditTransactionTypeValue,
@@ -7,6 +7,10 @@ import type {
 } from '../../../api/types';
 import { CreditTransactionType } from '../../../api/types';
 import { Button } from '../../../components/ui/button';
+import { EmptyState } from '../../../components/ui/empty-state';
+import { LoadingState } from '../../../components/ui/loading-state';
+import { SectionHeader } from '../../../components/ui/section-header';
+import { StatusBanner } from '../../../components/ui/status-banner';
 import { useCreditBalanceContext } from '../../../contexts/CreditBalanceContext';
 import { usePermissions } from '../../../hooks/usePermissions';
 import { useTranslation, type TranslationKey } from '../../../i18n';
@@ -44,16 +48,16 @@ function getTxBadgeColor(type: CreditTransactionTypeValue): string {
     case 'plan_grant':
     case 'admin_grant':
     case 'refund':
-      return 'bg-green-100 text-green-800';
+      return 'bg-success/15 text-success';
     case 'pack_purchased':
-      return 'bg-blue-100 text-blue-800';
+      return 'bg-info/15 text-info';
     case 'consumed':
-      return 'bg-gray-100 text-gray-800';
+      return 'bg-muted text-foreground';
     case 'expired':
     case 'admin_revoke':
-      return 'bg-red-100 text-red-800';
+      return 'bg-destructive/15 text-destructive';
     default:
-      return 'bg-gray-100 text-gray-800';
+      return 'bg-muted text-foreground';
   }
 }
 
@@ -78,6 +82,7 @@ const WorkspaceSettingsCredits: React.FC<{ workspace: IWorkspace }> = ({ workspa
     transactions: txPageData,
     hasNextPage: txHasMore,
     loading: txLoading,
+    refetch: refetchTx,
   } = useCreditTransactions(workspaceId, { limit: 10, page: txPage });
 
   const [allTransactions, setAllTransactions] = useState<ICreditTransaction[]>([]);
@@ -184,7 +189,7 @@ const WorkspaceSettingsCredits: React.FC<{ workspace: IWorkspace }> = ({ workspa
 
   if (!workspaceId) {
     return (
-      <div className="border rounded-lg p-4 text-center text-gray-500">
+      <div className="border rounded-lg p-4 text-center text-muted-foreground">
         <p>{t('subscription.invalidWorkspace')}</p>
       </div>
     );
@@ -193,10 +198,10 @@ const WorkspaceSettingsCredits: React.FC<{ workspace: IWorkspace }> = ({ workspa
   const hasPackages = !packagesLoading && packages.length > 0;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header: description + actions */}
       <div className="space-y-3">
-        <p className="text-sm text-gray-600">{t('credits.description')}</p>
+        <p className="text-sm text-muted-foreground">{t('credits.description')}</p>
         <div className="flex flex-wrap items-center gap-2">
           {hasPackages && canManageBilling && (
             <Button size="sm" onClick={() => setDialogOpen(true)}>
@@ -213,103 +218,81 @@ const WorkspaceSettingsCredits: React.FC<{ workspace: IWorkspace }> = ({ workspa
 
       {/* Status banners */}
       {balanceError && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-          <p className="font-medium">{t('credits.errorLoading')}</p>
-          <p className="text-sm mt-1">{balanceError}</p>
-        </div>
+        <StatusBanner variant="error" title={t('credits.errorLoading')} message={balanceError} />
       )}
 
       {purchaseSuccess && (
-        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg flex items-start justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
-            <p className="text-sm font-medium">{t('credits.purchaseSuccess')}</p>
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setPurchaseSuccess(false)}
-            className="flex-shrink-0 border-green-200 text-green-700 hover:bg-green-100"
-          >
-            {t('settings.common.dismiss')}
-          </Button>
-        </div>
+        <StatusBanner
+          variant="success"
+          icon={<CheckCircle2 className="h-4 w-4 flex-shrink-0" />}
+          title={t('credits.purchaseSuccess')}
+          actionLabel={t('settings.common.dismiss')}
+          onAction={() => setPurchaseSuccess(false)}
+        />
       )}
 
       {purchaseCanceled && (
-        <div className="bg-amber-50 border border-amber-200 text-amber-700 px-4 py-3 rounded-lg flex items-start justify-between gap-4">
-          <p className="text-sm font-medium">{t('credits.purchaseCanceled')}</p>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setPurchaseCanceled(false)}
-            className="flex-shrink-0 border-amber-200 text-amber-700 hover:bg-amber-100"
-          >
-            {t('settings.common.dismiss')}
-          </Button>
-        </div>
+        <StatusBanner
+          variant="warning"
+          title={t('credits.purchaseCanceled')}
+          actionLabel={t('settings.common.dismiss')}
+          onAction={() => setPurchaseCanceled(false)}
+        />
       )}
 
       {purchaseError && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-start justify-between gap-4">
-          <p className="text-sm">{purchaseError}</p>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setPurchaseError(null)}
-            className="flex-shrink-0 border-red-200 text-red-700 hover:bg-red-100"
-          >
-            {t('settings.common.dismiss')}
-          </Button>
-        </div>
+        <StatusBanner
+          variant="error"
+          message={purchaseError}
+          actionLabel={t('settings.common.dismiss')}
+          onAction={() => setPurchaseError(null)}
+        />
       )}
 
       {/* Balance Card */}
-      <div className="border border-gray-200 rounded-lg overflow-hidden">
-        <div className="bg-gray-50/50 p-4 sm:p-5">
+      <div className="border border-border rounded-lg overflow-hidden">
+        <div className="bg-muted/30 p-4 sm:p-5">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
               {t('credits.balance')}
             </h3>
-            <Coins className="h-5 w-5 text-gray-400" />
+            <Coins className="h-5 w-5 text-muted-foreground/70" />
           </div>
           {balance ? (
             <>
-              <div className="text-3xl font-bold text-gray-900 mb-4">
+              <div className="text-3xl font-bold text-foreground mb-4">
                 {fmtNum(balance.available)}
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <p className="text-xs text-gray-500">{t('credits.totalGranted')}</p>
-                  <p className="text-sm font-medium text-gray-900">
+                  <p className="text-xs text-muted-foreground">{t('credits.totalGranted')}</p>
+                  <p className="text-sm font-medium text-foreground">
                     {fmtNum(balance.totalGranted)}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500">{t('credits.totalConsumed')}</p>
-                  <p className="text-sm font-medium text-gray-900">
+                  <p className="text-xs text-muted-foreground">{t('credits.totalConsumed')}</p>
+                  <p className="text-sm font-medium text-foreground">
                     {fmtNum(balance.totalConsumed)}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500">{t('credits.totalExpired')}</p>
-                  <p className="text-sm font-medium text-gray-900">
+                  <p className="text-xs text-muted-foreground">{t('credits.totalExpired')}</p>
+                  <p className="text-sm font-medium text-foreground">
                     {fmtNum(balance.totalExpired)}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500">{t('credits.available')}</p>
-                  <p className="text-sm font-semibold text-green-600">
-                    {fmtNum(balance.available)}
-                  </p>
+                  <p className="text-xs text-muted-foreground">{t('credits.available')}</p>
+                  <p className="text-sm font-semibold text-success">{fmtNum(balance.available)}</p>
                 </div>
               </div>
             </>
           ) : (
             <div className="text-center py-4">
-              <Coins className="h-10 w-10 text-gray-300 mx-auto mb-2" />
-              <p className="text-sm text-gray-600">{t('credits.noCredits')}</p>
-              <p className="text-xs text-gray-500 mt-1">{t('credits.noCreditsHint')}</p>
+              <Coins className="h-10 w-10 text-muted-foreground/50 mx-auto mb-2" />
+              <p className="text-sm text-muted-foreground">{t('credits.noCredits')}</p>
+              <p className="text-xs text-muted-foreground mt-1">{t('credits.noCreditsHint')}</p>
               {hasPackages && canManageBilling && (
                 <Button size="sm" className="mt-3" onClick={() => setDialogOpen(true)}>
                   <ShoppingCart className="h-3.5 w-3.5 me-1.5" />
@@ -322,7 +305,7 @@ const WorkspaceSettingsCredits: React.FC<{ workspace: IWorkspace }> = ({ workspa
 
         {/* Expiring credits warning */}
         {!expiringLoading && expiringCredits > 0 && (
-          <div className="px-4 py-3 bg-amber-50 border-t border-amber-200 text-sm text-amber-800">
+          <div className="px-4 py-3 bg-warning/10 border-t border-warning/30 text-sm text-warning">
             {t('credits.expiringInDays', { count: expiringCredits, days: 7 })}
           </div>
         )}
@@ -330,25 +313,28 @@ const WorkspaceSettingsCredits: React.FC<{ workspace: IWorkspace }> = ({ workspa
 
       {/* Recent Transactions */}
       <div>
-        <h3 className="text-sm font-semibold text-gray-900 mb-3">{t('credits.transactions')}</h3>
+        <SectionHeader title={t('credits.transactions')} className="mb-3" />
         {txLoading && transactions.length === 0 ? (
-          <div className="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">
-            <Loader2 className="h-4 w-4 animate-spin flex-shrink-0" />
-            <span>{t('settings.common.loading')}</span>
-          </div>
+          <LoadingState />
         ) : transactions.length === 0 ? (
-          <div className="border rounded-lg p-6 text-center">
-            <p className="text-sm text-gray-500">{t('credits.noTransactions')}</p>
-          </div>
+          <EmptyState
+            icon={<History className="h-5 w-5 text-muted-foreground" />}
+            description={t('credits.noTransactions')}
+            action={
+              <Button variant="outline" size="sm" progress={txLoading} onClick={refetchTx}>
+                {t('settings.common.refreshAction', { loading: String(txLoading) })}
+              </Button>
+            }
+          />
         ) : (
-          <div className="border border-gray-200 rounded-lg overflow-hidden">
-            <div className="divide-y divide-gray-100">
+          <div className="border border-border rounded-lg overflow-hidden">
+            <div className="divide-y divide-border/60">
               {transactions.map(tx => (
                 <TransactionRow key={tx._id} tx={tx} />
               ))}
             </div>
             {txHasMore && (
-              <div className="border-t border-gray-200 px-4 py-3 text-center">
+              <div className="border-t border-border px-4 py-3 text-center">
                 <Button
                   variant="ghost"
                   size="sm"
@@ -401,18 +387,20 @@ function TransactionRow({ tx }: { tx: ICreditTransaction }) {
             >
               {t(typeKey)}
             </span>
-            {tx.description && <p className="text-sm text-gray-700 truncate">{tx.description}</p>}
+            {tx.description && <p className="text-sm text-foreground truncate">{tx.description}</p>}
           </div>
-          <p className="text-xs text-gray-400">{formatDate(tx.createdAt, formattingLocale)}</p>
+          <p className="text-xs text-muted-foreground/70">
+            {formatDate(tx.createdAt, formattingLocale)}
+          </p>
         </div>
         <div className="text-end shrink-0">
           <span
-            className={cn('text-sm font-semibold', isPositive ? 'text-green-600' : 'text-gray-900')}
+            className={cn('text-sm font-semibold', isPositive ? 'text-success' : 'text-foreground')}
           >
             {isPositive ? '+' : ''}
             {fmtNum(tx.amount)}
           </span>
-          <p className="text-xs text-gray-400">{fmtNum(tx.balanceAfter)}</p>
+          <p className="text-xs text-muted-foreground/70">{fmtNum(tx.balanceAfter)}</p>
         </div>
       </div>
     </div>

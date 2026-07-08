@@ -445,12 +445,10 @@ export function buildLlmsTxt(
  * API Catalog (RFC 9727) as a `linkset+json` document for
  * `/.well-known/api-catalog`. Returns null when no APIs are configured.
  */
-export function buildApiCatalog(
-  config: AgentReadyConfig
-): DiscoveryDocument | null {
+export function buildApiCatalog(config: AgentReadyConfig): DiscoveryDocument | null {
   const apis = config.apiCatalog ?? [];
   if (!apis.length) return null;
-  const linkset = apis.map((api) => ({
+  const linkset = apis.map(api => ({
     anchor: api.anchor,
     ...(api.title ? { title: api.title } : {}),
     ...(api.serviceDesc ? { 'service-desc': [{ href: api.serviceDesc }] } : {}),
@@ -469,9 +467,7 @@ export function buildApiCatalog(
  * MCP Server Card (SEP-1649) for `/.well-known/mcp/server-card.json`. Returns
  * null when no card is configured (i.e. no MCP server is running).
  */
-export function buildMcpServerCard(
-  config: AgentReadyConfig
-): DiscoveryDocument | null {
+export function buildMcpServerCard(config: AgentReadyConfig): DiscoveryDocument | null {
   const card = config.mcpServerCard;
   if (!card) return null;
   return jsonDoc(
@@ -484,9 +480,7 @@ export function buildMcpServerCard(
         endpoint: card.endpoint,
       },
       capabilities: card.capabilities ?? { tools: {} },
-      ...(card.documentationUrl
-        ? { documentation_url: card.documentationUrl }
-        : {}),
+      ...(card.documentationUrl ? { documentation_url: card.documentationUrl } : {}),
     },
     config
   );
@@ -508,13 +502,11 @@ export function buildAuthMd(
   }
   const as = bundle.authorizationServer;
   if (!as) return null;
-  const resources = (bundle.protectedResources ?? [])
-    .map((r) => `- \`${r.resource}\``)
-    .join('\n');
+  const resources = (bundle.protectedResources ?? []).map(r => `- \`${r.resource}\``).join('\n');
   const scopes = Array.from(
     new Set(
       (bundle.protectedResources ?? []).flatMap(
-        (r) => (r.metadata?.scopes_supported as string[] | undefined) ?? []
+        r => (r.metadata?.scopes_supported as string[] | undefined) ?? []
       )
     )
   );
@@ -532,7 +524,7 @@ Fetch the metadata document above for the \`authorization_endpoint\`, \`token_en
 ${resources || '- See `/.well-known/oauth-protected-resource`'}
 
 Each resource publishes its metadata at \`/.well-known/oauth-protected-resource\`, listing the authorization server(s) that can issue tokens for it.
-${scopes.length ? `\n## Scopes\n${scopes.map((s) => `- \`${s}\``).join('\n')}\n` : ''}
+${scopes.length ? `\n## Scopes\n${scopes.map(s => `- \`${s}\``).join('\n')}\n` : ''}
 ## How an agent authenticates
 1. Discover this document and \`/.well-known/oauth-protected-resource\`.
 2. Fetch the authorization-server metadata for the endpoints.

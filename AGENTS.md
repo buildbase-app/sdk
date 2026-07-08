@@ -6,12 +6,12 @@ BuildBase is a multi-tenant SaaS platform SDK: auth, workspaces, subscriptions/b
 
 ## The one rule: two entry points, pick by runtime
 
-| Import                  | Runtime          | Contains                                                                 |
-| ----------------------- | ---------------- | ----------------------------------------------------------------------- |
-| `@buildbase/sdk`        | **Server** / any | Zero React. `BuildBase()` factory, API classes, webhooks, agent tooling, pure utils, enums, types. |
-| `@buildbase/sdk/react`  | **Client**       | Everything in core **re-exported** + React providers, hooks, gate components. |
-| `@buildbase/sdk/data`   | any              | Static datasets: `countries`, `currencies`, `languages`, `timezones`, `betaFormSchema`. |
-| `@buildbase/sdk/css`    | build            | `import '@buildbase/sdk/css'` — required once for component styling.     |
+| Import                 | Runtime          | Contains                                                                                           |
+| ---------------------- | ---------------- | -------------------------------------------------------------------------------------------------- |
+| `@buildbase/sdk`       | **Server** / any | Zero React. `BuildBase()` factory, API classes, webhooks, agent tooling, pure utils, enums, types. |
+| `@buildbase/sdk/react` | **Client**       | Everything in core **re-exported** + React providers, hooks, gate components.                      |
+| `@buildbase/sdk/data`  | any              | Static datasets: `countries`, `currencies`, `languages`, `timezones`, `betaFormSchema`.            |
+| `@buildbase/sdk/css`   | build            | `import '@buildbase/sdk/css'` — required once for component styling.                               |
 
 - **In a React component / client hook → import from `@buildbase/sdk/react`.** It contains the whole core surface too, so you rarely need both.
 - **In an API route, server action, webhook, cron, or Node/edge → import from `@buildbase/sdk`.** Never import `/react` on the server.
@@ -24,9 +24,13 @@ BuildBase is a multi-tenant SaaS platform SDK: auth, workspaces, subscriptions/b
 import '@buildbase/sdk/css';
 import { SaaSOSProvider } from '@buildbase/sdk/react';
 
-<SaaSOSProvider serverUrl={process.env.NEXT_PUBLIC_BUILDBASE_URL!} orgId={process.env.NEXT_PUBLIC_BUILDBASE_ORG_ID!} locale="en">
+<SaaSOSProvider
+  serverUrl={process.env.NEXT_PUBLIC_BUILDBASE_URL!}
+  orgId={process.env.NEXT_PUBLIC_BUILDBASE_ORG_ID!}
+  locale="en"
+>
   {children}
-</SaaSOSProvider>
+</SaaSOSProvider>;
 ```
 
 Everything below `SaaSOSProvider` can use the hooks and gate components. **Prefer SDK hooks over reaching into internal context/Redux.**
@@ -35,8 +39,22 @@ Everything below `SaaSOSProvider` can use the hooks and gate components. **Prefe
 
 ```ts
 import BuildBase from '@buildbase/sdk';
-export const { auth, workspace, subscription, usage, credits, plans, invoices,
-  users, features, settings, notification, permissions, withSession, client } = BuildBase({
+export const {
+  auth,
+  workspace,
+  subscription,
+  usage,
+  credits,
+  plans,
+  invoices,
+  users,
+  features,
+  settings,
+  notification,
+  permissions,
+  withSession,
+  client,
+} = BuildBase({
   serverUrl: process.env.BUILDBASE_URL!,
   orgId: process.env.BUILDBASE_ORG_ID!,
   getSessionId: async () => (await cookies()).get('bb-session-id')?.value ?? null, // Next.js

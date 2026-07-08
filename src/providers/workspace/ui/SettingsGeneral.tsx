@@ -18,6 +18,7 @@ import { Input } from '../../../components/ui/input';
 import { Label } from '../../../components/ui/label';
 import { RadioGroup, RadioGroupItem } from '../../../components/ui/radio-group';
 import { ScrollArea } from '../../../components/ui/scroll-area';
+import { StatusBanner } from '../../../components/ui/status-banner';
 import { usePermissions } from '../../../hooks/usePermissions';
 import { useSuccessMessage } from '../../../hooks/useSuccessMessage';
 import { useTranslation } from '../../../i18n';
@@ -83,10 +84,12 @@ const WorkspaceSettingsGeneral: React.FC<{ workspace: IWorkspace }> = ({ workspa
   return (
     <div>
       {success.message && (
-        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded mb-4">
-          <p className="font-medium">{t('settings.common.success')}</p>
-          <p className="text-sm">{success.message}</p>
-        </div>
+        <StatusBanner
+          variant="success"
+          title={t('settings.common.success')}
+          message={success.message}
+          className="mb-4"
+        />
       )}
       {!canEdit && <NoPermission descriptionKey="general.ownerOnly" />}
       <Form {...form}>
@@ -171,6 +174,8 @@ const WorkspaceSettingsGeneral: React.FC<{ workspace: IWorkspace }> = ({ workspa
                           type="button"
                           onClick={() => handleEmojiSelect(emoji)}
                           disabled={!canEdit}
+                          aria-label={emoji}
+                          aria-pressed={selectedEmoji === emoji}
                           className={`w-8 h-8 rounded flex items-center justify-center text-lg hover:bg-muted transition-colors ${
                             selectedEmoji === emoji ? 'bg-primary text-primary-foreground' : ''
                           }`}

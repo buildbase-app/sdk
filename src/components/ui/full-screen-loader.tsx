@@ -19,13 +19,20 @@ const DefaultSpinner = ({ message }: { message: string }) => (
       style={{
         width: 40,
         height: 40,
-        border: '3px solid #e5e7eb',
-        borderTopColor: '#6b7280',
+        border: '3px solid hsl(var(--muted, 210 40% 96%))',
+        borderTopColor: 'hsl(var(--muted-foreground, 215.4 16.3% 46.9%))',
         borderRadius: '50%',
         animation: 'bb-fs-loader-spin 0.6s linear infinite',
       }}
     />
-    <p aria-hidden="true" style={{ marginTop: 16, color: '#6b7280', fontSize: 14 }}>
+    <p
+      aria-hidden="true"
+      style={{
+        marginTop: 16,
+        color: 'hsl(var(--muted-foreground, 215.4 16.3% 46.9%))',
+        fontSize: 14,
+      }}
+    >
       {message}
     </p>
     <style>{`
@@ -35,8 +42,8 @@ const DefaultSpinner = ({ message }: { message: string }) => (
       }
       @media (prefers-color-scheme: dark) {
         .bb-fs-loader-spinner {
-          border-color: #374151 !important;
-          border-top-color: #9ca3af !important;
+          border-color: hsl(var(--muted, 217.2 32.6% 17.5%)) !important;
+          border-top-color: hsl(var(--muted-foreground, 215 20.2% 65.1%)) !important;
         }
       }
     `}</style>
@@ -101,14 +108,14 @@ export const FullScreenLoader = ({
     {children ?? <DefaultSpinner message={message} />}
     <style>{`
       .bb-fs-loader {
-        background-color: #fff;
+        background-color: hsl(var(--background, 0 0% 100%));
       }
       @media (prefers-color-scheme: dark) {
         .bb-fs-loader {
-          background-color: #0a0a0a;
+          background-color: hsl(var(--background, 222.2 84% 4.9%));
         }
         .bb-fs-loader p {
-          color: #9ca3af !important;
+          color: hsl(var(--muted-foreground, 215 20.2% 65.1%)) !important;
         }
       }
     `}</style>

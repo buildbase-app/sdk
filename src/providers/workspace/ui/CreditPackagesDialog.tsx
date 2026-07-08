@@ -69,9 +69,7 @@ const CreditPackagesDialog: React.FC<CreditPackagesDialogProps> = ({
         {/* Header — fixed */}
         <div className="flex-shrink-0 px-4 py-4 sm:px-6 sm:py-6 border-b space-y-3 sm:space-y-4">
           <div>
-            <DialogTitle className="text-xl sm:text-2xl font-bold">
-              {t('credits.dialogTitle')}
-            </DialogTitle>
+            <DialogTitle className="text-xl font-semibold">{t('credits.dialogTitle')}</DialogTitle>
             <DialogDescription className="mt-1 text-sm">
               {t('credits.dialogDescription')}
               {workspaceName && (
@@ -85,8 +83,8 @@ const CreditPackagesDialog: React.FC<CreditPackagesDialogProps> = ({
           {/* Currency selector */}
           {!workspaceBillingCurrency?.trim() && availableCurrencies.length > 1 && (
             <div className="flex items-center gap-2">
-              <span className="text-sm text-slate-600">{t('pricing.currency')}</span>
-              <div className="flex gap-1 rounded-lg border border-gray-200 bg-gray-50/50 p-1">
+              <span className="text-sm text-muted-foreground">{t('pricing.currency')}</span>
+              <div className="flex gap-1 rounded-lg border border-border bg-muted/30 p-1">
                 {availableCurrencies.map(code => (
                   <button
                     key={code}
@@ -95,8 +93,8 @@ const CreditPackagesDialog: React.FC<CreditPackagesDialogProps> = ({
                     className={cn(
                       'rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
                       effectiveCurrency === code
-                        ? 'bg-white text-gray-900 shadow-sm'
-                        : 'text-gray-500 hover:text-gray-700'
+                        ? 'bg-background text-foreground shadow-sm'
+                        : 'text-muted-foreground hover:text-foreground'
                     )}
                   >
                     {getCurrencySymbol(code)} {code.toUpperCase()}
@@ -110,7 +108,7 @@ const CreditPackagesDialog: React.FC<CreditPackagesDialogProps> = ({
         {/* Scrollable package list — vertical layout */}
         <div className="flex-1 overflow-y-auto">
           {packages.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-gray-400">
+            <div className="flex flex-col items-center justify-center py-16 text-muted-foreground/70">
               <Coins className="h-12 w-12 mb-3" />
               <p className="text-sm">{t('credits.noPackages')}</p>
             </div>
@@ -135,22 +133,22 @@ const CreditPackagesDialog: React.FC<CreditPackagesDialogProps> = ({
                       'rounded-xl border p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center gap-4 transition-all',
                       isPurchasing
                         ? 'border-primary bg-primary/5 shadow-md'
-                        : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'
+                        : 'border-border hover:border-border hover:shadow-sm'
                     )}
                   >
                     {/* Left: info */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <h3 className="text-lg font-semibold text-gray-900">{pkg.name}</h3>
-                        <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700">
-                          <Coins className="h-3 w-3" />
+                        <h3 className="text-lg font-semibold text-foreground">{pkg.name}</h3>
+                        <span className="inline-flex items-center gap-1 rounded-full bg-info/10 px-2.5 py-0.5 text-xs font-medium text-info">
+                          <Coins className="h-3.5 w-3.5" />
                           {t('credits.creditsAmount', { count: fmtNum(pkg.creditAmount) })}
                         </span>
                       </div>
                       {pkg.description && (
-                        <p className="text-sm text-gray-500 mb-2">{pkg.description}</p>
+                        <p className="text-sm text-muted-foreground mb-2">{pkg.description}</p>
                       )}
-                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-400">
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground/70">
                         <span>
                           {pkg.validityDays
                             ? t('credits.validityDays', { count: pkg.validityDays })
@@ -169,7 +167,7 @@ const CreditPackagesDialog: React.FC<CreditPackagesDialogProps> = ({
                     {/* Right: price + button */}
                     <div className="flex items-center gap-4 sm:flex-col sm:items-end sm:gap-2 shrink-0">
                       {price != null && (
-                        <span className="text-2xl sm:text-3xl font-bold text-gray-900 whitespace-nowrap">
+                        <span className="text-2xl sm:text-3xl font-bold text-foreground whitespace-nowrap">
                           {fmtCents(price, variantCurrency)}
                         </span>
                       )}

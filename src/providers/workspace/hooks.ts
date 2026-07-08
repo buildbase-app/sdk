@@ -7,8 +7,8 @@ import { handleError } from '../../lib/error-handler';
 import { eventEmitter } from '../events';
 import { useSaaSSettings } from '../os/hooks';
 import { workspaceSettingsManager } from './settings-manager';
+import { SettingsScreen } from './settings-screens';
 import { IWorkspace, IWorkspaceUser } from './types';
-import { SettingsScreen } from './ui/SettingsDialog';
 import { useWorkspaceApiWithOs } from './use-workspace-api';
 import { getWorkspaceUserRole, isWorkspaceOwner, workspaceStorage } from './utils';
 

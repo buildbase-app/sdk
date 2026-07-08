@@ -50,6 +50,7 @@ export const de: SDKMessages = {
         'Sie haben keine Berechtigung, auf diesen Bereich zuzugreifen. Kontaktieren Sie einen Workspace-Administrator, wenn Sie Zugriff benötigen.',
       billingManageOnly:
         'Nur Benutzer mit Abrechnungsverwaltungsberechtigungen können diese Aktion durchführen.',
+      openSettings: 'Einstellungen öffnen',
     },
   },
   subscription: {
@@ -616,6 +617,13 @@ export const de: SDKMessages = {
     fetchExpiringCredits: 'Ablaufendes Guthaben konnte nicht abgerufen werden',
   },
   security: {
+    connectedAgentsTitle: 'Verbundene Agents',
+    connectedAgentsDescription:
+      'KI-Agents, denen du Zugriff auf dein Konto gewährt hast. Trenne alle, die du nicht mehr nutzt — der Zugriff wird sofort entzogen.',
+    connectedAgentsDisconnect: 'Trennen',
+    connectedAgentsEmpty: 'Keine verbundenen Agents.',
+    connectedAgentsAccess: 'Zugriff',
+    connectedAgentsGranted: 'Gewährt',
     inactive: 'Inaktiv',
     inactiveHint:
       'Auf einer früheren Anmeldedomain registriert und nicht mehr verwendbar. Sie können ihn entfernen.',

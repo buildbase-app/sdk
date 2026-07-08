@@ -13,7 +13,9 @@ import {
   AlertDialogTrigger,
 } from '../../../components/ui/alert-dialog';
 import { Button } from '../../../components/ui/button';
+import { EmptyState } from '../../../components/ui/empty-state';
 import { Input } from '../../../components/ui/input';
+import { SectionHeader } from '../../../components/ui/section-header';
 import { useTranslation } from '../../../i18n';
 import { handleError } from '../../../lib/error-handler';
 import { useWorkspaceApiWithOs } from '../use-workspace-api';
@@ -82,16 +84,16 @@ const WorkspaceSettingsSecurity: React.FC = () => {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h3 className="text-sm font-medium">{t('security.passkeysTitle')}</h3>
-        <p className="text-sm text-muted-foreground">{t('security.passkeysDescription')}</p>
-      </div>
+      <SectionHeader
+        title={t('security.passkeysTitle')}
+        description={t('security.passkeysDescription')}
+      />
 
       {passkeys.length === 0 ? (
-        <div className="flex flex-col items-center gap-2 rounded-md border border-dashed p-6 text-center">
-          <KeyRound className="h-5 w-5 text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">{t('security.noPasskeys')}</p>
-        </div>
+        <EmptyState
+          icon={<KeyRound className="h-5 w-5 text-muted-foreground" />}
+          description={t('security.noPasskeys')}
+        />
       ) : (
         <div className="space-y-2">
           {passkeys.map(passkey => (
@@ -136,7 +138,7 @@ const WorkspaceSettingsSecurity: React.FC = () => {
                         <p className="truncate text-sm font-medium">{passkey.name}</p>
                         {passkey.active === false && (
                           <span
-                            className="shrink-0 rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-700"
+                            className="shrink-0 rounded-full border border-warning/40 bg-warning/10 px-2 py-0.5 text-xs font-medium text-warning"
                             title={t('security.inactiveHint')}
                           >
                             {t('security.inactive')}

@@ -49,6 +49,7 @@ export const ja: SDKMessages = {
       noPermissionDescription:
         'このセクションにアクセスする権限がありません。アクセスが必要な場合は、ワークスペース管理者にお問い合わせください。',
       billingManageOnly: '請求管理権限を持つユーザーのみがこの操作を実行できます。',
+      openSettings: '設定を開く',
     },
   },
   subscription: {
@@ -608,6 +609,13 @@ export const ja: SDKMessages = {
     fetchExpiringCredits: '期限切れ間近のクレジットの取得に失敗しました',
   },
   security: {
+    connectedAgentsTitle: '接続済みエージェント',
+    connectedAgentsDescription:
+      'アカウントへのアクセスを許可した AI エージェント。使わないものは切断してください。アクセスは即座に取り消されます。',
+    connectedAgentsDisconnect: '切断',
+    connectedAgentsEmpty: '接続済みのエージェントはありません。',
+    connectedAgentsAccess: 'アクセス',
+    connectedAgentsGranted: '許可日',
     inactive: '無効',
     inactiveHint: '以前のサインインドメインで登録されたため使用できません。削除できます。',
     passkeysTitle: 'パスキー',

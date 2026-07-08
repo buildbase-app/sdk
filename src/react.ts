@@ -35,6 +35,19 @@ export { WhenRoles, WhenWorkspaceRoles } from './components/user/role';
 export { WhenPermission } from './components/permission';
 export { usePermissions } from './hooks/usePermissions';
 
+// ─── Connected Agents (screen + headless hook) ─────────────────────────────────
+export {
+  ConnectedAgents,
+  ConnectedAgentsApi,
+  useConnectedAgents,
+  useConnectedAgentsApi,
+} from './components/connected-agents';
+export type {
+  ConnectedAgentsProps,
+  IConnectedAgent,
+  UseConnectedAgents,
+} from './components/connected-agents';
+
 // ─── Feature Gate Components ───────────────────────────────────────────────────
 export {
   WhenUserFeatureDisabled,
@@ -137,8 +150,18 @@ export type { SeatStatus } from './hooks/use-seat-status';
 export { BetaForm } from './components/beta/BetaForm';
 export { PricingPage } from './components/pricing';
 export type { PricingPageDetails, PricingPageProps } from './components/pricing';
+export { EmptyState } from './components/ui/empty-state';
+export type { EmptyStateProps } from './components/ui/empty-state';
 export { FullScreenLoader } from './components/ui/full-screen-loader';
 export type { FullScreenLoaderProps } from './components/ui/full-screen-loader';
+export { LoadingState } from './components/ui/loading-state';
+export type { LoadingStateProps } from './components/ui/loading-state';
+export { SectionHeader } from './components/ui/section-header';
+export type { SectionHeaderProps } from './components/ui/section-header';
+export { SidebarNavItem, SidebarNavSection } from './components/ui/sidebar-nav';
+export type { SidebarNavItemProps, SidebarNavSectionProps } from './components/ui/sidebar-nav';
+export { StatusBanner } from './components/ui/status-banner';
+export type { StatusBannerProps, StatusBannerVariant } from './components/ui/status-banner';
 export { WorkspaceSwitcher } from './providers/workspace/provider';
 
 export {
@@ -151,8 +174,8 @@ export { SUPPORTED_LOCALES, useTranslation } from './i18n';
 export type { SDKLocale, SDKMessages } from './i18n';
 
 // ─── Settings Screen Constants ─────────────────────────────────────────────────
-export { SETTINGS_SCREENS, SettingsScreen } from './providers/workspace/ui/SettingsDialog';
-export type { WorkspaceSettingsSection } from './providers/workspace/ui/SettingsDialog';
+export { SETTINGS_SCREENS, SettingsScreen } from './providers/workspace/settings-screens';
+export type { WorkspaceSettingsSection } from './providers/workspace/settings-screens';
 
 // ─── Settings Manager (programmatic control) ─────────────────────────────────
 export { workspaceSettingsManager } from './providers/workspace/settings-manager';

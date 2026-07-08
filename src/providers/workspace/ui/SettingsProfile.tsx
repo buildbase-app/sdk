@@ -17,6 +17,7 @@ import {
   FormMessage,
 } from '../../../components/ui/form';
 import { Input } from '../../../components/ui/input';
+import { StatusBanner } from '../../../components/ui/status-banner';
 import { useSuccessMessage } from '../../../hooks/useSuccessMessage';
 import { useTranslation } from '../../../i18n';
 import { handleError } from '../../../lib/error-handler';
@@ -54,14 +55,18 @@ const WorkspaceSettingsProfile: React.FC<{ workspace: IWorkspace }> = ({ workspa
   });
 
   useEffect(() => {
-    getProfile().then((user: IUser) => {
-      setUser(user);
-      form.setValue('name', user.name);
-      form.setValue('country', user.country);
-      form.setValue('timezone', user.timezone);
-      form.setValue('language', user.language);
-      form.setValue('currency', user.currency);
-    });
+    getProfile()
+      .then((user: IUser) => {
+        setUser(user);
+        form.setValue('name', user.name);
+        form.setValue('country', user.country);
+        form.setValue('timezone', user.timezone);
+        form.setValue('language', user.language);
+        form.setValue('currency', user.currency);
+      })
+      .catch(error => {
+        handleError(error, { component: 'WorkspaceSettingsProfile', action: 'getProfile' });
+      });
   }, [reloadCounter]);
 
   function reloadProfile() {
@@ -98,19 +103,24 @@ const WorkspaceSettingsProfile: React.FC<{ workspace: IWorkspace }> = ({ workspa
   return (
     <div>
       {success.message && (
-        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded mb-4">
-          <p className="font-medium">{t('settings.common.success')}</p>
-          <p className="text-sm">{success.message}</p>
-        </div>
+        <StatusBanner
+          variant="success"
+          title={t('settings.common.success')}
+          message={success.message}
+          className="mb-4"
+        />
       )}
       <div className="space-y-4">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-1">{t('profile.email')}</label>
+              <label htmlFor="profile-email" className="block text-sm font-medium mb-1">
+                {t('profile.email')}
+              </label>
               <Input
+                id="profile-email"
                 disabled
-                className="w-full border rounded px-3 py-2 bg-gray-100"
+                className="w-full border rounded px-3 py-2 bg-muted"
                 value={user?.email}
               />
             </div>
@@ -186,7 +196,7 @@ const WorkspaceSettingsProfile: React.FC<{ workspace: IWorkspace }> = ({ workspa
       </div>
       {user?.image && (
         <div>
-          <label className="block text-sm font-medium mb-1">{t('profile.profileImage')}</label>
+          <p className="block text-sm font-medium mb-1">{t('profile.profileImage')}</p>
           <div className="w-16 h-16 rounded-full overflow-hidden">
             <img src={user.image} alt={user.name} className="w-full h-full object-cover" />
           </div>

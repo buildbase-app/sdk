@@ -13,14 +13,14 @@ const NoPermission: React.FC<NoPermissionProps> = ({ titleKey, descriptionKey })
   const { t } = useTranslation();
 
   return (
-    <div className="border border-amber-200 bg-amber-50 rounded-lg p-4">
+    <div className="border border-warning/20 bg-warning/10 rounded-lg p-4">
       <div className="flex items-start gap-3">
-        <ShieldAlert className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+        <ShieldAlert className="h-5 w-5 text-warning shrink-0 mt-0.5" />
         <div>
-          <h4 className="text-sm font-medium text-amber-800">
+          <h4 className="text-sm font-medium text-warning">
             {t(titleKey ?? 'settings.common.noPermissionTitle')}
           </h4>
-          <p className="text-xs text-amber-700 mt-1">
+          <p className="text-xs text-warning/80 mt-1">
             {t(descriptionKey ?? 'settings.common.noPermissionDescription')}
           </p>
         </div>

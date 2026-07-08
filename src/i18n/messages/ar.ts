@@ -50,6 +50,7 @@ export const ar: SDKMessages = {
         'ليس لديك إذن للوصول إلى هذا القسم. تواصل مع مسؤول مساحة العمل إذا كنت بحاجة إلى الوصول.',
       billingManageOnly:
         'فقط المستخدمون الذين لديهم أذونات إدارة الفواتير يمكنهم تنفيذ هذا الإجراء.',
+      openSettings: 'فتح الإعدادات',
     },
   },
   subscription: {
@@ -606,6 +607,13 @@ export const ar: SDKMessages = {
     fetchExpiringCredits: 'فشل في جلب الرصيد المنتهي قريباً',
   },
   security: {
+    connectedAgentsTitle: 'الوكلاء المتصلون',
+    connectedAgentsDescription:
+      'وكلاء الذكاء الاصطناعي الذين منحتهم حق الوصول إلى حسابك. افصل أي وكيل لم تعد تستخدمه، وسيُلغى الوصول فورًا.',
+    connectedAgentsDisconnect: 'قطع الاتصال',
+    connectedAgentsEmpty: 'لا يوجد وكلاء متصلون.',
+    connectedAgentsAccess: 'الوصول',
+    connectedAgentsGranted: 'مُنح',
     inactive: 'غير نشط',
     inactiveHint: 'سُجّل على نطاق تسجيل دخول سابق ولم يعد قابلاً للاستخدام. يمكنك إزالته.',
     passkeysTitle: 'مفاتيح المرور',

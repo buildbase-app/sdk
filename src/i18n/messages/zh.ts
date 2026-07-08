@@ -48,6 +48,7 @@ export const zh: SDKMessages = {
       noPermissionTitle: '访问受限',
       noPermissionDescription: '您没有权限访问此部分。如需访问权限，请联系工作区管理员。',
       billingManageOnly: '只有具有账单管理权限的用户才能执行此操作。',
+      openSettings: '打开设置',
     },
   },
   subscription: {
@@ -590,6 +591,13 @@ export const zh: SDKMessages = {
     fetchExpiringCredits: '获取即将过期的积分失败',
   },
   security: {
+    connectedAgentsTitle: '已连接的代理',
+    connectedAgentsDescription:
+      '你已授权访问账户的 AI 代理。断开你不再使用的代理，访问权限会立即撤销。',
+    connectedAgentsDisconnect: '断开连接',
+    connectedAgentsEmpty: '没有已连接的代理。',
+    connectedAgentsAccess: '访问权限',
+    connectedAgentsGranted: '授权时间',
     inactive: '已失效',
     inactiveHint: '注册于之前的登录域名，已无法使用。您可以将其移除。',
     passkeysTitle: '通行密钥',

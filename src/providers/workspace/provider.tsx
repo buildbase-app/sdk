@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Building2, Image, Loader2, Plus, RefreshCcw, Search, Smile, Users } from 'lucide-react';
-import { ReactNode, useEffect, useState } from 'react';
+import { lazy, ReactNode, Suspense, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar';
@@ -35,8 +35,11 @@ import { useSaaSOs, useSaaSSettings } from '../os/hooks';
 import { isOsConfigReady } from '../os/types';
 import { useSaaSWorkspaces } from './hooks';
 import type { IWorkspace } from './types';
-import WorkspaceSettingsDialog from './ui/SettingsDialog';
 import { getSvgImage, workspaceEmojis } from './ui/utils';
+// Lazy-loaded so the 12 settings screens stay out of the main bundle
+const WorkspaceSettingsDialog = lazy(() =>
+  import('./ui/SettingsDialog').then(m => ({ default: m.default }))
+);
 
 export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
   return <>{children}</>;
@@ -136,12 +139,14 @@ export function WorkspaceSwitcher(props: {
     return (
       <>
         <div onClick={() => setOpen(true)}>{props.trigger?.(isLoading, currentWorkspace)}</div>
-        <WorkspaceSettingsDialog
-          workspace={currentWorkspace}
-          open={open}
-          onOpenChange={setOpen}
-          showTrigger={false}
-        />
+        <Suspense fallback={null}>
+          <WorkspaceSettingsDialog
+            workspace={currentWorkspace}
+            open={open}
+            onOpenChange={setOpen}
+            showTrigger={false}
+          />
+        </Suspense>
       </>
     );
   }
@@ -323,7 +328,7 @@ function WorkspaceItem(props: WorkspaceItemProps) {
         </div>
         {planName && (
           <div className="max-w-fit">
-            <div className="flex items-center gap-1 text-sm text-muted-foreground bg-green-500 text-white rounded-full px-2 py-0.5">
+            <div className="flex items-center gap-1 text-sm bg-success text-success-foreground rounded-full px-2 py-0.5">
               <span className="text-xs">{planName}</span>
             </div>
           </div>
@@ -351,19 +356,21 @@ function WorkspaceItem(props: WorkspaceItemProps) {
             {t('workspace.switchTo')}
           </Button>
         )}
-        <WorkspaceSettingsDialog
-          workspace={workspace}
-          onClose={() => {
-            if (isCurrentWorkspace) {
-              const index = workspacesToUse.findIndex(
-                w => w._id?.toString() === workspace._id?.toString()
-              );
-              if (index !== -1) {
-                setCurrentWorkspace(workspacesToUse[index]);
+        <Suspense fallback={null}>
+          <WorkspaceSettingsDialog
+            workspace={workspace}
+            onClose={() => {
+              if (isCurrentWorkspace) {
+                const index = workspacesToUse.findIndex(
+                  w => w._id?.toString() === workspace._id?.toString()
+                );
+                if (index !== -1) {
+                  setCurrentWorkspace(workspacesToUse[index]);
+                }
               }
-            }
-          }}
-        />
+            }}
+          />
+        </Suspense>
       </div>
     </div>
   );
@@ -505,6 +512,8 @@ function CreateWorkspaceDialog(props: { onCreated: () => void }) {
                           key={index}
                           type="button"
                           onClick={() => handleEmojiSelect(emoji)}
+                          aria-label={emoji}
+                          aria-pressed={selectedEmoji === emoji}
                           className={`w-8 h-8 rounded flex items-center justify-center text-lg hover:bg-muted transition-colors ${
                             selectedEmoji === emoji ? 'bg-primary text-primary-foreground' : ''
                           }`}

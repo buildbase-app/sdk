@@ -193,7 +193,7 @@ export const BetaForm: React.FC<BetaFormProps> = ({
               {formHidden && error && (
                 <div className="flex flex-col items-center justify-center w-full">
                   <div
-                    className="border-red-300 text-red-700"
+                    className="border-destructive/30 text-destructive"
                     role="alert"
                     aria-live="assertive"
                     aria-atomic={true}
@@ -215,7 +215,7 @@ export const BetaForm: React.FC<BetaFormProps> = ({
                 </div>
               )}
               {formHidden && showSuccess && message && (
-                <div className="flex flex-col items-center justify-center w-full text-green-700 border-green-300 text-center">
+                <div className="flex flex-col items-center justify-center w-full text-success border-success/30 text-center">
                   {betaFormConfig?.screen?.thankYou && (
                     <Screen screen={betaFormConfig?.screen?.thankYou} />
                   )}
@@ -231,7 +231,7 @@ export const BetaForm: React.FC<BetaFormProps> = ({
                   href={betaFormConfig?.privacyPolicy}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-blue-600 hover:text-blue-700"
+                  className="text-info hover:text-info"
                 >
                   {t('beta.privacyPolicy')}
                 </a>{' '}
@@ -240,7 +240,7 @@ export const BetaForm: React.FC<BetaFormProps> = ({
                   href={betaFormConfig?.termsOfService}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-blue-600 hover:text-blue-700"
+                  className="text-info hover:text-info"
                 >
                   {t('beta.termsOfService')}
                 </a>
