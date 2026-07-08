@@ -38,7 +38,7 @@ export class UserApi extends BaseApi {
 
   async updateAttribute(attributeKey: string, value: string | number | boolean): Promise<IUser> {
     return this.fetchJson<IUser>(
-      `users/attributes/${attributeKey}`,
+      this.apiPath`users/attributes/${attributeKey}`,
       {
         method: 'PATCH',
         body: JSON.stringify({ value }),

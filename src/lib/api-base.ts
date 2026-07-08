@@ -176,8 +176,10 @@ export abstract class BaseApi {
 
     // Timeout via AbortController
     let timeoutId: ReturnType<typeof setTimeout> | undefined;
+    let timeoutController: AbortController | undefined;
     if (this._timeout > 0) {
-      const controller = new AbortController();
+      timeoutController = new AbortController();
+      const controller = timeoutController;
       timeoutId = setTimeout(() => controller.abort(), this._timeout);
       fetchOptions.signal = init.signal
         ? combineAbortSignals(init.signal, controller.signal)
@@ -220,7 +222,10 @@ export abstract class BaseApi {
       } catch (error) {
         // Don't retry abort errors
         if (error instanceof Error && error.name === 'AbortError') {
-          if (timeoutId !== undefined) {
+          // Only report a timeout when OUR timeout controller fired — a
+          // caller-initiated abort (e.g. component unmount) must stay an
+          // AbortError so isAbortError() filtering keeps working.
+          if (timeoutController?.signal.aborted && !init.signal?.aborted) {
             const timeoutError = new Error(
               `Request timeout after ${this._timeout}ms: ${method} ${logPath}`
             );
@@ -313,6 +318,21 @@ export abstract class BaseApi {
   }
 
   /**
+   * Tagged template that URI-encodes interpolated path segments, so IDs
+   * containing `/ ? # ..` can't retarget the request path.
+   * Use for PATH segments only — never for pre-built query strings.
+   *
+   * @example
+   * this.apiPath`workspaces/${workspaceId}/users/${userId}`
+   */
+  protected apiPath(strings: TemplateStringsArray, ...values: Array<string | number>): string {
+    return strings.reduce(
+      (acc, s, i) => acc + s + (i < values.length ? encodeURIComponent(String(values[i])) : ''),
+      ''
+    );
+  }
+
+  /**
    * Parse JSON and unwrap `{ success, data }` envelope if present.
    * Throws if `success` is explicitly `false`.
    */
@@ -322,7 +342,8 @@ export abstract class BaseApi {
       if (!result.success) {
         throw new Error(result.message || defaultMsg);
       }
-      return (result.data || result) as T;
+      // `!== undefined` (not `||`): falsy payloads like 0, false, '' are valid data
+      return (result.data !== undefined ? result.data : result) as T;
     }
     return result as T;
   }

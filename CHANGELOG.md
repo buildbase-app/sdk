@@ -5,6 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- **`@buildbase/sdk/react` now actually exports the core runtime values its types declared.** `src/react.ts` used `export type * from './core'`, but the generated `dist/react/index.d.ts` flattened it into value exports — so `import { Permission, formatCents, AuthStatus, … } from '@buildbase/sdk/react'` (as documented in the README) type-checked and then was `undefined` at runtime. The re-export is now a value re-export (`export * from './core'`); the React bundle exposes the full core surface (90 → 159 exports).
+- **Caller-initiated aborts are no longer misreported as timeouts.** `BaseApi` converted every `AbortError` into a fake "Request timeout" error whenever a timeout was configured (i.e. always, default 30s), defeating `isAbortError()` filtering — component-unmount cancellations surfaced as real errors. Conversion now happens only when the internal timeout controller actually fired.
+- **`unwrapResponse` no longer swallows falsy payloads.** `result.data || result` returned the whole `{success, data}` envelope when `data` was `0`, `false`, `''`, or `null`; now checks `!== undefined`.
+- **API path parameters are URI-encoded.** All interpolated path segments (workspace/user/passkey/invoice/plan-version IDs, attribute keys) go through a new `BaseApi.apiPath` tagged template, so values containing `/ ? # ..` can't retarget the request path. Query strings are unaffected.
+- **Invoices tab no longer claims an active subscription while loading.** `subscription?.subscription !== null` was `true` for `undefined` (initial load); now `!= null`.
+- **Paid plans with no price for the selected interval render "—" instead of "Free"** in the plan dialog (dead ternary branch fell through to the free label).
+- **`@hookform/resolvers` moved from devDependencies to dependencies** — it's a runtime import in 4 shipped files and was being silently bundled (contradicting the 0.0.50 externalization), risking version skew against the external `zod`/`react-hook-form`.
+- Docs: AGENTS.md webhook verification note updated to runtime-agnostic (missed in 0.0.50); stale "3 levels" comment on `TranslationKey` corrected to 4.
+
+### Added
+
+- **`ui` prop on `SaaSOSProvider`** (`SDKUIConfig`): implementor-facing UI configuration. Every option is additive and defaults to current behavior; visibility options only hide UI and never bypass platform permissions.
+  - `ui.settings.sections` — show/hide any section of the workspace settings dialog (`profile`, `security`, `connected-agents`, `general`, `users`, `subscription`, `usage`, `credits`, `features`, `notifications`, `permissions`, `danger`). Hidden sections are removed from the sidebar (empty groups collapse) and are unreachable via deep links or `defaultSection` (the dialog falls back to the first enabled section).
+  - Per-screen toggles: `settings.profile.{language,country,currency,timezone}`, `settings.security.{passkeyRename,passkeyDelete}`, `settings.general.{nameEdit,iconEditor}`, `settings.users.{invite,roleChange,remove,seatPricing}`, `settings.subscription.{changePlan,cancel,managePayment,invoicesTab,planDetails}`, `settings.credits.{buyButton,transactions}`.
+  - `ui.workspaceSwitcher.{show,createButton,planBadge,memberCount}` — client-side switcher control, ANDed with server settings (`showSwitcher`, `canCreateWorkspace`).
+  - `ui.behavior.autoOpenPlanDialog` — disable the automatic plan-picker popup when a workspace has no subscription (explicit `selectPlan` deep links still open). `ui.behavior.trialEndingDays` — global default threshold for `WhenTrialEnding`.
+  - `ui.messages` (`PartialSDKMessages`) — per-key overrides for any SDK UI string, deep-merged over the active locale bundle (e.g. rename "Credits" to "Tokens" without forking locale files).
+  - `ui.errorBoundary.{title,retryLabel}` — strings for the top-level error boundary's default fallback (plain strings, since the boundary renders even when the i18n layer crashed).
+  - `ui.formats.date` — `Intl.DateTimeFormatOptions` for SDK-rendered dates (passkey activity, connected agents).
+- **`useUIVisibility()` hook** (exported): single-call visibility decision combining a `ui` config flag with an optional permission check — `visible(ui => ui.settings?.users?.invite, Permission.WORKSPACE_MEMBERS_INVITE)`. Used internally by every gated SDK surface; available to implementors for their own UI.
+- **`useUIConfig()` hook** (exported): raw access to the provided `ui` config. **`mergeUIConfig(base, override)`** (exported): the deep-merge used for per-dialog overrides.
+- **Per-dialog `ui` override**: `WorkspaceSettingsDialog` accepts its own `ui` prop, deep-merged over the provider-global config, so one app can render differently-configured settings dialogs.
+- **Notifications screen toggles**: `settings.notifications.{push,emailToggles,pushToggles}` hide the browser push block or the per-event email/push preference columns (the preference list collapses when both columns are hidden).
+- **Docs**: new `docs/UI-CONFIG.md` — full UI-configuration guide (complete toggle reference, visibility precedence, per-dialog override, recipes); README "UI Configuration" section links to it.
+- **Auth gates get standard gate props**: `WhenAuthenticated` / `WhenUnauthenticated` now accept `loadingComponent` and `fallbackComponent`, matching the subscription/quota/credit gates. Loading now covers all transitional auth states (`loading`, `redirecting`, `authenticating`).
+- **i18n English fallback chain**: `t()` now falls back to the English bundle for keys missing from an incomplete locale (or overrides) before returning the raw key.
+- **`SDKErrorBoundary`** accepts `errorTitle` and `retryLabel` props for its default fallback UI.
+
 ## [0.0.50] - 2026-07-07
 
 ### Fixed

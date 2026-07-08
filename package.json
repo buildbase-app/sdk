@@ -55,7 +55,7 @@
     "**/*.css"
   ],
   "scripts": {
-    "build": "rollup -c && npm run postbuild",
+    "build": "rollup -c && rollup -c rollup.dts.config.js && npm run postbuild",
     "postbuild": "rimraf dist/types dist/react/types dist/data/types dist/*.map dist/react/*.map dist/data/*.map && mkdir -p dist/css && [ -f dist/react/styles.css ] && mv dist/react/styles.css dist/css/styles.css || true && cp src/css.d.ts dist/css/styles.d.ts",
     "build:analyze": "rollup --config rollup.config.analyze.js",
     "dev": "rollup -c -w",
@@ -82,6 +82,7 @@
     "react-dom": "^18.0.0 || ^19.0.0"
   },
   "dependencies": {
+    "@hookform/resolvers": "^5.0.1",
     "@radix-ui/react-alert-dialog": "^1.1.13",
     "@radix-ui/react-avatar": "^1.1.9",
     "@radix-ui/react-dialog": "^1.1.13",
@@ -105,7 +106,6 @@
   },
   "devDependencies": {
     "@formatjs/cli": "^6.14.1",
-    "@hookform/resolvers": "^5.0.1",
     "@rollup/plugin-alias": "^6.0.0",
     "@rollup/plugin-commonjs": "^28.0.6",
     "@rollup/plugin-json": "^6.1.0",

@@ -134,7 +134,7 @@ export class WorkspaceApi extends BaseApi {
 
   async updateWorkspace(id: string, data: Partial<IWorkspace>): Promise<IWorkspace> {
     return this.fetchJson<IWorkspace>(
-      `workspaces/${id}`,
+      this.apiPath`workspaces/${id}`,
       { method: 'PUT', body: JSON.stringify(data) },
       'Failed to update workspace'
     );
@@ -142,7 +142,7 @@ export class WorkspaceApi extends BaseApi {
 
   async deleteWorkspace(id: string): Promise<{ success: boolean }> {
     return this.fetchJson<{ success: boolean }>(
-      `workspaces/${id}`,
+      this.apiPath`workspaces/${id}`,
       { method: 'DELETE' },
       'Failed to delete workspace'
     );
@@ -150,7 +150,7 @@ export class WorkspaceApi extends BaseApi {
 
   async getWorkspaceUsers(workspaceId: string): Promise<IWorkspaceUser[]> {
     return this.fetchJson<IWorkspaceUser[]>(
-      `workspaces/${workspaceId}/users`,
+      this.apiPath`workspaces/${workspaceId}/users`,
       {},
       'Failed to fetch workspace users'
     );
@@ -161,7 +161,7 @@ export class WorkspaceApi extends BaseApi {
     config: { email: string; role: string }
   ): Promise<{ userId: string; workspace: IWorkspace; message: string }> {
     return this.fetchJson(
-      `workspaces/${workspaceId}/users/add`,
+      this.apiPath`workspaces/${workspaceId}/users/add`,
       { method: 'POST', body: JSON.stringify(config) },
       'Failed to invite member'
     );
@@ -172,7 +172,7 @@ export class WorkspaceApi extends BaseApi {
     userId: string
   ): Promise<{ userId: string; workspace: IWorkspace; message: string }> {
     return this.fetchJson(
-      `workspaces/${workspaceId}/users/${userId}`,
+      this.apiPath`workspaces/${workspaceId}/users/${userId}`,
       { method: 'DELETE' },
       'Failed to remove user'
     );
@@ -184,7 +184,7 @@ export class WorkspaceApi extends BaseApi {
     data: Partial<IWorkspaceUser>
   ): Promise<{ userId: string; workspace: IWorkspace; message: string }> {
     return this.fetchJson(
-      `workspaces/${workspaceId}/users/${userId}`,
+      this.apiPath`workspaces/${workspaceId}/users/${userId}`,
       { method: 'PATCH', body: JSON.stringify(data) },
       'Failed to update user'
     );
@@ -203,7 +203,7 @@ export class WorkspaceApi extends BaseApi {
     permissions: Record<string, string[]>
   ): Promise<any> {
     return this.fetchJson(
-      `workspaces/${workspaceId}/permissions`,
+      this.apiPath`workspaces/${workspaceId}/permissions`,
       { method: 'PATCH', body: JSON.stringify({ permissions }) },
       'Failed to update workspace permissions'
     );
@@ -219,7 +219,7 @@ export class WorkspaceApi extends BaseApi {
 
   async updateFeature(workspaceId: string, key: string, value: boolean): Promise<IWorkspace> {
     return this.fetchJson<IWorkspace>(
-      `workspaces/${workspaceId}/features`,
+      this.apiPath`workspaces/${workspaceId}/features`,
       {
         method: 'PATCH',
         body: JSON.stringify({ features: { [key]: value } }),
@@ -229,7 +229,11 @@ export class WorkspaceApi extends BaseApi {
   }
 
   async getWorkspace(workspaceId: string): Promise<IWorkspace> {
-    return this.fetchJson<IWorkspace>(`workspaces/${workspaceId}`, {}, 'Failed to fetch workspace');
+    return this.fetchJson<IWorkspace>(
+      this.apiPath`workspaces/${workspaceId}`,
+      {},
+      'Failed to fetch workspace'
+    );
   }
 
   async getProfile(): Promise<IUser> {
@@ -259,14 +263,18 @@ export class WorkspaceApi extends BaseApi {
 
   async renamePasskey(passkeyId: string, name: string): Promise<void> {
     await this.fetchJson(
-      `passkeys/${passkeyId}`,
+      this.apiPath`passkeys/${passkeyId}`,
       { method: 'PATCH', body: JSON.stringify({ name }) },
       'Failed to rename passkey'
     );
   }
 
   async deletePasskey(passkeyId: string): Promise<void> {
-    await this.fetchJson(`passkeys/${passkeyId}`, { method: 'DELETE' }, 'Failed to remove passkey');
+    await this.fetchJson(
+      this.apiPath`passkeys/${passkeyId}`,
+      { method: 'DELETE' },
+      'Failed to remove passkey'
+    );
   }
 
   // Subscription Management Methods
@@ -276,7 +284,7 @@ export class WorkspaceApi extends BaseApi {
    * Returns subscription details including plan, plan version, and group information
    */
   async getCurrentSubscription(workspaceId: string): Promise<ISubscriptionResponse> {
-    const response = await this.fetchResponse(`workspaces/${workspaceId}/subscription`);
+    const response = await this.fetchResponse(this.apiPath`workspaces/${workspaceId}/subscription`);
     if (!response.ok) await this.throwResponseError(response, 'Failed to fetch subscription');
     return this.unwrapResponse<ISubscriptionResponse>(response, 'Failed to fetch subscription');
   }
@@ -287,7 +295,9 @@ export class WorkspaceApi extends BaseApi {
    * otherwise returns the latest published group
    */
   async getPlanGroup(workspaceId: string): Promise<IPlanGroupResponse> {
-    const response = await this.fetchResponse(`workspaces/${workspaceId}/subscription/plan-group`);
+    const response = await this.fetchResponse(
+      this.apiPath`workspaces/${workspaceId}/subscription/plan-group`
+    );
     if (!response.ok) await this.throwResponseError(response, 'Failed to fetch plan group');
     return this.unwrapResponse<IPlanGroupResponse>(response, 'Failed to fetch plan group');
   }
@@ -303,7 +313,8 @@ export class WorkspaceApi extends BaseApi {
     groupVersionId: string
   ): Promise<IPlanGroupResponse> {
     const response = await this.fetchResponse(
-      `workspaces/${workspaceId}/subscription/plan-group?groupVersionId=${encodeURIComponent(groupVersionId)}`
+      this.apiPath`workspaces/${workspaceId}/subscription/plan-group` +
+        `?groupVersionId=${encodeURIComponent(groupVersionId)}`
     );
     if (!response.ok) await this.throwResponseError(response, 'Failed to fetch plan group version');
     return this.unwrapResponse<IPlanGroupResponse>(response, 'Failed to fetch plan group version');
@@ -320,7 +331,7 @@ export class WorkspaceApi extends BaseApi {
    */
   async getPlanGroupVersions(workspaceId: string): Promise<IPlanGroupVersionsResponse> {
     const response = await this.fetchResponse(
-      `workspaces/${workspaceId}/subscription/plan-group/versions`
+      this.apiPath`workspaces/${workspaceId}/subscription/plan-group/versions`
     );
     if (!response.ok)
       await this.throwResponseError(response, 'Failed to fetch plan group versions');
@@ -340,7 +351,9 @@ export class WorkspaceApi extends BaseApi {
    */
   async getPublicPlans(slug: string): Promise<IPublicPlansResponse> {
     if (!this.orgId) throw new Error('orgId is required for getPublicPlans');
-    const response = await this.fetchResponse(`${this.orgId}/plans/${encodeURIComponent(slug)}`);
+    const response = await this.fetchResponse(
+      this.apiPath`${this.orgId}/plans/${encodeURIComponent(slug)}`
+    );
     if (!response.ok) await this.throwResponseError(response, 'Failed to fetch plans');
     return this.unwrapResponse<IPublicPlansResponse>(response, 'Failed to fetch plans');
   }
@@ -354,7 +367,7 @@ export class WorkspaceApi extends BaseApi {
    */
   async getPublicCreditPackages(): Promise<IPublicCreditPackagesResponse> {
     if (!this.orgId) throw new Error('orgId is required for getPublicCreditPackages');
-    const response = await this.fetchResponse(`${this.orgId}/credit-packages`);
+    const response = await this.fetchResponse(this.apiPath`${this.orgId}/credit-packages`);
     if (!response.ok) await this.throwResponseError(response, 'Failed to fetch credit packages');
     return this.unwrapResponse<IPublicCreditPackagesResponse>(
       response,
@@ -371,7 +384,7 @@ export class WorkspaceApi extends BaseApi {
    * @returns Plan group version with populated plan versions
    */
   async getPlanGroupVersion(groupVersionId: string): Promise<IPlanGroupVersion> {
-    const response = await this.fetchResponse(`plan-group-versions/${groupVersionId}`);
+    const response = await this.fetchResponse(this.apiPath`plan-group-versions/${groupVersionId}`);
     if (!response.ok) await this.throwResponseError(response, 'Failed to fetch plan group version');
     return this.unwrapResponse<IPlanGroupVersion>(response, 'Failed to fetch plan group version');
   }
@@ -386,10 +399,13 @@ export class WorkspaceApi extends BaseApi {
     workspaceId: string,
     request: ICheckoutSessionRequest
   ): Promise<CheckoutResult> {
-    const response = await this.fetchResponse(`workspaces/${workspaceId}/subscription/checkout`, {
-      method: 'POST',
-      body: JSON.stringify(request),
-    });
+    const response = await this.fetchResponse(
+      this.apiPath`workspaces/${workspaceId}/subscription/checkout`,
+      {
+        method: 'POST',
+        body: JSON.stringify(request),
+      }
+    );
     if (!response.ok) await this.throwResponseError(response, 'Failed to create checkout session');
     return this.unwrapResponse<CheckoutResult>(response, 'Failed to create checkout session');
   }
@@ -399,7 +415,7 @@ export class WorkspaceApi extends BaseApi {
     planVersionId: string
   ): Promise<{ success: boolean; message: string }> {
     const response = await this.fetchResponse(
-      `workspaces/${workspaceId}/subscription/select-free-plan`,
+      this.apiPath`workspaces/${workspaceId}/subscription/select-free-plan`,
       {
         method: 'POST',
         body: JSON.stringify({ planVersionId }),
@@ -419,10 +435,13 @@ export class WorkspaceApi extends BaseApi {
     workspaceId: string,
     request: ISubscriptionUpdateRequest
   ): Promise<ISubscriptionUpdateResponse | ICheckoutSessionResponse> {
-    const response = await this.fetchResponse(`workspaces/${workspaceId}/subscription`, {
-      method: 'PATCH',
-      body: JSON.stringify(request),
-    });
+    const response = await this.fetchResponse(
+      this.apiPath`workspaces/${workspaceId}/subscription`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify(request),
+      }
+    );
     if (!response.ok) await this.throwResponseError(response, 'Failed to update subscription');
     return this.unwrapResponse<ISubscriptionUpdateResponse | ICheckoutSessionResponse>(
       response,
@@ -438,7 +457,7 @@ export class WorkspaceApi extends BaseApi {
     workspaceId: string,
     returnUrl?: string
   ): Promise<{ url: string }> {
-    return this.fetchJson(`workspaces/${workspaceId}/subscription/billing-portal`, {
+    return this.fetchJson(this.apiPath`workspaces/${workspaceId}/subscription/billing-portal`, {
       method: 'POST',
       body: JSON.stringify(returnUrl ? { returnUrl } : {}),
     });
@@ -463,7 +482,7 @@ export class WorkspaceApi extends BaseApi {
     }
 
     const response = await this.fetchResponse(
-      `workspaces/${workspaceId}/subscription/invoices?${params.toString()}`
+      this.apiPath`workspaces/${workspaceId}/subscription/invoices` + `?${params.toString()}`
     );
     if (!response.ok) await this.throwResponseError(response, 'Failed to fetch invoices');
     return this.unwrapResponse<IInvoiceListResponse>(response, 'Failed to fetch invoices');
@@ -477,7 +496,7 @@ export class WorkspaceApi extends BaseApi {
    */
   async getInvoice(workspaceId: string, invoiceId: string): Promise<IInvoiceResponse> {
     const response = await this.fetchResponse(
-      `workspaces/${workspaceId}/subscription/invoices/${invoiceId}`
+      this.apiPath`workspaces/${workspaceId}/subscription/invoices/${invoiceId}`
     );
     if (!response.ok) await this.throwResponseError(response, 'Failed to fetch invoice');
     return this.unwrapResponse<IInvoiceResponse>(response, 'Failed to fetch invoice');
@@ -491,7 +510,7 @@ export class WorkspaceApi extends BaseApi {
    */
   async cancelSubscriptionAtPeriodEnd(workspaceId: string): Promise<ISubscriptionResponse> {
     const response = await this.fetchResponse(
-      `workspaces/${workspaceId}/subscription/cancel-at-period-end`,
+      this.apiPath`workspaces/${workspaceId}/subscription/cancel-at-period-end`,
       { method: 'POST' }
     );
     if (!response.ok) await this.throwResponseError(response, 'Failed to cancel subscription');
@@ -505,9 +524,12 @@ export class WorkspaceApi extends BaseApi {
    * @returns Updated subscription with cancelAtPeriodEnd set to false
    */
   async resumeSubscription(workspaceId: string): Promise<ISubscriptionResponse> {
-    const response = await this.fetchResponse(`workspaces/${workspaceId}/subscription/resume`, {
-      method: 'POST',
-    });
+    const response = await this.fetchResponse(
+      this.apiPath`workspaces/${workspaceId}/subscription/resume`,
+      {
+        method: 'POST',
+      }
+    );
     if (!response.ok) await this.throwResponseError(response, 'Failed to resume subscription');
     return this.unwrapResponse<ISubscriptionResponse>(response, 'Failed to resume subscription');
   }
@@ -524,10 +546,13 @@ export class WorkspaceApi extends BaseApi {
     workspaceId: string,
     request: IRecordUsageRequest
   ): Promise<IRecordUsageResponse> {
-    const response = await this.fetchResponse(`workspaces/${workspaceId}/subscription/usage`, {
-      method: 'POST',
-      body: JSON.stringify(request),
-    });
+    const response = await this.fetchResponse(
+      this.apiPath`workspaces/${workspaceId}/subscription/usage`,
+      {
+        method: 'POST',
+        body: JSON.stringify(request),
+      }
+    );
     if (!response.ok) await this.throwResponseError(response, 'Failed to record usage');
     return this.unwrapResponse<IRecordUsageResponse>(response, 'Failed to record usage');
   }
@@ -566,7 +591,7 @@ export class WorkspaceApi extends BaseApi {
     results: Array<{ success: boolean; quotaSlug: string; quantity: number; error?: string }>;
   }> {
     const response = await this.fetchResponse(
-      `workspaces/${workspaceId}/subscription/usage/batch`,
+      this.apiPath`workspaces/${workspaceId}/subscription/usage/batch`,
       {
         method: 'POST',
         body: JSON.stringify(request),
@@ -587,7 +612,8 @@ export class WorkspaceApi extends BaseApi {
     quotaSlug: string
   ): Promise<IQuotaUsageStatusResponse> {
     const response = await this.fetchResponse(
-      `workspaces/${workspaceId}/subscription/usage/status?quotaSlug=${encodeURIComponent(quotaSlug)}`
+      this.apiPath`workspaces/${workspaceId}/subscription/usage/status` +
+        `?quotaSlug=${encodeURIComponent(quotaSlug)}`
     );
     if (!response.ok) await this.throwResponseError(response, 'Failed to fetch quota usage status');
     return this.unwrapResponse<IQuotaUsageStatusResponse>(
@@ -602,7 +628,9 @@ export class WorkspaceApi extends BaseApi {
    * @returns All quota usage statuses keyed by quota slug
    */
   async getAllQuotaUsage(workspaceId: string): Promise<IAllQuotaUsageResponse> {
-    const response = await this.fetchResponse(`workspaces/${workspaceId}/subscription/usage/all`);
+    const response = await this.fetchResponse(
+      this.apiPath`workspaces/${workspaceId}/subscription/usage/all`
+    );
     if (!response.ok) await this.throwResponseError(response, 'Failed to fetch all quota usage');
     return this.unwrapResponse<IAllQuotaUsageResponse>(response, 'Failed to fetch all quota usage');
   }
@@ -623,7 +651,9 @@ export class WorkspaceApi extends BaseApi {
     if (query?.limit) params.append('limit', query.limit.toString());
 
     const queryString = params.toString();
-    const url = `workspaces/${workspaceId}/subscription/usage/logs${queryString ? `?${queryString}` : ''}`;
+    const url =
+      this.apiPath`workspaces/${workspaceId}/subscription/usage/logs` +
+      (queryString ? `?${queryString}` : '');
 
     const response = await this.fetchResponse(url);
     if (!response.ok) await this.throwResponseError(response, 'Failed to fetch usage logs');
@@ -667,7 +697,7 @@ export class WorkspaceApi extends BaseApi {
     if (data) body.data = data;
 
     return this.fetchJson(
-      `workspaces/${workspaceId}/notifications/send`,
+      this.apiPath`workspaces/${workspaceId}/notifications/send`,
       { method: 'POST', body: JSON.stringify(body) },
       'Failed to send notification'
     );
@@ -677,7 +707,7 @@ export class WorkspaceApi extends BaseApi {
 
   async getNotificationEvents(workspaceId: string): Promise<NotificationEvent[]> {
     return this.fetchJson(
-      `workspaces/${workspaceId}/notification-events`,
+      this.apiPath`workspaces/${workspaceId}/notification-events`,
       {},
       'Failed to fetch notification events'
     );
@@ -689,7 +719,7 @@ export class WorkspaceApi extends BaseApi {
     const result = await this.fetchJson<{
       notificationPreferences: Record<string, { email?: boolean; push?: boolean }>;
     }>(
-      `workspaces/${workspaceId}/notification-preferences`,
+      this.apiPath`workspaces/${workspaceId}/notification-preferences`,
       {},
       'Failed to fetch notification preferences'
     );
@@ -703,7 +733,7 @@ export class WorkspaceApi extends BaseApi {
     const result = await this.fetchJson<{
       notificationPreferences: Record<string, { email?: boolean; push?: boolean }>;
     }>(
-      `workspaces/${workspaceId}/notification-preferences`,
+      this.apiPath`workspaces/${workspaceId}/notification-preferences`,
       {
         method: 'PATCH',
         body: JSON.stringify({ notificationPreferences: preferences }),
@@ -721,7 +751,7 @@ export class WorkspaceApi extends BaseApi {
    * @returns Credit balance with available, totalGranted, totalConsumed, totalExpired, totalRefunded
    */
   async getCreditBalance(workspaceId: string): Promise<ICreditBalance> {
-    const response = await this.fetchResponse(`workspaces/${workspaceId}/credits`);
+    const response = await this.fetchResponse(this.apiPath`workspaces/${workspaceId}/credits`);
     if (!response.ok) await this.throwResponseError(response, 'Failed to fetch credit balance');
     return this.unwrapResponse<ICreditBalance>(response, 'Failed to fetch credit balance');
   }
@@ -737,10 +767,13 @@ export class WorkspaceApi extends BaseApi {
     workspaceId: string,
     request: IConsumeCreditsRequest
   ): Promise<IConsumeCreditsResponse> {
-    const response = await this.fetchResponse(`workspaces/${workspaceId}/credits/consume`, {
-      method: 'POST',
-      body: JSON.stringify(request),
-    });
+    const response = await this.fetchResponse(
+      this.apiPath`workspaces/${workspaceId}/credits/consume`,
+      {
+        method: 'POST',
+        body: JSON.stringify(request),
+      }
+    );
 
     if (!response.ok) {
       if (response.status === 402) {
@@ -769,10 +802,13 @@ export class WorkspaceApi extends BaseApi {
     workspaceId: string,
     request: ICreditPurchaseRequest
   ): Promise<ICreditPurchaseResponse> {
-    const response = await this.fetchResponse(`workspaces/${workspaceId}/credits/purchase`, {
-      method: 'POST',
-      body: JSON.stringify(request),
-    });
+    const response = await this.fetchResponse(
+      this.apiPath`workspaces/${workspaceId}/credits/purchase`,
+      {
+        method: 'POST',
+        body: JSON.stringify(request),
+      }
+    );
 
     if (!response.ok)
       await this.throwResponseError(response, 'Failed to create credit purchase checkout');
@@ -789,7 +825,9 @@ export class WorkspaceApi extends BaseApi {
    * @returns Array of credit packages
    */
   async getCreditPackages(workspaceId: string): Promise<ICreditPackage[]> {
-    const response = await this.fetchResponse(`workspaces/${workspaceId}/credits/packages`);
+    const response = await this.fetchResponse(
+      this.apiPath`workspaces/${workspaceId}/credits/packages`
+    );
     if (!response.ok) await this.throwResponseError(response, 'Failed to fetch credit packages');
     const data = await this.unwrapResponse<any>(response, 'Failed to fetch credit packages');
     return data.docs ?? data;
@@ -811,7 +849,9 @@ export class WorkspaceApi extends BaseApi {
     if (query?.limit) params.append('limit', query.limit.toString());
 
     const queryString = params.toString();
-    const url = `workspaces/${workspaceId}/credits/transactions${queryString ? `?${queryString}` : ''}`;
+    const url =
+      this.apiPath`workspaces/${workspaceId}/credits/transactions` +
+      (queryString ? `?${queryString}` : '');
 
     const response = await this.fetchResponse(url);
     if (!response.ok)
@@ -839,7 +879,9 @@ export class WorkspaceApi extends BaseApi {
     if (query?.limit) params.append('limit', query.limit.toString());
 
     const queryString = params.toString();
-    const url = `workspaces/${workspaceId}/credits/buckets${queryString ? `?${queryString}` : ''}`;
+    const url =
+      this.apiPath`workspaces/${workspaceId}/credits/buckets` +
+      (queryString ? `?${queryString}` : '');
 
     const response = await this.fetchResponse(url);
     if (!response.ok) await this.throwResponseError(response, 'Failed to fetch credit buckets');
@@ -855,7 +897,7 @@ export class WorkspaceApi extends BaseApi {
   async getExpiringCredits(workspaceId: string, days?: number): Promise<IExpiringCreditsResponse> {
     const params = days ? `?days=${days}` : '';
     const response = await this.fetchResponse(
-      `workspaces/${workspaceId}/credits/expiring${params}`
+      this.apiPath`workspaces/${workspaceId}/credits/expiring` + params
     );
     if (!response.ok) await this.throwResponseError(response, 'Failed to fetch expiring credits');
     return this.unwrapResponse<IExpiringCreditsResponse>(
