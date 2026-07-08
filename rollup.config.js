@@ -4,7 +4,6 @@ import resolve from '@rollup/plugin-node-resolve';
 import terser from '@rollup/plugin-terser';
 import typescript from '@rollup/plugin-typescript';
 import { createRequire } from 'module';
-import dts from 'rollup-plugin-dts';
 import postcss from 'rollup-plugin-postcss';
 
 const require = createRequire(import.meta.url);
@@ -139,23 +138,7 @@ export default [
     external,
   },
 
-  // ─── Type declarations ─────────────────────────────────────────────────────
-  {
-    input: 'dist/types/index.d.ts',
-    output: [{ file: 'dist/index.d.ts', format: 'esm' }],
-    plugins: [dts()],
-    external: [/\.css$/],
-  },
-  {
-    input: 'dist/react/types/react.d.ts',
-    output: [{ file: 'dist/react/index.d.ts', format: 'esm' }],
-    plugins: [dts()],
-    external: [/\.css$/],
-  },
-  {
-    input: 'dist/data/types/data.d.ts',
-    output: [{ file: 'dist/data/index.d.ts', format: 'esm' }],
-    plugins: [dts()],
-    external: [/\.css$/],
-  },
+  // Type declarations are bundled by rollup.dts.config.js in a second rollup
+  // invocation (see the `build` script) — running them in this same process
+  // raced plugin-typescript's async declaration writes.
 ];
