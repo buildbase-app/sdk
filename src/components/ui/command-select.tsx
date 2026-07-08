@@ -4,9 +4,17 @@ import { CheckCheck, ChevronsUpDown } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 import { Button } from './button';
-import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from './command';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from './command';
 import { Popover, PopoverContent, PopoverTrigger } from './popover';
 
+import { useTranslation } from '../../i18n';
 import { cn } from '../../lib/utils';
 
 export interface CommandSelectOption {
@@ -30,6 +38,7 @@ export function CommandSelect({
   placeholder = 'Search...',
   emptyLabel = 'Choose option',
 }: CommandSelectProps) {
+  const { t } = useTranslation();
   const [value, setValue] = useState(valueProp ?? '');
   const [open, setOpen] = useState(false);
 
@@ -48,14 +57,16 @@ export function CommandSelect({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
+        {/* Styled to match the Input primitive so dropdowns sit visually
+            flush with the other form fields (same radius/height/border) */}
         <Button
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="justify-between overflow-hidden text-ellipsis"
+          className="h-10 sm:h-9 w-full justify-between rounded-md border-input bg-transparent px-3 py-1 text-base sm:text-sm font-normal shadow-sm hover:bg-transparent"
         >
           {selected ? (
-            <div>
+            <div className="truncate">
               {String(selected.label).trim()}
               {selected.icon && (
                 <span className="ms-2 text-xs text-muted-foreground">{selected.icon}</span>
@@ -71,6 +82,7 @@ export function CommandSelect({
         <Command>
           <CommandInput placeholder={placeholder} />
           <CommandList>
+            <CommandEmpty>{t('dropdowns.noResults')}</CommandEmpty>
             <CommandGroup>
               {options.map(option => (
                 <CommandItem
@@ -79,7 +91,9 @@ export function CommandSelect({
                   })}
                   key={option.value}
                   value={option.value}
-                  defaultValue={option.value}
+                  // Let the search input match the visible label (and icon text),
+                  // not just the code — "germ" should find Germany, not only "de"
+                  keywords={[option.label]}
                   onSelect={() => handleSelect(option.value)}
                 >
                   {value === option.value && (

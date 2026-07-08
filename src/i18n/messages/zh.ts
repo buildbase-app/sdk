@@ -499,6 +499,7 @@ export const zh: SDKMessages = {
     searchCurrency: '选择货币...',
     chooseTimezone: '选择时区',
     searchTimezone: '选择时区...',
+    noResults: '未找到结果',
   },
   push: {
     failedToSubscribe: '订阅推送通知失败',

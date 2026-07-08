@@ -497,6 +497,7 @@ export interface SDKMessages {
     searchCurrency: string;
     chooseTimezone: string;
     searchTimezone: string;
+    noResults: string;
   };
   push: {
     failedToSubscribe: string;

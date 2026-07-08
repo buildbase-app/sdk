@@ -516,6 +516,7 @@ export const ja: SDKMessages = {
     searchCurrency: '通貨を選択...',
     chooseTimezone: 'タイムゾーンを選択',
     searchTimezone: 'タイムゾーンを選択...',
+    noResults: '結果が見つかりません',
   },
   push: {
     failedToSubscribe: 'プッシュ通知の登録に失敗しました',

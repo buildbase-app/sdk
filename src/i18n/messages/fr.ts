@@ -528,6 +528,7 @@ export const fr: SDKMessages = {
     searchCurrency: 'Choisir une devise...',
     chooseTimezone: 'Choisir un fuseau horaire',
     searchTimezone: 'Choisir un fuseau horaire...',
+    noResults: 'Aucun résultat trouvé',
   },
   push: {
     failedToSubscribe: "Échec de l'abonnement aux notifications push",

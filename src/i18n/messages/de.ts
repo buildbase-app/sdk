@@ -523,6 +523,7 @@ export const de: SDKMessages = {
     searchCurrency: 'Währung wählen...',
     chooseTimezone: 'Zeitzone wählen',
     searchTimezone: 'Zeitzone wählen...',
+    noResults: 'Keine Ergebnisse gefunden',
   },
   push: {
     failedToSubscribe: 'Push-Benachrichtigungen konnten nicht abonniert werden',

@@ -519,6 +519,7 @@ export const en: SDKMessages = {
     searchCurrency: 'Choose currency...',
     chooseTimezone: 'Choose timezone',
     searchTimezone: 'Choose timezone...',
+    noResults: 'No results found',
   },
   push: {
     failedToSubscribe: 'Failed to subscribe to push notifications',

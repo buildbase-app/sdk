@@ -515,6 +515,7 @@ export const ar: SDKMessages = {
     searchCurrency: 'اختر العملة...',
     chooseTimezone: 'اختر المنطقة الزمنية',
     searchTimezone: 'اختر المنطقة الزمنية...',
+    noResults: 'لم يتم العثور على نتائج',
   },
   push: {
     failedToSubscribe: 'فشل في الاشتراك في الإشعارات الفورية',

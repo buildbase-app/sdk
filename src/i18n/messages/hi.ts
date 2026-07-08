@@ -518,6 +518,7 @@ export const hi: SDKMessages = {
     searchCurrency: 'मुद्रा चुनें...',
     chooseTimezone: 'समय क्षेत्र चुनें',
     searchTimezone: 'समय क्षेत्र चुनें...',
+    noResults: 'कोई परिणाम नहीं मिला',
   },
   push: {
     failedToSubscribe: 'पुश सूचनाओं की सदस्यता लेने में विफल',

@@ -521,6 +521,7 @@ export const es: SDKMessages = {
     searchCurrency: 'Elegir moneda...',
     chooseTimezone: 'Elegir zona horaria',
     searchTimezone: 'Elegir zona horaria...',
+    noResults: 'No se encontraron resultados',
   },
   push: {
     failedToSubscribe: 'Error al suscribirse a las notificaciones push',

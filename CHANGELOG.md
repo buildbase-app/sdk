@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Combobox dropdowns (language/country/currency/timezone) looked disabled and ignored clicks.** The shared `CommandItem` styled items with the presence-based `data-[disabled]:` selector, but cmdk ≥1.0 always renders `data-disabled="true|false"` — so every option got `opacity-50` + `pointer-events-none`. Selector now matches the value (`data-[disabled=true]:`).
+- **Dropdown search matches visible labels**, not just option codes ("germ" now finds Germany, not only "de") via cmdk `keywords`; a search with no matches shows a translated "No results found" empty state (new `dropdowns.noResults` key in all 8 locales) instead of a blank panel.
+- **Dropdown triggers now match the Input styling** (same `rounded-md` radius, height, border, and text size) instead of inheriting the pill-shaped button base — form screens look consistent.
+- **Switch thumb mirrors correctly in RTL locales** (Arabic) — the checked state used a physical `translate-x` that moved the wrong way.
+- `CommandInput` wrapper attribute aligned to the canonical `cmdk-input-wrapper` so `CommandDialog`'s scoped selectors apply.
+
 - **`@buildbase/sdk/react` now actually exports the core runtime values its types declared.** `src/react.ts` used `export type * from './core'`, but the generated `dist/react/index.d.ts` flattened it into value exports — so `import { Permission, formatCents, AuthStatus, … } from '@buildbase/sdk/react'` (as documented in the README) type-checked and then was `undefined` at runtime. The re-export is now a value re-export (`export * from './core'`); the React bundle exposes the full core surface (90 → 159 exports).
 - **Caller-initiated aborts are no longer misreported as timeouts.** `BaseApi` converted every `AbortError` into a fake "Request timeout" error whenever a timeout was configured (i.e. always, default 30s), defeating `isAbortError()` filtering — component-unmount cancellations surfaced as real errors. Conversion now happens only when the internal timeout controller actually fired.
 - **`unwrapResponse` no longer swallows falsy payloads.** `result.data || result` returned the whole `{success, data}` envelope when `data` was `0`, `false`, `''`, or `null`; now checks `!== undefined`.
