@@ -1,6 +1,7 @@
 'use client';
 
 import { Bot } from 'lucide-react';
+import { useUIConfig } from '../../contexts/UIConfigContext';
 import { useTranslation } from '../../i18n';
 import { cn } from '../../lib/utils';
 import { useConnectedAgents } from '../../providers/connected-agents/hooks';
@@ -38,6 +39,7 @@ export function ConnectedAgents({
   emptyLabel,
 }: ConnectedAgentsProps) {
   const { t, formattingLocale } = useTranslation();
+  const { formats } = useUIConfig();
   const { agents, loading, error, revoking, revoke } = useConnectedAgents();
 
   const resolvedTitle = title === undefined ? t('security.connectedAgentsTitle') : title;
@@ -49,7 +51,10 @@ export function ConnectedAgents({
   const formatDate = (isoDate: string): string => {
     const date = new Date(isoDate);
     if (Number.isNaN(date.getTime())) return '';
-    return new Intl.DateTimeFormat(formattingLocale, { dateStyle: 'medium' }).format(date);
+    return new Intl.DateTimeFormat(
+      formattingLocale,
+      formats?.date ?? { dateStyle: 'medium' }
+    ).format(date);
   };
 
   return (

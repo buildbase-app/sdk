@@ -14,9 +14,13 @@
 // Import styles so they're included in the CSS extraction
 import './styles/globals.css';
 
-// ─── Core types (re-exported so React users rarely need a second import) ───────
-// Only types — no runtime values. Runtime utils come from @buildbase/sdk directly.
-export type * from './core';
+// ─── Core re-exports (so React users rarely need a second import) ──────────────
+// Values AND types: the generated d.ts flattens `export type *` into value
+// exports, so a type-only re-export here would declare runtime values that
+// don't exist (README examples like `import { Permission } from '…/react'`
+// would compile and then crash). core.ts is framework-agnostic, so re-exporting
+// values is safe for client bundles.
+export * from './core';
 
 // ─── Main Provider ─────────────────────────────────────────────────────────────
 export { SaaSOSProvider } from './providers/SaaSOSProvider';
@@ -171,7 +175,12 @@ export {
 
 // ─── Translations ──────────────────────────────────────────────────────────────
 export { SUPPORTED_LOCALES, useTranslation } from './i18n';
-export type { SDKLocale, SDKMessages } from './i18n';
+export type { PartialSDKMessages, SDKLocale, SDKMessages } from './i18n';
+
+// ─── UI Config ─────────────────────────────────────────────────────────────────
+export { mergeUIConfig, useUIConfig } from './contexts/UIConfigContext';
+export type { SDKUIConfig } from './contexts/UIConfigContext';
+export { useUIVisibility } from './hooks/useUIVisibility';
 
 // ─── Settings Screen Constants ─────────────────────────────────────────────────
 export { SETTINGS_SCREENS, SettingsScreen } from './providers/workspace/settings-screens';

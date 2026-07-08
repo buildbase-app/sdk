@@ -1,5 +1,5 @@
 import { ArrowLeft, Settings } from 'lucide-react';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '../../../components/ui/button';
 import {
   Dialog,
@@ -8,6 +8,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '../../../components/ui/dialog';
+import {
+  mergeUIConfig,
+  UIConfigProvider,
+  useUIConfig,
+  type SDKUIConfig,
+} from '../../../contexts/UIConfigContext';
+import { useUIVisibility } from '../../../hooks/useUIVisibility';
 import { useTranslation, type TranslationKey } from '../../../i18n';
 import { cn } from '../../../lib/utils';
 import { IWorkspace } from '../types';
@@ -58,9 +65,30 @@ export interface WorkspaceSettingsDialogProps {
   onSectionChange?: (section: WorkspaceSettingsSection) => void;
   showTrigger?: boolean;
   trigger?: React.ReactNode;
+  /**
+   * Per-instance UI config, deep-merged over the provider-global `ui` prop.
+   * Lets one app render differently-configured settings dialogs.
+   */
+  ui?: SDKUIConfig;
 }
 
-const WorkspaceSettingsDialog: React.FC<WorkspaceSettingsDialogProps> = ({
+/**
+ * Wrapper that scopes a per-instance `ui` override to this dialog's subtree —
+ * the sidebar and every settings screen resolve visibility from the merged config.
+ */
+const WorkspaceSettingsDialog: React.FC<WorkspaceSettingsDialogProps> = ({ ui, ...props }) => {
+  const globalUI = useUIConfig();
+  const mergedUI = useMemo(() => mergeUIConfig(globalUI, ui), [globalUI, ui]);
+
+  if (!ui) return <WorkspaceSettingsDialogInner {...props} />;
+  return (
+    <UIConfigProvider ui={mergedUI}>
+      <WorkspaceSettingsDialogInner {...props} />
+    </UIConfigProvider>
+  );
+};
+
+const WorkspaceSettingsDialogInner: React.FC<Omit<WorkspaceSettingsDialogProps, 'ui'>> = ({
   workspace,
   onClose,
   open: controlledOpen,
@@ -72,14 +100,22 @@ const WorkspaceSettingsDialog: React.FC<WorkspaceSettingsDialogProps> = ({
   trigger,
 }) => {
   const { t, dir } = useTranslation();
+  const { visible } = useUIVisibility();
   const [internalOpen, setInternalOpen] = useState(false);
   const [internalSection, setInternalSection] = useState<WorkspaceSettingsSection>(defaultSection);
 
   // Use controlled or uncontrolled state
   const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
   const setOpen = controlledOnOpenChange || setInternalOpen;
-  const section = controlledSection !== undefined ? controlledSection : internalSection;
+  const requestedSection = controlledSection !== undefined ? controlledSection : internalSection;
   const setSection = onSectionChange || setInternalSection;
+
+  // Sections hidden via the implementor UI config can't be reached, even by
+  // deep link or defaultSection — fall back to the first enabled section.
+  const enabledSection = (s: WorkspaceSettingsSection) => visible(ui => ui.settings?.sections?.[s]);
+  const section = enabledSection(requestedSection)
+    ? requestedSection
+    : (Object.values(SettingsScreen).find(enabledSection) ?? null);
 
   // Mobile list → detail navigation: start on the menu unless a specific
   // section was requested (controlled usage / deep link). Desktop ignores this.
@@ -120,8 +156,8 @@ const WorkspaceSettingsDialog: React.FC<WorkspaceSettingsDialogProps> = ({
     setMobileMenuOpen(false);
   };
 
-  // Don't render if no current workspace
-  if (!workspace) {
+  // Don't render if no current workspace, or every section is hidden by config
+  if (!workspace || !section) {
     return null;
   }
 

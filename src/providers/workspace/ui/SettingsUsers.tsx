@@ -10,6 +10,7 @@ import { StatusBanner } from '../../../components/ui/status-banner';
 import { useSubscriptionContext } from '../../../contexts/SubscriptionContext';
 import { useSeatStatus } from '../../../hooks/use-seat-status';
 import { usePermissions } from '../../../hooks/usePermissions';
+import { useUIVisibility } from '../../../hooks/useUIVisibility';
 import { useTranslation, type TranslationKey } from '../../../i18n';
 import { handleError } from '../../../lib/error-handler';
 import { Permission } from '../../../lib/permissions';
@@ -32,6 +33,7 @@ const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace
   const { getUsers, removeUser, updateUser } = useSaaSWorkspaces();
   const { settings } = useSaaSSettings();
   const { can } = usePermissions();
+  const { visible } = useUIVisibility();
 
   const { response: subscriptionResponse } = useSubscriptionContext();
 
@@ -136,9 +138,19 @@ const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace
       });
   };
 
-  const canInviteMembers = can(Permission.WORKSPACE_MEMBERS_INVITE);
-  const canRemoveMembers = can(Permission.WORKSPACE_MEMBERS_REMOVE);
-  const canChangeRoles = can(Permission.WORKSPACE_MEMBERS_ROLE_CHANGE);
+  const canInviteMembers = visible(
+    ui => ui.settings?.users?.invite,
+    Permission.WORKSPACE_MEMBERS_INVITE
+  );
+  const canRemoveMembers = visible(
+    ui => ui.settings?.users?.remove,
+    Permission.WORKSPACE_MEMBERS_REMOVE
+  );
+  const canChangeRoles = visible(
+    ui => ui.settings?.users?.roleChange,
+    Permission.WORKSPACE_MEMBERS_ROLE_CHANGE
+  );
+  const showSeatPricingBlock = visible(ui => ui.settings?.users?.seatPricing);
 
   const {
     hasSeatPricing,
@@ -158,25 +170,31 @@ const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace
 
   return (
     <div>
-      {!canInviteMembers && !canRemoveMembers && !canChangeRoles && (
-        <NoPermission descriptionKey="users.adminOnly" />
-      )}
+      {/* Permission-only check — config-hidden actions shouldn't imply missing permissions */}
+      {!can(Permission.WORKSPACE_MEMBERS_INVITE) &&
+        !can(Permission.WORKSPACE_MEMBERS_REMOVE) &&
+        !can(Permission.WORKSPACE_MEMBERS_ROLE_CHANGE) && (
+          <NoPermission descriptionKey="users.adminOnly" />
+        )}
 
       {canInviteMembers && (
         <div className="mb-4">
           {canInvite ? (
             <div>
               <InviteMember onInvite={refresh} workspaceId={workspace._id} />
-              {willBeBilled && perSeatPriceCents != null && perSeatPriceCents > 0 && (
-                <div className="flex items-center gap-1.5 mt-2 text-xs text-warning bg-warning/10 px-3 py-1.5 rounded-md">
-                  <span>
-                    {t('users.extraSeatCost', {
-                      price: fmtCents(perSeatPriceCents, currency),
-                      interval: billingInterval,
-                    })}
-                  </span>
-                </div>
-              )}
+              {showSeatPricingBlock &&
+                willBeBilled &&
+                perSeatPriceCents != null &&
+                perSeatPriceCents > 0 && (
+                  <div className="flex items-center gap-1.5 mt-2 text-xs text-warning bg-warning/10 px-3 py-1.5 rounded-md">
+                    <span>
+                      {t('users.extraSeatCost', {
+                        price: fmtCents(perSeatPriceCents, currency),
+                        interval: billingInterval,
+                      })}
+                    </span>
+                  </div>
+                )}
             </div>
           ) : (
             <div className="flex items-center justify-between p-3 bg-destructive/10 border border-destructive/20 rounded-md">
@@ -198,7 +216,7 @@ const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace
         </div>
       )}
       {/* Seat status card — shown for seat pricing OR plan-based limits */}
-      {(hasSeatPricing || maxUsers > 0) && (
+      {showSeatPricingBlock && (hasSeatPricing || maxUsers > 0) && (
         <div className="mb-4 rounded-lg border bg-muted/50 p-4">
           <div className="flex items-center justify-between mb-2">
             <h4 className="text-sm font-medium text-foreground">

@@ -4,6 +4,7 @@ import { Button } from '../../../components/ui/button';
 import { StatusBanner } from '../../../components/ui/status-banner';
 import { Switch } from '../../../components/ui/switch';
 import { usePermissions } from '../../../hooks/usePermissions';
+import { useUIVisibility } from '../../../hooks/useUIVisibility';
 import { useTranslation, type TranslationKey } from '../../../i18n';
 import { handleError } from '../../../lib/error-handler';
 import { Permission } from '../../../lib/permissions';
@@ -56,7 +57,11 @@ const WorkspaceSettingsNotifications: React.FC<{ workspace: IWorkspace }> = ({ w
   const { t } = useTranslation();
   const { api } = useWorkspaceApiWithOs();
   const { can } = usePermissions();
+  const { visible } = useUIVisibility();
   const canEdit = can(Permission.WORKSPACE_SETTINGS_EDIT);
+  const showPushBlock = visible(ui => ui.settings?.notifications?.push);
+  const showEmailToggles = visible(ui => ui.settings?.notifications?.emailToggles);
+  const showPushToggles = visible(ui => ui.settings?.notifications?.pushToggles);
 
   const browser = useMemo(() => detectBrowser(), []);
   const stepCount = BROWSER_STEP_COUNT[browser];
@@ -157,7 +162,7 @@ const WorkspaceSettingsNotifications: React.FC<{ workspace: IWorkspace }> = ({ w
       <p className="text-sm text-muted-foreground">{t('notifications.manageDescription')}</p>
 
       {/* ─── Push Notifications (browser-level) ─── */}
-      {isSupported && (
+      {showPushBlock && isSupported && (
         <>
           {pushError && permission !== 'denied' && (
             <StatusBanner variant="error" message={pushError} />
@@ -237,7 +242,7 @@ const WorkspaceSettingsNotifications: React.FC<{ workspace: IWorkspace }> = ({ w
         </div>
       )}
 
-      {!loading && hasEvents && canEdit && (
+      {!loading && hasEvents && canEdit && (showEmailToggles || showPushToggles) && (
         <>
           {successMsg && <StatusBanner variant="success" message={successMsg} />}
 
@@ -251,12 +256,16 @@ const WorkspaceSettingsNotifications: React.FC<{ workspace: IWorkspace }> = ({ w
                 <div className="flex items-center px-4 py-2 bg-muted/30">
                   <div className="flex-1" />
                   <div className="flex items-center gap-6">
-                    <div className="w-12 flex justify-center">
-                      <Mail className="h-3.5 w-3.5 text-muted-foreground/70" />
-                    </div>
-                    <div className="w-12 flex justify-center">
-                      <Smartphone className="h-3.5 w-3.5 text-muted-foreground/70" />
-                    </div>
+                    {showEmailToggles && (
+                      <div className="w-12 flex justify-center">
+                        <Mail className="h-3.5 w-3.5 text-muted-foreground/70" />
+                      </div>
+                    )}
+                    {showPushToggles && (
+                      <div className="w-12 flex justify-center">
+                        <Smartphone className="h-3.5 w-3.5 text-muted-foreground/70" />
+                      </div>
+                    )}
                   </div>
                 </div>
                 {categoryEvents.map(event => {
@@ -276,28 +285,32 @@ const WorkspaceSettingsNotifications: React.FC<{ workspace: IWorkspace }> = ({ w
                         )}
                       </div>
                       <div className="flex items-center gap-6 shrink-0">
-                        <div className="w-12 flex justify-center">
-                          {event.channels.email ? (
-                            <Switch
-                              checked={emailOn}
-                              onCheckedChange={() => toggleChannel(event.slug, 'email', emailOn)}
-                              disabled={emailUpdating}
-                            />
-                          ) : (
-                            <span className="text-xs text-muted-foreground/50">—</span>
-                          )}
-                        </div>
-                        <div className="w-12 flex justify-center">
-                          {event.channels.push ? (
-                            <Switch
-                              checked={pushOn}
-                              onCheckedChange={() => toggleChannel(event.slug, 'push', pushOn)}
-                              disabled={pushUpdating}
-                            />
-                          ) : (
-                            <span className="text-xs text-muted-foreground/50">—</span>
-                          )}
-                        </div>
+                        {showEmailToggles && (
+                          <div className="w-12 flex justify-center">
+                            {event.channels.email ? (
+                              <Switch
+                                checked={emailOn}
+                                onCheckedChange={() => toggleChannel(event.slug, 'email', emailOn)}
+                                disabled={emailUpdating}
+                              />
+                            ) : (
+                              <span className="text-xs text-muted-foreground/50">—</span>
+                            )}
+                          </div>
+                        )}
+                        {showPushToggles && (
+                          <div className="w-12 flex justify-center">
+                            {event.channels.push ? (
+                              <Switch
+                                checked={pushOn}
+                                onCheckedChange={() => toggleChannel(event.slug, 'push', pushOn)}
+                                disabled={pushUpdating}
+                              />
+                            ) : (
+                              <span className="text-xs text-muted-foreground/50">—</span>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                   );

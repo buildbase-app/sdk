@@ -19,6 +19,18 @@ export interface ErrorBoundaryProps {
    * @default true
    */
   resetOnPropsChange?: boolean;
+  /**
+   * Title shown by the default fallback UI.
+   * Plain strings (not i18n keys) because the boundary renders even when the
+   * translation provider itself has crashed or isn't mounted yet.
+   * @default "Something went wrong"
+   */
+  errorTitle?: string;
+  /**
+   * Label of the retry button in the default fallback UI.
+   * @default "Try again"
+   */
+  retryLabel?: string;
 }
 
 interface ErrorBoundaryState {
@@ -156,7 +168,7 @@ export class SDKErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundar
           }}
         >
           <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1rem', fontWeight: 600 }}>
-            Something went wrong
+            {this.props.errorTitle ?? 'Something went wrong'}
           </h3>
           <p style={{ margin: '0 0 1rem 0', fontSize: '0.875rem' }}>
             {this.state.error.message || 'An unexpected error occurred'}
@@ -173,7 +185,7 @@ export class SDKErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundar
               fontSize: '0.875rem',
             }}
           >
-            Try again
+            {this.props.retryLabel ?? 'Try again'}
           </button>
         </div>
       );

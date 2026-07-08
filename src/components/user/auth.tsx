@@ -1,23 +1,30 @@
 import { useSaaSAuth } from '../../providers/auth/hooks';
-import { AuthStatus } from '../../providers/auth/types';
+import { AuthStatus, getAuthFlags } from '../../providers/auth/types';
 
 interface IProps {
   children: React.ReactNode;
+  /** Optional component/element to show while auth status is still loading. */
+  loadingComponent?: React.ReactNode;
+  /** Optional component/element to show when the condition is not met. */
+  fallbackComponent?: React.ReactNode;
 }
 
 /**
  * Conditional component that renders children only when user is authenticated.
- * Returns null if user is not authenticated or authentication status is still loading.
+ * Optionally pass loadingComponent (while auth resolves) or fallbackComponent
+ * (when unauthenticated) — both default to null, matching the other SDK gates.
  *
  * @param props - Component props
  * @param props.children - Content to render when authenticated
+ * @param props.loadingComponent - Optional content while auth status resolves
+ * @param props.fallbackComponent - Optional content when not authenticated
  *
  * @example
  * ```tsx
  * function App() {
  *   return (
  *     <SaaSOSProvider {...config}>
- *       <WhenAuthenticated>
+ *       <WhenAuthenticated loadingComponent={<Skeleton />}>
  *         <Dashboard />
  *       </WhenAuthenticated>
  *       <WhenUnauthenticated>
@@ -29,21 +36,25 @@ interface IProps {
  * ```
  */
 export const WhenAuthenticated = (props: IProps) => {
-  const { children } = props;
+  const { children, loadingComponent, fallbackComponent } = props;
   const { status } = useSaaSAuth();
 
-  if (status !== AuthStatus.authenticated) return null;
+  if (getAuthFlags(status).isLoading) return loadingComponent ?? null;
+  if (status !== AuthStatus.authenticated) return fallbackComponent ?? null;
 
   return children;
 };
 
 /**
  * Conditional component that renders children only when user is NOT authenticated.
- * Returns null if user is authenticated.
- * Note: Also renders during loading/redirecting states (when not yet authenticated).
+ * Optionally pass loadingComponent (while auth resolves) or fallbackComponent
+ * (when authenticated) — both default to null, matching the other SDK gates.
+ * Note: without loadingComponent, nothing renders during loading/redirecting states.
  *
  * @param props - Component props
  * @param props.children - Content to render when unauthenticated
+ * @param props.loadingComponent - Optional content while auth status resolves
+ * @param props.fallbackComponent - Optional content when authenticated
  *
  * @example
  * ```tsx
@@ -79,10 +90,11 @@ export const WhenAuthenticated = (props: IProps) => {
  * ```
  */
 export const WhenUnauthenticated = (props: IProps) => {
-  const { children } = props;
+  const { children, loadingComponent, fallbackComponent } = props;
   const { status } = useSaaSAuth();
 
-  if (status !== AuthStatus.unauthenticated) return null;
+  if (getAuthFlags(status).isLoading) return loadingComponent ?? null;
+  if (status !== AuthStatus.unauthenticated) return fallbackComponent ?? null;
 
   return children;
 };

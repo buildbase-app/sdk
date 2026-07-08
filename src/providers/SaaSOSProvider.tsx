@@ -11,6 +11,8 @@ import { FullScreenLoaderProvider } from '../contexts/FullScreenLoaderContext';
 import { PermissionConfigProvider } from '../contexts/PermissionContext';
 import { QuotaUsageContextProvider } from '../contexts/QuotaUsageContext';
 import { SubscriptionContextProvider } from '../contexts/SubscriptionContext';
+import type { SDKUIConfig } from '../contexts/UIConfigContext';
+import { UIConfigProvider } from '../contexts/UIConfigContext';
 import type { SDKLocale } from '../i18n';
 import { TranslationProvider } from '../i18n';
 import '../styles/globals.css';
@@ -98,6 +100,22 @@ export interface SaaSOSProviderProps extends IOsState {
   loadingComponent?:
     | React.ReactNode
     | ((props: import('../contexts/FullScreenLoaderContext').LoadingProps) => React.ReactNode);
+  /**
+   * UI configuration — control which parts of the SDK UI are shown and
+   * override individual UI strings. Everything defaults to visible/current
+   * behavior; visibility options only hide UI and never bypass permissions.
+   *
+   * @example Hide settings sections and rebrand a label
+   * ```tsx
+   * <SaaSOSProvider
+   *   ui={{
+   *     settings: { sections: { credits: false, notifications: false } },
+   *     messages: { settings: { sidebar: { subscription: 'Billing' } } },
+   *   }}
+   * >
+   * ```
+   */
+  ui?: SDKUIConfig;
 }
 
 /**
@@ -246,6 +264,7 @@ const SaaSOSProviderInner: React.FC<SaaSOSProviderProps> = React.memo(
     defaultPermissions,
     getCheckoutStripeParams,
     loadingComponent,
+    ui,
     children,
   }) => {
     // Validate props synchronously - throws are caught by the parent SDKErrorBoundary
@@ -284,7 +303,7 @@ const SaaSOSProviderInner: React.FC<SaaSOSProviderProps> = React.memo(
     }, [memoizedHandleEvent]);
 
     return (
-      <TranslationProvider locale={locale}>
+      <TranslationProvider locale={locale} messageOverrides={ui?.messages}>
         <SDKContextProvider>
           <FullScreenLoaderProvider loadingComponent={loadingComponent}>
             <AuthProviderWrapper callbacks={memoizedCallbacks}>
@@ -292,17 +311,19 @@ const SaaSOSProviderInner: React.FC<SaaSOSProviderProps> = React.memo(
                 <ContextConfigProvider config={config} auth={auth}>
                   <CheckoutConfigProvider getCheckoutStripeParams={getCheckoutStripeParams}>
                     <PermissionConfigProvider appPermissions={defaultPermissions}>
-                      <UserProvider>
-                        <SubscriptionContextProvider>
-                          <QuotaUsageContextProvider>
-                            <CreditBalanceContextProvider>
-                              <PushNotificationProvider>
-                                <WorkspaceSettingsProvider>{children}</WorkspaceSettingsProvider>
-                              </PushNotificationProvider>
-                            </CreditBalanceContextProvider>
-                          </QuotaUsageContextProvider>
-                        </SubscriptionContextProvider>
-                      </UserProvider>
+                      <UIConfigProvider ui={ui}>
+                        <UserProvider>
+                          <SubscriptionContextProvider>
+                            <QuotaUsageContextProvider>
+                              <CreditBalanceContextProvider>
+                                <PushNotificationProvider>
+                                  <WorkspaceSettingsProvider>{children}</WorkspaceSettingsProvider>
+                                </PushNotificationProvider>
+                              </CreditBalanceContextProvider>
+                            </QuotaUsageContextProvider>
+                          </SubscriptionContextProvider>
+                        </UserProvider>
+                      </UIConfigProvider>
                     </PermissionConfigProvider>
                   </CheckoutConfigProvider>
                 </ContextConfigProvider>
@@ -319,7 +340,10 @@ SaaSOSProviderInner.displayName = 'SaaSOSProviderInner';
 
 export const SaaSOSProvider: React.FC<SaaSOSProviderProps> = ({ children, ...props }) => {
   return (
-    <SDKErrorBoundary>
+    <SDKErrorBoundary
+      errorTitle={props.ui?.errorBoundary?.title}
+      retryLabel={props.ui?.errorBoundary?.retryLabel}
+    >
       <SaaSOSProviderInner {...props}>{children}</SaaSOSProviderInner>
     </SDKErrorBoundary>
   );

@@ -19,6 +19,7 @@ import {
 import { Input } from '../../../components/ui/input';
 import { StatusBanner } from '../../../components/ui/status-banner';
 import { useSuccessMessage } from '../../../hooks/useSuccessMessage';
+import { useUIVisibility } from '../../../hooks/useUIVisibility';
 import { useTranslation } from '../../../i18n';
 import { handleError } from '../../../lib/error-handler';
 import { useSaaSWorkspaces } from '../hooks';
@@ -27,6 +28,11 @@ import SettingSkeleton from './Skeleton';
 
 const WorkspaceSettingsProfile: React.FC<{ workspace: IWorkspace }> = ({ workspace }) => {
   const { t } = useTranslation();
+  const { visible } = useUIVisibility();
+  const showLanguage = visible(ui => ui.settings?.profile?.language);
+  const showCountry = visible(ui => ui.settings?.profile?.country);
+  const showCurrency = visible(ui => ui.settings?.profile?.currency);
+  const showTimezone = visible(ui => ui.settings?.profile?.timezone);
   const { updateUserProfile, getProfile } = useSaaSWorkspaces();
   const [isSaving, setIsSaving] = useState(false);
   const [user, setUser] = useState<IUser>();
@@ -139,42 +145,50 @@ const WorkspaceSettingsProfile: React.FC<{ workspace: IWorkspace }> = ({ workspa
               )}
             />
             <div className="flex gap-y-2 my-4 flex-col">
-              <div className="flex flex-col gap-0.5">
-                <div className="text-sm font-medium">{t('profile.language')}</div>
-                <SelectLanguage
-                  value={form.watch('language')}
-                  onChange={newValue => {
-                    form.setValue('language', newValue);
-                  }}
-                />
-              </div>
-              <div className="flex flex-col gap-0.5">
-                <div className="text-sm font-medium">{t('profile.country')}</div>
-                <SelectCountry
-                  value={form.watch('country')}
-                  onChange={newValue => {
-                    form.setValue('country', newValue);
-                  }}
-                />
-              </div>
-              <div className="flex flex-col gap-0.5">
-                <div className="text-sm font-medium">{t('profile.currency')}</div>
-                <SelectCurrency
-                  value={form.watch('currency')}
-                  onChange={newValue => {
-                    form.setValue('currency', newValue);
-                  }}
-                />
-              </div>
-              <div className="flex flex-col gap-0.5">
-                <div className="text-sm font-medium">{t('profile.timezone')}</div>
-                <SelectTimeZone
-                  value={form.watch('timezone')}
-                  onChange={newValue => {
-                    form.setValue('timezone', newValue);
-                  }}
-                />
-              </div>
+              {showLanguage && (
+                <div className="flex flex-col gap-0.5">
+                  <div className="text-sm font-medium">{t('profile.language')}</div>
+                  <SelectLanguage
+                    value={form.watch('language')}
+                    onChange={newValue => {
+                      form.setValue('language', newValue);
+                    }}
+                  />
+                </div>
+              )}
+              {showCountry && (
+                <div className="flex flex-col gap-0.5">
+                  <div className="text-sm font-medium">{t('profile.country')}</div>
+                  <SelectCountry
+                    value={form.watch('country')}
+                    onChange={newValue => {
+                      form.setValue('country', newValue);
+                    }}
+                  />
+                </div>
+              )}
+              {showCurrency && (
+                <div className="flex flex-col gap-0.5">
+                  <div className="text-sm font-medium">{t('profile.currency')}</div>
+                  <SelectCurrency
+                    value={form.watch('currency')}
+                    onChange={newValue => {
+                      form.setValue('currency', newValue);
+                    }}
+                  />
+                </div>
+              )}
+              {showTimezone && (
+                <div className="flex flex-col gap-0.5">
+                  <div className="text-sm font-medium">{t('profile.timezone')}</div>
+                  <SelectTimeZone
+                    value={form.watch('timezone')}
+                    onChange={newValue => {
+                      form.setValue('timezone', newValue);
+                    }}
+                  />
+                </div>
+              )}
             </div>
             <div className="flex justify-end gap-x-2">
               <Button type="submit" progress={isSaving} disabled={isSaving}>

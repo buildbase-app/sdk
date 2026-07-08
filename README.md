@@ -9,6 +9,7 @@ Also works server-side (Next.js API routes, Express, Hono) — see [Server-Side 
 - [Features](#-features)
 - [Installation](#installation)
 - [Quick Start](#quick-start)
+- [UI Configuration](#️-ui-configuration)
 - [Authentication](#-authentication)
 - [Redirect Preservation](#redirect-preservation)
 - [Affiliate / Referral Tracking](#affiliate--referral-tracking)
@@ -203,6 +204,85 @@ function WorkspaceExample() {
   );
 }
 ```
+
+## 🎛️ UI Configuration
+
+The optional `ui` prop on `SaaSOSProvider` controls which parts of the SDK UI are shown and lets you override individual UI strings. Everything defaults to visible/current behavior — the config can only **hide** UI and never bypasses platform permissions, which remain the security floor.
+
+```tsx
+<SaaSOSProvider
+  serverUrl="..."
+  version="v1"
+  orgId="..."
+  ui={{
+    settings: {
+      // Hide whole sections of the workspace settings dialog.
+      // Hidden sections are also unreachable via deep links / defaultSection.
+      sections: { credits: false, notifications: false, 'connected-agents': false },
+
+      // Per-screen feature toggles
+      profile: { currency: false, timezone: false },
+      security: { passkeyDelete: false },
+      general: { iconEditor: false },
+      users: { invite: false, seatPricing: false },
+      subscription: { cancel: false, invoicesTab: false, planDetails: false },
+      credits: { buyButton: false, transactions: false },
+      notifications: { push: false, emailToggles: false, pushToggles: false },
+    },
+
+    // Workspace switcher (client-side; ANDed with server settings)
+    workspaceSwitcher: { createButton: false, planBadge: false, memberCount: false },
+
+    // Behaviors that are otherwise automatic
+    behavior: {
+      autoOpenPlanDialog: false, // don't auto-open the plan picker when no subscription
+      trialEndingDays: 7, // global default for <WhenTrialEnding>
+    },
+
+    // Per-key string overrides, deep-merged over the active locale bundle
+    messages: {
+      settings: { sidebar: { credits: 'Tokens', subscription: 'Billing' } },
+    },
+
+    // Default fallback strings for the top-level error boundary
+    errorBoundary: { title: 'Oops!', retryLabel: 'Retry' },
+
+    // Date formatting for SDK-rendered dates (passkeys, connected agents)
+    formats: { date: { dateStyle: 'short' } },
+  }}
+>
+```
+
+Section keys match the `SettingsScreen` values: `profile`, `security`, `connected-agents`, `general`, `users`, `subscription`, `usage`, `credits`, `features`, `notifications`, `permissions`, `danger`. Hidden sections are removed from the sidebar (empty groups collapse) and unreachable via deep links or `defaultSection` — the dialog falls back to the first enabled section.
+
+**Per-dialog override** — `WorkspaceSettingsDialog` accepts its own `ui` prop, deep-merged over the global config, so one app can render differently-configured dialogs:
+
+```tsx
+<WorkspaceSettingsDialog
+  workspace={ws}
+  ui={{ settings: { sections: { credits: true, danger: false } } }}
+/>
+```
+
+In your own components, use the same single-call helper the SDK uses internally — it combines the `ui` config flag with a permission check:
+
+```tsx
+import { useUIVisibility, Permission } from '@buildbase/sdk/react';
+
+function MembersPanel() {
+  const { visible } = useUIVisibility();
+
+  // Config flag AND permission in one decision
+  if (!visible(ui => ui.settings?.users?.invite, Permission.WORKSPACE_MEMBERS_INVITE)) {
+    return null;
+  }
+  return <InviteForm />;
+}
+```
+
+`useUIConfig()` gives you the raw `ui` object if you only need the config values; `mergeUIConfig(base, override)` is the deep-merge used for per-dialog overrides.
+
+📖 **Full guide with the complete toggle reference, precedence rules, and recipes (single-tenant, external billing, white-label, read-only): [docs/UI-CONFIG.md](./docs/UI-CONFIG.md)**
 
 ## 🔐 Authentication
 

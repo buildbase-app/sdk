@@ -16,19 +16,28 @@ import { Button } from '../../../components/ui/button';
 import { EmptyState } from '../../../components/ui/empty-state';
 import { Input } from '../../../components/ui/input';
 import { SectionHeader } from '../../../components/ui/section-header';
+import { useUIVisibility } from '../../../hooks/useUIVisibility';
 import { useTranslation } from '../../../i18n';
 import { handleError } from '../../../lib/error-handler';
 import { useWorkspaceApiWithOs } from '../use-workspace-api';
 import SettingSkeleton from './Skeleton';
 
-const formatDate = (isoDate: string, locale: string): string => {
+const formatDate = (
+  isoDate: string,
+  locale: string,
+  options?: Intl.DateTimeFormatOptions
+): string => {
   const date = new Date(isoDate);
   if (Number.isNaN(date.getTime())) return '';
-  return new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(date);
+  return new Intl.DateTimeFormat(locale, options ?? { dateStyle: 'medium' }).format(date);
 };
 
 const WorkspaceSettingsSecurity: React.FC = () => {
   const { t, formattingLocale } = useTranslation();
+  const { visible, ui } = useUIVisibility();
+  const dateFormat = ui.formats?.date;
+  const canRename = visible(ui => ui.settings?.security?.passkeyRename);
+  const canDelete = visible(ui => ui.settings?.security?.passkeyDelete);
   const { api } = useWorkspaceApiWithOs();
   const [loading, setLoading] = useState(true);
   const [passkeys, setPasskeys] = useState<IPasskeySummary[]>([]);
@@ -149,56 +158,60 @@ const WorkspaceSettingsSecurity: React.FC = () => {
                         {passkey.active === false
                           ? t('security.inactiveHint')
                           : passkey.lastUsedAt
-                            ? `${t('security.lastUsed')}: ${formatDate(passkey.lastUsedAt, formattingLocale)}`
+                            ? `${t('security.lastUsed')}: ${formatDate(passkey.lastUsedAt, formattingLocale, dateFormat)}`
                             : passkey.createdAt
-                              ? `${t('security.added')}: ${formatDate(passkey.createdAt, formattingLocale)}`
+                              ? `${t('security.added')}: ${formatDate(passkey.createdAt, formattingLocale, dateFormat)}`
                               : null}
                       </p>
                     </>
                   )}
                 </div>
               </div>
-              {editingId !== passkey.id && (
+              {editingId !== passkey.id && (canRename || canDelete) && (
                 <div className="flex shrink-0 items-center gap-1">
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-10 w-10 sm:h-8 sm:w-8"
-                    aria-label={t('security.rename')}
-                    onClick={() => {
-                      setEditingId(passkey.id);
-                      setEditingName(passkey.name);
-                    }}
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-10 w-10 sm:h-8 sm:w-8 text-destructive"
-                        aria-label={t('security.remove')}
-                        disabled={busyId === passkey.id}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>{t('security.removeTitle')}</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          {t('security.removeDescription')}
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>{t('settings.common.cancel')}</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => remove(passkey.id)}>
-                          {t('security.remove')}
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
+                  {canRename && (
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-10 w-10 sm:h-8 sm:w-8"
+                      aria-label={t('security.rename')}
+                      onClick={() => {
+                        setEditingId(passkey.id);
+                        setEditingName(passkey.name);
+                      }}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                  )}
+                  {canDelete && (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-10 w-10 sm:h-8 sm:w-8 text-destructive"
+                          aria-label={t('security.remove')}
+                          disabled={busyId === passkey.id}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>{t('security.removeTitle')}</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            {t('security.removeDescription')}
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>{t('settings.common.cancel')}</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => remove(passkey.id)}>
+                            {t('security.remove')}
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  )}
                 </div>
               )}
             </div>

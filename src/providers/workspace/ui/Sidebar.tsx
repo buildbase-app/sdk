@@ -15,7 +15,7 @@ import {
 import React from 'react';
 import { SidebarNavItem, SidebarNavSection } from '../../../components/ui/sidebar-nav';
 import { usePermissionConfig } from '../../../contexts/PermissionContext';
-import { usePermissions } from '../../../hooks/usePermissions';
+import { useUIVisibility } from '../../../hooks/useUIVisibility';
 import { useTranslation } from '../../../i18n';
 import { Permission } from '../../../lib/permissions';
 import { cn } from '../../../lib/utils';
@@ -34,11 +34,45 @@ interface Props {
 const Sidebar: React.FC<Props> = ({ workspace, section, setSection }) => {
   const { t } = useTranslation();
   const { settings } = useSaaSSettings();
-  const { can } = usePermissions();
   const { appPermissions } = usePermissionConfig();
+  const { visible } = useUIVisibility();
   const isPersonalMode = settings?.workspace?.mode === WorkspaceModes.Personal;
-  const canAccessDangerZone = can(Permission.WORKSPACE_DELETE);
   const hasAppPermissions = appPermissions && Object.keys(appPermissions).length > 0;
+
+  // Final visibility per item: implementor UI config AND permission/mode gates.
+  // The config can only hide items — permissions remain the security floor.
+  const showSection = (target: WorkspaceSettingsSection, permission?: string) =>
+    visible(ui => ui.settings?.sections?.[target], permission);
+  const showProfile = showSection(SettingsScreen.Profile);
+  const showSecurity = showSection(SettingsScreen.Security);
+  const showConnectedAgents = showSection(SettingsScreen.ConnectedAgents);
+  const showGeneral = showSection(SettingsScreen.General, Permission.WORKSPACE_SETTINGS_VIEW);
+  const showUsers =
+    showSection(SettingsScreen.Users, Permission.WORKSPACE_MEMBERS_VIEW) && !isPersonalMode;
+  const showSubscription = showSection(
+    SettingsScreen.Subscription,
+    Permission.WORKSPACE_BILLING_VIEW
+  );
+  const showUsage = showSection(SettingsScreen.Usage, Permission.WORKSPACE_USAGE_VIEW);
+  const showCredits = showSection(SettingsScreen.Credits, Permission.WORKSPACE_BILLING_VIEW);
+  const showFeatures = showSection(SettingsScreen.Features, Permission.WORKSPACE_FEATURES_VIEW);
+  const showNotifications = showSection(SettingsScreen.Notifications);
+  const showPermissions =
+    showSection(SettingsScreen.Permissions) && hasAppPermissions && !isPersonalMode;
+  const showDanger =
+    showSection(SettingsScreen.Danger, Permission.WORKSPACE_DELETE) && !isPersonalMode;
+
+  const showAccountSection = showProfile || showSecurity || showConnectedAgents;
+  const showWorkspaceSection =
+    showGeneral ||
+    showUsers ||
+    showSubscription ||
+    showUsage ||
+    showCredits ||
+    showFeatures ||
+    showNotifications ||
+    showPermissions ||
+    showDanger;
 
   const item = (target: WorkspaceSettingsSection, icon: React.ReactNode, label: string) => (
     <SidebarNavItem
@@ -91,81 +125,86 @@ const Sidebar: React.FC<Props> = ({ workspace, section, setSection }) => {
         </div>
       )}
 
-      <SidebarNavSection title={t('settings.sidebar.account')}>
-        {item(
-          SettingsScreen.Profile,
-          <UserIcon className="h-3.5 w-3.5" />,
-          t('settings.sidebar.profile')
-        )}
-        {item(
-          SettingsScreen.Security,
-          <KeyRound className="h-3.5 w-3.5" />,
-          t('settings.sidebar.security')
-        )}
-        {item(
-          SettingsScreen.ConnectedAgents,
-          <Bot className="h-3.5 w-3.5" />,
-          t('security.connectedAgentsTitle')
-        )}
-      </SidebarNavSection>
-      <SidebarNavSection title={t('settings.sidebar.workspace')}>
-        {can(Permission.WORKSPACE_SETTINGS_VIEW) &&
-          item(
-            SettingsScreen.General,
-            <SettingsIcon className="h-3.5 w-3.5" />,
-            t('settings.sidebar.general')
-          )}
-        {!isPersonalMode &&
-          can(Permission.WORKSPACE_MEMBERS_VIEW) &&
-          item(
-            SettingsScreen.Users,
-            <UsersIcon className="h-3.5 w-3.5" />,
-            t('settings.sidebar.users')
-          )}
-        {can(Permission.WORKSPACE_BILLING_VIEW) &&
-          item(
-            SettingsScreen.Subscription,
-            <CreditCard className="h-3.5 w-3.5" />,
-            t('settings.sidebar.subscription')
-          )}
-        {can(Permission.WORKSPACE_USAGE_VIEW) &&
-          item(
-            SettingsScreen.Usage,
-            <BarChart3 className="h-3.5 w-3.5" />,
-            t('settings.sidebar.usage')
-          )}
-        {can(Permission.WORKSPACE_BILLING_VIEW) &&
-          item(
-            SettingsScreen.Credits,
-            <Coins className="h-3.5 w-3.5" />,
-            t('settings.sidebar.credits')
-          )}
-        {can(Permission.WORKSPACE_FEATURES_VIEW) &&
-          item(
-            SettingsScreen.Features,
-            <ToggleRight className="h-3.5 w-3.5" />,
-            t('settings.sidebar.features')
-          )}
-        {item(
-          SettingsScreen.Notifications,
-          <Bell className="h-3.5 w-3.5" />,
-          t('settings.sidebar.notifications')
-        )}
-        {hasAppPermissions &&
-          !isPersonalMode &&
-          item(
-            SettingsScreen.Permissions,
-            <Shield className="h-3.5 w-3.5" />,
-            t('settings.sidebar.permissions')
-          )}
-        {canAccessDangerZone &&
-          !isPersonalMode &&
-          item(
-            SettingsScreen.Danger,
-            <AlertTriangle className="h-3.5 w-3.5" />,
-            t('settings.sidebar.danger')
-          )}
-      </SidebarNavSection>
+      {showAccountSection && (
+        <SidebarNavSection title={t('settings.sidebar.account')}>
+          {showProfile &&
+            item(
+              SettingsScreen.Profile,
+              <UserIcon className="h-3.5 w-3.5" />,
+              t('settings.sidebar.profile')
+            )}
+          {showSecurity &&
+            item(
+              SettingsScreen.Security,
+              <KeyRound className="h-3.5 w-3.5" />,
+              t('settings.sidebar.security')
+            )}
+          {showConnectedAgents &&
+            item(
+              SettingsScreen.ConnectedAgents,
+              <Bot className="h-3.5 w-3.5" />,
+              t('security.connectedAgentsTitle')
+            )}
+        </SidebarNavSection>
+      )}
+      {showWorkspaceSection && (
+        <SidebarNavSection title={t('settings.sidebar.workspace')}>
+          {showGeneral &&
+            item(
+              SettingsScreen.General,
+              <SettingsIcon className="h-3.5 w-3.5" />,
+              t('settings.sidebar.general')
+            )}
+          {showUsers &&
+            item(
+              SettingsScreen.Users,
+              <UsersIcon className="h-3.5 w-3.5" />,
+              t('settings.sidebar.users')
+            )}
+          {showSubscription &&
+            item(
+              SettingsScreen.Subscription,
+              <CreditCard className="h-3.5 w-3.5" />,
+              t('settings.sidebar.subscription')
+            )}
+          {showUsage &&
+            item(
+              SettingsScreen.Usage,
+              <BarChart3 className="h-3.5 w-3.5" />,
+              t('settings.sidebar.usage')
+            )}
+          {showCredits &&
+            item(
+              SettingsScreen.Credits,
+              <Coins className="h-3.5 w-3.5" />,
+              t('settings.sidebar.credits')
+            )}
+          {showFeatures &&
+            item(
+              SettingsScreen.Features,
+              <ToggleRight className="h-3.5 w-3.5" />,
+              t('settings.sidebar.features')
+            )}
+          {showNotifications &&
+            item(
+              SettingsScreen.Notifications,
+              <Bell className="h-3.5 w-3.5" />,
+              t('settings.sidebar.notifications')
+            )}
+          {showPermissions &&
+            item(
+              SettingsScreen.Permissions,
+              <Shield className="h-3.5 w-3.5" />,
+              t('settings.sidebar.permissions')
+            )}
+          {showDanger &&
+            item(
+              SettingsScreen.Danger,
+              <AlertTriangle className="h-3.5 w-3.5" />,
+              t('settings.sidebar.danger')
+            )}
+        </SidebarNavSection>
+      )}
     </div>
   );
 };

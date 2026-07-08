@@ -27,6 +27,7 @@ import { Label } from '../../components/ui/label';
 import { RadioGroup, RadioGroupItem } from '../../components/ui/radio-group';
 import { ScrollArea } from '../../components/ui/scroll-area';
 import { Separator } from '../../components/ui/separator';
+import { useUIVisibility } from '../../hooks/useUIVisibility';
 import { useTranslation } from '../../i18n';
 import { handleError } from '../../lib/error-handler';
 import { cn } from '../../lib/utils';
@@ -65,6 +66,7 @@ export function WorkspaceSwitcher(props: {
     switchToWorkspace,
   } = useSaaSWorkspaces();
   const { settings } = useSaaSSettings();
+  const { visible } = useUIVisibility();
   const [open, setOpen] = useState(false);
   const [reloadWorkspacesCount, setReloadWorkspacesCount] = useState<number>(0);
   const [searchQuery, setSearchQuery] = useState('');
@@ -108,9 +110,12 @@ export function WorkspaceSwitcher(props: {
     .filter(workspace => workspace._id !== currentWorkspace?._id)
     .filter(workspace => workspace.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
-  // Workspace mode settings
-  const canCreate = settings?.workspace?.canCreateWorkspace ?? true;
-  const showSwitcher = settings?.workspace?.showSwitcher ?? true;
+  // Workspace mode settings — server settings ANDed with the implementor UI config
+  const canCreate =
+    (settings?.workspace?.canCreateWorkspace ?? true) &&
+    visible(ui => ui.workspaceSwitcher?.createButton);
+  const showSwitcher =
+    (settings?.workspace?.showSwitcher ?? true) && visible(ui => ui.workspaceSwitcher?.show);
   const maxPerUser = settings?.workspace?.maxWorkspacesPerUser ?? 0; // 0 = unlimited
 
   const myWorkspacesCount =
@@ -286,6 +291,9 @@ interface WorkspaceItemProps {
 
 function WorkspaceItem(props: WorkspaceItemProps) {
   const { t } = useTranslation();
+  const { visible } = useUIVisibility();
+  const showMemberCount = visible(ui => ui.workspaceSwitcher?.memberCount);
+  const showPlanBadge = visible(ui => ui.workspaceSwitcher?.planBadge);
   const { workspace, setCurrentWorkspace, setOpen, workspacesToUse, switchingToId } = props;
   const isCurrentWorkspace = props.isCurrentWorkspace ?? false;
   const isSwitchingThis = switchingToId === workspace._id;
@@ -322,11 +330,13 @@ function WorkspaceItem(props: WorkspaceItemProps) {
             {workspace.name}
           </span>
         </div>
-        <div className="flex items-center gap-1 text-sm text-muted-foreground">
-          <Users className="h-3 w-3" />
-          <span>{t('workspace.membersCount', { count: workspace.users?.length || 0 })}</span>
-        </div>
-        {planName && (
+        {showMemberCount && (
+          <div className="flex items-center gap-1 text-sm text-muted-foreground">
+            <Users className="h-3 w-3" />
+            <span>{t('workspace.membersCount', { count: workspace.users?.length || 0 })}</span>
+          </div>
+        )}
+        {showPlanBadge && planName && (
           <div className="max-w-fit">
             <div className="flex items-center gap-1 text-sm bg-success text-success-foreground rounded-full px-2 py-0.5">
               <span className="text-xs">{planName}</span>

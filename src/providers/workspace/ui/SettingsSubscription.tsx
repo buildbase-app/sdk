@@ -39,6 +39,7 @@ import { LoadingState } from '../../../components/ui/loading-state';
 import { StatusBanner } from '../../../components/ui/status-banner';
 import { invalidateSubscription } from '../../../contexts/SubscriptionContext/subscriptionInvalidation';
 import { usePermissions } from '../../../hooks/usePermissions';
+import { useUIVisibility } from '../../../hooks/useUIVisibility';
 import { useTranslation } from '../../../i18n';
 import { Permission } from '../../../lib/permissions';
 import { safeRedirect } from '../../../lib/security';
@@ -124,6 +125,13 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
   const { api } = useWorkspaceApiWithOs();
   const { can } = usePermissions();
   const { settings: orgSettings } = useSaaSSettings();
+  const { visible, ui } = useUIVisibility();
+  const uiBehavior = ui.behavior;
+  const showChangePlan = visible(s => s.settings?.subscription?.changePlan);
+  const showCancel = visible(s => s.settings?.subscription?.cancel);
+  const showManagePayment = visible(s => s.settings?.subscription?.managePayment);
+  const showInvoicesTab = visible(s => s.settings?.subscription?.invoicesTab);
+  const showPlanDetails = visible(s => s.settings?.subscription?.planDetails);
   const canViewBilling = can(Permission.WORKSPACE_BILLING_VIEW);
   const canManageBilling = can(Permission.WORKSPACE_BILLING_MANAGE);
   const isPersonalMode = orgSettings?.workspace?.mode === WorkspaceModes.Personal;
@@ -214,7 +222,11 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
     const settingsState = workspaceSettingsManager.getState();
     const isSelectPlan = settingsState.params?.action === BBAction.SelectPlan;
 
-    if (!subscription?.subscription || isSelectPlan) {
+    // Explicit selectPlan deep links always open; the no-subscription
+    // auto-open can be disabled via ui.behavior.autoOpenPlanDialog.
+    const autoOpenAllowed = uiBehavior?.autoOpenPlanDialog !== false;
+
+    if ((!subscription?.subscription && autoOpenAllowed) || isSelectPlan) {
       autoOpenedRef.current = true;
       if (isSelectPlan) {
         selectPlanParamsRef.current = settingsState.params;
@@ -222,7 +234,12 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
       }
       setDialogOpen(true);
     }
-  }, [subscriptionLoading, subscription?.subscription, plansToShow]);
+  }, [
+    subscriptionLoading,
+    subscription?.subscription,
+    plansToShow,
+    uiBehavior?.autoOpenPlanDialog,
+  ]);
 
   useEffect(() => {
     return () => {
@@ -442,44 +459,46 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
         />
       )}
 
-      {/* Tabs */}
-      <div className="border-b border-border">
-        <nav className="-mb-px flex gap-6" role="tablist" aria-label="Subscription tabs">
-          <button
-            type="button"
-            role="tab"
-            aria-selected={activeTab === 'subscription'}
-            onClick={() => setActiveTab('subscription')}
-            className={`border-b-2 py-3 text-sm font-medium transition-colors ${
-              activeTab === 'subscription'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-muted-foreground hover:border-border hover:text-foreground'
-            }`}
-          >
-            {t('subscription.plan')}
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={activeTab === 'invoices'}
-            onClick={() => setActiveTab('invoices')}
-            className={`border-b-2 py-3 text-sm font-medium transition-colors ${
-              activeTab === 'invoices'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-muted-foreground hover:border-border hover:text-foreground'
-            }`}
-          >
-            {t('subscription.invoicesTab')}
-          </button>
-        </nav>
-      </div>
+      {/* Tabs — hidden entirely when the invoices tab is disabled (a lone tab is noise) */}
+      {showInvoicesTab && (
+        <div className="border-b border-border">
+          <nav className="-mb-px flex gap-6" role="tablist" aria-label="Subscription tabs">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === 'subscription'}
+              onClick={() => setActiveTab('subscription')}
+              className={`border-b-2 py-3 text-sm font-medium transition-colors ${
+                activeTab === 'subscription'
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-muted-foreground hover:border-border hover:text-foreground'
+              }`}
+            >
+              {t('subscription.plan')}
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === 'invoices'}
+              onClick={() => setActiveTab('invoices')}
+              className={`border-b-2 py-3 text-sm font-medium transition-colors ${
+                activeTab === 'invoices'
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-muted-foreground hover:border-border hover:text-foreground'
+              }`}
+            >
+              {t('subscription.invoicesTab')}
+            </button>
+          </nav>
+        </div>
+      )}
 
       {/* Subscription Tab Content */}
       {activeTab === 'subscription' && (
         <>
           {loading && <LoadingState />}
           {/* Deprecation Notice - Show if user's plan is on an older version */}
-          {isDeprecated && subscription?.subscription && (
+          {showChangePlan && isDeprecated && subscription?.subscription && (
             <div className="bg-warning/10 border border-warning/30 rounded-lg px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div className="flex items-center gap-2 min-w-0">
                 <AlertTriangle className="h-4 w-4 text-warning shrink-0" />
@@ -511,6 +530,9 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
               <div className="flex items-center gap-2">
                 {/* Show appropriate button based on subscription state */}
                 {(() => {
+                  // Plan-picker entry points disabled by the implementor UI config
+                  if (!showChangePlan) return null;
+
                   const isCanceled =
                     subscription?.subscription?.subscriptionStatus === SubscriptionStatus.Canceled;
                   const isCanceling = subscription?.subscription?.cancelAtPeriodEnd;
@@ -649,14 +671,16 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                                   : t('subscription.onTrial')}{' '}
                               {t('subscription.upgradeToKeepAccess')}
                             </span>
-                            <Button
-                              size="sm"
-                              variant={isUrgent ? 'default' : 'outline'}
-                              className={`shrink-0 ${isUrgent ? '' : 'border-info/30 text-info hover:bg-info/15'}`}
-                              onClick={() => setDialogOpen(true)}
-                            >
-                              {t('subscription.upgradePlan')}
-                            </Button>
+                            {showChangePlan && (
+                              <Button
+                                size="sm"
+                                variant={isUrgent ? 'default' : 'outline'}
+                                className={`shrink-0 ${isUrgent ? '' : 'border-info/30 text-info hover:bg-info/15'}`}
+                                onClick={() => setDialogOpen(true)}
+                              >
+                                {t('subscription.upgradePlan')}
+                              </Button>
+                            )}
                           </div>
                         );
                       })()}
@@ -809,6 +833,9 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
 
                       {/* Actions: Manage Payment, Cancel/Resume */}
                       {!isFreemiumPlan &&
+                        (showManagePayment ||
+                          showCancel ||
+                          subscription.subscription.cancelAtPeriodEnd) &&
                         (subscription.subscription.subscriptionStatus ===
                           SubscriptionStatus.Active ||
                           subscription.subscription.subscriptionStatus ===
@@ -816,7 +843,8 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                           subscription.subscription.subscriptionStatus ===
                             SubscriptionStatus.PastDue) && (
                           <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-4 pt-4 border-t border-border">
-                            {subscription.subscription &&
+                            {showManagePayment &&
+                              subscription.subscription &&
                               canManageBilling &&
                               subscription.subscription?.subscriptionId && (
                                 <Button
@@ -851,7 +879,7 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                                         ? t('subscription.resumeTrial')
                                         : t('subscription.resumeTitle')}
                                     </Button>
-                                  ) : (
+                                  ) : !showCancel ? null : (
                                     <Button
                                       variant="outline"
                                       size="sm"
@@ -887,14 +915,16 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                             <p className="text-sm text-destructive mt-0.5">
                               {t('subscription.paymentPastDueDescription')}
                             </p>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="mt-2 border-destructive/20 text-destructive hover:bg-destructive/15"
-                              onClick={() => setActiveTab('invoices')}
-                            >
-                              {t('subscription.viewInvoices')}
-                            </Button>
+                            {showInvoicesTab && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="mt-2 border-destructive/20 text-destructive hover:bg-destructive/15"
+                                onClick={() => setActiveTab('invoices')}
+                              >
+                                {t('subscription.viewInvoices')}
+                              </Button>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -991,7 +1021,8 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                     )}
 
                     {/* Plan Details */}
-                    {subscription.planVersion &&
+                    {showPlanDetails &&
+                      subscription.planVersion &&
                       (() => {
                         const planDetails = getPlanDetailsFromItems(
                           subscription.planVersion,
@@ -1216,7 +1247,7 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                 title={t('subscription.noSubscription')}
                 description={t('subscription.noSubscriptionDescription')}
                 action={
-                  plansToShow && plansToShow.length > 0 ? (
+                  showChangePlan && plansToShow && plansToShow.length > 0 ? (
                     <Button size="sm" onClick={() => setDialogOpen(true)}>
                       {t('subscription.viewPricingPlans')}
                     </Button>
@@ -1252,12 +1283,12 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
       )}
 
       {/* Invoices Tab Content */}
-      {activeTab === 'invoices' && (
+      {showInvoicesTab && activeTab === 'invoices' && (
         <>
           {loading && <LoadingState />}
           <WorkspaceSettingsInvoices
             workspaceId={workspaceId}
-            hasActiveSubscription={subscription?.subscription !== null}
+            hasActiveSubscription={subscription?.subscription != null}
             onViewPricingPlans={() => setActiveTab('subscription')}
             limit={20}
           />

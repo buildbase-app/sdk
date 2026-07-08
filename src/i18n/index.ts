@@ -3,7 +3,7 @@
 import IntlMessageFormat from 'intl-messageformat';
 import React, { createContext, useContext, useMemo } from 'react';
 import { en } from './messages/en';
-import type { SDKLocale, SDKMessages, TranslationKey } from './types';
+import type { PartialSDKMessages, SDKLocale, SDKMessages, TranslationKey } from './types';
 
 /** Values that can be interpolated into ICU messages */
 export type TranslationValues = Record<string, string | number | boolean>;
@@ -69,6 +69,35 @@ export function getFormattingLocale(locale: SDKLocale): string {
   return NATIVE_NUMERAL_LOCALES[locale] ?? locale;
 }
 
+// ─── Message Overrides ─────────────────────────────────────────────────────────
+
+/**
+ * Deep-merge implementor overrides over a locale bundle.
+ * Strings replace; objects merge recursively; non-matching shapes are ignored.
+ */
+function mergeMessages<T>(base: T, overrides: DeepOverrides<T>): T {
+  const result = { ...base };
+  for (const key of Object.keys(overrides) as Array<keyof T>) {
+    const override = overrides[key];
+    const baseValue = base[key];
+    if (typeof override === 'string') {
+      result[key] = override as T[keyof T];
+    } else if (
+      override &&
+      typeof override === 'object' &&
+      baseValue &&
+      typeof baseValue === 'object'
+    ) {
+      result[key] = mergeMessages(baseValue, override as DeepOverrides<T[keyof T]>);
+    }
+  }
+  return result;
+}
+
+type DeepOverrides<T> = {
+  [K in keyof T]?: T[K] extends string ? string : DeepOverrides<T[K]>;
+};
+
 // ─── Context ───────────────────────────────────────────────────────────────────
 
 interface TranslationContextValue {
@@ -95,30 +124,38 @@ const TranslationContext = createContext<TranslationContextValue>({
  */
 export function TranslationProvider({
   locale: rawLocale = 'en',
+  messageOverrides,
   children,
 }: {
   locale?: string;
+  /** Per-key string overrides deep-merged over the loaded locale bundle */
+  messageOverrides?: PartialSDKMessages;
   children: React.ReactNode;
 }) {
   const locale = resolveLocale(rawLocale);
-  const [messages, setMessages] = React.useState<SDKMessages>(en);
+  const [loadedMessages, setLoadedMessages] = React.useState<SDKMessages>(en);
 
   React.useEffect(() => {
     if (locale === 'en') {
-      setMessages(en);
+      setLoadedMessages(en);
       return;
     }
     let cancelled = false;
     const loader = messageLoaders[locale];
     if (loader) {
       loader().then(m => {
-        if (!cancelled) setMessages(m);
+        if (!cancelled) setLoadedMessages(m);
       });
     }
     return () => {
       cancelled = true;
     };
   }, [locale]);
+
+  const messages = useMemo(
+    () => (messageOverrides ? mergeMessages(loadedMessages, messageOverrides) : loadedMessages),
+    [loadedMessages, messageOverrides]
+  );
 
   const formattingLocale = getFormattingLocale(locale);
   const value = useMemo(
@@ -217,18 +254,22 @@ export function useTranslation() {
   const { messages, locale, formattingLocale } = useContext(TranslationContext);
 
   const t = useMemo(() => {
-    return (key: TranslationKey, values?: TranslationValues): string => {
-      // Dot-path key lookup
-      const parts = key.split('.');
-      let current: unknown = messages;
-      for (const part of parts) {
+    // Dot-path key lookup; returns undefined when the key is missing
+    const lookup = (source: SDKMessages, key: string): string | undefined => {
+      let current: unknown = source;
+      for (const part of key.split('.')) {
         if (current && typeof current === 'object' && part in current) {
           current = (current as Record<string, unknown>)[part];
         } else {
-          return key; // Fallback: return the key itself
+          return undefined;
         }
       }
-      const raw = typeof current === 'string' ? current : key;
+      return typeof current === 'string' ? current : undefined;
+    };
+
+    return (key: TranslationKey, values?: TranslationValues): string => {
+      // Fallback chain: active locale → English → the key itself
+      const raw = lookup(messages, key) ?? lookup(en, key) ?? key;
 
       // Fast path: no values → return raw string (zero overhead for static strings)
       if (!values) return raw;
@@ -278,4 +319,4 @@ export function useTranslation() {
 
 // ─── Re-exports ────────────────────────────────────────────────────────────────
 
-export type { SDKLocale, SDKMessages, TranslationKey } from './types';
+export type { PartialSDKMessages, SDKLocale, SDKMessages, TranslationKey } from './types';

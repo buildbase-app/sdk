@@ -13,6 +13,7 @@ import { SectionHeader } from '../../../components/ui/section-header';
 import { StatusBanner } from '../../../components/ui/status-banner';
 import { useCreditBalanceContext } from '../../../contexts/CreditBalanceContext';
 import { usePermissions } from '../../../hooks/usePermissions';
+import { useUIVisibility } from '../../../hooks/useUIVisibility';
 import { useTranslation, type TranslationKey } from '../../../i18n';
 import { invalidateCreditBalance } from '../../../lib/credit-balance-invalidation';
 import { Permission } from '../../../lib/permissions';
@@ -65,8 +66,14 @@ const WorkspaceSettingsCredits: React.FC<{ workspace: IWorkspace }> = ({ workspa
   const workspaceId = workspace._id?.toString();
   const { t, fmtNum } = useTranslation();
   const { can } = usePermissions();
+  const { visible } = useUIVisibility();
+  const showTransactions = visible(ui => ui.settings?.credits?.transactions);
   const canViewBilling = can(Permission.WORKSPACE_BILLING_VIEW);
-  const canManageBilling = can(Permission.WORKSPACE_BILLING_MANAGE);
+  // Buy-credits UI: implementor config AND billing permission in one decision
+  const canManageBilling = visible(
+    ui => ui.settings?.credits?.buyButton,
+    Permission.WORKSPACE_BILLING_MANAGE
+  );
   const {
     balance,
     loading: balanceLoading,
@@ -312,43 +319,45 @@ const WorkspaceSettingsCredits: React.FC<{ workspace: IWorkspace }> = ({ workspa
       </div>
 
       {/* Recent Transactions */}
-      <div>
-        <SectionHeader title={t('credits.transactions')} className="mb-3" />
-        {txLoading && transactions.length === 0 ? (
-          <LoadingState />
-        ) : transactions.length === 0 ? (
-          <EmptyState
-            icon={<History className="h-5 w-5 text-muted-foreground" />}
-            description={t('credits.noTransactions')}
-            action={
-              <Button variant="outline" size="sm" progress={txLoading} onClick={refetchTx}>
-                {t('settings.common.refreshAction', { loading: String(txLoading) })}
-              </Button>
-            }
-          />
-        ) : (
-          <div className="border border-border rounded-lg overflow-hidden">
-            <div className="divide-y divide-border/60">
-              {transactions.map(tx => (
-                <TransactionRow key={tx._id} tx={tx} />
-              ))}
-            </div>
-            {txHasMore && (
-              <div className="border-t border-border px-4 py-3 text-center">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleLoadMore}
-                  disabled={txLoading}
-                  progress={txLoading && txPage > 1}
-                >
-                  {t('credits.loadMore')}
+      {showTransactions && (
+        <div>
+          <SectionHeader title={t('credits.transactions')} className="mb-3" />
+          {txLoading && transactions.length === 0 ? (
+            <LoadingState />
+          ) : transactions.length === 0 ? (
+            <EmptyState
+              icon={<History className="h-5 w-5 text-muted-foreground" />}
+              description={t('credits.noTransactions')}
+              action={
+                <Button variant="outline" size="sm" progress={txLoading} onClick={refetchTx}>
+                  {t('settings.common.refreshAction', { loading: String(txLoading) })}
                 </Button>
+              }
+            />
+          ) : (
+            <div className="border border-border rounded-lg overflow-hidden">
+              <div className="divide-y divide-border/60">
+                {transactions.map(tx => (
+                  <TransactionRow key={tx._id} tx={tx} />
+                ))}
               </div>
-            )}
-          </div>
-        )}
-      </div>
+              {txHasMore && (
+                <div className="border-t border-border px-4 py-3 text-center">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleLoadMore}
+                    disabled={txLoading}
+                    progress={txLoading && txPage > 1}
+                  >
+                    {t('credits.loadMore')}
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Credit Packages Dialog */}
       {hasPackages && canManageBilling && (

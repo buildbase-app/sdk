@@ -608,9 +608,7 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                             <span className="text-2xl font-bold text-foreground">
                               {hasVariant && price !== null
                                 ? formatPrice(price, displayCurrency) || t('pricing.free')
-                                : !hasVariant
-                                  ? '—'
-                                  : formatPrice(price, displayCurrency) || t('pricing.free')}
+                                : '—'}
                             </span>
                             {price !== null && price > 0 && hasVariant && (
                               <span className="text-sm text-muted-foreground">
@@ -888,9 +886,7 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                                   <span className="text-2xl font-bold text-foreground">
                                     {hasVariant && price !== null
                                       ? formatPrice(price, displayCurrency) || t('pricing.free')
-                                      : !hasVariant
-                                        ? '—'
-                                        : formatPrice(price, displayCurrency) || t('pricing.free')}
+                                      : '—'}
                                   </span>
                                   {price !== null && price > 0 && hasVariant && (
                                     <span className="text-sm text-muted-foreground">

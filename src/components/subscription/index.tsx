@@ -1,5 +1,6 @@
 import { SubscriptionStatus } from '../../api/types';
 import { useSubscriptionContext } from '../../contexts/SubscriptionContext';
+import { useUIConfig } from '../../contexts/UIConfigContext';
 
 interface IWhenSubscriptionProps {
   /** Content to render when the condition is met (workspace has an active subscription). */
@@ -200,13 +201,17 @@ interface IWhenTrialEndingProps {
   loadingComponent?: React.ReactNode;
   /** Optional component/element to show when trial is not ending soon. */
   fallbackComponent?: React.ReactNode;
-  /** Number of days threshold to consider "ending soon". Defaults to 3. */
+  /**
+   * Number of days threshold to consider "ending soon".
+   * Defaults to `ui.behavior.trialEndingDays` from SaaSOSProvider, or 3.
+   */
   daysThreshold?: number;
 }
 
 /**
  * Renders children only when the subscription is trialing AND the trial ends within
- * the given threshold (default 3 days). Useful for showing urgent upgrade prompts.
+ * the given threshold (default 3 days, configurable globally via
+ * `ui.behavior.trialEndingDays`). Useful for showing urgent upgrade prompts.
  * Must be used within SubscriptionContextProvider.
  *
  * @example
@@ -217,7 +222,9 @@ interface IWhenTrialEndingProps {
  * ```
  */
 export const WhenTrialEnding = (props: IWhenTrialEndingProps) => {
-  const { children, loadingComponent, fallbackComponent, daysThreshold = 3 } = props;
+  const { children, loadingComponent, fallbackComponent } = props;
+  const { behavior } = useUIConfig();
+  const daysThreshold = props.daysThreshold ?? behavior?.trialEndingDays ?? 3;
   const { response, loading } = useSubscriptionContext();
 
   if (loading) return loadingComponent ?? null;

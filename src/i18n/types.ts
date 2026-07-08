@@ -594,11 +594,23 @@ export interface SDKMessages {
 /** Supported locale codes */
 export type SDKLocale = 'en' | 'es' | 'fr' | 'de' | 'ja' | 'zh' | 'hi' | 'ar';
 
+/** Recursively optional version of a message tree (leaves stay strings) */
+type DeepPartialMessages<T> = {
+  [K in keyof T]?: T[K] extends string ? string : DeepPartialMessages<T[K]>;
+};
+
+/**
+ * Per-key overrides for SDK UI strings — any subset of the SDKMessages tree.
+ * Deep-merged over the active locale bundle by the translation provider.
+ */
+export type PartialSDKMessages = DeepPartialMessages<SDKMessages>;
+
 // ─── Type-safe Translation Keys ─────────────────────────────────────────────
 
 /**
  * Generates a union of all valid dot-separated key paths from SDKMessages.
- * Supports up to 3 levels of nesting (covers all current keys).
+ * Supports up to 4 levels of nesting (covers all current keys, e.g.
+ * "notifications.unblock.firefox.step1").
  * Used to make `t()` calls compile-time safe with autocomplete.
  *
  * @example
