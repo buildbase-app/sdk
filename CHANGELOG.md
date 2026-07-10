@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.54] - 2026-07-10
+
 MCP + agent-readiness brought to **MCP 2025-06-18** compliance, a one-config setup path, first-class auth presets, and a full per-framework guide. **Behavior changes** are marked ⚠️.
 
 ### Added
@@ -24,6 +26,22 @@ MCP + agent-readiness brought to **MCP 2025-06-18** compliance, a one-config set
 - **CORS is on by default on `createMcpHandler`.** ⚠️ **Behavior change.** Responses now carry `Access-Control-Allow-Origin: *` (safe for a Bearer-token API — no cookies) and `OPTIONS` is answered automatically, so browser MCP clients work with zero config. New `cors` option: `cors: [origins]` narrows to those origins (reflected), `cors: false` disables. `allowedOrigins`, when set, still restricts and drives reflection.
 - **`buildbaseAuth` audience binding accepts multiple resources** and takes an explicit `resourceMetadataUrl`; `createAgentStack` binds both the canonical `<host>/mcp` and the literal endpoint URL and points the 401 challenge at `/.well-known/oauth-protected-resource/mcp`.
 
+### Security
+
+- **API retries are restricted to idempotent methods.** ⚠️ **Behavior change.** Automatic retries (network error / 5xx) now apply only to GET/HEAD/OPTIONS/PUT/DELETE. POST/PATCH are never replayed — the server may have processed a request whose response was lost, so replaying `purchase_credits`, `consume_credits`, or `create_checkout_session` risked double-charging. The retry backoff also respects the abort signal now (an unmount or timeout ends the wait immediately).
+- **Open-redirect hardening in `validateRedirectUrl` / `safeRedirect`.** Relative paths (`/dashboard`) are now accepted (protocol-relative `//host` and backslash `/\host` forms are not); new `RedirectValidationOptions` (`{ sameOrigin, allowedOrigins }`) restricts absolute URLs; `safeRedirect` validates its fallback URL too. ⚠️ Auth return URLs (`saveAuthIntent`/`consumeAuthIntent`) are now **same-origin only** — a tampered localStorage intent can no longer redirect off-site. Stripe/OAuth cross-origin `https:` targets are unaffected by default. Also fixed: the `http://[::1]` localhost allowance never matched (`URL.hostname` includes the brackets).
+- **`verifyClientJwt` pins the JWT `alg` before computing the HMAC** (was checked after) — hardens the verifier against algorithm-confusion if it is ever extended beyond HS256.
+
+### Fixed
+
+- **Zero-decimal currencies (JPY, KRW, …) format correctly.** `formatCents(1000, 'jpy')` now renders `¥1,000` (was `¥10.00` — a ÷100 on a currency with no minor unit). Fixed across `formatCents`, `formatOverageRate`, `formatOverageRateWithLabel`, `formatQuotaWithPrice`, and `getQuotaDisplayParts`; new `isZeroDecimalCurrency(currency)` and `minorAmountToDisplay(amount, currency)` are exported.
+- **Stale-response races in the workspace data hooks.** All 15 read hooks (`useSubscription`, `useAllQuotaUsage`, `useCreditBalance`, `usePlanGroup`, `useInvoices`, `useUsageLogs`, `usePublicPlans`, and the rest of the subscription/credit read surface) now drop superseded responses — a workspace switch can no longer render the previous workspace's subscription, quotas, credits, or invoices. Only the latest request clears `loading`; unmount aborts.
+- **`useSaaSSettings` no longer loses org settings for the session under React StrictMode.** The deduplicated global settings fetch was bound to the first caller's abort signal, so StrictMode's throwaway first mount aborted it for every waiter with no retry. The shared fetch is now detached — its result lands in the global store regardless of any one component's lifetime.
+- **`UserProvider` state split per resource.** Attributes and features now have independent loading/error (`attributesLoading`/`featuresLoading`, `attributesError`/`featuresError`; the combined `isLoading`/`error` remain for back-compat) — a features failure no longer surfaces as an attributes error, stale errors clear when a new request starts, and `useUserFeatures().isLoading/error` now reflect the features pipeline only, as documented.
+- **`createBBUrl` throws on an invalid explicit base URL** instead of silently substituting `https://localhost` (which sent Stripe success/cancel URLs to localhost with no error). The localhost default remains only for the no-argument server-side case.
+- **`createWorkspace`'s delayed plan-picker open is cancelled on unmount** — it can no longer pop open after the user navigated away or signed out during the 300ms delay.
+- **`workspaceSettingsManager.clearParams()` notifies subscribers** (React state no longer diverges from the manager), and `getState()` returns a stable snapshot reference.
+
 ### Removed
 
 - **`verifyClientJwt`'s legacy bare-`number` third argument.** ⚠️ **Behavior change.** The third parameter is now `VerifyClientJwtOptions` only (`{ clockToleranceSec?, requireExp?, issuer?, audience? }`); pass `{ clockToleranceSec: n }` instead of a bare number.
@@ -31,6 +49,7 @@ MCP + agent-readiness brought to **MCP 2025-06-18** compliance, a one-config set
 ### Internal
 
 - Centralized the duplicated base64url codec into `src/lib/base64url.ts` (was copied in `agent-bridge.ts` and `agent-auth.ts`).
+- **Test infrastructure (vitest): 113 tests** across sha256/HMAC vectors, webhook verification, agent-bridge JWT (round-trip, alg-confusion, exp/nbf, issuer/audience pinning, header-injection escaping), agent-auth session crypto (Node-crypto compatibility both directions), agent stack, permissions revoke/unknown-role semantics, redirect validation, URL params, API retry idempotency + abortable backoff, zero-decimal currency math — plus a **packaging test** asserting every value declared in each entry point's `.d.ts` exists in the runtime bundle (would have auto-caught the 0.0.51 `/react` phantom-exports bug). `@types/node` added; test files are now typechecked (`tsconfig.json` no longer excludes them; the build still does via `tsconfig.build.json`).
 
 ## [0.0.53] - 2026-07-09
 

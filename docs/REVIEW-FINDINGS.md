@@ -106,7 +106,7 @@ Tests added (vitest, now 85 total): `permissions`, `security`, `url-params`, `ap
 - [x] 🟡 **Unbounded `lucide-react >=0.544.0`.** package.json:100 — 0.x releases rename/remove icons; now externalized so consumers get newest. Bound it (`>=0.544.0 <1`).
 - [ ] ⚪ **Branding split.** `@buildbase/sdk` + `BuildBase()` vs `SaaSOSProvider`/`useSaaS*`/`saas-os-` CSS scope. Consider `BuildBaseProvider` alias + deprecation before the API calcifies.
 - [x] ⚪ **Stale i18n comment.** `i18n/types.ts:612` says "3 levels" but `Level4` exists and depth-4 keys are real. (Locale files themselves verified healthy: 8×527 identical keys, compiler-enforced.)
-- [ ] ⚪ **Zero test infrastructure.** _Mostly done (2026-07-10):_ vitest set up; suites cover `permissions`, `url-params`, `security`, `sha256`, `api-base` retry/abort, `currency-utils`/`quota-utils`, `agent-auth`, `agent-stack` (85 tests). Still missing: webhook verification, direct agent-bridge JWT vectors, and the packaging test asserting runtime exports match the d.ts (would have caught the 🔴 export bug automatically).
+- [x] ⚪ **Zero test infrastructure.** Done (2026-07-10): vitest, 113 tests — `permissions`, `url-params`, `security`, `sha256`, `api-base` retry/abort, `currency-utils`/`quota-utils`, `agent-auth`, `agent-stack`, `webhook-verification`, `agent-bridge` JWT vectors, and `packaging.test.ts` (asserts every d.ts value exists in the runtime bundle — auto-catches the 🔴 export bug class; requires a fresh `npm run build`). `@types/node` added; tests are typechecked via `tsconfig.json` (build excludes them via `tsconfig.build.json`).
 
 ---
 
