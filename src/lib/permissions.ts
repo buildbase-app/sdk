@@ -117,8 +117,9 @@ function collectAllPermissions(map: Record<string, string[]>): string[] {
  * 3. settings.workspace.permissions[role] (org-level template)
  * 4. DEFAULT_ROLE_PERMISSIONS[role] (SDK built-in defaults)
  * 5. Merge in appPermissions (developer-defined) for the role
- * 6. If role not found → use defaultRole from settings, then 'member'
- * 7. Apply setting restrictions (canInviteMembers, canCreateWorkspace)
+ * 6. If role not found → use an explicitly-configured, known `defaultRole`;
+ *    otherwise deny (no silent 'member' fallback for unknown roles)
+ * 7. Apply setting restrictions (canInviteMembers)
  */
 export function resolvePermissions(ctx: PermissionContext): Set<string> {
   const { userId, workspace, settings, appPermissions } = ctx;
@@ -154,34 +155,43 @@ export function resolvePermissions(ctx: PermissionContext): Set<string> {
   const platformOnly = (perms: string[]) => perms.filter(p => p.startsWith('workspace:'));
   const appOnly = (perms: string[]) => perms.filter(p => !p.startsWith('workspace:'));
 
+  // Presence, not non-emptiness: an explicit entry for `role` at a tier fully
+  // defines that role's permissions at that tier — including an explicit `[]`,
+  // which is a deliberate revoke that must win over lower tiers (previously a
+  // `[]` override silently fell through to defaults, so a revoke did nothing).
+  const hasWsEntry = !!workspacePerms && role in workspacePerms;
+  const hasOrgEntry = !!orgPerms && role in orgPerms;
+  const hasDefaultEntry = role in DEFAULT_ROLE_PERMISSIONS;
+
   // ── Platform permissions (workspace:*) ──
   // 3-tier: workspace overrides > org settings > SDK defaults
-  // Only consider workspace:-prefixed strings at each level
-  const wsPlatform = workspacePerms?.[role] ? platformOnly(workspacePerms[role]) : [];
-  const orgPlatform = orgPerms?.[role] ? platformOnly(orgPerms[role]) : [];
-  const defaultPlatform = DEFAULT_ROLE_PERMISSIONS[role] ?? [];
-
   let platformPerms: string[];
-  if (wsPlatform.length > 0) {
-    platformPerms = wsPlatform;
-  } else if (orgPlatform.length > 0) {
-    platformPerms = orgPlatform;
-  } else if (defaultPlatform.length > 0) {
-    platformPerms = defaultPlatform;
+  if (hasWsEntry) {
+    platformPerms = platformOnly(workspacePerms![role]);
+  } else if (hasOrgEntry) {
+    platformPerms = platformOnly(orgPerms![role]);
+  } else if (hasDefaultEntry) {
+    platformPerms = DEFAULT_ROLE_PERMISSIONS[role];
   } else {
-    // Unknown role → fall back to defaultRole or 'member'
-    const fallbackRole = settings?.workspace?.defaultRole ?? 'member';
-    platformPerms = DEFAULT_ROLE_PERMISSIONS[fallbackRole] ?? DEFAULT_ROLE_PERMISSIONS.member ?? [];
+    // Unknown role: deny by default. Only honor an explicitly-configured,
+    // *known* `defaultRole` — never silently grant `member` permissions to an
+    // unrecognized (possibly spoofed) role.
+    const fallbackRole = settings?.workspace?.defaultRole;
+    platformPerms =
+      fallbackRole && fallbackRole in DEFAULT_ROLE_PERMISSIONS
+        ? DEFAULT_ROLE_PERMISSIONS[fallbackRole]
+        : [];
   }
 
   const permissions = new Set<string>(platformPerms);
 
   // ── App permissions (non-workspace:*) ──
-  // 2-tier: workspace overrides > developer defaults (from SaaSOSProvider prop)
-  const wsApp = workspacePerms?.[role] ? appOnly(workspacePerms[role]) : [];
+  // 2-tier: an explicit workspace entry defines the role's app perms (empty =
+  // none); otherwise fall back to developer defaults (SaaSOSProvider prop).
+  const wsApp = hasWsEntry ? appOnly(workspacePerms![role]) : [];
   const defaultApp = appPermissions?.[role] ? appOnly(appPermissions[role]) : [];
 
-  const appPermsForRole = wsApp.length > 0 ? wsApp : defaultApp;
+  const appPermsForRole = hasWsEntry ? wsApp : defaultApp;
   for (const p of appPermsForRole) {
     permissions.add(p);
   }

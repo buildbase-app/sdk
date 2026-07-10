@@ -24,28 +24,39 @@ export { parseWebhookEvent, verifyWebhookSignature } from './lib/webhook-verific
 // Every function returns plain data (a DiscoveryDocument or the raw bundle) and
 // does no framework I/O — wire them into any router yourself (see the guide).
 export {
+  AI_BOT_USER_AGENTS,
   buildAgentCard,
   buildAgentSkillsIndex,
   buildApiCatalog,
   buildAuthMd,
+  buildDiscoveryLinkHeader,
   buildLlmsTxt,
   buildMcpServerCard,
   buildProtectedResourceMetadata,
+  buildRobotsTxt,
   buildSecurityTxt,
+  buildSitemap,
   buildSkillMd,
   clearAgentReadinessCache,
   fetchAgentReadiness,
+  negotiateMarkdown,
   provideWebMcpTools,
+  resolveAgentPath,
   resolveWellKnown,
   sha256Digest,
+  wantsMarkdown,
 } from './lib/agent-discovery';
 export type {
   AgentReadinessBundle,
   AgentReadyConfig,
   AgentSkill,
   ApiCatalogApi,
+  ContentSignals,
   DiscoveryDocument,
   McpServerCard,
+  RobotsConfig,
+  RobotsPolicy,
+  SitemapUrl,
   WebMcpTool,
 } from './lib/agent-discovery';
 
@@ -58,6 +69,7 @@ export {
   extractBearerToken,
   handleAppRevokeRequest,
   handleAppTokenRequest,
+  signClientJwt,
   verifyAppRevokeRequest,
   verifyAppTokenRequest,
   verifyClientJwt,

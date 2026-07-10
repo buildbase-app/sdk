@@ -23,4 +23,10 @@ export default [
     plugins: [dts()],
     external: [/\.css$/],
   },
+  {
+    input: 'dist/mcp/types/mcp.d.ts',
+    output: [{ file: 'dist/mcp/index.d.ts', format: 'esm' }],
+    plugins: [dts()],
+    external: [/\.css$/],
+  },
 ];

@@ -158,6 +158,9 @@ export const zh: SDKMessages = {
     },
     plan: '套餐',
     invoicesTab: '账单',
+    tabsLabel: '订阅标签',
+    endsOn: '(结束于 {date})',
+    versionLabel: '版本 {version}',
     changePlanButton: '更改套餐',
     noPlanAssigned: '未分配套餐',
     free: '免费',
@@ -200,6 +203,7 @@ export const zh: SDKMessages = {
     trialBadge: '{days} 天试用',
   },
   users: {
+    emailPlaceholder: 'example@example.com',
     title: '工作区成员',
     adminOnly: '只有工作区管理员才能管理用户和角色。',
     inviteByEmail: '通过电子邮件邀请成员',
@@ -318,6 +322,7 @@ export const zh: SDKMessages = {
     imageUrlPlaceholder: 'https://example.com/image.png',
     imageUrlDescription: '输入工作区图片的有效 URL。支持 PNG、JPG 和 SVG 格式。',
     previewLabel: '预览：',
+    previewImageAlt: '工作区预览',
     success: '工作区设置保存成功',
     chooseEmoji: '选择表情',
     customImageUrl: '自定义图片 URL',
@@ -449,6 +454,7 @@ export const zh: SDKMessages = {
     billingInterval: '计费周期',
   },
   beta: {
+    logoAlt: '标志',
     nameLabel: '姓名',
     emailLabel: '电子邮件',
     submitText: '提交',

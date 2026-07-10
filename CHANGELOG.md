@@ -5,6 +5,62 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.53] - 2026-07-09
+
+Production-readiness pass — MCP + agent-bridge hardening, permission-resolution correctness, auth-session teardown, and settings/a11y/i18n fixes. **Behavior changes** are marked ⚠️ (`builtinTools` default; permission-override semantics); the rest are additive or internal.
+
+### Security
+
+- **`builtinTools` now defaults to `'readonly'`, not `'all'`.** ⚠️ **Behavior change.** A `createMcpHandler({ buildbase })` with no explicit `builtinTools` previously exposed the entire surface — including `delete_workspace`, `cancel_subscription`, `purchase_credits`, `consume_credits` — to any token `auth.verify` accepted. It now exposes reads only (least privilege); opt into writes with `builtinTools: 'all'` or an explicit `{ include }` list. If you relied on the old default, add `builtinTools: 'all'`.
+- **Scope gating no longer bypassed by scopeless tokens.** `visibleTools` treated `scopes: undefined` as "grant everything" — a JWT minted without a `scope` claim received every tool, including custom tools declaring `requiredScopes`. A token now sees a scoped tool only when it carries all of that tool's scopes; no scopes → only tools that require none. `scopes: []` and `scopes: undefined` behave identically.
+- **Built-in `update_workspace` / `update_user_profile` no longer accept arbitrary fields.** Both took `data: z.record(z.string(), z.unknown())` forwarded to the backend `as any` (mass-assignment). They now expose an explicit, `.strict()` allowlist — `update_workspace`: `name`, `image`; `update_user_profile`: `name`, `image`, `country`, `timezone`, `language`, `currency` (role/email/attributes are not self-updatable via the agent tool).
+- **`verifyClientJwt` requires a numeric `exp` by default.** A JWT with no expiry was accepted and never expired. New `VerifyClientJwtOptions` (passable as the 3rd arg, which still also accepts a bare `clockToleranceSec` number): `requireExp` (default `true`), plus optional `issuer` / `audience` pinning (RFC 7519).
+- **`bearerChallenge` escapes `WWW-Authenticate` values.** `resource_metadata` / `error` / `error_description` are quoted-string-escaped and CR/LF-stripped, closing a header-injection vector when `errorDescription` is fed dynamic text.
+- **`buildRobotsTxt` / `buildSitemap` sanitize interpolated config.** robots.txt directive values strip CR/LF (can't inject extra directives); sitemap `<changefreq>` is XML-escaped and `<priority>` is clamped to 0.0–1.0.
+- **Permission resolution: explicit `[]` now revokes, and unknown roles are denied.** ⚠️ **Behavior change.** `resolvePermissions` used a non-emptiness check, so an explicit empty override (`workspace.permissions[role] = []`, a deliberate revoke) silently fell through to org/SDK defaults and granted permissions anyway. It now uses presence: an explicit entry — including `[]` — fully defines that role's permissions at that tier. And an **unknown role is denied by default** instead of silently inheriting `member` permissions; only an explicitly-configured, _known_ `settings.workspace.defaultRole` is honored as a fallback. Owners are unaffected (still all permissions).
+- **A dead session (401) is now cleared.** `useWorkspaceApiWithOs`'s `onUnauthorized` only called `onSessionExpired`; it now also runs `removeSession()` + dispatches `authActions.removeSession()`, so gated UI can't keep rendering "authenticated" behind an invalid token.
+
+### Added
+
+- **MCP CORS / preflight.** With `allowedOrigins` set, `OPTIONS` returns 204 with `Access-Control-*` headers and successful responses echo `Access-Control-Allow-Origin` for a matching Origin — browser-based MCP clients now work. No `allowedOrigins` → no CORS headers (server-to-server unaffected).
+- **`createMcpHandler({ formatToolError })`.** Map a thrown tool error to the message returned to the agent — redact internal details in production while the full error still reaches `onError`.
+- **Public model types exported** from `@buildbase/sdk` and `/react`: `IUser`, `IWorkspace`, `ISettings`, `TranslationKey` (previously appeared in exported signatures but weren't name-exported).
+- **`createMcpHandler` DoS controls.** `maxRequestBytes` (default 1 MiB) rejects oversized bodies with 413 before parsing — and before the stream is read on the `fetch` adapter (via `Content-Length`); set `0` to disable. `rateLimit(auth, req)` gate runs after auth and before dispatch, returning `false` or `{ ok: false, retryAfter }` for a 429 (the server holds no counters — back it with your own store; a throwing limiter fails closed).
+- **OIDC discovery alias.** `resolveWellKnown`/`resolveAgentPath` now also serve the authorization-server metadata at `/.well-known/openid-configuration` (same document as `/.well-known/oauth-authorization-server`), and the Agent Card advertises `openid_configuration` — so agents that only probe the OIDC path no longer get a 404.
+- **`AgentReadyConfig.fetchTimeoutMs`** (default 5000) — platform fetches (`fetchAgentReadiness`, auth-server metadata) now time out via `AbortController` and fail soft, so a hung BuildBase server can't hang discovery routes forever.
+- **`onError` covers `tools/list` schema conversion.** A tool whose zod schema can't convert to JSON Schema no longer throws an unhandled 500 out of `handle`; it's reported via `onError` and served a permissive object schema.
+
+### Fixed
+
+- **`useConnectedAgents().refresh()` guards against stale writes.** The list fetch now passes an `AbortSignal`, ignores superseded/aborted responses, and aborts on unmount — a rapid workspace/server switch or unmount can no longer clobber state with an older response.
+- **Accessibility.** The personal-mode settings trigger was a bare `div onClick` (no keyboard/AT access) — now `role="button"` + `tabIndex` + Enter/Space handling + `aria-label`. The subscription tabs had `role="tab"`/`tablist` without the rest of the pattern — now complete: `id`/`aria-controls`/roving `tabIndex`/arrow-key navigation, with real `role="tabpanel"` panels.
+- **Hardcoded strings moved into i18n** (all 8 locales): subscription tabs `aria-label`, "(ends {date})", "Version {version}", the invite-email placeholder, and the logo / workspace-preview `alt` text.
+- **Palette token.** `focus:ring-red-600` → `focus:ring-destructive`; the `lint:tokens` guard was widened to also catch `ring`/`outline`/`from`/`via`/`to`/`fill`/`stroke`/`shadow` palette classes.
+
+### Changed
+
+- **`lucide-react` bound to `>=0.544.0 <1`** — 0.x releases rename/remove icons; the previous open range let consumers pull a breaking minor.
+
+## [0.0.52] - 2026-07-08
+
+### Added
+
+- **New entry point `@buildbase/sdk/mcp` — a live MCP server for your app.** `createMcpHandler({ buildbase, auth, tools })` returns a stateless Streamable-HTTP handler (`fetch(Request)` for Next.js/edge, pure `handle()` for Express) exposing the **full BuildBase surface** as MCP tools — 42 built-ins spanning workspaces, users, subscription, plans, invoices, usage, credits, feature flags, permissions, and settings (reads + writes + destructive ops). **Default `builtinTools: 'all'`** — the SDK restricts nothing; the consumer narrows via `'readonly'` | `false` | `{ include }` | `{ exclude }`. Every tool runs under the user's BuildBase session, so the platform enforces the user's real permissions (an agent can never exceed the user). Custom tools are defined with `defineMcpTool` + zod schemas (converted to JSON Schema with zod 4's native `z.toJSONSchema`). Bearer auth plugs into the OAuth2 app-bridge: `auth.verify` maps the app-minted token to the BuildBase session tools run under, and unauthenticated requests get an RFC 9728 `WWW-Authenticate` challenge. Built-in tools carry no BuildBase-specific scope requirement (the agent acts as an authenticated app user; the read/write boundary is `builtinTools`); optional per-scope gating (`requiredScopes` vs the token's `scopes`) is available for custom tools using your own scope names. Origin allowlisting, per-request `withSession`. Hand-rolled protocol subset (initialize / ping / tools/list / tools/call, protocol versions 2024-11-05 → 2025-06-18) — no `@modelcontextprotocol/sdk` dependency (zod-3-based, Node-http-bound). Separate entry so the core stays zod-free at runtime.
+- **`resolveAgentPath(path, config)`** — superset of `resolveWellKnown` that also serves the root-level documents: `/robots.txt`, `/sitemap.xml`, `/llms.txt`, `/auth.md`, `/security.txt` (RFC 9116 legacy alias). One catch-all now covers the entire agent-readiness surface.
+- **`buildRobotsTxt(config)`** — robots.txt with per-AI-bot policy groups (new `AI_BOT_USER_AGENTS` list: GPTBot, ClaudeBot, PerplexityBot, Bytespider, …; `aiBots: 'allow' | 'deny' | RobotsPolicy[]`), [Content Signals](https://contentsignals.org) directives (`contentSignals: { search, aiInput, aiTrain }`), and `Sitemap:` references.
+- **`buildSitemap(config)`** — minimal sitemap.xml from `config.sitemap.urls` for API-first apps without a content pipeline (null when unconfigured, so next-sitemap users keep their files).
+- **`wantsMarkdown(acceptHeader)` / `negotiateMarkdown(...)`** — q-value-aware markdown content negotiation; negotiated documents carry `vary: 'Accept'` (new optional field on `DiscoveryDocument`).
+- **`buildDiscoveryLinkHeader(config)`** — `Link` response-header value advertising llms.txt, the Agent Card, sitemap, API catalog, and MCP server card. Sync/pure — edge-middleware-safe.
+- **`signClientJwt(payload, secret, { expiresInSec? })`** — HS256 mint, the symmetric counterpart of `verifyClientJwt`, for `applicationTokenUrl` handlers that mint the app's agent tokens (pure JS, edge-safe).
+- **`config.llmsTxt`** — local llms.txt override that wins over the platform-bundle content (mirrors the existing `authMd` convention).
+- **MCP without lock-in:** `buildbase` is optional on `createMcpHandler` — omit it for a standalone MCP server exposing only your own tools (built-ins default off; `ctx.bb` throws a clear error if touched). New `context(auth, req)` factory injects your own per-request context (`ctx.custom`) into tool executions. Custom tools now override same-named built-ins instead of throwing.
+
+### Changed
+
+- **Clean split: the app owns discovery content, the platform owns auth.** `protectedResources` (RFC 9728) and `llms.txt` are now defined locally in `AgentReadyConfig` and served with no platform round-trip — `buildProtectedResourceMetadata(path, config)` builds the doc from `config.protectedResources` (deriving `authorization_servers` from `serverUrl`/`orgId`), and `buildLlmsTxt(config)` serves `config.llmsTxt`. Both lost their `bundle` parameter. `AgentReadinessBundle` is slimmed to `{ enabled, authorizationServer }` — the only thing the platform supplies. New config field: `AgentReadyConfig.protectedResources`.
+- **`/.well-known/oauth-authorization-server` now serves the full RFC 8414 metadata** (cached, fail-soft proxy of the platform's canonical document) instead of a nonstandard pointer object; falls back to the pointer when the platform is unreachable. `clearAgentReadinessCache()` clears this cache too.
+- **`AppTokenRequestClaims.sessionId`** — the platform now mints a per-user BuildBase session on every OAuth2 grant (including refresh) and sends it in the app-bridge mint claims. Embed it encrypted in the token you mint (never plaintext, never stored) so your MCP/agent endpoints can call BuildBase as the consenting user.
+
 ## [0.0.51] - 2026-07-08
 
 ### Fixed

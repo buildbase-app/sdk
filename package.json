@@ -1,6 +1,6 @@
 {
   "name": "@buildbase/sdk",
-  "version": "0.0.51",
+  "version": "0.0.53",
   "type": "module",
   "description": "A SDK for Buildbase",
   "main": "dist/index.cjs",
@@ -25,6 +25,12 @@
       "require": "./dist/data/index.cjs",
       "default": "./dist/data/index.cjs"
     },
+    "./mcp": {
+      "types": "./dist/mcp/index.d.ts",
+      "import": "./dist/mcp/index.mjs",
+      "require": "./dist/mcp/index.cjs",
+      "default": "./dist/mcp/index.cjs"
+    },
     "./css": {
       "types": "./dist/css/styles.d.ts",
       "default": "./dist/css/styles.css"
@@ -38,6 +44,9 @@
       ],
       "data": [
         "./dist/data/index.d.ts"
+      ],
+      "mcp": [
+        "./dist/mcp/index.d.ts"
       ],
       "css": [
         "./dist/css/styles.d.ts"
@@ -56,7 +65,7 @@
   ],
   "scripts": {
     "build": "rollup -c && rollup -c rollup.dts.config.js && npm run postbuild",
-    "postbuild": "rimraf dist/types dist/react/types dist/data/types dist/*.map dist/react/*.map dist/data/*.map && mkdir -p dist/css && [ -f dist/react/styles.css ] && mv dist/react/styles.css dist/css/styles.css || true && cp src/css.d.ts dist/css/styles.d.ts",
+    "postbuild": "rimraf dist/types dist/react/types dist/data/types dist/mcp/types dist/*.map dist/react/*.map dist/data/*.map dist/mcp/*.map && mkdir -p dist/css && [ -f dist/react/styles.css ] && mv dist/react/styles.css dist/css/styles.css || true && cp src/css.d.ts dist/css/styles.d.ts",
     "build:analyze": "rollup --config rollup.config.analyze.js",
     "dev": "rollup -c -w",
     "clean": "rimraf dist",
@@ -72,7 +81,7 @@
     "format:check": "prettier --check . --plugin=prettier-plugin-organize-imports",
     "lint": "npm run lint:types && npm run lint:tokens",
     "lint:types": "tsc --noEmit",
-    "lint:tokens": "grep -rEn '(bg|text|border|divide)-(gray|slate|red|green|emerald|amber|yellow|blue|purple|pink|indigo|violet|orange|teal|cyan|lime|rose|fuchsia|sky|stone|zinc|neutral)-[0-9]+|bg-white|text-white|#[0-9a-fA-F]{6}' src/components src/providers --include='*.tsx' && echo 'Hard-coded colors found — use theme tokens (see docs/THEMING.md)' && exit 1 || exit 0",
+    "lint:tokens": "grep -rEn '(bg|text|border|divide|ring|outline|from|via|to|fill|stroke|shadow|ring-offset)-(gray|slate|red|green|emerald|amber|yellow|blue|purple|pink|indigo|violet|orange|teal|cyan|lime|rose|fuchsia|sky|stone|zinc|neutral)-[0-9]+|bg-white|text-white|#[0-9a-fA-F]{6}' src/components src/providers --include='*.tsx' && echo 'Hard-coded colors found — use theme tokens (see docs/THEMING.md)' && exit 1 || exit 0",
     "push:sdk": "npm run build && yalc push",
     "watch:push": "nodemon",
     "watch:push:light": "chokidar \"src/**/*\" -c \"npm run push:sdk\" --initial --ignore dist"
@@ -99,7 +108,7 @@
     "clsx": "^2.0.0",
     "cmdk": "^1.1.1",
     "intl-messageformat": "^11.2.0",
-    "lucide-react": ">=0.544.0",
+    "lucide-react": ">=0.544.0 <1",
     "react-hook-form": "^7.60.0",
     "tailwind-merge": "^3.3.1",
     "zod": "^4.3.6"
@@ -136,6 +145,10 @@
     "saas",
     "sdk",
     "buildbase",
+    "mcp",
+    "model-context-protocol",
+    "ai-agents",
+    "agent-ready",
     "react",
     "billing",
     "stripe",

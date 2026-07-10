@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { IConnectedAgent } from '../../api/services/connected-agents-api';
 import { handleErrorUnlessAborted } from '../../lib/error-handler';
 import { useConnectedAgentsApi } from './api';
@@ -30,24 +30,36 @@ export function useConnectedAgents(): UseConnectedAgents {
   const [error, setError] = useState<string | null>(null);
   const [revoking, setRevoking] = useState<string | null>(null);
 
+  // Guards against stale writes: only the most recent in-flight list may commit.
+  const activeRef = useRef<AbortController | null>(null);
+
   const refresh = useCallback(async () => {
+    activeRef.current?.abort();
+    const controller = new AbortController();
+    activeRef.current = controller;
     setLoading(true);
     setError(null);
     try {
-      setAgents(await api.list());
+      const result = await api.list(controller.signal);
+      if (!controller.signal.aborted) setAgents(result);
     } catch (err) {
+      if (controller.signal.aborted) return; // superseded — ignore
       handleErrorUnlessAborted(err, {
         component: 'useConnectedAgents',
         action: 'list',
       });
       setError(err instanceof Error ? err.message : 'Failed to load');
     } finally {
-      setLoading(false);
+      if (activeRef.current === controller) {
+        activeRef.current = null;
+        setLoading(false);
+      }
     }
   }, [api]);
 
   useEffect(() => {
     refresh();
+    return () => activeRef.current?.abort();
   }, [refresh]);
 
   const revoke = useCallback(

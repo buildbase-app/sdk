@@ -160,6 +160,9 @@ export const hi: SDKMessages = {
     },
     plan: 'प्लान',
     invoicesTab: 'चालान',
+    tabsLabel: 'सदस्यता टैब',
+    endsOn: '({date} को समाप्त)',
+    versionLabel: 'संस्करण {version}',
     changePlanButton: 'प्लान बदलें',
     noPlanAssigned: 'कोई प्लान नहीं',
     free: 'मुफ़्त',
@@ -208,6 +211,7 @@ export const hi: SDKMessages = {
     trialBadge: '{days} दिन का ट्रायल',
   },
   users: {
+    emailPlaceholder: 'example@example.com',
     title: 'वर्कस्पेस सदस्य',
     adminOnly: 'केवल वर्कस्पेस एडमिन ही उपयोगकर्ताओं और भूमिकाओं को प्रबंधित कर सकते हैं।',
     inviteByEmail: 'ईमेल से सदस्य आमंत्रित करें',
@@ -330,6 +334,7 @@ export const hi: SDKMessages = {
     imageUrlDescription:
       'अपने वर्कस्पेस की छवि के लिए एक मान्य URL दर्ज करें। PNG, JPG और SVG प्रारूप समर्थित हैं।',
     previewLabel: 'पूर्वावलोकन:',
+    previewImageAlt: 'वर्कस्पेस पूर्वावलोकन',
     success: 'वर्कस्पेस सेटिंग्स सफलतापूर्वक सहेजी गईं',
     chooseEmoji: 'इमोजी चुनें',
     customImageUrl: 'कस्टम छवि URL',
@@ -467,6 +472,7 @@ export const hi: SDKMessages = {
     billingInterval: 'बिलिंग अवधि',
   },
   beta: {
+    logoAlt: 'लोगो',
     nameLabel: 'नाम',
     emailLabel: 'ईमेल',
     submitText: 'जमा करें',

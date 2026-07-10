@@ -143,7 +143,21 @@ export function WorkspaceSwitcher(props: {
   if (!showSwitcher && currentWorkspace) {
     return (
       <>
-        <div onClick={() => setOpen(true)}>{props.trigger?.(isLoading, currentWorkspace)}</div>
+        <div
+          role="button"
+          tabIndex={0}
+          aria-label={t('settings.common.openSettings')}
+          className="cursor-pointer"
+          onClick={() => setOpen(true)}
+          onKeyDown={e => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              setOpen(true);
+            }
+          }}
+        >
+          {props.trigger?.(isLoading, currentWorkspace)}
+        </div>
         <Suspense fallback={null}>
           <WorkspaceSettingsDialog
             workspace={currentWorkspace}
@@ -558,7 +572,7 @@ function CreateWorkspaceDialog(props: { onCreated: () => void }) {
                       <div className="w-12 h-12 rounded-lg border-2 border-border overflow-hidden bg-muted">
                         <img
                           src={form.watch('image') || undefined}
-                          alt="Workspace preview"
+                          alt={t('general.previewImageAlt')}
                           className="w-full h-full object-cover"
                           onError={e => {
                             e.currentTarget.style.display = 'none';

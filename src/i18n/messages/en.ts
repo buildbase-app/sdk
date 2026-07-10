@@ -162,6 +162,9 @@ export const en: SDKMessages = {
     },
     plan: 'Plan',
     invoicesTab: 'Invoices',
+    tabsLabel: 'Subscription tabs',
+    endsOn: '(ends {date})',
+    versionLabel: 'Version {version}',
     changePlanButton: 'Change Plan',
     noPlanAssigned: 'No plan assigned',
     free: 'Free',
@@ -210,6 +213,7 @@ export const en: SDKMessages = {
     trialBadge: '{days}-day trial',
   },
   users: {
+    emailPlaceholder: 'example@example.com',
     title: 'Workspace Members',
     adminOnly: 'Only workspace admin can manage users and roles.',
     inviteByEmail: 'Invite member by email',
@@ -330,6 +334,7 @@ export const en: SDKMessages = {
     imageUrlDescription:
       'Enter a valid URL for your workspace image. Supports PNG, JPG, and SVG formats.',
     previewLabel: 'Preview:',
+    previewImageAlt: 'Workspace preview',
     success: 'Workspace settings saved successfully',
     chooseEmoji: 'Choose Emoji',
     customImageUrl: 'Custom Image URL',
@@ -468,6 +473,7 @@ export const en: SDKMessages = {
     billingInterval: 'Billing interval',
   },
   beta: {
+    logoAlt: 'Logo',
     nameLabel: 'Name',
     emailLabel: 'Email',
     submitText: 'Submit',

@@ -25,34 +25,31 @@
  * @example Next.js App Router — the entire integration:
  * ```ts
  * // lib/agent-ready.ts
- * import type { AgentReadyConfig } from "@buildbase/sdk";
+ * import { resolveAgentPath, type AgentReadyConfig } from "@buildbase/sdk";
  * export const agentConfig: AgentReadyConfig = {
  *   serverUrl: process.env.BUILDBASE_URL!,
  *   orgId: process.env.BUILDBASE_ORG_ID!,
  *   siteUrl: "https://imejis.io",
  *   site: { name: "Imejis", description: "Generate images from templates via API." },
+ *   robots: { contentSignals: { search: true, aiInput: true, aiTrain: false } },
  * };
- *
- * // app/.well-known/[...path]/route.ts
- * import { resolveWellKnown } from "@buildbase/sdk";
- * import { agentConfig } from "@/lib/agent-ready";
- * export async function GET(req: Request) {
- *   const doc = await resolveWellKnown(new URL(req.url).pathname, agentConfig);
+ * export async function serveAgentPath(req: Request): Promise<Response> {
+ *   const doc = await resolveAgentPath(new URL(req.url).pathname, agentConfig);
  *   if (!doc) return new Response('{"error":"not_found"}', { status: 404 });
  *   return new Response(doc.body, {
  *     status: doc.status,
- *     headers: { "Content-Type": doc.contentType, "Cache-Control": doc.cacheControl },
+ *     headers: {
+ *       "Content-Type": doc.contentType,
+ *       "Cache-Control": doc.cacheControl,
+ *       ...(doc.vary ? { Vary: doc.vary } : {}),
+ *     },
  *   });
  * }
  *
- * // app/llms.txt/route.ts
- * import { buildLlmsTxt, fetchAgentReadiness } from "@buildbase/sdk";
- * import { agentConfig } from "@/lib/agent-ready";
- * export async function GET() {
- *   const doc = buildLlmsTxt(agentConfig, await fetchAgentReadiness(agentConfig));
- *   if (!doc) return new Response("Not found", { status: 404 });
- *   return new Response(doc.body, { headers: { "Content-Type": doc.contentType } });
- * }
+ * // app/.well-known/[...path]/route.ts — plus identical two-liners at
+ * // app/robots.txt/route.ts, app/llms.txt/route.ts, app/auth.md/route.ts, …
+ * import { serveAgentPath } from "@/lib/agent-ready";
+ * export const GET = serveAgentPath;
  * ```
  */
 
@@ -68,21 +65,16 @@ import { sha256Hex, utf8Bytes } from './sha256';
 export interface AgentReadinessBundle {
   /** False when the org has not enabled agent readiness — everything else absent. */
   enabled: boolean;
-  /** Pointer to the org's RFC 8414 authorization-server metadata. */
+  /**
+   * Pointer to the org's RFC 8414 authorization-server metadata. This is the
+   * ONLY thing the platform owns and serves — discovery content (protected
+   * resources, llms.txt, sitemap, API catalog, skills) is app-owned and
+   * defined locally in {@link AgentReadyConfig}.
+   */
   authorizationServer?: {
     issuer: string;
     metadataUrl: string;
   };
-  /**
-   * RFC 9728 protected-resource metadata objects, ready to serve. Each `metadata`
-   * is a complete document; `resource` is the canonical resource URI it describes.
-   */
-  protectedResources?: Array<{
-    resource: string;
-    metadata: Record<string, unknown>;
-  }>;
-  /** Org-authored llms.txt content, or null when unset. */
-  llmsTxt?: string | null;
 }
 
 /** An Agent Skill (Agent Skills Discovery RFC v0.2.0) published by this app. */
@@ -134,6 +126,63 @@ export interface McpServerCard {
   documentationUrl?: string;
 }
 
+/** One robots.txt policy group (a `User-agent:` block). */
+export interface RobotsPolicy {
+  /** User-agent(s) this group applies to, e.g. `'*'` or `'GPTBot'`. */
+  userAgent: string | string[];
+  /** Paths to allow, e.g. `['/']`. */
+  allow?: string[];
+  /** Paths to disallow, e.g. `['/api/']`. */
+  disallow?: string[];
+  /** Optional `Crawl-delay` (non-standard but widely honored). */
+  crawlDelay?: number;
+}
+
+/**
+ * Content Signals (https://contentsignals.org) — declares how crawlers may use
+ * this site's content. Each flag renders as `<signal>=yes|no`; omitted flags
+ * are not emitted (unset = no preference expressed).
+ */
+export interface ContentSignals {
+  /** May content be indexed for search? → `search=yes|no`. */
+  search?: boolean;
+  /** May content be used as AI input (RAG, grounding)? → `ai-input=yes|no`. */
+  aiInput?: boolean;
+  /** May content be used for AI training? → `ai-train=yes|no`. */
+  aiTrain?: boolean;
+}
+
+/** Configuration for `buildRobotsTxt`. Every field is optional. */
+export interface RobotsConfig {
+  /** Policy groups. Defaults to `[{ userAgent: '*', allow: ['/'] }]`. */
+  policies?: RobotsPolicy[];
+  /**
+   * Stance toward known AI crawlers ({@link AI_BOT_USER_AGENTS}): `'allow'`
+   * (default — an explicit `Allow: /` group per bot, so readiness checkers see
+   * AI bots addressed), `'deny'` (a `Disallow: /` group per bot), or explicit
+   * per-bot policies for finer control.
+   */
+  aiBots?: 'allow' | 'deny' | RobotsPolicy[];
+  /** Content-Signal directive attached to the `User-agent: *` group. */
+  contentSignals?: ContentSignals;
+  /**
+   * Sitemap URLs. Defaults to `${siteUrl}/sitemap.xml` when `config.sitemap`
+   * is set; pass `[]` to emit no `Sitemap:` line.
+   */
+  sitemaps?: string[];
+}
+
+/** One URL entry for the generated sitemap.xml. */
+export interface SitemapUrl {
+  /** Absolute URL, or a path resolved against `siteUrl`. */
+  loc: string;
+  /** ISO-8601 last-modified date. */
+  lastmod?: string;
+  changefreq?: 'always' | 'hourly' | 'daily' | 'weekly' | 'monthly' | 'yearly' | 'never';
+  /** 0.0–1.0. */
+  priority?: number;
+}
+
 /** Configuration for the agent-readiness discovery layer. */
 export interface AgentReadyConfig {
   /** BuildBase server base URL, e.g. `https://api.buildbase.app` (no trailing slash needed). */
@@ -183,8 +232,44 @@ export interface AgentReadyConfig {
    * `buildAuthMd` generates one from the OAuth metadata + site config.
    */
   authMd?: string;
+  /**
+   * Local `/llms.txt` content. Takes precedence over the org-authored llms.txt
+   * from the platform bundle — use when the app owns richer llms.txt content.
+   */
+  llmsTxt?: string;
+  /** robots.txt generation (`buildRobotsTxt`). Omitted = sane defaults. */
+  robots?: RobotsConfig;
+  /**
+   * URLs for a minimal generated sitemap.xml (`buildSitemap`). Omit when the
+   * app already generates sitemaps (e.g. next-sitemap) — the builder then
+   * returns null and your own files win.
+   */
+  sitemap?: { urls: Array<string | SitemapUrl> };
+  /**
+   * RFC 9728 protected resources this app serves, defined locally (app-owned).
+   * When set, the SDK builds the `/.well-known/oauth-protected-resource`
+   * document from this config — `authorization_servers` is derived from
+   * `serverUrl`/`orgId` (the BuildBase issuer). Takes precedence over the
+   * platform bundle. Omit to fall back to the org-configured bundle.
+   */
+  protectedResources?: Array<{
+    /** The protected API's resource URI. Defaults to `siteUrl`. */
+    resource?: string;
+    /** Scopes this resource accepts (`scopes_supported`). */
+    scopes?: string[];
+    /** Human documentation URL (`resource_documentation`). */
+    documentationUrl?: string;
+    /** Bearer methods (`bearer_methods_supported`). Defaults to `['header']`. */
+    bearerMethods?: string[];
+  }>;
   /** TTL (seconds) for cached platform fetches. Default 300 (5 min). */
   cacheTtlSeconds?: number;
+  /**
+   * Timeout (ms) for platform fetches. Fail-soft on timeout, so a hung or slow
+   * BuildBase server can't hang discovery routes forever. Default 5000; set `0`
+   * to disable.
+   */
+  fetchTimeoutMs?: number;
   /** Injectable fetch, mainly for testing. Defaults to the global `fetch`. */
   fetch?: typeof fetch;
 }
@@ -195,6 +280,8 @@ export interface DiscoveryDocument {
   contentType: string;
   body: string;
   cacheControl: string;
+  /** Value for a `Vary` response header, when the body is negotiated. */
+  vary?: string;
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -208,6 +295,29 @@ const JSON_CT = 'application/json';
 const LINKSET_CT = 'application/linkset+json';
 const MARKDOWN_CT = 'text/markdown; charset=utf-8';
 const TEXT_CT = 'text/plain; charset=utf-8';
+const XML_CT = 'application/xml; charset=utf-8';
+
+/**
+ * User-agent strings of the known AI crawlers/agents that agent-readiness
+ * checkers look for in robots.txt (`buildRobotsTxt` emits a policy group per
+ * entry when `robots.aiBots` is `'allow'`/`'deny'`).
+ */
+export const AI_BOT_USER_AGENTS: readonly string[] = [
+  'GPTBot',
+  'OAI-SearchBot',
+  'ChatGPT-User',
+  'ClaudeBot',
+  'Claude-User',
+  'Claude-SearchBot',
+  'PerplexityBot',
+  'Perplexity-User',
+  'Google-Extended',
+  'Applebot-Extended',
+  'CCBot',
+  'Bytespider',
+  'meta-externalagent',
+  'Amazonbot',
+];
 
 // ─── Small utilities ──────────────────────────────────────────────────────────
 
@@ -236,6 +346,28 @@ interface CacheEntry {
 
 const bundleCache = new Map<string, CacheEntry>();
 
+const DEFAULT_FETCH_TIMEOUT_MS = 5000;
+
+/**
+ * `fetch` with a bounded timeout via `AbortController`, so a hung platform
+ * connection rejects (and the caller fail-softs) instead of pending forever.
+ */
+async function fetchWithTimeout(
+  doFetch: typeof fetch,
+  url: string,
+  init: RequestInit,
+  timeoutMs: number
+): Promise<Response> {
+  if (!timeoutMs || timeoutMs <= 0) return doFetch(url, init);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await doFetch(url, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 /**
  * Fetch (and cache) an org's agent-readiness bundle from the BuildBase server.
  *
@@ -257,9 +389,12 @@ export async function fetchAgentReadiness(config: AgentReadyConfig): Promise<Age
 
   let value: AgentReadinessBundle = { enabled: false };
   try {
-    const res = await doFetch(url, {
-      headers: { Accept: JSON_CT },
-    });
+    const res = await fetchWithTimeout(
+      doFetch,
+      url,
+      { headers: { Accept: JSON_CT } },
+      config.fetchTimeoutMs ?? DEFAULT_FETCH_TIMEOUT_MS
+    );
     if (res.ok) {
       const data = (await res.json()) as AgentReadinessBundle;
       if (data && typeof data === 'object') value = data;
@@ -272,9 +407,53 @@ export async function fetchAgentReadiness(config: AgentReadyConfig): Promise<Age
   return value;
 }
 
-/** Clear the in-memory agent-readiness cache (mainly for tests). */
+interface MetadataCacheEntry {
+  value: Record<string, unknown> | null;
+  expiresAt: number;
+}
+
+const authServerMetadataCache = new Map<string, MetadataCacheEntry>();
+
+/**
+ * Fetch (and cache) the platform's RFC 8414 authorization-server metadata so
+ * it can be re-served from this app's origin. Fail-soft: null on any error.
+ */
+async function fetchAuthServerMetadata(
+  metadataUrl: string,
+  config: AgentReadyConfig
+): Promise<Record<string, unknown> | null> {
+  const ttl = config.cacheTtlSeconds ?? DEFAULT_CACHE_TTL;
+
+  const cached = authServerMetadataCache.get(metadataUrl);
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.value;
+  }
+
+  const doFetch = config.fetch ?? fetch;
+  let value: Record<string, unknown> | null = null;
+  try {
+    const res = await fetchWithTimeout(
+      doFetch,
+      metadataUrl,
+      { headers: { Accept: JSON_CT } },
+      config.fetchTimeoutMs ?? DEFAULT_FETCH_TIMEOUT_MS
+    );
+    if (res.ok) {
+      const data = (await res.json()) as Record<string, unknown>;
+      if (data && typeof data === 'object') value = data;
+    }
+  } catch {
+    // fail-soft — value stays null
+  }
+
+  authServerMetadataCache.set(metadataUrl, { value, expiresAt: Date.now() + ttl * 1000 });
+  return value;
+}
+
+/** Clear the in-memory agent-readiness caches (mainly for tests). */
 export function clearAgentReadinessCache(): void {
   bundleCache.clear();
+  authServerMetadataCache.clear();
 }
 
 // ─── Document builders ────────────────────────────────────────────────────────
@@ -296,6 +475,9 @@ export function buildAgentCard(
   };
   if (bundle.authorizationServer?.metadataUrl) {
     capabilities.oauth_authorization_server = bundle.authorizationServer.metadataUrl;
+    // Same metadata is also re-served at the OIDC discovery alias from this
+    // origin (see resolveWellKnown), for agents that only probe that path.
+    capabilities.openid_configuration = '/.well-known/openid-configuration';
   }
   // /auth.md exists whenever there's an authorization server (or an override).
   if (bundle.authorizationServer || config.authMd) {
@@ -345,26 +527,39 @@ function protectedResourceWellKnownPath(resource: string): string {
 /**
  * Resolve the RFC 9728 protected-resource metadata for a request path, or null
  * if no configured resource maps to it.
+ *
+ * App-owned and local: built entirely from `config.protectedResources`, with
+ * `authorization_servers` derived from `serverUrl`/`orgId` (the BuildBase
+ * issuer). No platform round-trip.
  */
 export function buildProtectedResourceMetadata(
   requestPath: string,
-  config: AgentReadyConfig,
-  bundle: AgentReadinessBundle
+  config: AgentReadyConfig
 ): DiscoveryDocument | null {
-  const resources = bundle.protectedResources ?? [];
+  const resources = config.protectedResources ?? [];
   if (!resources.length) return null;
 
   const normalized = requestPath.replace(/\/+$/, '') || PROTECTED_RESOURCE_PREFIX;
+  const authServer = `${trimTrailingSlash(config.serverUrl)}/org/${config.orgId}`;
+  const built = resources.map(r => {
+    const resource = r.resource ?? trimTrailingSlash(config.siteUrl);
+    return {
+      path: protectedResourceWellKnownPath(resource),
+      metadata: {
+        resource,
+        authorization_servers: [authServer],
+        bearer_methods_supported: r.bearerMethods ?? ['header'],
+        ...(r.scopes?.length ? { scopes_supported: r.scopes } : {}),
+        ...(r.documentationUrl ? { resource_documentation: r.documentationUrl } : {}),
+      },
+    };
+  });
 
-  // Exact path match first (handles multiple resources at distinct paths).
-  const match = resources.find(r => protectedResourceWellKnownPath(r.resource) === normalized);
+  const match = built.find(b => b.path === normalized);
   if (match) return jsonDoc(match.metadata, config);
-
-  // Bare `/.well-known/oauth-protected-resource` with a single resource: serve it.
-  if (normalized === PROTECTED_RESOURCE_PREFIX && resources.length === 1) {
-    return jsonDoc(resources[0].metadata, config);
+  if (normalized === PROTECTED_RESOURCE_PREFIX && built.length === 1) {
+    return jsonDoc(built[0].metadata, config);
   }
-
   return null;
 }
 
@@ -427,16 +622,17 @@ export function buildSecurityTxt(config: AgentReadyConfig): DiscoveryDocument | 
   };
 }
 
-/** The org-authored llms.txt, or null when the org hasn't set one. */
-export function buildLlmsTxt(
-  config: AgentReadyConfig,
-  bundle: AgentReadinessBundle
-): DiscoveryDocument | null {
-  if (!bundle.llmsTxt) return null;
+/**
+ * The `/llms.txt` document from `config.llmsTxt` (app-authored). Returns null
+ * when not set — serve your own static file instead. llms.txt is app content,
+ * not platform-managed.
+ */
+export function buildLlmsTxt(config: AgentReadyConfig): DiscoveryDocument | null {
+  if (!config.llmsTxt) return null;
   return {
     status: 200,
     contentType: TEXT_CT,
-    body: bundle.llmsTxt,
+    body: config.llmsTxt,
     cacheControl: cacheHeader(config.cacheTtlSeconds ?? DEFAULT_CACHE_TTL),
   };
 }
@@ -502,14 +698,6 @@ export function buildAuthMd(
   }
   const as = bundle.authorizationServer;
   if (!as) return null;
-  const resources = (bundle.protectedResources ?? []).map(r => `- \`${r.resource}\``).join('\n');
-  const scopes = Array.from(
-    new Set(
-      (bundle.protectedResources ?? []).flatMap(
-        r => (r.metadata?.scopes_supported as string[] | undefined) ?? []
-      )
-    )
-  );
   const body = `# Agent Authentication
 
 ${config.site.name} supports AI-agent access via OAuth 2.0 (authorization code + PKCE).
@@ -518,18 +706,17 @@ ${config.site.name} supports AI-agent access via OAuth 2.0 (authorization code +
 - Issuer: \`${as.issuer}\`
 - Metadata (RFC 8414): ${as.metadataUrl}
 
-Fetch the metadata document above for the \`authorization_endpoint\`, \`token_endpoint\`, and supported grant types / PKCE methods.
+Fetch the metadata document above for the \`authorization_endpoint\`, \`token_endpoint\`, supported grant types / PKCE methods, and — when the app allows it — the dynamic client \`registration_endpoint\` (RFC 7591).
 
 ## Protected resources (RFC 9728)
-${resources || '- See `/.well-known/oauth-protected-resource`'}
+See \`/.well-known/oauth-protected-resource\`, which lists the resource, its supported scopes, and the authorization server(s) that can issue tokens for it.
 
-Each resource publishes its metadata at \`/.well-known/oauth-protected-resource\`, listing the authorization server(s) that can issue tokens for it.
-${scopes.length ? `\n## Scopes\n${scopes.map(s => `- \`${s}\``).join('\n')}\n` : ''}
 ## How an agent authenticates
 1. Discover this document and \`/.well-known/oauth-protected-resource\`.
 2. Fetch the authorization-server metadata for the endpoints.
-3. Run the authorization-code flow with PKCE (S256), requesting the scopes above and the target \`resource\`.
-4. Exchange the code for an access token and call the API with \`Authorization: Bearer <token>\`.
+3. Register a client (dynamic registration) or use a pre-issued client_id.
+4. Run the authorization-code flow with PKCE (S256), requesting the scopes and target \`resource\`.
+5. Exchange the code for an access token and call the API with \`Authorization: Bearer <token>\`.
 
 Documentation: ${config.site.documentationUrl ?? config.siteUrl}
 `;
@@ -545,6 +732,208 @@ function jsonDoc(value: unknown, config: AgentReadyConfig): DiscoveryDocument {
   };
 }
 
+// ─── Site documents (robots.txt, sitemap.xml, markdown negotiation, Link) ────
+
+/** Strip CR/LF (and other control chars) so a config value can't inject extra
+ * robots.txt directives on its own line. */
+function robotsValue(value: string | number): string {
+  // eslint-disable-next-line no-control-regex
+  return String(value).replace(/[\x00-\x1f\x7f]/g, '');
+}
+
+function renderRobotsPolicy(policy: RobotsPolicy, contentSignals?: ContentSignals): string {
+  const agents = Array.isArray(policy.userAgent) ? policy.userAgent : [policy.userAgent];
+  const lines = agents.map(a => `User-agent: ${robotsValue(a)}`);
+  if (contentSignals) {
+    const signals = [
+      ...(contentSignals.search !== undefined
+        ? [`search=${contentSignals.search ? 'yes' : 'no'}`]
+        : []),
+      ...(contentSignals.aiInput !== undefined
+        ? [`ai-input=${contentSignals.aiInput ? 'yes' : 'no'}`]
+        : []),
+      ...(contentSignals.aiTrain !== undefined
+        ? [`ai-train=${contentSignals.aiTrain ? 'yes' : 'no'}`]
+        : []),
+    ];
+    if (signals.length) lines.push(`Content-Signal: ${signals.join(', ')}`);
+  }
+  for (const p of policy.allow ?? []) lines.push(`Allow: ${robotsValue(p)}`);
+  for (const p of policy.disallow ?? []) lines.push(`Disallow: ${robotsValue(p)}`);
+  if (policy.crawlDelay !== undefined) lines.push(`Crawl-delay: ${robotsValue(policy.crawlDelay)}`);
+  return lines.join('\n');
+}
+
+/**
+ * robots.txt with AI-bot policy groups, Content Signals, and sitemap
+ * references. Always returns a document — with no `config.robots` it emits an
+ * allow-all default policy plus an explicit `Allow: /` group per known AI bot.
+ */
+export function buildRobotsTxt(config: AgentReadyConfig): DiscoveryDocument {
+  const robots = config.robots ?? {};
+  const site = trimTrailingSlash(config.siteUrl);
+  const policies = robots.policies ?? [{ userAgent: '*', allow: ['/'] }];
+
+  const aiBots = robots.aiBots ?? 'allow';
+  const aiPolicies: RobotsPolicy[] =
+    aiBots === 'allow'
+      ? [{ userAgent: [...AI_BOT_USER_AGENTS], allow: ['/'] }]
+      : aiBots === 'deny'
+        ? [{ userAgent: [...AI_BOT_USER_AGENTS], disallow: ['/'] }]
+        : aiBots;
+
+  const sitemaps = robots.sitemaps ?? (config.sitemap ? [`${site}/sitemap.xml`] : []);
+
+  const groups = [
+    `# robots.txt — agent-ready. See ${site}/llms.txt and ${site}/.well-known/agent.json`,
+    // Content Signals attach to the first (usually `*`) group.
+    ...policies.map((p, i) => renderRobotsPolicy(p, i === 0 ? robots.contentSignals : undefined)),
+    ...aiPolicies.map(p => renderRobotsPolicy(p)),
+    ...(sitemaps.length ? [sitemaps.map(s => `Sitemap: ${robotsValue(s)}`).join('\n')] : []),
+  ];
+
+  return {
+    status: 200,
+    contentType: TEXT_CT,
+    body: groups.join('\n\n') + '\n',
+    cacheControl: cacheHeader(config.cacheTtlSeconds ?? DEFAULT_CACHE_TTL),
+  };
+}
+
+/** Clamp a sitemap `<priority>` to the spec's 0.0–1.0 range. */
+function clampPriority(value: number): string {
+  const n = typeof value === 'number' && Number.isFinite(value) ? value : 0.5;
+  return String(Math.min(1, Math.max(0, n)));
+}
+
+function escapeXml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
+/**
+ * A minimal sitemap.xml from `config.sitemap.urls`, or null when not
+ * configured. Meant for API-first apps that would otherwise have no sitemap —
+ * apps with real content pipelines (e.g. next-sitemap) should keep those and
+ * omit `config.sitemap`.
+ */
+export function buildSitemap(config: AgentReadyConfig): DiscoveryDocument | null {
+  const urls = config.sitemap?.urls;
+  if (!urls?.length) return null;
+  const site = trimTrailingSlash(config.siteUrl);
+
+  const entries = urls.map(u => {
+    const url: SitemapUrl = typeof u === 'string' ? { loc: u } : u;
+    const loc = /^https?:\/\//.test(url.loc)
+      ? url.loc
+      : `${site}${url.loc.startsWith('/') ? '' : '/'}${url.loc}`;
+    const fields = [
+      `    <loc>${escapeXml(loc)}</loc>`,
+      ...(url.lastmod ? [`    <lastmod>${escapeXml(url.lastmod)}</lastmod>`] : []),
+      ...(url.changefreq
+        ? [`    <changefreq>${escapeXml(String(url.changefreq))}</changefreq>`]
+        : []),
+      ...(url.priority !== undefined
+        ? // Clamp to the spec's 0.0–1.0 range; non-numeric input falls back to 0.5.
+          [`    <priority>${clampPriority(url.priority)}</priority>`]
+        : []),
+    ];
+    return `  <url>\n${fields.join('\n')}\n  </url>`;
+  });
+
+  const body =
+    '<?xml version="1.0" encoding="UTF-8"?>\n' +
+    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' +
+    entries.join('\n') +
+    '\n</urlset>\n';
+
+  return {
+    status: 200,
+    contentType: XML_CT,
+    body,
+    cacheControl: cacheHeader(config.cacheTtlSeconds ?? DEFAULT_CACHE_TTL),
+  };
+}
+
+/**
+ * True when an `Accept` header prefers markdown (`text/markdown` /
+ * `text/x-markdown`) over `text/html` — q-value aware, so
+ * `text/html;q=0.5, text/markdown` is markdown but `text/markdown;q=0.1,
+ * text/html` is not. A bare wildcard does not count as a markdown preference.
+ */
+export function wantsMarkdown(acceptHeader: string | null | undefined): boolean {
+  if (!acceptHeader) return false;
+  let markdownQ = 0;
+  let htmlQ = 0;
+  for (const part of acceptHeader.split(',')) {
+    const [rawType, ...params] = part.trim().split(';');
+    const type = rawType.trim().toLowerCase();
+    let q = 1;
+    for (const param of params) {
+      const [k, v] = param.split('=').map(s => s.trim());
+      if (k === 'q') {
+        const parsed = Number(v);
+        if (!Number.isNaN(parsed)) q = parsed;
+      }
+    }
+    if (type === 'text/markdown' || type === 'text/x-markdown') {
+      markdownQ = Math.max(markdownQ, q);
+    } else if (type === 'text/html' || type === 'text/*' || type === '*/*') {
+      htmlQ = Math.max(htmlQ, q);
+    }
+  }
+  return markdownQ > 0 && markdownQ >= htmlQ;
+}
+
+/**
+ * Markdown content negotiation: pick the markdown or HTML variant of a page
+ * per the `Accept` header. The returned document carries `vary: 'Accept'` —
+ * forward it so caches key on the header.
+ */
+export function negotiateMarkdown(
+  acceptHeader: string | null | undefined,
+  variants: { html: string; markdown: string },
+  config?: Pick<AgentReadyConfig, 'cacheTtlSeconds'>
+): DiscoveryDocument {
+  const markdown = wantsMarkdown(acceptHeader);
+  return {
+    status: 200,
+    contentType: markdown ? MARKDOWN_CT : 'text/html; charset=utf-8',
+    body: markdown ? variants.markdown : variants.html,
+    cacheControl: cacheHeader(config?.cacheTtlSeconds ?? DEFAULT_CACHE_TTL),
+    vary: 'Accept',
+  };
+}
+
+/**
+ * Value for a `Link` response header advertising this app's discovery
+ * documents (llms.txt, Agent Card, and — when configured — sitemap, API
+ * catalog, MCP server card). Sync and pure (no platform fetch), so it's safe
+ * in edge middleware.
+ */
+export function buildDiscoveryLinkHeader(config: AgentReadyConfig): string {
+  const site = trimTrailingSlash(config.siteUrl);
+  const links = [
+    `<${site}/llms.txt>; rel="describedby"; type="text/plain"`,
+    `<${site}/.well-known/agent.json>; rel="describedby"; type="application/json"`,
+  ];
+  if (config.sitemap || config.robots?.sitemaps?.length) {
+    const sitemap = config.robots?.sitemaps?.[0] ?? `${site}/sitemap.xml`;
+    links.push(`<${sitemap}>; rel="sitemap"; type="application/xml"`);
+  }
+  if (config.apiCatalog?.length) {
+    links.push(`<${site}${API_CATALOG_PATH}>; rel="api-catalog"; type="${LINKSET_CT}"`);
+  }
+  if (config.mcpServerCard) {
+    links.push(`<${site}${MCP_CARD_PATH}>; rel="mcp-server"; type="application/json"`);
+  }
+  return links.join(', ');
+}
+
 // ─── Dispatcher ────────────────────────────────────────────────────────────────
 
 /**
@@ -555,8 +944,8 @@ function jsonDoc(value: unknown, config: AgentReadyConfig): DiscoveryDocument {
  * oauth-authorization-server (pointer), agent-skills index + SKILL.md,
  * security.txt, api-catalog (RFC 9727), and the MCP server card.
  *
- * Root-level docs are served via their own builders (they aren't under
- * `.well-known`): `buildLlmsTxt` for `/llms.txt` and `buildAuthMd` for `/auth.md`.
+ * Root-level docs (`/robots.txt`, `/llms.txt`, `/auth.md`, …) are not handled
+ * here — use {@link resolveAgentPath}, which covers both, for new wiring.
  */
 export async function resolveWellKnown(
   requestPath: string,
@@ -581,17 +970,27 @@ export async function resolveWellKnown(
     return buildSkillMd(path, config);
   }
 
-  // RFC 8414 pointer: forward agents to the platform's canonical metadata URL.
-  if (path === '/.well-known/oauth-authorization-server') {
+  // RFC 8414 (`oauth-authorization-server`) and the OIDC discovery alias
+  // (`openid-configuration`): serve the platform's full authorization-server
+  // metadata from this origin (cached, fail-soft proxy). Both paths return the
+  // same document — the auth/token endpoints an agent needs are identical, and
+  // serving the OIDC path stops agents that only probe it from seeing a 404.
+  // Strict clients should still use the canonical platform URL (the issuer's
+  // origin); this endpoint exists so origin-only discovery finds valid metadata.
+  if (
+    path === '/.well-known/oauth-authorization-server' ||
+    path === '/.well-known/openid-configuration'
+  ) {
     const bundle = await fetchAgentReadiness(config);
-    const metadataUrl = bundle.authorizationServer?.metadataUrl;
-    if (!metadataUrl) return null;
+    const as = bundle.authorizationServer;
+    if (!as?.metadataUrl) return null;
+    const metadata = await fetchAuthServerMetadata(as.metadataUrl, config);
+    if (metadata) return jsonDoc(metadata, config);
+    // Proxy fetch failed — fall back to the pointer shape.
     return jsonDoc(
       {
-        ...(bundle.authorizationServer?.issuer
-          ? { issuer: bundle.authorizationServer.issuer }
-          : {}),
-        oauth_authorization_server_metadata: metadataUrl,
+        ...(as.issuer ? { issuer: as.issuer } : {}),
+        oauth_authorization_server_metadata: as.metadataUrl,
       },
       config
     );
@@ -606,8 +1005,49 @@ export async function resolveWellKnown(
   }
 
   if (path.startsWith(PROTECTED_RESOURCE_PREFIX)) {
-    const bundle = await fetchAgentReadiness(config);
-    return buildProtectedResourceMetadata(path, config, bundle);
+    // App-owned, built from local config — no platform round-trip.
+    return buildProtectedResourceMetadata(path, config);
+  }
+
+  return null;
+}
+
+/**
+ * Superset of {@link resolveWellKnown}: resolves ANY agent-facing path — the
+ * root-level documents (`/robots.txt`, `/sitemap.xml`, `/llms.txt`,
+ * `/auth.md`, `/security.txt`) plus everything under `/.well-known/*`. One
+ * catch-all (or middleware) wired to this function covers the app's entire
+ * agent-readiness surface. Returns null for paths this app doesn't serve.
+ */
+export async function resolveAgentPath(
+  requestPath: string,
+  config: AgentReadyConfig
+): Promise<DiscoveryDocument | null> {
+  const path = requestPath.replace(/\/+$/, '') || requestPath;
+
+  if (path === '/robots.txt') {
+    return buildRobotsTxt(config);
+  }
+
+  if (path === '/sitemap.xml') {
+    return buildSitemap(config);
+  }
+
+  if (path === '/llms.txt') {
+    return buildLlmsTxt(config);
+  }
+
+  if (path === '/auth.md') {
+    return buildAuthMd(config, await fetchAgentReadiness(config));
+  }
+
+  // RFC 9116 legacy location (canonical is /.well-known/security.txt).
+  if (path === '/security.txt') {
+    return buildSecurityTxt(config);
+  }
+
+  if (path.startsWith('/.well-known')) {
+    return resolveWellKnown(path, config);
   }
 
   return null;
@@ -645,26 +1085,32 @@ export function provideWebMcpTools(tools: WebMcpTool[]): boolean {
 // cacheControl }`, or the raw bundle). It performs no I/O beyond fetching the
 // platform bundle and never touches a `Request`/`Response` or `(req, res)`.
 //
-// Wire it into any framework in a couple of lines — call `resolveWellKnown` for
-// the `.well-known/*` paths and `buildLlmsTxt` for `/llms.txt`, then hand the
+// Wire it into any framework in a couple of lines — call `resolveAgentPath`
+// for every agent-facing path (root docs + `.well-known/*`), then hand the
 // returned document to your framework's response. Examples:
 //
-//   // Next.js App Router — app/.well-known/[...path]/route.ts
+//   // Next.js App Router — app/.well-known/[...path]/route.ts (and identical
+//   // two-line routes at app/robots.txt/route.ts, app/llms.txt/route.ts, …)
 //   export async function GET(req: Request) {
 //     const { pathname } = new URL(req.url);
-//     const doc = await resolveWellKnown(pathname, config);
+//     const doc = await resolveAgentPath(pathname, config);
 //     if (!doc) return new Response('{"error":"not_found"}', { status: 404 });
 //     return new Response(doc.body, {
 //       status: doc.status,
-//       headers: { 'Content-Type': doc.contentType, 'Cache-Control': doc.cacheControl },
+//       headers: {
+//         'Content-Type': doc.contentType,
+//         'Cache-Control': doc.cacheControl,
+//         ...(doc.vary ? { Vary: doc.vary } : {}),
+//       },
 //     });
 //   }
 //
-//   // Next.js Pages Router / Express — (req, res)
-//   const path = `/.well-known/${[].concat(req.query.path).join('/')}`;
-//   const doc = await resolveWellKnown(path, config);
-//   if (!doc) return res.status(404).json({ error: 'not_found' });
-//   res.status(doc.status)
-//      .setHeader('Content-Type', doc.contentType)
-//      .setHeader('Cache-Control', doc.cacheControl)
-//      .send(doc.body);
+//   // Express — one middleware covers everything
+//   app.use(async (req, res, next) => {
+//     const doc = await resolveAgentPath(req.path, config);
+//     if (!doc) return next();
+//     res.status(doc.status)
+//        .setHeader('Content-Type', doc.contentType)
+//        .setHeader('Cache-Control', doc.cacheControl)
+//        .send(doc.body);
+//   });

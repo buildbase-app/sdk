@@ -235,3 +235,9 @@ export type {
 } from './api/types';
 
 export { SDKEvent } from './providers/events/types';
+
+// ─── Public model types (appear in exported hook/API signatures) ───────────────
+export type { IUser } from './api/types';
+export type { TranslationKey } from './i18n/types';
+export type { ISettings } from './providers/types';
+export type { IWorkspace } from './providers/workspace/types';

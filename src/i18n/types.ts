@@ -184,6 +184,9 @@ export interface SDKMessages {
     };
     plan: string;
     invoicesTab: string;
+    tabsLabel: string;
+    endsOn: string;
+    versionLabel: string;
     changePlanButton: string;
     noPlanAssigned: string;
     free: string;
@@ -224,6 +227,7 @@ export interface SDKMessages {
     trialBadge: string;
   };
   users: {
+    emailPlaceholder: string;
     title: string;
     adminOnly: string;
     inviteByEmail: string;
@@ -339,6 +343,7 @@ export interface SDKMessages {
     imageUrlPlaceholder: string;
     imageUrlDescription: string;
     previewLabel: string;
+    previewImageAlt: string;
     success: string;
     chooseEmoji: string;
     customImageUrl: string;
@@ -447,6 +452,7 @@ export interface SDKMessages {
     billingInterval: string;
   };
   beta: {
+    logoAlt: string;
     nameLabel: string;
     emailLabel: string;
     submitText: string;

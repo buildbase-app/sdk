@@ -160,6 +160,9 @@ export const ja: SDKMessages = {
     },
     plan: 'プラン',
     invoicesTab: '請求書',
+    tabsLabel: 'サブスクリプションタブ',
+    endsOn: '(終了日 {date})',
+    versionLabel: 'バージョン {version}',
     changePlanButton: 'プランを変更',
     noPlanAssigned: 'プランが割り当てられていません',
     free: '無料',
@@ -206,6 +209,7 @@ export const ja: SDKMessages = {
     trialBadge: '{days}日間トライアル',
   },
   users: {
+    emailPlaceholder: 'example@example.com',
     title: 'ワークスペースメンバー',
     adminOnly: 'ワークスペース管理者のみがユーザーとロールを管理できます。',
     inviteByEmail: 'メールでメンバーを招待',
@@ -329,6 +333,7 @@ export const ja: SDKMessages = {
     imageUrlDescription:
       'ワークスペース画像の有効なURLを入力してください。PNG、JPG、SVG形式に対応しています。',
     previewLabel: 'プレビュー：',
+    previewImageAlt: 'ワークスペースのプレビュー',
     success: 'ワークスペース設定が正常に保存されました',
     chooseEmoji: '絵文字を選択',
     customImageUrl: 'カスタム画像URL',
@@ -464,6 +469,7 @@ export const ja: SDKMessages = {
     billingInterval: '請求間隔',
   },
   beta: {
+    logoAlt: 'ロゴ',
     nameLabel: '名前',
     emailLabel: 'メールアドレス',
     submitText: '送信',

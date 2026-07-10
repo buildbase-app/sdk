@@ -8,6 +8,37 @@ Legend: 🔴 critical · 🟠 high · 🟡 medium · ⚪ low
 
 ---
 
+## MCP hardening batch — done (2026-07-09, v0.0.53)
+
+Separate review of the 0.0.52 MCP server (not covered above). All landed:
+
+- [x] 🔴 **`builtinTools` defaulted to `'all'`** — any accepted token got destructive/billing built-ins. Default is now `'readonly'` (least privilege); writes are opt-in. (`mcp-server.ts`)
+- [x] 🔴 **Scopeless tokens bypassed scope gating** — `visibleTools` returned all tools when `scopes` was `undefined`. Now `undefined`/`[]` are equivalent and a scoped tool needs all its scopes. (`mcp-server.ts`)
+- [x] 🟠 **Mass-assignment in `update_workspace` / `update_user_profile`** — open `z.record` → backend `as any`. Replaced with `.strict()` field allowlists. (`mcp-tools.ts`)
+- [x] 🟠 **`verifyClientJwt` didn't require `exp`** — non-expiring tokens accepted. `requireExp` (default true) + optional `issuer`/`audience`. (`agent-bridge.ts`)
+- [x] 🟠 **No request-body cap / no rate-limit surface** — added `maxRequestBytes` (default 1 MiB, 413) + `Content-Length` pre-check on the fetch adapter, and a stateless `rateLimit` gate (fails closed, 429). (`mcp-server.ts`)
+- [x] 🟡 **`tools/list` schema conversion unwrapped** — a bad zod schema threw an unhandled 500. Now caught, reported to `onError`, served a permissive object schema. (`mcp-server.ts`)
+- [x] 🟡 **Bare `fetch` with no timeout in discovery** — `fetchAgentReadiness`/auth-server metadata now use `AbortController` + `fetchTimeoutMs` (default 5000), fail-soft. (`agent-discovery.ts`)
+- [x] 🟡 **Unescaped interpolation** — `bearerChallenge` header values (quoted-string escape + CR/LF strip); robots.txt directive values (CR/LF strip); sitemap `changefreq` (XML-escape) / `priority` (clamp 0–1). (`agent-bridge.ts`, `agent-discovery.ts`)
+- [x] 🟡 **`useConnectedAgents().refresh()` had no abort guard** — now `AbortSignal` + stale-response guard + unmount abort. (`connected-agents/hooks.ts`)
+
+Follow-up (2026-07-09, same version): the deferred MCP items are now largely closed — **CORS/OPTIONS** added (driven by `allowedOrigins`), **tool-error redaction** via `formatToolError`. Still deferred: built-in `send_notification` fan-out has no rate limit of its own (mitigated by the `rateLimit` gate).
+
+## Batch 3 (correctness / a11y) + types — done (2026-07-09, v0.0.53)
+
+- [x] 🟡 **401 left auth context authenticated** — `useWorkspaceApiWithOs.onUnauthorized` now clears stored + redux session. (`use-workspace-api.ts`)
+- [x] 🟡 **Permission overrides couldn't revoke; unknown roles got member perms** — presence-based tiers (explicit `[]` revokes); unknown roles denied unless a known `defaultRole` is configured. Doc corrected (`applySettingRestrictions` only handles `canInviteMembers`). (`permissions.ts`) ⚠️ behavior change.
+- [x] 🟠 **Keyboard-inaccessible settings trigger** — `role=button`/`tabIndex`/Enter-Space/`aria-label`. (`workspace/provider.tsx`)
+- [x] 🟠 **Forbidden palette class** `focus:ring-red-600` → `focus:ring-destructive`; `lint:tokens` regex widened (now catches `ring`/`outline`/`from`/`via`/`to`/`fill`/`stroke`/`shadow`).
+- [x] 🟡 **ARIA tabs without tab semantics** — completed: ids, `aria-controls`, roving `tabIndex`, arrow keys, real `role=tabpanel` panels. (`SettingsSubscription.tsx`)
+- [x] 🟠 **Hardcoded English strings** — subscription tabs label, "(ends {date})", "Version {n}", invite-email placeholder, logo / workspace-preview alt text → i18n keys in all 8 locales.
+- [x] 🟡 **Public-signature types not exported** — `IUser`, `IWorkspace`, `ISettings`, `TranslationKey` now exported from core (both entries). (`WorkspaceContextValue` deferred — two definitions; needs disambiguation.)
+- [x] 🟡 **Unbounded `lucide-react`** → `>=0.544.0 <1`.
+
+Deferred from Batch 3 (larger, want tests first): `useSaaSWorkspaces` lifecycle into a real provider; selector `useSyncExternalStore` rework; `any`-index signatures; `SettingsSubscription.tsx` extraction.
+
+---
+
 ## Core / API layer
 
 - [ ] 🔴 **Retries replay non-idempotent POSTs — double-charge risk.** `src/lib/api-base.ts:208-243` retries any method on network error/5xx, including `consumeCredits`, `recordUsage`, `purchaseCredits`, `createCheckoutSession` (`workspace-api.ts:736,523,768,385`). Restrict retries to idempotent methods or auto-attach the backend-supported `idempotencyKey`.
@@ -15,7 +46,7 @@ Legend: 🔴 critical · 🟠 high · 🟡 medium · ⚪ low
 - [ ] 🟠 **`validateRedirectUrl`/`safeRedirect` don't prevent open redirects.** `src/lib/security.ts:10-50`. Protocol-only check (`https://evil.com` passes); safe relative paths (`/dashboard`) throw in `new URL()` and silently fall back; `fallbackUrl` is never validated. Add same-origin/allowlist validation + relative-path support via `new URL(url, origin)`.
 - [x] 🟡 **`unwrapResponse` uses `result.data || result`.** `src/lib/api-base.ts:325` — falsy payloads (`0`, `false`, `''`, `null`) return the whole envelope cast to `T`. Use `result.data !== undefined ? result.data : result`. (~25 call sites affected.)
 - [x] 🟡 **Path params not URI-encoded.** `workspace-api.ts:137,175,263,374`, `user-api.ts:41` — IDs containing `/ ? # ../` retarget the request path; query params in the same file ARE encoded. Wrap path segments in `encodeURIComponent()`.
-- [ ] 🟡 **Permission overrides can't revoke; unknown roles gain member perms.** `src/lib/permissions.ts:164-184` — `length > 0` checks mean `[]` (explicit revoke) falls through to defaults; unknown roles fall back to `member` (grant-by-default). Also doc at :121 claims `applySettingRestrictions` handles `canCreateWorkspace` but it only handles `canInviteMembers` (:210-226). Distinguish "present but empty" from "absent"; deny unknown roles.
+- [x] 🟡 **Permission overrides can't revoke; unknown roles gain member perms.** `src/lib/permissions.ts:164-184` — `length > 0` checks mean `[]` (explicit revoke) falls through to defaults; unknown roles fall back to `member` (grant-by-default). Also doc at :121 claims `applySettingRestrictions` handles `canCreateWorkspace` but it only handles `canInviteMembers` (:210-226). Distinguish "present but empty" from "absent"; deny unknown roles.
 - [ ] 🟡 **`formatCents` breaks zero-decimal currencies (JPY).** `src/api/billing/currency-utils.ts:95-97` — `formatCents(1000,'jpy')` → "¥10.00" instead of ¥1,000; `jpy` is in `PLAN_CURRENCY_CODES`. Same bug in `formatOverageRate`/`formatQuotaWithPrice`. Maintain a zero-decimal set or use `Intl.NumberFormat`.
 - [ ] 🟡 **~20× copy-pasted response handling + 3 divergent conventions.** `workspace-api.ts:278-865` repeats fetch→throwResponseError→unwrapResponse; others use `fetchJson`; `selectFreePlan` (:410) / `AuthApi.requestAuth` (auth-api.ts:45) return raw `response.json()` unchecked. Add `BaseApi.fetchUnwrapped<T>()`; one envelope convention.
 - [ ] 🟡 **WorkspaceApi methods can't be aborted.** All ~40 methods lack `AbortSignal` params (Auth/User/Settings APIs have them). Thread an optional `signal` through.
@@ -27,7 +58,7 @@ Legend: 🔴 critical · 🟠 high · 🟡 medium · ⚪ low
 - [ ] 🔴 **`useSaaSSettings` shared promise bound to first caller's AbortSignal; StrictMode kills settings for the session.** `src/providers/os/hooks.ts:38-85` — module-global `_settingsFetchPromise` uses a component signal; on abort all waiters get `null`, error is swallowed, effect deps never re-fire. Use a detached AbortController for the deduped fetch, or re-arm while `settings === null && !_settingsFetchPromise`.
 - [ ] 🟠 **`useSaaSWorkspaces` singleton logic lives per hook instance.** `workspace/hooks.ts:202-220, 228-230, 233-273, 385-417` — init effect, dedup refs, auto-switch fallback are per-instance while the hook mounts in many components: double fetches, and `onWorkspaceChange` / `workspace:changed` can fire multiple times per switch (implementors mint tokens there). Move lifecycle into a real provider (`WorkspaceProvider` at provider.tsx:45-47 is currently an empty passthrough); keep the hook as selector/actions.
 - [ ] 🟠 **Selector API doesn't bail out of re-renders.** `contexts/shared/createContext.tsx:73-102`, `useAppSelector.ts:35-56` — `useContext` on the whole state context means every dispatch re-renders every consumer of `useSaaSAuth`/`usePermissions`/`useUIVisibility`/`useSaaSWorkspaces`; docs claiming selector bailout are false; `useSelectWithEquality` writes refs during render. Rework with `useSyncExternalStore` over a mutable store (or `use-context-selector`).
-- [ ] 🟡 **401 leaves auth context authenticated.** `use-workspace-api.ts:20-22` — `onUnauthorized` never dispatches `removeSession()`; dead session keeps authenticated UI up. Also `session.expires` (auth/utils.ts:38-44) is stamped but never checked — dead field.
+- [x] 🟡 **401 leaves auth context authenticated.** `use-workspace-api.ts:20-22` — `onUnauthorized` never dispatches `removeSession()`; dead session keeps authenticated UI up. Also `session.expires` (auth/utils.ts:38-44) is stamped but never checked — dead field.
 - [ ] 🟡 **`UserProvider` shares `error`/`loading` across attributes+features pipelines.** `user/provider.tsx:38-158` — cross-stomping flags, stale error never cleared, mutation refetches have no abort signal, `t` missing from deps. Split per-resource state.
 - [ ] 🟡 **Hook return shapes drift from `{ data, loading, error, refetch }` convention.** `useUserAttributes`/`useUserFeatures` → `isLoading`/`refreshX`; `useSaaSSettings` → no loading/error at all (WorkspaceSwitcher flashes wrong UI on `?? true` defaults until settings arrive); `useSaaSWorkspaces` returns an unmemoized ~25-key object every render (`hooks.ts:618-646`).
 - [ ] ⚪ **Un-cleared 300ms timer in `createWorkspace`.** `workspace/hooks.ts:308-310` — plan picker can open after navigate/sign-out. Clear on unmount or open after switch resolves.
@@ -35,12 +66,12 @@ Legend: 🔴 critical · 🟠 high · 🟡 medium · ⚪ low
 
 ## UI components / screens
 
-- [ ] 🟠 **Hardcoded English strings bypass i18n.** `SettingsSubscription.tsx:732` `(ends {date})`; `:830` `Version {n}`; `:465` `aria-label="Subscription tabs"`; `SettingsUsers.tsx:478` placeholder email; `provider.tsx:561` + `BetaForm.tsx:268,270` alt texts. Add keys to types.ts + all 8 locales.
-- [ ] 🟠 **Keyboard-inaccessible settings trigger in personal mode.** `provider.tsx:146` — plain `div onClick` with no role/tabIndex/key handler; keyboard/AT users can't open settings when `showSwitcher` is false. Use `DialogTrigger asChild`.
+- [x] 🟠 **Hardcoded English strings bypass i18n.** `SettingsSubscription.tsx:732` `(ends {date})`; `:830` `Version {n}`; `:465` `aria-label="Subscription tabs"`; `SettingsUsers.tsx:478` placeholder email; `provider.tsx:561` + `BetaForm.tsx:268,270` alt texts. Add keys to types.ts + all 8 locales.
+- [x] 🟠 **Keyboard-inaccessible settings trigger in personal mode.** `provider.tsx:146` — plain `div onClick` with no role/tabIndex/key handler; keyboard/AT users can't open settings when `showSwitcher` is false. Use `DialogTrigger asChild`.
 - [ ] 🟠 **`SettingsSubscription.tsx` is 1,467 lines.** Extraction seams: `SubscriptionStatusBadge` (696-747), `TrialBanner` (645-686), one `SubscriptionNoticeBanner` primitive replacing 4 near-identical banners (905-1021), `PlanDetailsSection` (1023-1239), `CancelSubscriptionDialog`/`ResumeSubscriptionDialog` (1332-1462).
-- [ ] 🟠 **Forbidden palette class.** `SettingsSubscription.tsx:1450` `focus:ring-red-600` → `focus:ring-destructive`. (Note: current lint:tokens grep doesn't catch `ring-*` — consider widening the regex.)
+- [x] 🟠 **Forbidden palette class.** `SettingsSubscription.tsx:1450` `focus:ring-red-600` → `focus:ring-destructive`. (Note: current lint:tokens grep doesn't catch `ring-*` — consider widening the regex.)
 - [ ] 🟡 **Blank pane instead of `<NoPermission/>`.** `SettingsSubscription.tsx:415` `if (!canViewBilling) return null` (after the skeleton return → skeleton flash then nothing). Siblings do it right.
-- [ ] 🟡 **ARIA tabs without tab semantics.** `SettingsSubscription.tsx:465-493` — `role="tablist"/"tab"` but no `aria-controls`/ids/tabpanel/arrow-keys. Complete the pattern or drop the roles.
+- [x] 🟡 **ARIA tabs without tab semantics.** `SettingsSubscription.tsx:465-493` — `role="tablist"/"tab"` but no `aria-controls`/ids/tabpanel/arrow-keys. Complete the pattern or drop the roles.
 - [x] 🟡 **`hasActiveSubscription` wrong while loading.** `SettingsSubscription.tsx:1291` — `subscription?.subscription !== null` is `true` when `undefined`. Use `!= null`.
 - [x] 🟡 **Paid plan with missing interval price renders "Free".** `SubscriptionDialog.tsx:609-613, 889-893` — dead ternary branch; `formatPrice(null)` → `'' || t('pricing.free')`. Show `'—'` for `price === null`.
 - [ ] 🟡 **Mobile/desktop plan rendering duplicated.** `SubscriptionDialog.tsx:543-800` vs `827-1350` (+ third credits copy in `SettingsSubscription.tsx:1196-1235`); `displayCurrency` recomputed inline 6×. Extract `PlanTrialBadge`, `PlanPriceBlock`, `CreditGrantSummary`, `getDisplayCurrency()`.
@@ -52,10 +83,10 @@ Legend: 🔴 critical · 🟠 high · 🟡 medium · ⚪ low
 
 - [x] 🔴 **`/react` d.ts declares ~60 runtime values that don't exist.** `src/react.ts:19` `export type * from './core'` → `rollup-plugin-dts` flattens to value exports in `dist/react/index.d.ts`; runtime bundle has none (verified: `Permission`, `formatCents` missing). README (incl. the UI-config `useUIVisibility`+`Permission` example) and JSDoc teach the broken import. Fix: `export * from './core'` (values) — matches docs/intent.
 - [x] 🟡 **`@hookform/resolvers` is a runtime import but devDependency-only.** Imported in 4 shipped files; silently bundled (contradicts 0.0.50 externalization claim), version-skew risk vs external `zod`/`react-hook-form`. Move to `dependencies`.
-- [ ] 🟡 **Public-signature types not exported.** `IWorkspace`, `ISettings`, `IUser`, `WorkspaceContextValue`, `TranslationKey` appear in exported signatures but aren't name-exported from `/react`. Add to exports.
+- [x] 🟡 **Public-signature types not exported.** `IWorkspace`, `ISettings`, `IUser`, `WorkspaceContextValue`, `TranslationKey` appear in exported signatures but aren't name-exported from `/react`. Add to exports.
 - [ ] 🟡 **`any`-index signatures defeat typing.** `ISettings` (`providers/types.ts:29`) and `NotificationData` (`workspace-api.ts:92`) — use `unknown` index or dedicated `extensions`/`mergeTags` fields. Also `WebMcpTool.execute(input: any)` (`agent-discovery.ts:625`).
 - [x] 🟡 **AGENTS.md still says webhook verification is "Node only".** `AGENTS.md:72` — contradicts 0.0.50 runtime-agnostic fix (README was updated, AGENTS.md missed).
-- [ ] 🟡 **Unbounded `lucide-react >=0.544.0`.** package.json:100 — 0.x releases rename/remove icons; now externalized so consumers get newest. Bound it (`>=0.544.0 <1`).
+- [x] 🟡 **Unbounded `lucide-react >=0.544.0`.** package.json:100 — 0.x releases rename/remove icons; now externalized so consumers get newest. Bound it (`>=0.544.0 <1`).
 - [ ] ⚪ **Branding split.** `@buildbase/sdk` + `BuildBase()` vs `SaaSOSProvider`/`useSaaS*`/`saas-os-` CSS scope. Consider `BuildBaseProvider` alias + deprecation before the API calcifies.
 - [x] ⚪ **Stale i18n comment.** `i18n/types.ts:612` says "3 levels" but `Level4` exists and depth-4 keys are real. (Locale files themselves verified healthy: 8×527 identical keys, compiler-enforced.)
 - [ ] ⚪ **Zero test infrastructure.** Highest-value minimal setup: vitest over `lib/permissions`, `lib/url-params`, `lib/security`, `lib/sha256` + webhook verification, `api/billing/*` pricing math, agent-bridge JWT — plus one packaging test asserting runtime exports match the d.ts (would have caught the 🔴 export bug automatically).

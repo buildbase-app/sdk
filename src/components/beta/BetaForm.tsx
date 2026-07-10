@@ -264,8 +264,9 @@ function Screen({ screen }: { screen: IBetaConfig['screen']['register'] }) {
 }
 
 function Logo({ logo }: { logo: IBetaConfig['logo'] }) {
+  const { t } = useTranslation();
   if (typeof logo === 'string') {
-    return <img src={logo} alt="Logo" className="max-h-24" />;
+    return <img src={logo} alt={t('beta.logoAlt')} className="max-h-24" />;
   }
-  return <img src={logo.bucket?.url} alt="Logo" className="max-h-24" />;
+  return <img src={logo.bucket?.url} alt={t('beta.logoAlt')} className="max-h-24" />;
 }

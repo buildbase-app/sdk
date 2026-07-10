@@ -163,6 +163,9 @@ export const es: SDKMessages = {
     },
     plan: 'Plan',
     invoicesTab: 'Facturas',
+    tabsLabel: 'Pestañas de suscripción',
+    endsOn: '(finaliza {date})',
+    versionLabel: 'Versión {version}',
     changePlanButton: 'Cambiar plan',
     noPlanAssigned: 'Sin plan asignado',
     free: 'Gratis',
@@ -211,6 +214,7 @@ export const es: SDKMessages = {
     trialBadge: 'Prueba de {days} días',
   },
   users: {
+    emailPlaceholder: 'example@example.com',
     title: 'Miembros del espacio de trabajo',
     adminOnly: 'Solo el administrador del espacio de trabajo puede gestionar usuarios y roles.',
     inviteByEmail: 'Invitar miembro por correo electrónico',
@@ -332,6 +336,7 @@ export const es: SDKMessages = {
     imageUrlDescription:
       'Introduce una URL válida para la imagen de tu espacio de trabajo. Compatible con formatos PNG, JPG y SVG.',
     previewLabel: 'Vista previa:',
+    previewImageAlt: 'Vista previa del espacio de trabajo',
     success: 'Configuración del espacio de trabajo guardada correctamente',
     chooseEmoji: 'Elegir emoji',
     customImageUrl: 'URL de imagen personalizada',
@@ -470,6 +475,7 @@ export const es: SDKMessages = {
     billingInterval: 'Intervalo de facturación',
   },
   beta: {
+    logoAlt: 'Logotipo',
     nameLabel: 'Nombre',
     emailLabel: 'Correo electrónico',
     submitText: 'Enviar',

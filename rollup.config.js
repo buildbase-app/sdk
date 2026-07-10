@@ -138,6 +138,21 @@ export default [
     external,
   },
 
+  // ─── @buildbase/sdk/mcp (MCP server, server-only) ──────────────────────────
+  // Separate entry because it needs zod at runtime (tool input validation) —
+  // the core entry stays zod-free.
+  {
+    input: 'src/mcp.ts',
+    preserveEntrySignatures: 'exports-only',
+    treeshake: treeshakeConfig,
+    output: [
+      { file: 'dist/mcp/index.cjs', format: 'cjs', sourcemap: false, inlineDynamicImports: true },
+      { file: 'dist/mcp/index.mjs', format: 'esm', sourcemap: false, inlineDynamicImports: true },
+    ],
+    plugins: createPlugins({ declarationDir: 'dist/mcp/types' }),
+    external,
+  },
+
   // Type declarations are bundled by rollup.dts.config.js in a second rollup
   // invocation (see the `build` script) — running them in this same process
   // raced plugin-typescript's async declaration writes.

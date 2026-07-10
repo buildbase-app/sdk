@@ -475,7 +475,7 @@ function InviteMember({ onInvite, workspaceId }: { onInvite: () => void; workspa
           type="email"
           value={email}
           onChange={e => setEmail(e.target.value)}
-          placeholder="example@example.com"
+          placeholder={t('users.emailPlaceholder')}
         />
       </div>
       <div>

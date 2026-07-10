@@ -162,6 +162,9 @@ export const de: SDKMessages = {
     },
     plan: 'Plan',
     invoicesTab: 'Rechnungen',
+    tabsLabel: 'Abonnement-Tabs',
+    endsOn: '(endet {date})',
+    versionLabel: 'Version {version}',
     changePlanButton: 'Plan ändern',
     noPlanAssigned: 'Kein Plan zugewiesen',
     free: 'Kostenlos',
@@ -210,6 +213,7 @@ export const de: SDKMessages = {
     trialBadge: '{days}-Tage-Testversion',
   },
   users: {
+    emailPlaceholder: 'example@example.com',
     title: 'Arbeitsbereich-Mitglieder',
     adminOnly: 'Nur der Arbeitsbereich-Administrator kann Benutzer und Rollen verwalten.',
     inviteByEmail: 'Mitglied per E-Mail einladen',
@@ -333,6 +337,7 @@ export const de: SDKMessages = {
     imageUrlDescription:
       'Gib eine gültige URL für dein Arbeitsbereich-Bild ein. Unterstützt PNG-, JPG- und SVG-Formate.',
     previewLabel: 'Vorschau:',
+    previewImageAlt: 'Arbeitsbereich-Vorschau',
     success: 'Arbeitsbereich-Einstellungen erfolgreich gespeichert',
     chooseEmoji: 'Emoji wählen',
     customImageUrl: 'Benutzerdefinierte Bild-URL',
@@ -470,6 +475,7 @@ export const de: SDKMessages = {
     billingInterval: 'Abrechnungsintervall',
   },
   beta: {
+    logoAlt: 'Logo',
     nameLabel: 'Name',
     emailLabel: 'E-Mail',
     submitText: 'Absenden',

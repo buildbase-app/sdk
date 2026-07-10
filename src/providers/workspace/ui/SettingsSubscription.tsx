@@ -462,11 +462,31 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
       {/* Tabs — hidden entirely when the invoices tab is disabled (a lone tab is noise) */}
       {showInvoicesTab && (
         <div className="border-b border-border">
-          <nav className="-mb-px flex gap-6" role="tablist" aria-label="Subscription tabs">
+          <nav
+            className="-mb-px flex gap-6"
+            role="tablist"
+            aria-label={t('subscription.tabsLabel')}
+            onKeyDown={e => {
+              if (
+                e.key === 'ArrowLeft' ||
+                e.key === 'ArrowRight' ||
+                e.key === 'Home' ||
+                e.key === 'End'
+              ) {
+                e.preventDefault();
+                setActiveTab(
+                  e.key === 'ArrowLeft' || e.key === 'End' ? 'invoices' : 'subscription'
+                );
+              }
+            }}
+          >
             <button
               type="button"
               role="tab"
+              id="subscription-tab-subscription"
+              aria-controls="subscription-panel-subscription"
               aria-selected={activeTab === 'subscription'}
+              tabIndex={activeTab === 'subscription' ? 0 : -1}
               onClick={() => setActiveTab('subscription')}
               className={`border-b-2 py-3 text-sm font-medium transition-colors ${
                 activeTab === 'subscription'
@@ -479,7 +499,10 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
             <button
               type="button"
               role="tab"
+              id="subscription-tab-invoices"
+              aria-controls="subscription-panel-invoices"
               aria-selected={activeTab === 'invoices'}
+              tabIndex={activeTab === 'invoices' ? 0 : -1}
               onClick={() => setActiveTab('invoices')}
               className={`border-b-2 py-3 text-sm font-medium transition-colors ${
                 activeTab === 'invoices'
@@ -495,7 +518,12 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
 
       {/* Subscription Tab Content */}
       {activeTab === 'subscription' && (
-        <>
+        <div
+          id="subscription-panel-subscription"
+          role="tabpanel"
+          aria-labelledby="subscription-tab-subscription"
+          tabIndex={0}
+        >
           {loading && <LoadingState />}
           {/* Deprecation Notice - Show if user's plan is on an older version */}
           {showChangePlan && isDeprecated && subscription?.subscription && (
@@ -729,13 +757,13 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                               subscription.subscription.stripeCurrentPeriodEnd
                           ) && (
                             <span className="text-xs text-muted-foreground">
-                              (ends{' '}
-                              {formatPeriodEndDate(
-                                formattingLocale,
-                                subscription.subscription.trialEnd ||
-                                  subscription.subscription.stripeCurrentPeriodEnd
-                              )}
-                              )
+                              {t('subscription.endsOn', {
+                                date: formatPeriodEndDate(
+                                  formattingLocale,
+                                  subscription.subscription.trialEnd ||
+                                    subscription.subscription.stripeCurrentPeriodEnd
+                                ),
+                              })}
                             </span>
                           )}
                         {isDeprecated && (
@@ -827,7 +855,9 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
 
                       {isDeprecated && (
                         <p className="text-xs text-warning mt-2">
-                          Version {currentVersion?.version || t('invoices.na')}
+                          {t('subscription.versionLabel', {
+                            version: currentVersion?.version || t('invoices.na'),
+                          })}
                         </p>
                       )}
 
@@ -1279,12 +1309,17 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                 }
               />
             ))}
-        </>
+        </div>
       )}
 
       {/* Invoices Tab Content */}
       {showInvoicesTab && activeTab === 'invoices' && (
-        <>
+        <div
+          id="subscription-panel-invoices"
+          role="tabpanel"
+          aria-labelledby="subscription-tab-invoices"
+          tabIndex={0}
+        >
           {loading && <LoadingState />}
           <WorkspaceSettingsInvoices
             workspaceId={workspaceId}
@@ -1292,7 +1327,7 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
             onViewPricingPlans={() => setActiveTab('subscription')}
             limit={20}
           />
-        </>
+        </div>
       )}
 
       {/* Subscription Dialog */}
@@ -1447,7 +1482,7 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                 <AlertDialogAction
                   onClick={handleCancelSubscription}
                   disabled={cancelLoading}
-                  className="bg-destructive hover:bg-destructive/90 focus:ring-red-600"
+                  className="bg-destructive hover:bg-destructive/90 focus:ring-destructive"
                 >
                   {cancelLoading
                     ? t('subscription.canceling')

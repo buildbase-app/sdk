@@ -160,6 +160,9 @@ export const ar: SDKMessages = {
     },
     plan: 'الخطة',
     invoicesTab: 'الفواتير',
+    tabsLabel: 'علامات تبويب الاشتراك',
+    endsOn: '(ينتهي في {date})',
+    versionLabel: 'الإصدار {version}',
     changePlanButton: 'تغيير الخطة',
     noPlanAssigned: 'لم يتم تعيين خطة',
     free: 'مجاني',
@@ -207,6 +210,7 @@ export const ar: SDKMessages = {
     trialBadge: 'تجربة {days} يوم',
   },
   users: {
+    emailPlaceholder: 'example@example.com',
     title: 'أعضاء مساحة العمل',
     adminOnly: 'فقط مدير مساحة العمل يمكنه إدارة المستخدمين والأدوار.',
     inviteByEmail: 'دعوة عضو عبر البريد الإلكتروني',
@@ -330,6 +334,7 @@ export const ar: SDKMessages = {
     imageUrlPlaceholder: 'https://example.com/image.png',
     imageUrlDescription: 'أدخل رابطاً صالحاً لصورة مساحة العمل. الصيغ المدعومة: PNG و JPG و SVG.',
     previewLabel: 'معاينة:',
+    previewImageAlt: 'معاينة مساحة العمل',
     success: 'تم حفظ إعدادات مساحة العمل بنجاح',
     chooseEmoji: 'اختر رمزاً تعبيرياً',
     customImageUrl: 'رابط صورة مخصص',
@@ -464,6 +469,7 @@ export const ar: SDKMessages = {
     billingInterval: 'فترة الفوترة',
   },
   beta: {
+    logoAlt: 'الشعار',
     nameLabel: 'الاسم',
     emailLabel: 'البريد الإلكتروني',
     submitText: 'إرسال',

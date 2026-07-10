@@ -79,6 +79,13 @@ export interface AppTokenRequestClaims {
   resource?: string[];
   /** The OAuth2 client's display title. */
   clientTitle?: string;
+  /**
+   * Per-user BuildBase session bound to this grant. Embed it ENCRYPTED in the
+   * token you mint (JWTs are signed, not encrypted) and never store it — your
+   * MCP/agent endpoints decrypt it per request to call BuildBase as this user
+   * (`buildbase.withSession(...)`). Fresh on every grant, including refresh.
+   */
+  sessionId?: string;
   [claim: string]: unknown;
 }
 
@@ -106,16 +113,43 @@ function jsonFromB64Url(b64url: string): Record<string, any> {
   return JSON.parse(new TextDecoder().decode(base64UrlToBytes(b64url)));
 }
 
+/** Options for {@link verifyClientJwt} (all optional; secure defaults). */
+export interface VerifyClientJwtOptions {
+  /** Allowed clock skew in seconds for `exp`/`nbf`. Default 60. */
+  clockToleranceSec?: number;
+  /**
+   * Require a numeric `exp` claim. Default **true** — a JWT with no expiry
+   * would never expire, so a leaked token stays valid forever. Set `false`
+   * only for a token type you know is intentionally non-expiring.
+   */
+  requireExp?: boolean;
+  /** If set, `iss` must equal this value (RFC 7519 issuer check). */
+  issuer?: string;
+  /** If set, `aud` must equal (or, for an array `aud`, include) this value. */
+  audience?: string;
+}
+
 /**
  * Verify a BuildBase-issued HS256 JWT (signed with the client secret) and return
- * its payload. Checks the signature (timing-safe), the algorithm, and `exp`/`nbf`.
+ * its payload. Checks the signature (timing-safe), the algorithm, `exp`/`nbf`,
+ * and — by default — that an `exp` is present at all. Optionally pins `iss`/`aud`.
  * Throws {@link AppBridgeError} on any failure.
+ *
+ * The third argument accepts either the legacy `clockToleranceSec` number or a
+ * {@link VerifyClientJwtOptions} object.
  */
 export function verifyClientJwt(
   token: string,
   clientSecret: string,
-  clockToleranceSec = 60
+  optionsOrTolerance: number | VerifyClientJwtOptions = {}
 ): Record<string, any> {
+  const options: VerifyClientJwtOptions =
+    typeof optionsOrTolerance === 'number'
+      ? { clockToleranceSec: optionsOrTolerance }
+      : optionsOrTolerance;
+  const clockToleranceSec = options.clockToleranceSec ?? 60;
+  const requireExp = options.requireExp ?? true;
+
   if (!token || !clientSecret) {
     throw new AppBridgeError('invalid_token', 'Missing token or client secret');
   }
@@ -149,11 +183,22 @@ export function verifyClientJwt(
   }
 
   const now = Math.floor(Date.now() / 1000);
+  if (requireExp && typeof payload.exp !== 'number') {
+    throw new AppBridgeError('invalid_token', 'JWT is missing a numeric exp claim');
+  }
   if (typeof payload.exp === 'number' && now > payload.exp + clockToleranceSec) {
     throw new AppBridgeError('token_expired', 'JWT has expired');
   }
   if (typeof payload.nbf === 'number' && now + clockToleranceSec < payload.nbf) {
     throw new AppBridgeError('token_not_yet_valid', 'JWT is not yet valid');
+  }
+  if (options.issuer !== undefined && payload.iss !== options.issuer) {
+    throw new AppBridgeError('invalid_issuer', 'JWT issuer mismatch');
+  }
+  if (options.audience !== undefined) {
+    const aud = payload.aud;
+    const ok = Array.isArray(aud) ? aud.includes(options.audience) : aud === options.audience;
+    if (!ok) throw new AppBridgeError('invalid_audience', 'JWT audience mismatch');
   }
   return payload;
 }
@@ -163,6 +208,43 @@ export function extractBearerToken(authorization: string | null | undefined): st
   if (!authorization) return null;
   const match = /^Bearer\s+(.+)$/i.exec(authorization.trim());
   return match ? match[1].trim() : null;
+}
+
+/** Encode bytes as base64url. Uses the global `btoa` (Node 16+, edge, browser). */
+function bytesToBase64Url(bytes: Uint8Array): string {
+  let binary = '';
+  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+function jsonToB64Url(value: unknown): string {
+  return bytesToBase64Url(utf8Bytes(JSON.stringify(value)));
+}
+
+/**
+ * Sign an HS256 JWT — the symmetric counterpart of {@link verifyClientJwt}.
+ * Sets `iat` and `exp` (from `expiresInSec`, default 3600) unless the payload
+ * already carries them. The intended use is minting the app's own agent access
+ * tokens in an `applicationTokenUrl` handler, embedding whatever claims the
+ * MCP/API layer needs to verify later (e.g. `sub`, `scope`, a session id).
+ */
+export function signClientJwt(
+  payload: Record<string, unknown>,
+  secret: string,
+  options?: { expiresInSec?: number }
+): string {
+  if (!secret) {
+    throw new AppBridgeError('invalid_secret', 'Missing signing secret');
+  }
+  const now = Math.floor(Date.now() / 1000);
+  const claims = {
+    iat: now,
+    exp: now + (options?.expiresInSec ?? 3600),
+    ...payload,
+  };
+  const signingInput = `${jsonToB64Url({ alg: 'HS256', typ: 'JWT' })}.${jsonToB64Url(claims)}`;
+  const signature = hmacSha256(utf8Bytes(secret), utf8Bytes(signingInput));
+  return `${signingInput}.${bytesToBase64Url(signature)}`;
 }
 
 // ─── Request verifiers ─────────────────────────────────────────────────────────
@@ -317,15 +399,25 @@ export async function handleAppRevokeRequest(options: {
  * }
  * ```
  */
+/**
+ * Sanitize a value for use inside an HTTP `WWW-Authenticate` quoted string:
+ * drop control characters (CR/LF — header-injection defense) and backslash-
+ * escape `"` and `\` per RFC 7230 quoted-string rules.
+ */
+function quoteAuthParam(value: string): string {
+  // eslint-disable-next-line no-control-regex
+  return value.replace(/[\x00-\x1f\x7f]/g, '').replace(/([\\"])/g, '\\$1');
+}
+
 export function bearerChallenge(options: {
   resourceMetadataUrl: string;
   error?: 'invalid_token' | 'insufficient_scope' | string;
   errorDescription?: string;
 }): { status: number; headers: Record<string, string>; body: string } {
-  const parts = [`Bearer resource_metadata="${options.resourceMetadataUrl}"`];
-  if (options.error) parts.push(`error="${options.error}"`);
+  const parts = [`Bearer resource_metadata="${quoteAuthParam(options.resourceMetadataUrl)}"`];
+  if (options.error) parts.push(`error="${quoteAuthParam(options.error)}"`);
   if (options.errorDescription) {
-    parts.push(`error_description="${options.errorDescription}"`);
+    parts.push(`error_description="${quoteAuthParam(options.errorDescription)}"`);
   }
   return {
     status: 401,
