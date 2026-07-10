@@ -290,6 +290,16 @@ export const useSaaSWorkspaces = () => {
     }
   }, [api, workspace.refreshing, dispatch]);
 
+  // Pending plan-picker timer — cleared on unmount so the picker can't pop
+  // open after the user has navigated away or signed out mid-delay.
+  const planPickerTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(
+    () => () => {
+      if (planPickerTimerRef.current) clearTimeout(planPickerTimerRef.current);
+    },
+    []
+  );
+
   const createWorkspace = useCallback(
     async (name: string, image?: string) => {
       const data = await api.createWorkspace({ name, image });
@@ -305,7 +315,9 @@ export const useSaaSWorkspaces = () => {
         });
       });
       // Auto-open plan picker after workspace switch
-      setTimeout(() => {
+      if (planPickerTimerRef.current) clearTimeout(planPickerTimerRef.current);
+      planPickerTimerRef.current = setTimeout(() => {
+        planPickerTimerRef.current = null;
         workspaceSettingsManager.openWorkspaceSettings(SettingsScreen.Subscription);
       }, 300);
     },

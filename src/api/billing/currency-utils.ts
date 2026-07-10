@@ -91,9 +91,48 @@ export const PLAN_CURRENCY_OPTIONS = PLAN_CURRENCY_CODES.map(value => ({
   label: `${value.toUpperCase()} (${getCurrencySymbol(value)})`,
 }));
 
-/** Format cents as money string (e.g. 1999, "usd" -> "$19.99"). Caller must pass currency (e.g. from plan or workspace). */
+/**
+ * ISO 4217 zero-decimal currencies (per Stripe): amounts are already whole
+ * units — there is no "cents" subdivision to divide by.
+ */
+const ZERO_DECIMAL_CURRENCIES = new Set([
+  'bif',
+  'clp',
+  'djf',
+  'gnf',
+  'jpy',
+  'kmf',
+  'krw',
+  'mga',
+  'pyg',
+  'rwf',
+  'ugx',
+  'vnd',
+  'vuv',
+  'xaf',
+  'xof',
+  'xpf',
+]);
+
+/** True when `currency` has no minor unit (JPY, KRW, …) — amounts are whole units, not cents. */
+export function isZeroDecimalCurrency(currency: string | null | undefined): boolean {
+  return ZERO_DECIMAL_CURRENCIES.has((currency ?? '').trim().toLowerCase());
+}
+
+/**
+ * Convert a minor-unit amount to its display number for `currency`:
+ * `minorAmountToDisplay(1999, 'usd')` → `"19.99"`,
+ * `minorAmountToDisplay(1000, 'jpy')` → `"1,000"` (zero-decimal — no division).
+ */
+export function minorAmountToDisplay(amount: number, currency: string): string {
+  return isZeroDecimalCurrency(currency)
+    ? amount.toLocaleString('en-US')
+    : (amount / 100).toFixed(2);
+}
+
+/** Format cents as money string (e.g. 1999, "usd" -> "$19.99"; 1000, "jpy" -> "¥1,000"). Caller must pass currency (e.g. from plan or workspace). */
 export function formatCents(cents: number, currency: string): string {
-  return getCurrencySymbol(currency) + (cents / 100).toFixed(2);
+  return getCurrencySymbol(currency) + minorAmountToDisplay(cents, currency);
 }
 
 /** Translatable labels for overage/quota formatting */
@@ -134,7 +173,7 @@ export function formatOverageRate(
   const l = { ...DEFAULT_OVERAGE_LABELS, ...labels };
   const unitSizeN = unitSize != null && unitSize >= 1 ? unitSize : 1;
   const symbol = getCurrencySymbol(currency);
-  const amount = (overageCents / 100).toFixed(2);
+  const amount = minorAmountToDisplay(overageCents, currency);
   if (unitSizeN === 1) return `${symbol}${amount}/${l.unit}`;
   return `${symbol}${amount}/${unitSizeN.toLocaleString()} ${l.units}`;
 }
@@ -156,7 +195,7 @@ export function formatOverageRateWithLabel(
   const l = { ...DEFAULT_OVERAGE_LABELS, ...labels };
   const unitSizeN = unitSize != null && unitSize >= 1 ? unitSize : 1;
   const symbol = getCurrencySymbol(currency);
-  const amount = (overageCents / 100).toFixed(2);
+  const amount = minorAmountToDisplay(overageCents, currency);
   if (unitLabel) {
     const plural = pluralUnitLabel ?? (unitLabel.endsWith('s') ? unitLabel : `${unitLabel}s`);
     if (unitSizeN >= 2) return `${symbol}${amount}/${unitSizeN.toLocaleString()} ${plural}`;

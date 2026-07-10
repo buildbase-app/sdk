@@ -14,6 +14,7 @@ import type {
 import { useTranslation } from '../../i18n';
 import { invalidateCreditBalance } from '../../lib/credit-balance-invalidation';
 import { getHookErrorMessage, handleError } from '../../lib/error-handler';
+import { useLatestRequest } from '../../lib/use-latest-request';
 import { isOsConfigReady } from '../os/types';
 import { useWorkspaceApiWithOs } from './use-workspace-api';
 
@@ -46,18 +47,24 @@ export const useCreditBalance = (workspaceId: string | null | undefined) => {
   const [balance, setBalance] = useState<ICreditBalance | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { begin, settle } = useLatestRequest();
 
   const fetchBalance = useCallback(async () => {
     if (!workspaceId) {
+      begin();
       setBalance(null);
+      setLoading(false);
       return;
     }
+    const req = begin();
     setLoading(true);
     setError(null);
     try {
       const data = await api.getCreditBalance(workspaceId);
+      if (req.signal.aborted) return;
       setBalance(data);
     } catch (err) {
+      if (req.signal.aborted) return;
       const errorMessage = getHookErrorMessage(err, 'errors.fetchCreditBalance', t);
       setError(errorMessage);
       handleError(err, {
@@ -66,9 +73,9 @@ export const useCreditBalance = (workspaceId: string | null | undefined) => {
         metadata: { workspaceId },
       });
     } finally {
-      setLoading(false);
+      if (settle(req)) setLoading(false);
     }
-  }, [api, workspaceId]);
+  }, [api, workspaceId, begin, settle]);
 
   useEffect(() => {
     fetchBalance();
@@ -250,18 +257,24 @@ export const useCreditPackages = (workspaceId: string | null | undefined) => {
   const [packages, setPackages] = useState<ICreditPackage[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { begin, settle } = useLatestRequest();
 
   const fetchPackages = useCallback(async () => {
     if (!workspaceId) {
+      begin();
       setPackages([]);
+      setLoading(false);
       return;
     }
+    const req = begin();
     setLoading(true);
     setError(null);
     try {
       const data = await api.getCreditPackages(workspaceId);
+      if (req.signal.aborted) return;
       setPackages(data);
     } catch (err) {
+      if (req.signal.aborted) return;
       const errorMessage = getHookErrorMessage(err, 'errors.fetchCreditPackages', t);
       setError(errorMessage);
       handleError(err, {
@@ -270,9 +283,9 @@ export const useCreditPackages = (workspaceId: string | null | undefined) => {
         metadata: { workspaceId },
       });
     } finally {
-      setLoading(false);
+      if (settle(req)) setLoading(false);
     }
-  }, [api, workspaceId]);
+  }, [api, workspaceId, begin, settle]);
 
   useEffect(() => {
     fetchPackages();
@@ -330,6 +343,7 @@ export const useCreditTransactions = (
   const [hasPrevPage, setHasPrevPage] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { begin, settle } = useLatestRequest();
 
   const type = query?.type;
   const pageNum = query?.page;
@@ -337,18 +351,22 @@ export const useCreditTransactions = (
 
   const fetchTransactions = useCallback(async () => {
     if (!workspaceId) {
+      begin();
       setTransactions([]);
       setTotalDocs(0);
       setTotalPages(0);
       setPage(1);
       setHasNextPage(false);
       setHasPrevPage(false);
+      setLoading(false);
       return;
     }
+    const req = begin();
     setLoading(true);
     setError(null);
     try {
       const data = await api.getCreditTransactions(workspaceId, { type, page: pageNum, limit });
+      if (req.signal.aborted) return;
       setTransactions(data.docs || []);
       setTotalDocs(data.totalDocs || 0);
       setTotalPages(data.totalPages || 0);
@@ -356,6 +374,7 @@ export const useCreditTransactions = (
       setHasNextPage(data.hasNextPage || false);
       setHasPrevPage(data.hasPrevPage || false);
     } catch (err) {
+      if (req.signal.aborted) return;
       const errorMessage = getHookErrorMessage(err, 'errors.fetchCreditTransactions', t);
       setError(errorMessage);
       handleError(err, {
@@ -364,9 +383,9 @@ export const useCreditTransactions = (
         metadata: { workspaceId },
       });
     } finally {
-      setLoading(false);
+      if (settle(req)) setLoading(false);
     }
-  }, [api, workspaceId, type, pageNum, limit]);
+  }, [api, workspaceId, type, pageNum, limit, begin, settle]);
 
   useEffect(() => {
     fetchTransactions();
@@ -414,18 +433,24 @@ export const useExpiringCredits = (workspaceId: string | null | undefined, days?
   const [data, setData] = useState<IExpiringCreditsResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { begin, settle } = useLatestRequest();
 
   const fetchExpiring = useCallback(async () => {
     if (!workspaceId) {
+      begin();
       setData(null);
+      setLoading(false);
       return;
     }
+    const req = begin();
     setLoading(true);
     setError(null);
     try {
       const result = await api.getExpiringCredits(workspaceId, days);
+      if (req.signal.aborted) return;
       setData(result);
     } catch (err) {
+      if (req.signal.aborted) return;
       const errorMessage = getHookErrorMessage(err, 'errors.fetchExpiringCredits', t);
       setError(errorMessage);
       handleError(err, {
@@ -434,9 +459,9 @@ export const useExpiringCredits = (workspaceId: string | null | undefined, days?
         metadata: { workspaceId, days },
       });
     } finally {
-      setLoading(false);
+      if (settle(req)) setLoading(false);
     }
-  }, [api, workspaceId, days]);
+  }, [api, workspaceId, days, begin, settle]);
 
   useEffect(() => {
     fetchExpiring();
@@ -489,19 +514,25 @@ export const usePublicCreditPackages = () => {
   const [notes, setNotes] = useState<string | undefined>();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { begin, settle } = useLatestRequest();
 
   const fetchPackages = useCallback(async () => {
     if (!isConfigReady) {
+      begin();
       setPackages([]);
+      setLoading(false);
       return;
     }
+    const req = begin();
     setLoading(true);
     setError(null);
     try {
       const result = await api.getPublicCreditPackages();
+      if (req.signal.aborted) return;
       setPackages(result.packages || []);
       setNotes(result.notes);
     } catch (err) {
+      if (req.signal.aborted) return;
       const errorMessage = getHookErrorMessage(err, 'errors.fetchCreditPackages', t);
       setError(errorMessage);
       handleError(err, {
@@ -509,9 +540,9 @@ export const usePublicCreditPackages = () => {
         action: 'fetchPackages',
       });
     } finally {
-      setLoading(false);
+      if (settle(req)) setLoading(false);
     }
-  }, [api, isConfigReady]);
+  }, [api, isConfigReady, begin, settle]);
 
   useEffect(() => {
     fetchPackages();

@@ -37,6 +37,7 @@
  * ```
  */
 
+import { base64UrlToBytes, bytesToBase64Url } from './base64url';
 import { hmacSha256, timingSafeEqualBytes, utf8Bytes } from './sha256';
 
 // ─── Errors ─────────────────────────────────────────────────────────────────
@@ -99,16 +100,6 @@ export interface AppRevokeRequestClaims {
 
 // ─── JWT (HS256) verification ─────────────────────────────────────────────────
 
-/** Decode a base64url string to bytes. Uses the global `atob` (Node 16+, edge, browser). */
-function base64UrlToBytes(b64url: string): Uint8Array {
-  const b64 = b64url.replace(/-/g, '+').replace(/_/g, '/');
-  const pad = b64.length % 4 === 0 ? '' : '='.repeat(4 - (b64.length % 4));
-  const binary = atob(b64 + pad);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-  return bytes;
-}
-
 function jsonFromB64Url(b64url: string): Record<string, any> {
   return JSON.parse(new TextDecoder().decode(base64UrlToBytes(b64url)));
 }
@@ -134,19 +125,12 @@ export interface VerifyClientJwtOptions {
  * its payload. Checks the signature (timing-safe), the algorithm, `exp`/`nbf`,
  * and — by default — that an `exp` is present at all. Optionally pins `iss`/`aud`.
  * Throws {@link AppBridgeError} on any failure.
- *
- * The third argument accepts either the legacy `clockToleranceSec` number or a
- * {@link VerifyClientJwtOptions} object.
  */
 export function verifyClientJwt(
   token: string,
   clientSecret: string,
-  optionsOrTolerance: number | VerifyClientJwtOptions = {}
+  options: VerifyClientJwtOptions = {}
 ): Record<string, any> {
-  const options: VerifyClientJwtOptions =
-    typeof optionsOrTolerance === 'number'
-      ? { clockToleranceSec: optionsOrTolerance }
-      : optionsOrTolerance;
   const clockToleranceSec = options.clockToleranceSec ?? 60;
   const requireExp = options.requireExp ?? true;
 
@@ -159,17 +143,11 @@ export function verifyClientJwt(
   }
   const [headerB64, payloadB64, sigB64] = parts;
 
-  const expected = hmacSha256(utf8Bytes(clientSecret), utf8Bytes(`${headerB64}.${payloadB64}`));
-  let provided: Uint8Array;
-  try {
-    provided = base64UrlToBytes(sigB64);
-  } catch {
-    throw new AppBridgeError('invalid_signature', 'Unreadable JWT signature');
-  }
-  if (!timingSafeEqualBytes(expected, provided)) {
-    throw new AppBridgeError('invalid_signature', 'JWT signature verification failed');
-  }
-
+  // Decode the header and PIN the algorithm before doing any crypto. The key is
+  // always the symmetric client secret, so we must never let the token's own
+  // header pick the algorithm (alg-confusion / alg:none). Checking alg first —
+  // before computing the HMAC — keeps this robust even if the verifier is later
+  // extended to support asymmetric algorithms.
   let header: Record<string, any>;
   let payload: Record<string, any>;
   try {
@@ -180,6 +158,17 @@ export function verifyClientJwt(
   }
   if (header.alg !== 'HS256') {
     throw new AppBridgeError('invalid_algorithm', `Unexpected JWT alg: ${String(header.alg)}`);
+  }
+
+  const expected = hmacSha256(utf8Bytes(clientSecret), utf8Bytes(`${headerB64}.${payloadB64}`));
+  let provided: Uint8Array;
+  try {
+    provided = base64UrlToBytes(sigB64);
+  } catch {
+    throw new AppBridgeError('invalid_signature', 'Unreadable JWT signature');
+  }
+  if (!timingSafeEqualBytes(expected, provided)) {
+    throw new AppBridgeError('invalid_signature', 'JWT signature verification failed');
   }
 
   const now = Math.floor(Date.now() / 1000);
@@ -208,13 +197,6 @@ export function extractBearerToken(authorization: string | null | undefined): st
   if (!authorization) return null;
   const match = /^Bearer\s+(.+)$/i.exec(authorization.trim());
   return match ? match[1].trim() : null;
-}
-
-/** Encode bytes as base64url. Uses the global `btoa` (Node 16+, edge, browser). */
-function bytesToBase64Url(bytes: Uint8Array): string {
-  let binary = '';
-  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
-  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
 function jsonToB64Url(value: unknown): string {
@@ -264,11 +246,9 @@ export function verifyAppTokenRequest(options: VerifyOptions): AppTokenRequestCl
   if (!token) {
     throw new AppBridgeError('invalid_token', 'Missing Bearer token');
   }
-  return verifyClientJwt(
-    token,
-    options.clientSecret,
-    options.clockToleranceSec
-  ) as AppTokenRequestClaims;
+  return verifyClientJwt(token, options.clientSecret, {
+    clockToleranceSec: options.clockToleranceSec,
+  }) as AppTokenRequestClaims;
 }
 
 /** Verify an `applicationRevokeUrl` request and return the revocation context. */
@@ -277,11 +257,9 @@ export function verifyAppRevokeRequest(options: VerifyOptions): AppRevokeRequest
   if (!token) {
     throw new AppBridgeError('invalid_token', 'Missing Bearer token');
   }
-  return verifyClientJwt(
-    token,
-    options.clientSecret,
-    options.clockToleranceSec
-  ) as AppRevokeRequestClaims;
+  return verifyClientJwt(token, options.clientSecret, {
+    clockToleranceSec: options.clockToleranceSec,
+  }) as AppRevokeRequestClaims;
 }
 
 // ─── Response envelope (matches the platform's strict schema) ───────────────────

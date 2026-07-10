@@ -28,6 +28,13 @@ import { getAuthHeaders } from './auth-utils';
 // catch as it propagates up. Ensures onError fires at most once per failure.
 const reportedErrors = new WeakSet<Error>();
 
+/**
+ * RFC 9110 idempotent methods — the only ones safe to retry automatically.
+ * POST/PATCH are never replayed: the server may have processed the request
+ * even though the response was lost.
+ */
+const IDEMPOTENT_METHODS = new Set(['GET', 'HEAD', 'OPTIONS', 'PUT', 'DELETE']);
+
 export interface IBaseApiConfig {
   serverUrl: string;
   version: ApiVersion;
@@ -163,6 +170,22 @@ export abstract class BaseApi {
     return this.executeFetchUrl(this.url(path), init, path);
   }
 
+  /** Backoff sleep that ends early (with an AbortError) when the signal fires. */
+  private static delay(ms: number, signal: AbortSignal | undefined | null): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const abort = () => {
+        clearTimeout(timer);
+        reject(new DOMException('The operation was aborted.', 'AbortError'));
+      };
+      if (signal?.aborted) return abort();
+      const timer = setTimeout(() => {
+        signal?.removeEventListener('abort', abort);
+        resolve();
+      }, ms);
+      signal?.addEventListener('abort', abort, { once: true });
+    });
+  }
+
   /** Internal: execute fetch against a resolved URL with timeout, retries, debug logging, and error callback. */
   private async executeFetchUrl(
     fullUrl: string,
@@ -173,6 +196,12 @@ export abstract class BaseApi {
     const logPath = path ?? fullUrl;
     const headers = this.buildHeaders(init);
     const fetchOptions: RequestInit = { ...init, headers };
+
+    // Only replay requests that are safe to replay (RFC 9110 idempotent
+    // methods). A POST that hit a network error or 5xx may still have been
+    // processed by the server — retrying it can double-charge (consumeCredits,
+    // purchaseCredits, createCheckoutSession) or double-create.
+    const retryable = IDEMPOTENT_METHODS.has(method);
 
     // Timeout via AbortController
     let timeoutId: ReturnType<typeof setTimeout> | undefined;
@@ -185,6 +214,20 @@ export abstract class BaseApi {
         ? combineAbortSignals(init.signal, controller.signal)
         : controller.signal;
     }
+
+    // Classify an AbortError: only report a timeout when OUR timeout controller
+    // fired — a caller-initiated abort (e.g. component unmount) must stay an
+    // AbortError so isAbortError() filtering keeps working.
+    const classifyAbort = (error: Error): Error => {
+      if (timeoutController?.signal.aborted && !init.signal?.aborted) {
+        const timeoutError = new Error(
+          `Request timeout after ${this._timeout}ms: ${method} ${logPath}`
+        );
+        this.reportError(timeoutError, { method, path: logPath });
+        return timeoutError;
+      }
+      return error;
+    };
 
     const attempt = async (retryCount: number): Promise<Response> => {
       try {
@@ -206,15 +249,17 @@ export abstract class BaseApi {
           this._onUnauthorized();
         }
 
-        // Retry on 5xx (server errors) if retries remaining
-        if (response.status >= 500 && retryCount < this._maxRetries) {
+        // Retry on 5xx (server errors) if idempotent and retries remaining
+        if (response.status >= 500 && retryable && retryCount < this._maxRetries) {
           const delay = Math.min(1000 * Math.pow(2, retryCount), 10_000);
           if (this._debug) {
             console.log(
               `[BuildBase] Retrying in ${delay}ms (attempt ${retryCount + 1}/${this._maxRetries})`
             );
           }
-          await new Promise(r => setTimeout(r, delay));
+          // Aborting (caller signal or timeout) ends the backoff immediately;
+          // the AbortError lands in the catch below, which classifies it.
+          await BaseApi.delay(delay, fetchOptions.signal);
           return attempt(retryCount + 1);
         }
 
@@ -222,28 +267,22 @@ export abstract class BaseApi {
       } catch (error) {
         // Don't retry abort errors
         if (error instanceof Error && error.name === 'AbortError') {
-          // Only report a timeout when OUR timeout controller fired — a
-          // caller-initiated abort (e.g. component unmount) must stay an
-          // AbortError so isAbortError() filtering keeps working.
-          if (timeoutController?.signal.aborted && !init.signal?.aborted) {
-            const timeoutError = new Error(
-              `Request timeout after ${this._timeout}ms: ${method} ${logPath}`
-            );
-            this.reportError(timeoutError, { method, path: logPath });
-            throw timeoutError;
-          }
-          throw error;
+          throw classifyAbort(error);
         }
 
-        // Retry network errors
-        if (retryCount < this._maxRetries) {
+        // Retry network errors (idempotent methods only)
+        if (retryable && retryCount < this._maxRetries) {
           const delay = Math.min(1000 * Math.pow(2, retryCount), 10_000);
           if (this._debug) {
             console.log(
               `[BuildBase] Network error, retrying in ${delay}ms (attempt ${retryCount + 1}/${this._maxRetries})`
             );
           }
-          await new Promise(r => setTimeout(r, delay));
+          try {
+            await BaseApi.delay(delay, fetchOptions.signal);
+          } catch (abortError) {
+            throw classifyAbort(abortError as Error);
+          }
           return attempt(retryCount + 1);
         }
 

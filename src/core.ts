@@ -72,6 +72,7 @@ export type { BBActionType, BBScreenType, BBStatusType } from './lib/url-params'
 // ─── Security ──────────────────────────────────────────────────────────────────
 
 export { safeRedirect, validateRedirectUrl } from './lib/security';
+export type { RedirectValidationOptions } from './lib/security';
 
 // ─── Auth Intent (redirect preservation) ────────────────────────────────────────
 
@@ -91,6 +92,8 @@ export {
   getCurrencyFlag,
   getCurrencySymbol,
   getQuotaUnitLabelFromName,
+  isZeroDecimalCurrency,
+  minorAmountToDisplay,
 } from './api/billing/currency-utils';
 
 export { formatQuotaWithPrice, getQuotaDisplayValue } from './api/billing/quota-utils';

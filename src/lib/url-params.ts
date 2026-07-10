@@ -118,16 +118,20 @@ function decodeBBParam(raw: string): Record<string, string> {
  * ```
  */
 export function createBBUrl(params: Record<string, string>, baseUrl?: string): string {
+  // A caller-provided base must be valid: silently substituting a fallback
+  // would send redirect URLs (e.g. Stripe success/cancel) to the wrong host
+  // with no error. The localhost default exists only for the no-argument
+  // server-side case, where there is no current page to derive from.
+  const raw =
+    baseUrl ?? (typeof window !== 'undefined' ? window.location.href : 'https://localhost');
   let url: URL;
   try {
-    const raw =
-      baseUrl || (typeof window !== 'undefined' ? window.location.href : 'https://localhost');
     url = new URL(raw);
-    // Strip existing query params — only keep the path. The bb param is the only one we need.
-    url.search = '';
   } catch {
-    url = new URL('https://localhost');
+    throw new Error(`createBBUrl: invalid base URL: ${JSON.stringify(raw)}`);
   }
+  // Strip existing query params — only keep the path. The bb param is the only one we need.
+  url.search = '';
 
   url.searchParams.set(BB_PARAM, encodeBBParam(params));
   return url.toString();

@@ -93,8 +93,10 @@ export function useUserFeatures() {
 
   return {
     features: context.features,
-    isLoading: context.isLoading,
-    error: context.error,
+    // Per-resource state: reflects the FEATURES pipeline only (an attributes
+    // fetch/update no longer flips this hook's loading/error).
+    isLoading: context.featuresLoading,
+    error: context.featuresError,
     refreshFeatures: context.refreshFeatures,
     isFeatureEnabled: (featureId: string) => Boolean(context.features[featureId]),
   };

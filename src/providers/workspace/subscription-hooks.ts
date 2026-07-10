@@ -24,6 +24,7 @@ import { invalidateQuotaUsage } from '../../contexts/QuotaUsageContext/quotaUsag
 import { invalidateSubscription } from '../../contexts/SubscriptionContext/subscriptionInvalidation';
 import { useTranslation } from '../../i18n';
 import { getHookErrorMessage, handleError } from '../../lib/error-handler';
+import { useLatestRequest } from '../../lib/use-latest-request';
 import { isOsConfigReady } from '../os/types';
 import { useWorkspaceApiWithOs } from './use-workspace-api';
 
@@ -43,18 +44,24 @@ export const usePublicPlans = (slug: string) => {
   const [data, setData] = useState<IPublicPlansResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { begin, settle } = useLatestRequest();
 
   const fetchPlans = useCallback(async () => {
     if (!slug || !isConfigReady) {
+      begin();
       setData(null);
+      setLoading(false);
       return;
     }
+    const req = begin();
     setLoading(true);
     setError(null);
     try {
       const result = await api.getPublicPlans(slug);
+      if (req.signal.aborted) return;
       setData(result);
     } catch (err) {
+      if (req.signal.aborted) return;
       const errorMessage = getHookErrorMessage(err, 'errors.fetchPlans', t);
       setError(errorMessage);
       handleError(err, {
@@ -63,9 +70,9 @@ export const usePublicPlans = (slug: string) => {
         metadata: { slug },
       });
     } finally {
-      setLoading(false);
+      if (settle(req)) setLoading(false);
     }
-  }, [api, slug, isConfigReady]);
+  }, [api, slug, isConfigReady, begin, settle]);
 
   useEffect(() => {
     fetchPlans();
@@ -123,19 +130,25 @@ export const usePublicPlanGroupVersion = (groupVersionId: string | null | undefi
   const [planGroupVersion, setPlanGroupVersion] = useState<IPlanGroupVersion | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { begin, settle } = useLatestRequest();
 
   const fetchVersion = useCallback(async () => {
     if (!groupVersionId) {
+      begin();
       setPlanGroupVersion(null);
+      setLoading(false);
       return;
     }
 
+    const req = begin();
     setLoading(true);
     setError(null);
     try {
       const data = await api.getPlanGroupVersion(groupVersionId);
+      if (req.signal.aborted) return;
       setPlanGroupVersion(data);
     } catch (err) {
+      if (req.signal.aborted) return;
       const errorMessage = getHookErrorMessage(err, 'errors.fetchPlanGroupVersion', t);
       setError(errorMessage);
       handleError(err, {
@@ -144,9 +157,9 @@ export const usePublicPlanGroupVersion = (groupVersionId: string | null | undefi
         metadata: { groupVersionId },
       });
     } finally {
-      setLoading(false);
+      if (settle(req)) setLoading(false);
     }
-  }, [api, groupVersionId]);
+  }, [api, groupVersionId, begin, settle]);
 
   useEffect(() => {
     fetchVersion();
@@ -204,19 +217,25 @@ export const useSubscription = (workspaceId: string | null | undefined) => {
   const [subscription, setSubscription] = useState<ISubscriptionResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { begin, settle } = useLatestRequest();
 
   const fetchSubscription = useCallback(async () => {
     if (!workspaceId) {
+      begin();
       setSubscription(null);
+      setLoading(false);
       return;
     }
 
+    const req = begin();
     setLoading(true);
     setError(null);
     try {
       const data = await api.getCurrentSubscription(workspaceId);
+      if (req.signal.aborted) return;
       setSubscription(data);
     } catch (err) {
+      if (req.signal.aborted) return;
       const errorMessage = getHookErrorMessage(err, 'errors.fetchSubscription', t);
       setError(errorMessage);
       handleError(err, {
@@ -225,9 +244,9 @@ export const useSubscription = (workspaceId: string | null | undefined) => {
         metadata: { workspaceId },
       });
     } finally {
-      setLoading(false);
+      if (settle(req)) setLoading(false);
     }
-  }, [api, workspaceId]);
+  }, [api, workspaceId, begin, settle]);
 
   useEffect(() => {
     fetchSubscription();
@@ -297,21 +316,27 @@ export const usePlanGroup = (
   const [planGroup, setPlanGroup] = useState<IPlanGroupResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { begin, settle } = useLatestRequest();
 
   const fetchPlanGroup = useCallback(async () => {
     if (!workspaceId) {
+      begin();
       setPlanGroup(null);
+      setLoading(false);
       return;
     }
 
+    const req = begin();
     setLoading(true);
     setError(null);
     try {
       const data = groupVersionId
         ? await api.getPlanGroupByVersion(workspaceId, groupVersionId)
         : await api.getPlanGroup(workspaceId);
+      if (req.signal.aborted) return;
       setPlanGroup(data);
     } catch (err) {
+      if (req.signal.aborted) return;
       const errorMessage = getHookErrorMessage(err, 'errors.fetchPlanGroup', t);
       setError(errorMessage);
       handleError(err, {
@@ -320,9 +345,9 @@ export const usePlanGroup = (
         metadata: { workspaceId, groupVersionId },
       });
     } finally {
-      setLoading(false);
+      if (settle(req)) setLoading(false);
     }
-  }, [api, workspaceId, groupVersionId]);
+  }, [api, workspaceId, groupVersionId, begin, settle]);
 
   useEffect(() => {
     fetchPlanGroup();
@@ -375,19 +400,25 @@ export const usePlanGroupVersions = (workspaceId: string | null | undefined) => 
   const [versions, setVersions] = useState<IPlanGroupVersionsResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { begin, settle } = useLatestRequest();
 
   const fetchVersions = useCallback(async () => {
     if (!workspaceId) {
+      begin();
       setVersions(null);
+      setLoading(false);
       return;
     }
 
+    const req = begin();
     setLoading(true);
     setError(null);
     try {
       const data = await api.getPlanGroupVersions(workspaceId);
+      if (req.signal.aborted) return;
       setVersions(data);
     } catch (err) {
+      if (req.signal.aborted) return;
       const errorMessage = getHookErrorMessage(err, 'errors.fetchPlanGroupVersions', t);
       setError(errorMessage);
       handleError(err, {
@@ -396,9 +427,9 @@ export const usePlanGroupVersions = (workspaceId: string | null | undefined) => 
         metadata: { workspaceId },
       });
     } finally {
-      setLoading(false);
+      if (settle(req)) setLoading(false);
     }
-  }, [api, workspaceId]);
+  }, [api, workspaceId, begin, settle]);
 
   useEffect(() => {
     fetchVersions();
@@ -792,21 +823,27 @@ export const useInvoices = (
   const [hasMore, setHasMore] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { begin, settle } = useLatestRequest();
 
   const fetchInvoices = useCallback(async () => {
     if (!workspaceId) {
+      begin();
       setInvoices([]);
       setHasMore(false);
+      setLoading(false);
       return;
     }
 
+    const req = begin();
     setLoading(true);
     setError(null);
     try {
       const data = await api.listInvoices(workspaceId, limit, startingAfter);
+      if (req.signal.aborted) return;
       setInvoices(data.invoices || []);
       setHasMore(data.has_more || false);
     } catch (err) {
+      if (req.signal.aborted) return;
       const errorMessage = getHookErrorMessage(err, 'errors.fetchInvoices', t);
       setError(errorMessage);
       handleError(err, {
@@ -815,9 +852,9 @@ export const useInvoices = (
         metadata: { workspaceId, limit, startingAfter },
       });
     } finally {
-      setLoading(false);
+      if (settle(req)) setLoading(false);
     }
-  }, [api, workspaceId, limit, startingAfter]);
+  }, [api, workspaceId, limit, startingAfter, begin, settle]);
 
   useEffect(() => {
     fetchInvoices();
@@ -923,19 +960,25 @@ export const useInvoice = (
   const [invoice, setInvoice] = useState<IInvoice | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { begin, settle } = useLatestRequest();
 
   const fetchInvoice = useCallback(async () => {
     if (!workspaceId || !invoiceId) {
+      begin();
       setInvoice(null);
+      setLoading(false);
       return;
     }
 
+    const req = begin();
     setLoading(true);
     setError(null);
     try {
       const data = await api.getInvoice(workspaceId, invoiceId);
+      if (req.signal.aborted) return;
       setInvoice(data.invoice);
     } catch (err) {
+      if (req.signal.aborted) return;
       const errorMessage = getHookErrorMessage(err, 'errors.fetchInvoice', t);
       setError(errorMessage);
       handleError(err, {
@@ -944,9 +987,9 @@ export const useInvoice = (
         metadata: { workspaceId, invoiceId },
       });
     } finally {
-      setLoading(false);
+      if (settle(req)) setLoading(false);
     }
-  }, [api, workspaceId, invoiceId]);
+  }, [api, workspaceId, invoiceId, begin, settle]);
 
   useEffect(() => {
     fetchInvoice();
@@ -1224,19 +1267,25 @@ export const useQuotaUsageStatus = (
   const [status, setStatus] = useState<IQuotaUsageStatusResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { begin, settle } = useLatestRequest();
 
   const fetchStatus = useCallback(async () => {
     if (!workspaceId || !quotaSlug) {
+      begin();
       setStatus(null);
+      setLoading(false);
       return;
     }
 
+    const req = begin();
     setLoading(true);
     setError(null);
     try {
       const data = await api.getQuotaUsageStatus(workspaceId, quotaSlug);
+      if (req.signal.aborted) return;
       setStatus(data);
     } catch (err) {
+      if (req.signal.aborted) return;
       const errorMessage = getHookErrorMessage(err, 'errors.fetchQuotaUsage', t);
       setError(errorMessage);
       handleError(err, {
@@ -1245,9 +1294,9 @@ export const useQuotaUsageStatus = (
         metadata: { workspaceId, quotaSlug },
       });
     } finally {
-      setLoading(false);
+      if (settle(req)) setLoading(false);
     }
-  }, [api, workspaceId, quotaSlug]);
+  }, [api, workspaceId, quotaSlug, begin, settle]);
 
   useEffect(() => {
     fetchStatus();
@@ -1301,19 +1350,25 @@ export const useAllQuotaUsage = (workspaceId: string | null | undefined) => {
   const [quotas, setQuotas] = useState<Record<string, IQuotaUsageStatus> | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { begin, settle } = useLatestRequest();
 
   const fetchAllUsage = useCallback(async () => {
     if (!workspaceId) {
+      begin();
       setQuotas(null);
+      setLoading(false);
       return;
     }
 
+    const req = begin();
     setLoading(true);
     setError(null);
     try {
       const data = await api.getAllQuotaUsage(workspaceId);
+      if (req.signal.aborted) return;
       setQuotas(data.quotas);
     } catch (err) {
+      if (req.signal.aborted) return;
       const errorMessage = getHookErrorMessage(err, 'errors.fetchAllQuotaUsage', t);
       setError(errorMessage);
       handleError(err, {
@@ -1322,9 +1377,9 @@ export const useAllQuotaUsage = (workspaceId: string | null | undefined) => {
         metadata: { workspaceId },
       });
     } finally {
-      setLoading(false);
+      if (settle(req)) setLoading(false);
     }
-  }, [api, workspaceId]);
+  }, [api, workspaceId, begin, settle]);
 
   useEffect(() => {
     fetchAllUsage();
@@ -1397,6 +1452,7 @@ export const useUsageLogs = (
   const [hasPrevPage, setHasPrevPage] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { begin, settle } = useLatestRequest();
 
   const from = options?.from;
   const to = options?.to;
@@ -1406,15 +1462,18 @@ export const useUsageLogs = (
 
   const fetchLogs = useCallback(async () => {
     if (!workspaceId) {
+      begin();
       setLogs([]);
       setTotalDocs(0);
       setTotalPages(0);
       setPage(1);
       setHasNextPage(false);
       setHasPrevPage(false);
+      setLoading(false);
       return;
     }
 
+    const req = begin();
     setLoading(true);
     setError(null);
     try {
@@ -1427,6 +1486,7 @@ export const useUsageLogs = (
         ...(limit && { limit }),
       };
       const data = await api.getUsageLogs(workspaceId, query);
+      if (req.signal.aborted) return;
       setLogs(data.docs || []);
       setTotalDocs(data.totalDocs || 0);
       setTotalPages(data.totalPages || 0);
@@ -1434,6 +1494,7 @@ export const useUsageLogs = (
       setHasNextPage(data.hasNextPage || false);
       setHasPrevPage(data.hasPrevPage || false);
     } catch (err) {
+      if (req.signal.aborted) return;
       const errorMessage = getHookErrorMessage(err, 'errors.fetchUsageLogs', t);
       setError(errorMessage);
       handleError(err, {
@@ -1442,9 +1503,9 @@ export const useUsageLogs = (
         metadata: { workspaceId, quotaSlug },
       });
     } finally {
-      setLoading(false);
+      if (settle(req)) setLoading(false);
     }
-  }, [api, workspaceId, quotaSlug, from, to, source, pageNum, limit]);
+  }, [api, workspaceId, quotaSlug, from, to, source, pageNum, limit, begin, settle]);
 
   useEffect(() => {
     fetchLogs();

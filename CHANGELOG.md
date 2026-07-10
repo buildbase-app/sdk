@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+MCP + agent-readiness brought to **MCP 2025-06-18** compliance, a one-config setup path, first-class auth presets, and a full per-framework guide. **Behavior changes** are marked ⚠️.
+
+### Added
+
+- **`createAgentStack(config)` — the whole MCP + agent-readiness surface from one config object** (`@buildbase/sdk/mcp`). Derives the MCP handler, the SEP-1649 server card, the RFC 9728 protected-resource metadata (root + canonical `<host>/mcp` + endpoint), the API-catalog entry, the BuildBase client, `buildbaseAuth`, CORS, and the discovery `Link` header. Returns `{ mcp, mcpEndpoint, config, linkHeader, resolvePath, serveAgentPath, routes }` — Next.js wires `export const { GET, POST, DELETE, OPTIONS } = agent.routes` + `export const GET = agent.serveAgentPath`. Everything derived is overridable via `mcp.*` / `discovery.*`.
+- **Auth presets — the app mints & verifies its own tokens with pure local crypto; the platform never sees the secret.** `mintAgentToken({ claims, secret })` (drop into `handleAppTokenRequest.mintToken` — HS256 with your secret, `aud` from the granted RFC 8707 resource, per-user BuildBase session embedded as an encrypted `sid`), `buildbaseAuth({ secret, resource, requireAudience })` (the `auth` config for `createMcpHandler` — verify + audience binding + `sid` decrypt + derived `resourceMetadataUrl`; `resource` accepts `string | string[]`), and `createSessionRefCrypto(secret)` (the underlying AES-256-GCM `sid` crypto, WebCrypto, wire-format `base64url(iv|tag|ciphertext)`, key `SHA-256(secret+":bb-session")` — byte-compatible with a Node `createCipheriv` layout). Also exported from the core entry. `MCP_AUTH_DEBUG=1` logs received-vs-expected `aud` on rejection.
+- **A2A Agent Card** at `/.well-known/agent-card.json` (`buildA2AAgentCard`) — served **by default**, derived from `site` + `skills`; `a2aCard: false` disables, an object overrides. Advertised on the Agent Card capabilities and the discovery `Link` header.
+- **`AgentReadyConfig.scopes` — an app scope catalog** (`AppScope[]`, `{ name, description }`) that drives `scopes_supported` in your RFC 9728 protected-resource metadata. Scopes are app-owned.
+- **More discovery builders / paths:** `buildLlmsFullTxt` (`/llms-full.txt`), `buildWebBotAuthDirectory` (JWKS at `/.well-known/http-message-signatures-directory`, opt-in), `buildMcpDiscoveryManifest` (SEP-1960 `/.well-known/mcp.json`), `buildDnsAidRecords` (suggested `_agents` DNS records to publish at your DNS provider), and `config.extraPaths` (serve any literal document by exact path — commerce discovery x402/UCP/ACP/MPP, `/openapi.json`, future well-knowns; takes precedence over built-ins).
+- **Per-framework guide** — `docs/MCP-AND-AGENT-READINESS.md`: the complete flows (cold-start, mint, verify), the scope/resource model, and copy-paste recipes for Next.js (App + Pages Router), Express, Fastify, Hono, Bun, Deno, Cloudflare Workers, and React/SPA (WebMCP), plus a production checklist.
+
+### Changed
+
+- **MCP Server Card is now SEP-1649 v1.0.** ⚠️ **Output shape change.** `/.well-known/mcp/server-card.json` now emits `$schema`, `version: "1.0"`, `protocolVersion: "2025-06-18"`, `transport: { type, url }` (was `transport.endpoint`), and **boolean** `capabilities` (`{ tools: true, resources: false, prompts: false }`; a legacy `{ tools: {} }`-style object is normalized). `/.well-known/mcp.json` (SEP-1960) gains `$schema` + `version: "1.0"` and a per-server `transport` object. `McpServerCard` gains an optional `protocolVersion`.
+- **CORS is on by default on `createMcpHandler`.** ⚠️ **Behavior change.** Responses now carry `Access-Control-Allow-Origin: *` (safe for a Bearer-token API — no cookies) and `OPTIONS` is answered automatically, so browser MCP clients work with zero config. New `cors` option: `cors: [origins]` narrows to those origins (reflected), `cors: false` disables. `allowedOrigins`, when set, still restricts and drives reflection.
+- **`buildbaseAuth` audience binding accepts multiple resources** and takes an explicit `resourceMetadataUrl`; `createAgentStack` binds both the canonical `<host>/mcp` and the literal endpoint URL and points the 401 challenge at `/.well-known/oauth-protected-resource/mcp`.
+
+### Removed
+
+- **`verifyClientJwt`'s legacy bare-`number` third argument.** ⚠️ **Behavior change.** The third parameter is now `VerifyClientJwtOptions` only (`{ clockToleranceSec?, requireExp?, issuer?, audience? }`); pass `{ clockToleranceSec: n }` instead of a bare number.
+
+### Internal
+
+- Centralized the duplicated base64url codec into `src/lib/base64url.ts` (was copied in `agent-bridge.ts` and `agent-auth.ts`).
+
 ## [0.0.53] - 2026-07-09
 
 Production-readiness pass — MCP + agent-bridge hardening, permission-resolution correctness, auth-session teardown, and settings/a11y/i18n fixes. **Behavior changes** are marked ⚠️ (`builtinTools` default; permission-override semantics); the rest are additive or internal.

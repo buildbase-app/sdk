@@ -121,6 +121,7 @@
     "@rollup/plugin-node-resolve": "^16.0.1",
     "@rollup/plugin-terser": "^1.0.0",
     "@rollup/plugin-typescript": "^12.1.4",
+    "@types/node": "^26.1.1",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "autoprefixer": "^10.4.16",
@@ -139,7 +140,8 @@
     "rollup-plugin-visualizer": "^6.0.5",
     "tailwindcss": "^3.4.17",
     "tslib": "^2.8.1",
-    "typescript": "^5.2.0"
+    "typescript": "^5.2.0",
+    "vitest": "^2.1.9"
   },
   "keywords": [
     "saas",

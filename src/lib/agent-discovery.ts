@@ -3,17 +3,17 @@
  *
  * Makes a consuming app "agent ready" (see https://isitagentready.com) by
  * serving the standard machine-readable discovery documents an AI agent looks
- * for — with the BuildBase server as the source of truth.
+ * for.
  *
- * The heavy lifting already lives on the platform: an org admin configures
- * agent readiness once (protected resources, scopes, llms.txt) and the server
- * publishes the OAuth2 authorization-server metadata (RFC 8414) and the
- * per-resource protected-resource metadata (RFC 9728). This module lets an app
- * re-serve those documents from its own origin — where agents actually look —
- * plus generate the static discovery documents (Agent Card, Agent Skills,
- * security.txt) from local config. The result: an org admin adds full agent
- * support to their app in a couple of lines, and never hand-writes a
- * `.well-known` route.
+ * Ownership is split: the platform owns AUTH — it publishes the OAuth2
+ * authorization-server metadata (RFC 8414) and this module re-serves it from
+ * the app's origin, where agents actually look. Everything else (protected
+ * resources and their scopes, RFC 9728 metadata, llms.txt, sitemap, Agent
+ * Card, Agent Skills, security.txt) is CONTENT the app owns — declared locally
+ * in {@link AgentReadyConfig} and generated here; the shared authorization
+ * server stays scope- and resource-agnostic. The result: an org admin adds
+ * full agent support to their app in a couple of lines, and never hand-writes
+ * a `.well-known` route.
  *
  * Zero React and no framework types — every function returns plain data. The
  * only runtime dependency is `fetch`; SHA-256 (for Agent Skills digests) is a
@@ -108,7 +108,7 @@ export interface ApiCatalogApi {
   title?: string;
 }
 
-/** MCP Server Card (SEP-1649 / SEP-2127), advertising a live MCP server. */
+/** MCP Server Card (SEP-1649 v1.0), advertising a live MCP server. */
 export interface McpServerCard {
   /** Server name. */
   name: string;
@@ -118,12 +118,52 @@ export interface McpServerCard {
   endpoint: string;
   /** Transport type. Defaults to `"streamable-http"`. */
   transport?: string;
-  /** Capabilities object, e.g. `{ tools: {}, resources: {} }`. */
+  /** MCP protocol version the server speaks. Defaults to `"2025-06-18"`. */
+  protocolVersion?: string;
+  /**
+   * Capability flags. Booleans per SEP-1649 v1.0; a legacy object value
+   * (e.g. `{ tools: {} }`) is normalized to booleans by presence.
+   */
   capabilities?: Record<string, unknown>;
   /** Optional human description. */
   description?: string;
   /** Documentation URL. */
   documentationUrl?: string;
+}
+
+/** One OAuth scope an app declares in its scope catalog. */
+export interface AppScope {
+  /** Scope name, e.g. `designs:read`. */
+  name: string;
+  /** Human-readable description, shown on the consent screen. */
+  description: string;
+}
+
+/** One skill advertised on the A2A Agent Card. */
+export interface A2ACardSkill {
+  id: string;
+  name: string;
+  description: string;
+  tags?: string[];
+}
+
+/**
+ * Overrides for the A2A Agent Card (`/.well-known/agent-card.json`). Every
+ * field is optional — the card is fully derived from `site` + `skills` by
+ * default. See {@link buildA2AAgentCard}.
+ */
+export interface A2ACardConfig {
+  name?: string;
+  version?: string;
+  description?: string;
+  /** The endpoint agents connect to. Defaults to `siteUrl`. */
+  serviceUrl?: string;
+  /** Transport protocol advertised for `serviceUrl`. Defaults to `'http'`. */
+  transportProtocol?: string;
+  /** A2A capability flags. Defaults to `{ streaming: false, pushNotifications: false }`. */
+  capabilities?: Record<string, unknown>;
+  /** Skills; defaults to a mapping of `config.skills` (or a generic site skill). */
+  skills?: A2ACardSkill[];
 }
 
 /** One robots.txt policy group (a `User-agent:` block). */
@@ -207,6 +247,15 @@ export interface AgentReadyConfig {
   };
   /** Agent Skills to publish. Omit to skip the Agent Skills documents. */
   skills?: AgentSkill[];
+  /**
+   * The app's OAuth scope catalog — the source of truth for `scopes_supported`
+   * in this app's RFC 9728 protected-resource metadata (served from your own
+   * origin). Declare real, per-app scopes here (`designs:read`,
+   * `render:execute`, …) instead of placeholders. A `protectedResources` entry
+   * without its own `scopes` list inherits every catalog scope name. Scopes are
+   * app-owned: the shared BuildBase authorization server stays scope-agnostic.
+   */
+  scopes?: AppScope[];
   /** security.txt fields (RFC 9116). Omit to skip serving security.txt. */
   security?: {
     /** Contact URI(s) — email (`mailto:`) or URL. */
@@ -237,6 +286,37 @@ export interface AgentReadyConfig {
    * from the platform bundle — use when the app owns richer llms.txt content.
    */
   llmsTxt?: string;
+  /**
+   * Local `/llms-full.txt` content (llmstxt.org expanded document). Omit to
+   * skip serving it (or serve your own static file, which then wins).
+   */
+  llmsFullTxt?: string;
+  /**
+   * A2A Agent Card served at `/.well-known/agent-card.json`. Served by
+   * DEFAULT, derived from `site` + `skills`, so readiness scanners find a
+   * valid card with zero config. Pass `false` to disable, or an object to
+   * override any derived field.
+   */
+  a2aCard?: false | A2ACardConfig;
+  /**
+   * Web Bot Auth key directory (IETF WebBotAuth) served at
+   * `/.well-known/http-message-signatures-directory`. Only for apps whose own
+   * outbound bot/agent signs its requests — publish the JWKS public keys here
+   * so receiving sites can verify the signatures. Omitted = not served.
+   */
+  webBotAuth?: { keys: Array<Record<string, unknown>> };
+  /**
+   * Extra literal documents served by {@link resolveAgentPath}, keyed by exact
+   * request path. The escape hatch for anything the SDK has no builder for —
+   * commerce discovery (x402, UCP, ACP, MPP), `/openapi.json`, future
+   * `.well-known` documents. A string value infers its content type from the
+   * path extension. Extra paths take precedence over built-in documents, so
+   * they can also override any SDK-generated document.
+   */
+  extraPaths?: Record<
+    string,
+    string | { body: string; contentType?: string; status?: number; cacheControl?: string }
+  >;
   /** robots.txt generation (`buildRobotsTxt`). Omitted = sane defaults. */
   robots?: RobotsConfig;
   /**
@@ -291,6 +371,9 @@ const PROTECTED_RESOURCE_PREFIX = '/.well-known/oauth-protected-resource';
 const AGENT_SKILLS_PREFIX = '/.well-known/agent-skills';
 const API_CATALOG_PATH = '/.well-known/api-catalog';
 const MCP_CARD_PATH = '/.well-known/mcp/server-card.json';
+const MCP_MANIFEST_PATH = '/.well-known/mcp.json';
+const A2A_CARD_PATH = '/.well-known/agent-card.json';
+const WEB_BOT_AUTH_PATH = '/.well-known/http-message-signatures-directory';
 const JSON_CT = 'application/json';
 const LINKSET_CT = 'application/linkset+json';
 const MARKDOWN_CT = 'text/markdown; charset=utf-8';
@@ -492,6 +575,12 @@ export function buildAgentCard(
   if (config.mcpServerCard) {
     capabilities.mcp_server_card = MCP_CARD_PATH;
   }
+  if (config.a2aCard !== false) {
+    capabilities.a2a_agent_card = A2A_CARD_PATH;
+  }
+  if (config.llmsFullTxt) {
+    capabilities.llms_full_txt = '/llms-full.txt';
+  }
 
   const card = {
     schema_version: '1.0',
@@ -528,28 +617,33 @@ function protectedResourceWellKnownPath(resource: string): string {
  * Resolve the RFC 9728 protected-resource metadata for a request path, or null
  * if no configured resource maps to it.
  *
- * App-owned and local: built entirely from `config.protectedResources`, with
- * `authorization_servers` derived from `serverUrl`/`orgId` (the BuildBase
- * issuer). No platform round-trip.
+ * App-owned. `authorization_servers` uses the platform bundle's real
+ * `authorizationServer.issuer` when provided (so this doc can't advertise a
+ * different issuer than the AS metadata / agent card / auth.md), falling back
+ * to the `serverUrl`/`orgId` heuristic when the bundle isn't available.
  */
 export function buildProtectedResourceMetadata(
   requestPath: string,
-  config: AgentReadyConfig
+  config: AgentReadyConfig,
+  authServerIssuer?: string
 ): DiscoveryDocument | null {
   const resources = config.protectedResources ?? [];
   if (!resources.length) return null;
 
   const normalized = requestPath.replace(/\/+$/, '') || PROTECTED_RESOURCE_PREFIX;
-  const authServer = `${trimTrailingSlash(config.serverUrl)}/org/${config.orgId}`;
+  const authServer =
+    authServerIssuer ?? `${trimTrailingSlash(config.serverUrl)}/org/${config.orgId}`;
+  const catalogScopes = config.scopes?.map(s => s.name);
   const built = resources.map(r => {
     const resource = r.resource ?? trimTrailingSlash(config.siteUrl);
+    const scopes = r.scopes ?? catalogScopes;
     return {
       path: protectedResourceWellKnownPath(resource),
       metadata: {
         resource,
         authorization_servers: [authServer],
         bearer_methods_supported: r.bearerMethods ?? ['header'],
-        ...(r.scopes?.length ? { scopes_supported: r.scopes } : {}),
+        ...(scopes?.length ? { scopes_supported: scopes } : {}),
         ...(r.documentationUrl ? { resource_documentation: r.documentationUrl } : {}),
       },
     };
@@ -638,6 +732,171 @@ export function buildLlmsTxt(config: AgentReadyConfig): DiscoveryDocument | null
 }
 
 /**
+ * The `/llms-full.txt` document from `config.llmsFullTxt` (app-authored).
+ * Returns null when not set — serve your own static file instead.
+ */
+export function buildLlmsFullTxt(config: AgentReadyConfig): DiscoveryDocument | null {
+  if (!config.llmsFullTxt) return null;
+  return {
+    status: 200,
+    contentType: TEXT_CT,
+    body: config.llmsFullTxt,
+    cacheControl: cacheHeader(config.cacheTtlSeconds ?? DEFAULT_CACHE_TTL),
+  };
+}
+
+/**
+ * A2A Agent Card (https://a2a-protocol.org) for `/.well-known/agent-card.json`.
+ * Served by default, fully derived from `site` + `skills`, so a consumer is
+ * A2A-discoverable with zero config; `config.a2aCard` overrides any field or
+ * disables the card entirely (`false`). Skills fall back to a generic
+ * site-content skill when none are configured — the card must carry at least
+ * one skill to validate.
+ */
+export function buildA2AAgentCard(config: AgentReadyConfig): DiscoveryDocument | null {
+  if (config.a2aCard === false) return null;
+  const override = config.a2aCard ?? {};
+  const site = trimTrailingSlash(config.siteUrl);
+  const serviceUrl = override.serviceUrl ?? site;
+  const transportProtocol = override.transportProtocol ?? 'http';
+  const skills: A2ACardSkill[] =
+    override.skills ??
+    ((config.skills ?? []).length
+      ? (config.skills ?? []).map(s => ({
+          id: s.name,
+          name: s.name,
+          description: s.description,
+          tags: ['discovery'],
+        }))
+      : [
+          {
+            id: 'site-content',
+            name: 'Site content',
+            description: `Read ${config.site.name}'s public content and machine-readable discovery documents (llms.txt, sitemap, API catalog).`,
+            tags: ['content'],
+          },
+        ]);
+
+  const card = {
+    protocolVersion: '0.3.0',
+    name: override.name ?? config.site.name,
+    version: override.version ?? '1.0.0',
+    description:
+      override.description ??
+      config.site.description ??
+      `${config.site.name} — agent-accessible web application.`,
+    url: serviceUrl,
+    preferredTransport: transportProtocol,
+    // Newer A2A drafts (and readiness scanners) look for supportedInterfaces;
+    // url/preferredTransport above cover clients on the older card shape.
+    supportedInterfaces: [{ serviceUrl, transportProtocol }],
+    provider: config.site.provider
+      ? { organization: config.site.provider.name, url: config.site.provider.url }
+      : { organization: config.site.name, url: site },
+    capabilities: override.capabilities ?? { streaming: false, pushNotifications: false },
+    defaultInputModes: ['text/plain', 'application/json'],
+    defaultOutputModes: ['text/plain', 'application/json'],
+    skills,
+    ...(config.site.documentationUrl ? { documentationUrl: config.site.documentationUrl } : {}),
+  };
+  return jsonDoc(card, config);
+}
+
+/**
+ * Web Bot Auth key directory (JWKS) for
+ * `/.well-known/http-message-signatures-directory`. Returns null unless
+ * `config.webBotAuth.keys` is set — signing keys are the app's own and can't
+ * be derived.
+ */
+export function buildWebBotAuthDirectory(config: AgentReadyConfig): DiscoveryDocument | null {
+  const keys = config.webBotAuth?.keys;
+  if (!keys?.length) return null;
+  return {
+    status: 200,
+    contentType: 'application/http-message-signatures-directory+json',
+    body: JSON.stringify({ keys }, null, 2),
+    cacheControl: cacheHeader(config.cacheTtlSeconds ?? DEFAULT_CACHE_TTL),
+  };
+}
+
+/** Resolve a `config.extraPaths` entry to a document, or null. */
+function resolveExtraPath(path: string, config: AgentReadyConfig): DiscoveryDocument | null {
+  const entry = config.extraPaths?.[path];
+  if (entry === undefined) return null;
+  const doc = typeof entry === 'string' ? { body: entry } : entry;
+  return {
+    status: doc.status ?? 200,
+    contentType: doc.contentType ?? contentTypeForPath(path),
+    body: doc.body,
+    cacheControl: doc.cacheControl ?? cacheHeader(config.cacheTtlSeconds ?? DEFAULT_CACHE_TTL),
+  };
+}
+
+function contentTypeForPath(path: string): string {
+  if (path.endsWith('.json') || path.includes('.well-known/')) return JSON_CT;
+  if (path.endsWith('.md')) return MARKDOWN_CT;
+  if (path.endsWith('.xml')) return XML_CT;
+  return TEXT_CT;
+}
+
+/** One DNS record the org should publish for DNS-AID agent discovery. */
+export interface DnsAidRecord {
+  /** Fully-qualified record name, e.g. `_a2a._agents.example.com`. */
+  name: string;
+  /** Record type — HTTPS for HTTPS endpoints, SVCB otherwise. */
+  type: 'HTTPS' | 'SVCB';
+  ttl: number;
+  /** Record data, e.g. `1 example.com. alpn="h2" port=443`. */
+  data: string;
+}
+
+/**
+ * DNS-AID (DNS for AI Discovery) records this app should publish under its
+ * domain's `_agents` namespace. DNS records can't be served over HTTP — hand
+ * these to the org's DNS provider (and DNSSEC-sign the zone). Derived from the
+ * same config as the HTTP discovery surface, so the two never disagree.
+ */
+export function buildDnsAidRecords(config: AgentReadyConfig): DnsAidRecord[] {
+  let host: string;
+  try {
+    host = new URL(config.siteUrl).hostname;
+  } catch {
+    return [];
+  }
+  const records: DnsAidRecord[] = [
+    {
+      name: `_index._agents.${host}`,
+      type: 'HTTPS',
+      ttl: 3600,
+      data: `1 ${host}. alpn="h2" port=443`,
+    },
+  ];
+  if (config.a2aCard !== false) {
+    records.push({
+      name: `_a2a._agents.${host}`,
+      type: 'HTTPS',
+      ttl: 3600,
+      data: `1 ${host}. alpn="h2" port=443`,
+    });
+  }
+  if (config.mcpServerCard) {
+    let mcpHost = host;
+    try {
+      mcpHost = new URL(config.mcpServerCard.endpoint).hostname;
+    } catch {
+      // relative endpoint — same host
+    }
+    records.push({
+      name: `_mcp._agents.${host}`,
+      type: 'HTTPS',
+      ttl: 3600,
+      data: `1 ${mcpHost}. alpn="h2" port=443`,
+    });
+  }
+  return records;
+}
+
+/**
  * API Catalog (RFC 9727) as a `linkset+json` document for
  * `/.well-known/api-catalog`. Returns null when no APIs are configured.
  */
@@ -659,24 +918,94 @@ export function buildApiCatalog(config: AgentReadyConfig): DiscoveryDocument | n
   };
 }
 
+const MCP_PROTOCOL_VERSION = '2025-06-18';
+
 /**
- * MCP Server Card (SEP-1649) for `/.well-known/mcp/server-card.json`. Returns
- * null when no card is configured (i.e. no MCP server is running).
+ * Normalize a card's capabilities to SEP-1649 v1.0 boolean flags. Legacy
+ * object values (`{ tools: {} }`) count as `true` by presence; `tools`,
+ * `resources`, and `prompts` are always emitted so consumers of the card can
+ * rely on explicit flags.
+ */
+function cardCapabilities(capabilities?: Record<string, unknown>): Record<string, boolean> {
+  const source = capabilities ?? { tools: true };
+  const flags: Record<string, boolean> = { tools: false, resources: false, prompts: false };
+  for (const [key, value] of Object.entries(source)) {
+    flags[key] = value !== false && value !== undefined && value !== null;
+  }
+  return flags;
+}
+
+/**
+ * MCP Server Card (SEP-1649 v1.0) for `/.well-known/mcp/server-card.json`.
+ * Returns null when no card is configured (i.e. no MCP server is running).
  */
 export function buildMcpServerCard(config: AgentReadyConfig): DiscoveryDocument | null {
   const card = config.mcpServerCard;
   if (!card) return null;
   return jsonDoc(
     {
-      schema_version: '2024-11-05',
+      $schema: 'https://modelcontextprotocol.io/schemas/server-card/v1.0',
+      version: '1.0',
+      protocolVersion: card.protocolVersion ?? MCP_PROTOCOL_VERSION,
       serverInfo: { name: card.name, version: card.version },
       ...(card.description ? { description: card.description } : {}),
       transport: {
         type: card.transport ?? 'streamable-http',
-        endpoint: card.endpoint,
+        url: card.endpoint,
       },
-      capabilities: card.capabilities ?? { tools: {} },
+      capabilities: cardCapabilities(card.capabilities),
       ...(card.documentationUrl ? { documentation_url: card.documentationUrl } : {}),
+    },
+    config
+  );
+}
+
+/**
+ * MCP discovery manifest (SEP-1960) for `/.well-known/mcp.json` — the
+ * origin-level index of every MCP server this app exposes. Complements the
+ * per-server card (SEP-1649): scanners and agents probe this path first, then
+ * follow `server_card` for detail. Returns null when no MCP server is
+ * configured.
+ *
+ * The transport endpoint may live on a different origin than the app serving
+ * this manifest (e.g. card on `www.`, server on `api.`); the `authentication`
+ * pointer is derived from the ENDPOINT's origin per RFC 9728 path derivation,
+ * so agents land on the metadata the server's own WWW-Authenticate challenge
+ * advertises.
+ */
+export function buildMcpDiscoveryManifest(config: AgentReadyConfig): DiscoveryDocument | null {
+  const card = config.mcpServerCard;
+  if (!card) return null;
+  const site = trimTrailingSlash(config.siteUrl);
+  let authentication: { type: string; protected_resource_metadata: string } | undefined;
+  try {
+    const endpoint = new URL(card.endpoint);
+    authentication = {
+      type: 'oauth2',
+      protected_resource_metadata: `${endpoint.origin}${protectedResourceWellKnownPath(card.endpoint)}`,
+    };
+  } catch {
+    // Relative/malformed endpoint — omit the auth pointer rather than guess.
+  }
+  return jsonDoc(
+    {
+      $schema: 'https://modelcontextprotocol.io/schemas/mcp-discovery/v1.0',
+      version: '1.0',
+      servers: [
+        {
+          name: card.name,
+          ...(card.description ? { description: card.description } : {}),
+          transport: {
+            type: card.transport ?? 'streamable-http',
+            url: card.endpoint,
+          },
+          version: card.version,
+          capabilities: cardCapabilities(card.capabilities),
+          ...(card.documentationUrl ? { documentation_url: card.documentationUrl } : {}),
+          server_card: `${site}${MCP_CARD_PATH}`,
+          ...(authentication ? { authentication } : {}),
+        },
+      ],
     },
     config
   );
@@ -921,6 +1250,9 @@ export function buildDiscoveryLinkHeader(config: AgentReadyConfig): string {
     `<${site}/llms.txt>; rel="describedby"; type="text/plain"`,
     `<${site}/.well-known/agent.json>; rel="describedby"; type="application/json"`,
   ];
+  if (config.a2aCard !== false) {
+    links.push(`<${site}${A2A_CARD_PATH}>; rel="describedby"; type="application/json"`);
+  }
   if (config.sitemap || config.robots?.sitemaps?.length) {
     const sitemap = config.robots?.sitemaps?.[0] ?? `${site}/sitemap.xml`;
     links.push(`<${sitemap}>; rel="sitemap"; type="application/xml"`);
@@ -956,6 +1288,14 @@ export async function resolveWellKnown(
   if (path === '/.well-known/agent.json') {
     const bundle = await fetchAgentReadiness(config);
     return buildAgentCard(config, bundle);
+  }
+
+  if (path === A2A_CARD_PATH) {
+    return buildA2AAgentCard(config);
+  }
+
+  if (path === WEB_BOT_AUTH_PATH) {
+    return buildWebBotAuthDirectory(config);
   }
 
   if (path === '/.well-known/security.txt') {
@@ -1004,9 +1344,16 @@ export async function resolveWellKnown(
     return buildMcpServerCard(config);
   }
 
+  if (path === MCP_MANIFEST_PATH) {
+    return buildMcpDiscoveryManifest(config);
+  }
+
   if (path.startsWith(PROTECTED_RESOURCE_PREFIX)) {
-    // App-owned, built from local config — no platform round-trip.
-    return buildProtectedResourceMetadata(path, config);
+    // App-owned content, but reconcile `authorization_servers` with the real
+    // issuer from the platform bundle (cached) so the four discovery docs never
+    // advertise two different authorization servers.
+    const bundle = await fetchAgentReadiness(config);
+    return buildProtectedResourceMetadata(path, config, bundle.authorizationServer?.issuer);
   }
 
   return null;
@@ -1025,8 +1372,17 @@ export async function resolveAgentPath(
 ): Promise<DiscoveryDocument | null> {
   const path = requestPath.replace(/\/+$/, '') || requestPath;
 
+  // Consumer-supplied documents win over every built-in ("accelerate, never
+  // gate") — they can add paths the SDK has no builder for, or override one.
+  const extra = resolveExtraPath(path, config);
+  if (extra) return extra;
+
   if (path === '/robots.txt') {
     return buildRobotsTxt(config);
+  }
+
+  if (path === '/llms-full.txt') {
+    return buildLlmsFullTxt(config);
   }
 
   if (path === '/sitemap.xml') {

@@ -30,10 +30,12 @@ class WorkspaceSettingsManager {
   }
 
   /**
-   * Get current state
+   * Get current state. Returns the internal immutable snapshot (every change
+   * replaces the object, never mutates it) so the reference is stable between
+   * changes — a `useSyncExternalStore.getSnapshot` requirement.
    */
   getState(): SettingsManagerState {
-    return { ...this.currentState };
+    return this.currentState;
   }
 
   /**
@@ -77,10 +79,12 @@ class WorkspaceSettingsManager {
    * Clear params without changing open/section state
    */
   clearParams(): void {
+    if (this.currentState.params === undefined) return;
     this.currentState = {
       ...this.currentState,
       params: undefined,
     };
+    this.notifyListeners();
   }
 
   private notifyListeners(): void {

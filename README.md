@@ -2935,7 +2935,11 @@ app.post('/webhooks/buildbase', (req, res) => {
 
 ## Agent Readiness (Discovery)
 
-Make a consuming app [agent ready](https://isitagentready.com) by serving the standard machine-readable discovery documents an AI agent looks for — Agent Card, OAuth metadata (RFC 8414/9728), Agent Skills, API Catalog (RFC 9727), MCP Server Card, `robots.txt` with AI-bot rules + Content Signals, `sitemap.xml`, `security.txt` (RFC 9116), `llms.txt`, and `auth.md` — with the BuildBase server as the source of truth. Framework-agnostic and zero React: every function returns a plain `DiscoveryDocument` (`{ status, contentType, body, cacheControl, vary? }`); you wire it into your own router.
+> **Full guide:** [`docs/MCP-AND-AGENT-READINESS.md`](docs/MCP-AND-AGENT-READINESS.md) covers the whole surface — the fast path, the auth model, and the scope/resource customization spectrum. This section is the overview.
+
+Make a consuming app [agent ready](https://isitagentready.com) by serving the machine-readable discovery documents an AI client looks for — Agent Card, A2A card, OAuth metadata (RFC 8414/9728), Agent Skills, API Catalog (RFC 9727), MCP Server Card (SEP-1649 v1.0) + discovery manifest (SEP-1960), `robots.txt` with AI-bot rules + Content Signals, `sitemap.xml`, `security.txt`, `llms.txt`/`llms-full.txt`, and `auth.md`. Framework-agnostic and zero React: every function returns a plain `DiscoveryDocument` (`{ status, contentType, body, cacheControl, vary? }`).
+
+The fast path is [`createAgentStack`](docs/MCP-AND-AGENT-READINESS.md#fast-path--createagentstack) — one config derives the MCP handler **and** the whole discovery surface. To wire the discovery layer on its own, use `resolveAgentPath`:
 
 ```ts
 // lib/agent-ready.ts
@@ -2947,11 +2951,15 @@ export const agentConfig: AgentReadyConfig = {
   siteUrl: 'https://imejis.io',
   site: { name: 'Imejis', description: 'Generate images from templates via API.' },
   // Discovery content is YOURS — defined here in code, not in the platform:
+  scopes: [
+    { name: 'designs:read', description: 'View designs' },
+    { name: 'render:execute', description: 'Render images' },
+  ],
   llmsTxt: '# Imejis\n\n> Generate images from templates via API.',
   robots: { contentSignals: { search: true, aiInput: true, aiTrain: false } },
   sitemap: { urls: ['/', '/pricing'] }, // omit if you already generate sitemaps
-  protectedResources: [{ scopes: ['read:profile', 'write:posts'] }], // RFC 9728
-  // skills, security, apiCatalog, mcpServerCard, authMd, cacheTtlSeconds — all optional
+  protectedResources: [{ resource: 'https://imejis.io/mcp' }], // scopes inherited from catalog
+  // skills, security, apiCatalog, mcpServerCard, a2aCard, extraPaths — all optional
 };
 
 export async function serveAgentPath(req: Request): Promise<Response> {
@@ -3031,21 +3039,61 @@ Clean split, no duplication: **your app owns discovery content, the platform own
 | llms.txt                                                   | `buildLlmsTxt`                                                             |
 | MCP Server Card + live MCP server                          | `buildMcpServerCard` + [`@buildbase/sdk/mcp`](#mcp-server-buildbasesdkmcp) |
 | Agent Skills / API Catalog                                 | `buildAgentSkillsIndex` / `buildApiCatalog`                                |
+| A2A Agent Card                                             | `buildA2AAgentCard` (served by default from `site` + `skills`)             |
 | OAuth discovery (RFC 8414) + protected resource (RFC 9728) | `resolveAgentPath` (platform-backed)                                       |
-| DNS-AID                                                    | out of SDK scope — add the DNS record at your registrar                    |
-| Web Bot Auth, commerce (x402/ACP/UCP)                      | not yet — planned                                                          |
+| Web Bot Auth                                               | `buildWebBotAuthDirectory` (opt-in — publish your JWKS)                    |
+| DNS-AID                                                    | `buildDnsAidRecords` (returns records — publish at your DNS provider)      |
+| Commerce (x402/ACP/UCP/MPP), openapi.json                  | `config.extraPaths` (serve any literal document by path)                   |
 
-**Functions:** `resolveAgentPath`, `resolveWellKnown`, `fetchAgentReadiness`, `clearAgentReadinessCache`, `buildAgentCard`, `buildProtectedResourceMetadata`, `buildAgentSkillsIndex`, `buildSkillMd`, `buildSecurityTxt`, `buildLlmsTxt`, `buildRobotsTxt`, `buildSitemap`, `buildApiCatalog`, `buildMcpServerCard`, `buildAuthMd`, `buildDiscoveryLinkHeader`, `wantsMarkdown`, `negotiateMarkdown`, `provideWebMcpTools`, `sha256Digest`. **Constants:** `AI_BOT_USER_AGENTS`. **Types:** `AgentReadyConfig`, `AgentReadinessBundle`, `AgentSkill`, `ApiCatalogApi`, `McpServerCard`, `RobotsConfig`, `RobotsPolicy`, `ContentSignals`, `SitemapUrl`, `WebMcpTool`, `DiscoveryDocument`.
+**Functions:** `resolveAgentPath`, `resolveWellKnown`, `fetchAgentReadiness`, `clearAgentReadinessCache`, `buildAgentCard`, `buildA2AAgentCard`, `buildProtectedResourceMetadata`, `buildAgentSkillsIndex`, `buildSkillMd`, `buildSecurityTxt`, `buildLlmsTxt`, `buildLlmsFullTxt`, `buildRobotsTxt`, `buildSitemap`, `buildApiCatalog`, `buildMcpServerCard`, `buildMcpDiscoveryManifest`, `buildAuthMd`, `buildWebBotAuthDirectory`, `buildDnsAidRecords`, `buildDiscoveryLinkHeader`, `wantsMarkdown`, `negotiateMarkdown`, `provideWebMcpTools`, `sha256Digest`. **Constants:** `AI_BOT_USER_AGENTS`. **Types:** `AgentReadyConfig`, `AgentReadinessBundle`, `AgentSkill`, `AppScope`, `ApiCatalogApi`, `A2ACardConfig`, `A2ACardSkill`, `DnsAidRecord`, `McpServerCard`, `RobotsConfig`, `RobotsPolicy`, `ContentSignals`, `SitemapUrl`, `WebMcpTool`, `DiscoveryDocument`.
 
 ## MCP Server (`@buildbase/sdk/mcp`)
 
-Turn your app into a **live MCP server** so AI agents can operate it: the built-in tools expose your BuildBase state (workspaces, subscription, quotas, credits, feature flags, permissions) and you add your own product tools with zod schemas. Stateless Streamable HTTP — pure functions plus a Web-standard `Request`/`Response` adapter, so it runs on Node 18+, edge, Deno, and Bun. Server-only, zero React; split from the core entry because it uses `zod` at runtime.
+> **Full guide:** [`docs/MCP-AND-AGENT-READINESS.md`](docs/MCP-AND-AGENT-READINESS.md).
+
+Turn your app into a **live MCP server** so AI agents can operate it: the built-in tools expose your BuildBase state (workspaces, subscription, quotas, credits, feature flags, permissions) and you add your own product tools with zod schemas. Stateless Streamable HTTP (MCP 2025-06-18) — pure functions plus a Web-standard `Request`/`Response` adapter, so it runs on Node 18+, edge, Deno, and Bun. Server-only, zero React; split from the core entry because it uses `zod` at runtime.
+
+The fast path bundles the server + the whole discovery surface from one config:
+
+```ts
+// lib/agent.ts
+import { createAgentStack, defineMcpTool } from '@buildbase/sdk/mcp';
+import { z } from 'zod';
+
+export const agent = createAgentStack({
+  serverUrl: process.env.NEXT_PUBLIC_BUILDBASE_SERVER_URL!,
+  orgId: process.env.NEXT_PUBLIC_BUILDBASE_ORG_ID!,
+  siteUrl: 'https://imejis.io',
+  site: { name: 'Imejis', description: 'Generate images from templates via API.' },
+  secret: process.env.SYSTEM_SECRET!, // derives buildbaseAuth (verify + aud + sid decrypt)
+  scopes: [{ name: 'render:execute', description: 'Render images' }],
+  mcp: {
+    builtinTools: 'readonly',
+    tools: [
+      defineMcpTool({
+        name: 'generate_image',
+        description: 'Render an image from a template',
+        inputSchema: z.object({ templateId: z.string(), data: z.record(z.string(), z.any()) }),
+        requiredScopes: ['render:execute'],
+        execute: async (input, { bb, workspaceId }) => {
+          await bb.usage.record(workspaceId!, { quotaSlug: 'images', quantity: 1 });
+          return renderTemplate(input.templateId, input.data);
+        },
+      }),
+    ],
+  },
+});
+
+// app/api/mcp/route.ts
+export const { GET, POST, DELETE, OPTIONS } = agent.routes;
+```
+
+Prefer the primitives (own token format, unified web+agent auth)? Wire `createMcpHandler` + `buildbaseAuth` directly — `buildbaseAuth` does the full verify (HS256, RFC 8707 audience binding, `sid` decrypt) so you never hand-roll it:
 
 ```ts
 // lib/mcp.ts
 import BuildBase from '@buildbase/sdk';
-import { createMcpHandler, defineMcpTool, verifyClientJwt } from '@buildbase/sdk/mcp';
-import { z } from 'zod';
+import { createMcpHandler, defineMcpTool, buildbaseAuth } from '@buildbase/sdk/mcp';
 
 const buildbase = BuildBase({
   serverUrl: process.env.BUILDBASE_URL!,
@@ -3055,50 +3103,29 @@ const buildbase = BuildBase({
 export const mcp = createMcpHandler({
   buildbase,
   serverInfo: { name: 'imejis', version: '1.0.0' },
-  auth: {
-    // Verify the Bearer token your app minted in the OAuth2 app-bridge flow
-    // and map it to the BuildBase session the tools run under.
-    verify: token => {
-      const c = verifyClientJwt(token, process.env.BUILDBASE_CLIENT_SECRET!);
-      return { sessionId: String(c.sid), userId: String(c.sub), scopes: c.scope as string[] };
-    },
-    // Unauthenticated requests get a 401 whose WWW-Authenticate header points
-    // here, so agents bootstrap the whole OAuth discovery flow (RFC 9728).
-    resourceMetadataUrl: 'https://imejis.io/.well-known/oauth-protected-resource',
-  },
-  builtinTools: 'readonly', // default; 'all' opts into the mutating tools
+  auth: buildbaseAuth({
+    secret: process.env.SYSTEM_SECRET!,
+    resource: ['https://imejis.io/mcp', 'https://imejis.io/api/mcp'],
+    requireAudience: true,
+  }),
+  builtinTools: 'readonly',
   tools: [
-    defineMcpTool({
-      name: 'generate_image',
-      description: 'Render an image from a template',
-      inputSchema: z.object({ templateId: z.string(), data: z.record(z.string(), z.any()) }),
-      annotations: { readOnlyHint: false },
-      execute: async (input, { bb, workspaceId }) => {
-        await bb.usage.record(workspaceId!, { quotaSlug: 'images', quantity: 1 });
-        return renderTemplate(input.templateId, input.data);
-      },
-    }),
+    /* defineMcpTool(...) */
   ],
 });
 ```
 
 ```ts
-// app/api/mcp/route.ts  (Next.js App Router)
-import { mcp } from '@/lib/mcp';
-export const POST = (req: Request) => mcp.fetch(req);
-export const GET = (req: Request) => mcp.fetch(req); // 405 per spec (no SSE)
-export const DELETE = (req: Request) => mcp.fetch(req); // 405 (stateless)
-```
-
-```ts
-// Express — the pure form
+// Express / Fastify / Node — the pure form
 app.post('/mcp', async (req, res) => {
   const r = await mcp.handle({ method: req.method, headers: req.headers, body: req.body });
   res.status(r.status).set(r.headers).send(r.body);
 });
 ```
 
-Advertise it via the server card so agents find the endpoint:
+> **Copy-paste recipes for every framework** — Next.js (App + Pages Router), Express, Fastify, Hono, Bun, Deno, Cloudflare Workers, and React/SPA (WebMCP) — plus the per-framework mint route and a production checklist: [`docs/MCP-AND-AGENT-READINESS.md`](docs/MCP-AND-AGENT-READINESS.md#framework-recipes). Two adapters cover them all: `mcp.fetch(Request)` (web standard — App Router, Hono, Bun, Deno, edge) and `mcp.handle({method,headers,body})` (pure — Express, Fastify, Pages Router).
+
+Advertise it via the server card so agents find the endpoint (the stack sets this automatically):
 
 ```ts
 export const agentConfig: AgentReadyConfig = {
@@ -3187,21 +3214,25 @@ The SDK accelerates; it never gates. Everything BuildBase-specific is optional:
 
 ### Auth in one line of plumbing
 
-The OAuth2 app-bridge flow already mints your app's Bearer tokens (see [OAuth2 App Bridge](#oauth2-app-bridge)); `signClientJwt(payload, secret)` is the symmetric counterpart of `verifyClientJwt` for exactly that. The mint claims include `sessionId` — a per-user BuildBase session bound to the grant (fresh on every mint, including refresh). Embed it **encrypted** (JWTs are signed, not encrypted — the agent can read its own token) and keep it out of any storage, so it simply expires with the token; your MCP `auth.verify` decrypts it back into `McpAuthInfo.sessionId`:
+The OAuth2 app-bridge flow mints your app's Bearer tokens (see [OAuth2 App Bridge](#oauth2-app-bridge)). Use the presets and neither the mint nor the verify is hand-rolled — the per-user BuildBase session rides as an **encrypted `sid`** claim (JWTs are signed, not encrypted), never stored, expiring with the token:
 
 ```ts
-mintToken: (user) => ({
-  token: signClientJwt(
-    { sub: user.id, scope: user.scope, aud: user.resource, sid: encrypt(user.sessionId) },
-    process.env.BUILDBASE_CLIENT_SECRET!
-  ),
-  expiresIn: 3600,
-}),
+// mint (applicationTokenUrl) — HS256 with your secret, aud from the grant, encrypted sid
+import { mintAgentToken } from '@buildbase/sdk';
+mintToken: (claims) => mintAgentToken({ claims, secret: process.env.SYSTEM_SECRET! }),
+
+// verify (MCP server) — HS256 + RFC 8707 audience + sid decrypt → McpAuthInfo
+import { buildbaseAuth } from '@buildbase/sdk/mcp';
+auth: buildbaseAuth({ secret: process.env.SYSTEM_SECRET!, resource: 'https://imejis.io/mcp' }),
 ```
 
-Set `auth: false` to disable auth entirely (local development only). Test with the MCP Inspector: `npx @modelcontextprotocol/inspector --cli http://localhost:3000/api/mcp --transport http --header "Authorization: Bearer <token>" --method tools/list`.
+Bringing your own token format? `auth.verify(token, req) → McpAuthInfo` accepts any Bearer token; set `auth.resourceMetadataUrl` so 401s carry the RFC 9728 challenge. Set `auth: false` to disable auth (local dev only). Debug audience mismatches with `MCP_AUTH_DEBUG=1`. Test with the MCP Inspector: `npx @modelcontextprotocol/inspector --cli http://localhost:3000/api/mcp --transport http --header "Authorization: Bearer <token>" --method tools/list`.
 
-**Exports:** `createMcpHandler`, `defineMcpTool`, `builtinMcpTools`, `selectBuiltinTools`, plus re-exported auth helpers (`signClientJwt`, `verifyClientJwt`, `extractBearerToken`, `bearerChallenge`, `AppBridgeError`). **Types:** `CreateMcpHandlerConfig`, `McpHandler`, `McpToolDefinition`, `McpToolContext`, `McpAuthInfo`, `McpHttpRequest`, `McpHttpResponse`, `McpToolAnnotations`, `McpBuildBaseClient`, `BuiltinMcpToolName`, `McpServerCard`, `ScopedActions`.
+**Exports:** `createAgentStack`, `createMcpHandler`, `defineMcpTool`, `builtinMcpTools`, `selectBuiltinTools`, `buildbaseAuth`, `mintAgentToken`, `createSessionRefCrypto`, plus re-exported auth helpers (`signClientJwt`, `verifyClientJwt`, `extractBearerToken`, `bearerChallenge`, `AppBridgeError`). **Types:** `AgentStack`, `AgentStackConfig`, `CreateMcpHandlerConfig`, `McpHandler`, `McpToolDefinition`, `McpToolContext`, `McpAuthInfo`, `McpHttpRequest`, `McpHttpResponse`, `McpToolAnnotations`, `McpBuildBaseClient`, `BuiltinMcpToolName`, `BuildBaseAuthOptions`, `MintAgentTokenOptions`, `SessionRefCrypto`, `McpServerCard`, `ScopedActions`.
+
+### Scopes & resources — restrict or open up
+
+Scopes and resources are **app-owned** — the shared BuildBase authorization server stays scope/resource-agnostic. Scopes have three levers: **declare** a catalog (`scopes: [{ name, description }]` → `scopes_supported` in your own RFC 9728 protected-resource metadata), **gate per tool** (`requiredScopes` on a custom tool → hidden/refused unless the token carries them), and the **floor** (every tool runs under the user's BuildBase session, so the platform enforces the user's real permissions — an agent never exceeds the user). Resources have two: **declare** `protectedResources` (RFC 9728) and **bind** the token audience via `buildbaseAuth({ resource, requireAudience })` (RFC 8707) — the audience check at your resource is the whole gate. Built-ins are restricted with `builtinTools`, not scopes. Public clients (Claude Desktop, Cursor, Inspector) self-register with PKCE and no secret. Full model: [the guide](docs/MCP-AND-AGENT-READINESS.md#scopes--resources-restrict-or-open-up).
 
 ## OAuth2 App Bridge
 
@@ -3211,6 +3242,8 @@ BuildBase runs the full OAuth2 authorization flow (login, consent, code, PKCE, r
 - `applicationRevokeUrl` — invalidate a user's token on revocation (optional)
 
 Both requests carry `Authorization: Bearer <JWT>`, an HS256 JWT signed with your client secret. This toolkit verifies those requests (timing-safe, no `alg` confusion) and shapes the exact response body the platform expects, so you write only the part that's yours: minting/invalidating a token in your own format.
+
+> For the common case, `mintToken: (claims) => mintAgentToken({ claims, secret })` is the preset — it signs HS256 with your secret, binds `aud` to the granted RFC 8707 resource, and embeds the encrypted `sid`. The examples below show the hand-rolled equivalent, for apps that mint their own token format (e.g. one shared with their web sessions). See [the guide](docs/MCP-AND-AGENT-READINESS.md#auth-minting--verifying-the-token).
 
 ```ts
 // applicationTokenUrl handler (Next.js Pages Router)
@@ -3295,7 +3328,9 @@ return res.json({ id: claims.id, email: claims.email /* … */ });
 
 The one-call handlers cover the common path; the underlying pieces are exported for custom flows: `verifyAppTokenRequest` / `verifyAppRevokeRequest` (verify → claims), `verifyClientJwt`, `extractBearerToken`, and the response builders `appTokenSuccess` / `appTokenFailure`. Verification throws `AppBridgeError` (with a machine-readable `code` like `invalid_signature`, `token_expired`, `invalid_algorithm`). HMAC verification uses the SDK's dependency-free pure-JS HMAC-SHA256, so it behaves identically under ESM, CJS, a bundler, or bare Node.
 
-**Types:** `AppTokenRequestClaims`, `AppRevokeRequestClaims`, `AppTokenResult`, `AppTokenResponseBody`, `HandlerResult`.
+**Presets** (also on the core entry): `mintAgentToken` (the whole mint — HS256 + `aud` + encrypted `sid`), `buildbaseAuth` (the whole verify), `createSessionRefCrypto` (the `sid` AES-256-GCM crypto). The platform relays the minted token but never sees your secret — it can neither forge nor decode your tokens.
+
+**Exports:** `handleAppTokenRequest`, `handleAppRevokeRequest`, `verifyAppTokenRequest`, `verifyAppRevokeRequest`, `verifyClientJwt`, `signClientJwt`, `extractBearerToken`, `bearerChallenge`, `appTokenSuccess`, `appTokenFailure`, `mintAgentToken`, `buildbaseAuth`, `createSessionRefCrypto`, `AppBridgeError`. **Types:** `AppTokenRequestClaims`, `AppRevokeRequestClaims`, `AppTokenResult`, `AppTokenResponseBody`, `HandlerResult`, `VerifyClientJwtOptions`, `BuildBaseAuthOptions`, `MintAgentTokenOptions`, `SessionRefCrypto`.
 
 ## 🚀 Publishing a Release
 

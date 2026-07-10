@@ -234,15 +234,17 @@ const readonlyTools: McpToolDefinition<any>[] = [
   {
     name: 'get_usage_logs',
     description: "Get a workspace's usage log entries (paginated, filterable).",
-    inputSchema: z.object({
-      workspaceId: workspaceIdField,
-      quotaSlug: z.string().optional(),
-      from: z.string().optional().describe('ISO date lower bound.'),
-      to: z.string().optional().describe('ISO date upper bound.'),
-      source: z.string().optional(),
-      page: z.number().int().min(1).optional(),
-      limit: z.number().int().min(1).max(100).optional(),
-    }),
+    inputSchema: z
+      .object({
+        workspaceId: workspaceIdField,
+        quotaSlug: z.string().optional(),
+        from: z.string().optional().describe('ISO date lower bound.'),
+        to: z.string().optional().describe('ISO date upper bound.'),
+        source: z.string().optional(),
+        page: z.number().int().min(1).optional(),
+        limit: z.number().int().min(1).max(100).optional(),
+      })
+      .strict(),
     annotations: readOnly,
     execute: (input, ctx) => {
       const { workspaceId, ...query } = input;
@@ -266,13 +268,15 @@ const readonlyTools: McpToolDefinition<any>[] = [
   {
     name: 'get_credit_buckets',
     description: "Get a workspace's credit buckets (paginated).",
-    inputSchema: z.object({
-      workspaceId: workspaceIdField,
-      status: z.string().optional(),
-      source: z.string().optional(),
-      page: z.number().int().min(1).optional(),
-      limit: z.number().int().min(1).max(100).optional(),
-    }),
+    inputSchema: z
+      .object({
+        workspaceId: workspaceIdField,
+        status: z.string().optional(),
+        source: z.string().optional(),
+        page: z.number().int().min(1).optional(),
+        limit: z.number().int().min(1).max(100).optional(),
+      })
+      .strict(),
     annotations: readOnly,
     execute: (input, ctx) => {
       const { workspaceId, ...query } = input;
@@ -493,14 +497,16 @@ const mutatingTools: McpToolDefinition<any>[] = [
   {
     name: 'create_subscription_checkout',
     description: 'Create a Stripe checkout session to subscribe a workspace to a plan.',
-    inputSchema: z.object({
-      workspaceId: workspaceIdField,
-      planVersionId: z.string(),
-      billingInterval: z.string().optional(),
-      currency: z.string().optional(),
-      successUrl: z.string().optional(),
-      cancelUrl: z.string().optional(),
-    }),
+    inputSchema: z
+      .object({
+        workspaceId: workspaceIdField,
+        planVersionId: z.string(),
+        billingInterval: z.string().optional(),
+        currency: z.string().optional(),
+        successUrl: z.string().optional(),
+        cancelUrl: z.string().optional(),
+      })
+      .strict(),
     annotations: { readOnlyHint: false, openWorldHint: true },
     execute: (input, ctx) => {
       const { workspaceId, ...req } = input;
@@ -510,13 +516,15 @@ const mutatingTools: McpToolDefinition<any>[] = [
   {
     name: 'update_subscription',
     description: "Change a workspace's subscription plan.",
-    inputSchema: z.object({
-      workspaceId: workspaceIdField,
-      planVersionId: z.string(),
-      billingInterval: z.string().optional(),
-      successUrl: z.string().optional(),
-      cancelUrl: z.string().optional(),
-    }),
+    inputSchema: z
+      .object({
+        workspaceId: workspaceIdField,
+        planVersionId: z.string(),
+        billingInterval: z.string().optional(),
+        successUrl: z.string().optional(),
+        cancelUrl: z.string().optional(),
+      })
+      .strict(),
     annotations: { readOnlyHint: false },
     execute: (input, ctx) => {
       const { workspaceId, ...req } = input;
@@ -551,13 +559,15 @@ const mutatingTools: McpToolDefinition<any>[] = [
   {
     name: 'purchase_credits',
     description: 'Create a Stripe checkout session to buy a credit package.',
-    inputSchema: z.object({
-      workspaceId: workspaceIdField,
-      creditPackageId: z.string(),
-      currency: z.string().optional(),
-      successUrl: z.string().describe('Redirect URL on success.'),
-      cancelUrl: z.string().describe('Redirect URL on cancel.'),
-    }),
+    inputSchema: z
+      .object({
+        workspaceId: workspaceIdField,
+        creditPackageId: z.string(),
+        currency: z.string().optional(),
+        successUrl: z.string().describe('Redirect URL on success.'),
+        cancelUrl: z.string().describe('Redirect URL on cancel.'),
+      })
+      .strict(),
     annotations: { readOnlyHint: false, openWorldHint: true },
     execute: (input, ctx) => {
       const { workspaceId, ...req } = input;

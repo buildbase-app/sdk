@@ -37,6 +37,18 @@ export {
   verifyClientJwt,
 } from './lib/agent-bridge';
 
+// ─── One-config agent stack (MCP server + full discovery surface) ─────────────
+export { createAgentStack } from './lib/agent-stack';
+export type { AgentStack, AgentStackConfig } from './lib/agent-stack';
+
+// ─── BuildBase auth presets (mint + verify the app's own agent tokens) ────────
+export { buildbaseAuth, createSessionRefCrypto, mintAgentToken } from './lib/agent-auth';
+export type {
+  BuildBaseAuthOptions,
+  MintAgentTokenOptions,
+  SessionRefCrypto,
+} from './lib/agent-auth';
+
 // ─── Related types from core ──────────────────────────────────────────────────
 export type { McpServerCard } from './lib/agent-discovery';
 export type { ScopedActions } from './lib/server-client';

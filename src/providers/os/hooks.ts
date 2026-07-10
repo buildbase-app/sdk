@@ -36,7 +36,7 @@ export function useSaaSSettings() {
   );
 
   const getSettings = useCallback(
-    async (signal?: AbortSignal): Promise<ISettings | null> => {
+    async (_signal?: AbortSignal): Promise<ISettings | null> => {
       if (!settingsApi) return null;
 
       // If already fetching, reuse the in-flight promise
@@ -44,7 +44,12 @@ export function useSaaSSettings() {
 
       _settingsFetchPromise = (async () => {
         try {
-          const data = await settingsApi.getSettings(signal);
+          // Detached on purpose: the result lands in the GLOBAL store, so the
+          // shared fetch must not be tied to any one component's signal. (A
+          // caller's signal — e.g. StrictMode's throwaway first mount — would
+          // abort it for every waiter, and since the effect deps never change
+          // again, settings would stay null for the whole session.)
+          const data = await settingsApi.getSettings();
           dispatch.os(osActions.setSettings(data));
           return data;
         } catch (err) {
@@ -66,11 +71,11 @@ export function useSaaSSettings() {
 
   // Automatically fetch settings once when OS config is ready
   useAsyncEffect(
-    async signal => {
+    async () => {
       // Already in store — nothing to do
       if (settings) return;
       if (!isOsConfigReady(os)) return;
-      await getSettings(signal);
+      await getSettings();
     },
     // Only re-run when config changes, not when settings/getSettings change
     [serverUrl, version, orgId],

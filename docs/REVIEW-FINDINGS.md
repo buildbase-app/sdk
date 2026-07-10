@@ -1,8 +1,8 @@
 # SDK Fresh-Eye Review — Findings Backlog (2026-07-08)
 
 Full-codebase review (core/API, state/providers/hooks, UI screens, packaging/types/i18n/docs).
-43 verified findings. Status: **Batch 1 done (2026-07-08)** — check items off as they land.
-Recommended order: Batch 1 → 4 (see bottom).
+43 verified findings. Status: **Batches 1–3, MCP hardening, Batch 2 (money & security), and the state-layer batch all done (last: 2026-07-10)** — check items off as they land.
+Remaining: Batch 4 (structure & polish: SettingsSubscription/SubscriptionDialog extractions, selector `useSyncExternalStore` rework, `useSaaSWorkspaces` → real provider, `any`-index signatures, formatter dedup, branding alias, WorkspaceApi AbortSignal threading, response-handling dedup) + remaining test gaps.
 
 Legend: 🔴 critical · 🟠 high · 🟡 medium · ⚪ low
 
@@ -37,32 +37,49 @@ Follow-up (2026-07-09, same version): the deferred MCP items are now largely clo
 
 Deferred from Batch 3 (larger, want tests first): `useSaaSWorkspaces` lifecycle into a real provider; selector `useSyncExternalStore` rework; `any`-index signatures; `SettingsSubscription.tsx` extraction.
 
+## State-layer batch (async correctness) — done (2026-07-10, unreleased)
+
+- [x] 🔴 **Stale-response races in gate-context fetch hooks** — new `useLatestRequest()` helper (`lib/use-latest-request.ts`, follows the `useConnectedAgents` pattern) applied to all 15 read hooks: subscription-hooks (usePublicPlans, usePublicPlanGroupVersion, useSubscription, usePlanGroup, usePlanGroupVersions, useInvoices, useInvoice, useQuotaUsageStatus, useAllQuotaUsage, useUsageLogs) + credit-hooks (useCreditBalance, useCreditPackages, useCreditTransactions, useExpiringCredits, usePublicCreditPackages). Superseded responses are dropped; only the latest request clears `loading`; unmount aborts.
+- [x] 🔴 **`useSaaSSettings` StrictMode/shared-promise bug** — the deduped global fetch is now detached from any caller's AbortSignal (its result lands in the global store, so it must not die with a component). (`os/hooks.ts`)
+- [x] 🟡 **`UserProvider` split** — per-resource `attributesLoading/featuresLoading` + `attributesError/featuresError` (combined `isLoading`/`error` kept for back-compat); stale errors cleared on new requests; `t` added to deps; `useUserFeatures` now reports features-only state as documented. (`user/provider.tsx`, `user/hooks.ts`)
+- [x] ⚪ **`createWorkspace` 300ms timer** — tracked in a ref, cleared on unmount and re-invocation. (`workspace/hooks.ts`)
+- [x] ⚪ **`settingsManager`** — `clearParams()` notifies subscribers (no-op when params already empty); `getState()` returns the stable internal snapshot (`useSyncExternalStore`-ready). (`settings-manager.ts`)
+
+## Batch 2 (money & security) — done (2026-07-10, unreleased)
+
+- [x] 🔴 **Retries replay non-idempotent POSTs** — retries now gated on RFC 9110 idempotent methods (GET/HEAD/OPTIONS/PUT/DELETE); POST/PATCH never replayed. Backoff sleep is abort-aware (caller abort or timeout ends it immediately). (`api-base.ts`) ⚠️ behavior change: POSTs no longer retry on 5xx/network error.
+- [x] 🟠 **Open-redirect gaps** — `validateRedirectUrl` now accepts relative paths (rejects `//host` and `/\host` forms), takes `{ sameOrigin, allowedOrigins }`, and `safeRedirect` validates the fallback. Auth-intent return URLs are same-origin-only; Stripe/OAuth cross-origin https targets unchanged. Also fixed: the `http://[::1]` localhost check never matched (URL.hostname includes brackets). (`security.ts`, `auth-intent.ts`)
+- [x] 🟡 **Zero-decimal currencies (JPY)** — `isZeroDecimalCurrency` + `minorAmountToDisplay` (exported); fixed `formatCents`, `formatOverageRate(-WithLabel)`, `formatQuotaWithPrice`, `getQuotaDisplayParts`. `formatCents(1000,'jpy')` → `¥1,000`. (`currency-utils.ts`, `quota-utils.ts`)
+- [x] ⚪ **`createBBUrl` silent localhost fallback** — invalid explicit base now throws; the localhost default remains only for the no-argument server-side case. (`url-params.ts`)
+
+Tests added (vitest, now 85 total): `permissions`, `security`, `url-params`, `api-base` retry/abort, `currency-utils`/`quota-utils` zero-decimal — plus the pre-existing `sha256`, `agent-auth`, `agent-stack` suites.
+
 ---
 
 ## Core / API layer
 
-- [ ] 🔴 **Retries replay non-idempotent POSTs — double-charge risk.** `src/lib/api-base.ts:208-243` retries any method on network error/5xx, including `consumeCredits`, `recordUsage`, `purchaseCredits`, `createCheckoutSession` (`workspace-api.ts:736,523,768,385`). Restrict retries to idempotent methods or auto-attach the backend-supported `idempotencyKey`.
+- [x] 🔴 **Retries replay non-idempotent POSTs — double-charge risk.** `src/lib/api-base.ts:208-243` retries any method on network error/5xx, including `consumeCredits`, `recordUsage`, `purchaseCredits`, `createCheckoutSession` (`workspace-api.ts:736,523,768,385`). Restrict retries to idempotent methods or auto-attach the backend-supported `idempotencyKey`.
 - [x] 🟠 **User aborts misreported as timeouts.** `src/lib/api-base.ts:222-229` converts any `AbortError` into a fake "Request timeout" error whenever a timeout is configured (default 30s ⇒ always). Defeats `isAbortError()` (`error-handler.ts:75`); unmount cancellations surface as real errors. Convert only when the timeout controller actually fired (see `fetchWithTimeout`, `api-utils.ts:381`).
-- [ ] 🟠 **`validateRedirectUrl`/`safeRedirect` don't prevent open redirects.** `src/lib/security.ts:10-50`. Protocol-only check (`https://evil.com` passes); safe relative paths (`/dashboard`) throw in `new URL()` and silently fall back; `fallbackUrl` is never validated. Add same-origin/allowlist validation + relative-path support via `new URL(url, origin)`.
+- [x] 🟠 **`validateRedirectUrl`/`safeRedirect` don't prevent open redirects.** `src/lib/security.ts:10-50`. Protocol-only check (`https://evil.com` passes); safe relative paths (`/dashboard`) throw in `new URL()` and silently fall back; `fallbackUrl` is never validated. Add same-origin/allowlist validation + relative-path support via `new URL(url, origin)`.
 - [x] 🟡 **`unwrapResponse` uses `result.data || result`.** `src/lib/api-base.ts:325` — falsy payloads (`0`, `false`, `''`, `null`) return the whole envelope cast to `T`. Use `result.data !== undefined ? result.data : result`. (~25 call sites affected.)
 - [x] 🟡 **Path params not URI-encoded.** `workspace-api.ts:137,175,263,374`, `user-api.ts:41` — IDs containing `/ ? # ../` retarget the request path; query params in the same file ARE encoded. Wrap path segments in `encodeURIComponent()`.
 - [x] 🟡 **Permission overrides can't revoke; unknown roles gain member perms.** `src/lib/permissions.ts:164-184` — `length > 0` checks mean `[]` (explicit revoke) falls through to defaults; unknown roles fall back to `member` (grant-by-default). Also doc at :121 claims `applySettingRestrictions` handles `canCreateWorkspace` but it only handles `canInviteMembers` (:210-226). Distinguish "present but empty" from "absent"; deny unknown roles.
-- [ ] 🟡 **`formatCents` breaks zero-decimal currencies (JPY).** `src/api/billing/currency-utils.ts:95-97` — `formatCents(1000,'jpy')` → "¥10.00" instead of ¥1,000; `jpy` is in `PLAN_CURRENCY_CODES`. Same bug in `formatOverageRate`/`formatQuotaWithPrice`. Maintain a zero-decimal set or use `Intl.NumberFormat`.
+- [x] 🟡 **`formatCents` breaks zero-decimal currencies (JPY).** `src/api/billing/currency-utils.ts:95-97` — `formatCents(1000,'jpy')` → "¥10.00" instead of ¥1,000; `jpy` is in `PLAN_CURRENCY_CODES`. Same bug in `formatOverageRate`/`formatQuotaWithPrice`. Maintain a zero-decimal set or use `Intl.NumberFormat`.
 - [ ] 🟡 **~20× copy-pasted response handling + 3 divergent conventions.** `workspace-api.ts:278-865` repeats fetch→throwResponseError→unwrapResponse; others use `fetchJson`; `selectFreePlan` (:410) / `AuthApi.requestAuth` (auth-api.ts:45) return raw `response.json()` unchecked. Add `BaseApi.fetchUnwrapped<T>()`; one envelope convention.
 - [ ] 🟡 **WorkspaceApi methods can't be aborted.** All ~40 methods lack `AbortSignal` params (Auth/User/Settings APIs have them). Thread an optional `signal` through.
-- [ ] ⚪ **`createBBUrl` swaps invalid base for `https://localhost`.** `src/lib/url-params.ts:122-130` — a typo'd base yields Stripe return URLs pointing at localhost with no error. Throw/return null instead. Related: retry backoff (`api-base.ts:215,241`) ignores the abort signal during sleep.
+- [x] ⚪ **`createBBUrl` swaps invalid base for `https://localhost`.** `src/lib/url-params.ts:122-130` — a typo'd base yields Stripe return URLs pointing at localhost with no error. Throw/return null instead. Related: retry backoff (`api-base.ts:215,241`) ignores the abort signal during sleep.
 
 ## State / providers / hooks
 
-- [ ] 🔴 **Stale-response races in every gate-context fetch hook.** `subscription-hooks.ts:208-241` (`useSubscription`), `:1305-1338` (`useAllQuotaUsage`), `credit-hooks.ts` (`useCreditBalance`), `usePlanGroup`, `useInvoices`, `useUsageLogs`, `usePublicPlans` — `setState` after `await` with no abort/version guard. Workspace switch can render the previous workspace's subscription/quota/credits through `WhenSubscription` etc. Add abort signal or `versionRef` guard before each `setState`.
-- [ ] 🔴 **`useSaaSSettings` shared promise bound to first caller's AbortSignal; StrictMode kills settings for the session.** `src/providers/os/hooks.ts:38-85` — module-global `_settingsFetchPromise` uses a component signal; on abort all waiters get `null`, error is swallowed, effect deps never re-fire. Use a detached AbortController for the deduped fetch, or re-arm while `settings === null && !_settingsFetchPromise`.
+- [x] 🔴 **Stale-response races in every gate-context fetch hook.** `subscription-hooks.ts:208-241` (`useSubscription`), `:1305-1338` (`useAllQuotaUsage`), `credit-hooks.ts` (`useCreditBalance`), `usePlanGroup`, `useInvoices`, `useUsageLogs`, `usePublicPlans` — `setState` after `await` with no abort/version guard. Workspace switch can render the previous workspace's subscription/quota/credits through `WhenSubscription` etc. Add abort signal or `versionRef` guard before each `setState`.
+- [x] 🔴 **`useSaaSSettings` shared promise bound to first caller's AbortSignal; StrictMode kills settings for the session.** `src/providers/os/hooks.ts:38-85` — module-global `_settingsFetchPromise` uses a component signal; on abort all waiters get `null`, error is swallowed, effect deps never re-fire. Use a detached AbortController for the deduped fetch, or re-arm while `settings === null && !_settingsFetchPromise`.
 - [ ] 🟠 **`useSaaSWorkspaces` singleton logic lives per hook instance.** `workspace/hooks.ts:202-220, 228-230, 233-273, 385-417` — init effect, dedup refs, auto-switch fallback are per-instance while the hook mounts in many components: double fetches, and `onWorkspaceChange` / `workspace:changed` can fire multiple times per switch (implementors mint tokens there). Move lifecycle into a real provider (`WorkspaceProvider` at provider.tsx:45-47 is currently an empty passthrough); keep the hook as selector/actions.
 - [ ] 🟠 **Selector API doesn't bail out of re-renders.** `contexts/shared/createContext.tsx:73-102`, `useAppSelector.ts:35-56` — `useContext` on the whole state context means every dispatch re-renders every consumer of `useSaaSAuth`/`usePermissions`/`useUIVisibility`/`useSaaSWorkspaces`; docs claiming selector bailout are false; `useSelectWithEquality` writes refs during render. Rework with `useSyncExternalStore` over a mutable store (or `use-context-selector`).
 - [x] 🟡 **401 leaves auth context authenticated.** `use-workspace-api.ts:20-22` — `onUnauthorized` never dispatches `removeSession()`; dead session keeps authenticated UI up. Also `session.expires` (auth/utils.ts:38-44) is stamped but never checked — dead field.
-- [ ] 🟡 **`UserProvider` shares `error`/`loading` across attributes+features pipelines.** `user/provider.tsx:38-158` — cross-stomping flags, stale error never cleared, mutation refetches have no abort signal, `t` missing from deps. Split per-resource state.
+- [x] 🟡 **`UserProvider` shares `error`/`loading` across attributes+features pipelines.** `user/provider.tsx:38-158` — cross-stomping flags, stale error never cleared, mutation refetches have no abort signal, `t` missing from deps. Split per-resource state.
 - [ ] 🟡 **Hook return shapes drift from `{ data, loading, error, refetch }` convention.** `useUserAttributes`/`useUserFeatures` → `isLoading`/`refreshX`; `useSaaSSettings` → no loading/error at all (WorkspaceSwitcher flashes wrong UI on `?? true` defaults until settings arrive); `useSaaSWorkspaces` returns an unmemoized ~25-key object every render (`hooks.ts:618-646`).
-- [ ] ⚪ **Un-cleared 300ms timer in `createWorkspace`.** `workspace/hooks.ts:308-310` — plan picker can open after navigate/sign-out. Clear on unmount or open after switch resolves.
-- [ ] ⚪ **`settingsManager.clearParams()` doesn't notify subscribers; `getState()` allocates per call.** `settings-manager.ts:35-37, 79-84` — diverges manager/React state; blocks `useSyncExternalStore` migration. Notify on clear; return internal immutable state.
+- [x] ⚪ **Un-cleared 300ms timer in `createWorkspace`.** `workspace/hooks.ts:308-310` — plan picker can open after navigate/sign-out. Clear on unmount or open after switch resolves.
+- [x] ⚪ **`settingsManager.clearParams()` doesn't notify subscribers; `getState()` allocates per call.** `settings-manager.ts:35-37, 79-84` — diverges manager/React state; blocks `useSyncExternalStore` migration. Notify on clear; return internal immutable state.
 
 ## UI components / screens
 
@@ -89,7 +106,7 @@ Deferred from Batch 3 (larger, want tests first): `useSaaSWorkspaces` lifecycle 
 - [x] 🟡 **Unbounded `lucide-react >=0.544.0`.** package.json:100 — 0.x releases rename/remove icons; now externalized so consumers get newest. Bound it (`>=0.544.0 <1`).
 - [ ] ⚪ **Branding split.** `@buildbase/sdk` + `BuildBase()` vs `SaaSOSProvider`/`useSaaS*`/`saas-os-` CSS scope. Consider `BuildBaseProvider` alias + deprecation before the API calcifies.
 - [x] ⚪ **Stale i18n comment.** `i18n/types.ts:612` says "3 levels" but `Level4` exists and depth-4 keys are real. (Locale files themselves verified healthy: 8×527 identical keys, compiler-enforced.)
-- [ ] ⚪ **Zero test infrastructure.** Highest-value minimal setup: vitest over `lib/permissions`, `lib/url-params`, `lib/security`, `lib/sha256` + webhook verification, `api/billing/*` pricing math, agent-bridge JWT — plus one packaging test asserting runtime exports match the d.ts (would have caught the 🔴 export bug automatically).
+- [ ] ⚪ **Zero test infrastructure.** _Mostly done (2026-07-10):_ vitest set up; suites cover `permissions`, `url-params`, `security`, `sha256`, `api-base` retry/abort, `currency-utils`/`quota-utils`, `agent-auth`, `agent-stack` (85 tests). Still missing: webhook verification, direct agent-bridge JWT vectors, and the packaging test asserting runtime exports match the d.ts (would have caught the 🔴 export bug automatically).
 
 ---
 

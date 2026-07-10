@@ -1,5 +1,5 @@
 import type { BillingInterval, IQuotaByInterval } from '../types';
-import { getCurrencySymbol } from './currency-utils';
+import { getCurrencySymbol, isZeroDecimalCurrency } from './currency-utils';
 
 export type QuotaDisplayValue = {
   included: number;
@@ -79,10 +79,15 @@ export function formatQuotaWithPrice(
   const includedStr = `${included} ${labels.included}`;
   if (value.allowOverage === false) return `${includedStr} (hard limit)`;
   if (overage === undefined || overage === null) return includedStr;
-  const priceNum = overageInCents ? overage / 100 : overage;
+  // Zero-decimal currencies (JPY, KRW, …) have no minor unit: the amount is
+  // already whole units — never divide by 100, never show decimals.
+  const zeroDecimal = isZeroDecimalCurrency(currency);
+  const priceNum = overageInCents && !zeroDecimal ? overage / 100 : overage;
   const price =
     typeof priceNum === 'number' && Number.isFinite(priceNum)
-      ? priceNum.toFixed(2)
+      ? zeroDecimal
+        ? priceNum.toLocaleString('en-US')
+        : priceNum.toFixed(2)
       : String(overage);
   const unit =
     unitName && 'unitSize' in value && value.unitSize != null && value.unitSize > 0
@@ -131,8 +136,11 @@ export function getQuotaDisplayParts(
     return { included, hasOverage: false, allowOverage: true, price: '', unit: '' };
   }
 
-  // Format price with locale-aware currency formatting
-  const priceNum = overageInCents ? overage / 100 : overage;
+  // Format price with locale-aware currency formatting. Zero-decimal
+  // currencies (JPY, KRW, …) have no minor unit: no ÷100, no decimals.
+  const zeroDecimal = isZeroDecimalCurrency(currency);
+  const priceNum = overageInCents && !zeroDecimal ? overage / 100 : overage;
+  const fractionDigits = zeroDecimal ? 0 : 2;
   const currencyCode = (currency ?? '').trim().toUpperCase();
   let price: string;
   if (currencyCode && typeof priceNum === 'number' && Number.isFinite(priceNum)) {
@@ -140,15 +148,15 @@ export function getQuotaDisplayParts(
       price = new Intl.NumberFormat(locale, {
         style: 'currency',
         currency: currencyCode,
-        minimumFractionDigits: 2,
+        minimumFractionDigits: fractionDigits,
       }).format(priceNum);
     } catch {
       const symbol = options.currencySymbol ?? getCurrencySymbol(currency ?? '');
-      price = `${symbol}${priceNum.toFixed(2)}`;
+      price = `${symbol}${priceNum.toFixed(fractionDigits)}`;
     }
   } else {
     const symbol = options.currencySymbol ?? getCurrencySymbol(currency ?? '');
-    price = `${symbol}${typeof priceNum === 'number' ? priceNum.toFixed(2) : String(overage)}`;
+    price = `${symbol}${typeof priceNum === 'number' ? priceNum.toFixed(fractionDigits) : String(overage)}`;
   }
 
   // Format unit size with locale-aware number formatting

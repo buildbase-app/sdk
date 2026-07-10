@@ -25,18 +25,23 @@ export { parseWebhookEvent, verifyWebhookSignature } from './lib/webhook-verific
 // does no framework I/O — wire them into any router yourself (see the guide).
 export {
   AI_BOT_USER_AGENTS,
+  buildA2AAgentCard,
   buildAgentCard,
   buildAgentSkillsIndex,
   buildApiCatalog,
   buildAuthMd,
   buildDiscoveryLinkHeader,
+  buildDnsAidRecords,
+  buildLlmsFullTxt,
   buildLlmsTxt,
+  buildMcpDiscoveryManifest,
   buildMcpServerCard,
   buildProtectedResourceMetadata,
   buildRobotsTxt,
   buildSecurityTxt,
   buildSitemap,
   buildSkillMd,
+  buildWebBotAuthDirectory,
   clearAgentReadinessCache,
   fetchAgentReadiness,
   negotiateMarkdown,
@@ -47,12 +52,16 @@ export {
   wantsMarkdown,
 } from './lib/agent-discovery';
 export type {
+  A2ACardConfig,
+  A2ACardSkill,
   AgentReadinessBundle,
   AgentReadyConfig,
   AgentSkill,
   ApiCatalogApi,
+  AppScope,
   ContentSignals,
   DiscoveryDocument,
+  DnsAidRecord,
   McpServerCard,
   RobotsConfig,
   RobotsPolicy,
@@ -81,6 +90,15 @@ export type {
   AppTokenResult,
   HandlerResult,
 } from './lib/agent-bridge';
+
+// ─── BuildBase agent-auth presets (the app mints/verifies its own tokens; the
+// platform never sees the secret or the token — pure local WebCrypto) ─────────
+export { buildbaseAuth, createSessionRefCrypto, mintAgentToken } from './lib/agent-auth';
+export type {
+  BuildBaseAuthOptions,
+  MintAgentTokenOptions,
+  SessionRefCrypto,
+} from './lib/agent-auth';
 
 // ─── BuildBase Factory (server-side) ───────────────────────────────────────────
 export { default as BuildBase, default } from './lib/server-client';

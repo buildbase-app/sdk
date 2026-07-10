@@ -207,6 +207,15 @@ export interface CreateMcpHandlerConfig {
    */
   allowedOrigins?: string[];
   /**
+   * CORS for browser-based MCP clients. Default **true**: emit
+   * `Access-Control-Allow-Origin: *` (safe for a Bearer-token API — no
+   * cookies are ever involved), or reflect the matching origin when
+   * `allowedOrigins` is set. Pass an origin array to allow only those, or
+   * `false` to emit no CORS headers at all. Preflight (OPTIONS) is answered
+   * automatically either way — no wrapper needed in your route.
+   */
+  cors?: boolean | string[];
+  /**
    * Hard cap on the raw request-body size in bytes (DoS protection). Bodies
    * larger than this are rejected with 413 before parsing. Defaults to
    * 1 MiB (`1_048_576`); set `0` to disable the check.
@@ -326,6 +335,29 @@ function errorMessage(error: unknown): string {
 export function createMcpHandler(config: CreateMcpHandlerConfig): McpHandler {
   const serverInfo = config.serverInfo ?? { name: 'buildbase-mcp', version: '1.0.0' };
 
+  // Discovery footgun: auth is enforced but no RFC 9728 pointer is advertised,
+  // so agents get a bare 401 and can't bootstrap OAuth — the server silently
+  // looks "not agent-ready". Warn once at create time.
+  if (config.auth && !config.auth.resourceMetadataUrl) {
+    // eslint-disable-next-line no-console
+    console.warn(
+      '[buildbase/mcp] auth is enabled but `auth.resourceMetadataUrl` is unset — ' +
+        '401 responses will carry no WWW-Authenticate/resource_metadata pointer, ' +
+        'so MCP clients cannot discover your authorization server. Set it to your ' +
+        '/.well-known/oauth-protected-resource URL.'
+    );
+  }
+
+  // Normalize the DNS-rebind / CORS origin allowlist ONCE (lowercase, strip a
+  // trailing slash) so a stray-slash or uppercased entry can't silently fail to
+  // match — which would disable both protection and CORS with no error.
+  const normalizeOrigin = (o: string): string => o.trim().toLowerCase().replace(/\/+$/, '');
+  const allowedOrigins = config.allowedOrigins
+    ? new Set(config.allowedOrigins.map(normalizeOrigin))
+    : null;
+  const originAllowed = (origin: string | undefined): boolean =>
+    !!origin && !!allowedOrigins && allowedOrigins.has(normalizeOrigin(origin));
+
   // Assemble the tool registry once, at create time. Built-ins need the
   // BuildBase client; without one the server is standalone (your tools only).
   // Least privilege by default: reads only. Writes/destructive ops are opt-in
@@ -361,6 +393,19 @@ export function createMcpHandler(config: CreateMcpHandlerConfig): McpHandler {
       if (typeof prop !== 'string') return undefined;
       throw new Error(
         `No \`buildbase\` client configured — pass one to createMcpHandler to use bb.${prop} in tools.`
+      );
+    },
+  });
+
+  // Authenticated but session-less: the token verified yet carried no BuildBase
+  // session id. Fail CLOSED — never call BuildBase with an empty session (which
+  // would run unscoped) — while leaving session-less tools (e.g. public content)
+  // working. Any `ctx.bb.*` access throws a clear, non-ambiguous error.
+  const sessionlessBb = new Proxy({} as ScopedActions, {
+    get(_target, prop) {
+      if (typeof prop !== 'string') return undefined;
+      throw new Error(
+        `This tool needs an authenticated BuildBase session, but the token carried none (bb.${prop}). Re-authenticate.`
       );
     },
   });
@@ -416,19 +461,31 @@ export function createMcpHandler(config: CreateMcpHandlerConfig): McpHandler {
     return jsonResponse(401, { error: 'unauthorized' });
   }
 
-  // CORS is opt-in: headers are emitted only when `allowedOrigins` is set and
-  // the request Origin matches one — so browser MCP clients work without the
-  // server ever reflecting an arbitrary origin.
+  // CORS is on by default so browser MCP clients work with zero config:
+  // `*` for a Bearer-token API is safe (no cookies, no credentialed requests),
+  // and the server never reflects an arbitrary origin — an origin list
+  // (`cors: [...]` or `allowedOrigins`) narrows it to exact matches.
+  const corsOrigins = Array.isArray(config.cors) ? new Set(config.cors.map(normalizeOrigin)) : null;
   function corsHeaders(req: McpHttpRequest): Record<string, string> {
-    if (!config.allowedOrigins) return {};
+    if (config.cors === false) return {};
     const origin = headerGet(req.headers, 'origin');
-    if (!origin || !config.allowedOrigins.includes(origin)) return {};
+    let allowOrigin: string | null;
+    if (corsOrigins) {
+      allowOrigin = origin && corsOrigins.has(normalizeOrigin(origin)) ? origin : null;
+    } else if (allowedOrigins) {
+      allowOrigin = originAllowed(origin) ? (origin as string) : null;
+    } else {
+      allowOrigin = '*';
+    }
+    if (!allowOrigin) return {};
     return {
-      'Access-Control-Allow-Origin': origin,
+      'Access-Control-Allow-Origin': allowOrigin,
       'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization, MCP-Protocol-Version',
+      'Access-Control-Allow-Headers':
+        'Content-Type, Authorization, MCP-Protocol-Version, Mcp-Session-Id, Last-Event-ID',
+      'Access-Control-Expose-Headers': 'MCP-Protocol-Version, Mcp-Session-Id, WWW-Authenticate',
       'Access-Control-Max-Age': '86400',
-      Vary: 'Origin',
+      ...(allowOrigin !== '*' ? { Vary: 'Origin' } : {}),
     };
   }
 
@@ -446,9 +503,9 @@ export function createMcpHandler(config: CreateMcpHandlerConfig): McpHandler {
     const method = req.method.toUpperCase();
 
     // DNS-rebinding protection: enforce the Origin allowlist when configured.
-    if (config.allowedOrigins) {
+    if (allowedOrigins) {
       const origin = headerGet(req.headers, 'origin');
-      if (origin && !config.allowedOrigins.includes(origin)) {
+      if (origin && !originAllowed(origin)) {
         return jsonResponse(403, { error: 'origin_not_allowed' });
       }
     }
@@ -594,10 +651,16 @@ export function createMcpHandler(config: CreateMcpHandlerConfig): McpHandler {
           }
         }
 
+        const sessionId = auth?.sessionId ?? '';
         const context: McpToolContext = {
-          // auth === null only when config.auth is false (dev mode); tools that
-          // hit BuildBase then run session-less and fail with a clear error.
-          bb: config.buildbase ? config.buildbase.withSession(auth?.sessionId ?? '') : missingBb,
+          // No buildbase → missingBb. Authenticated but empty session → fail
+          // CLOSED via sessionlessBb (never call BuildBase unscoped). Otherwise
+          // bind the user's session so every bb call runs as that user.
+          bb: config.buildbase
+            ? sessionId
+              ? config.buildbase.withSession(sessionId)
+              : sessionlessBb
+            : missingBb,
           auth: auth ?? { sessionId: '' },
           workspaceId: auth?.workspaceId,
           custom,

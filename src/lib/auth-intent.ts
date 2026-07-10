@@ -25,10 +25,11 @@ function isValidIntent(data: unknown): data is AuthIntent {
 
 /**
  * Save the current URL as the post-auth redirect target.
- * Validates the URL before storing — rejects unsafe URLs silently.
+ * Validates the URL before storing — rejects unsafe URLs silently. Same-origin
+ * only: the return URL is "where the user was", never another site.
  */
 export function saveAuthIntent(returnUrl: string): void {
-  if (!validateRedirectUrl(returnUrl)) return;
+  if (!validateRedirectUrl(returnUrl, { sameOrigin: true })) return;
   setStorageJSON<AuthIntent>(AUTH_INTENT_KEY, {
     returnUrl,
     createdAt: Date.now(),
@@ -48,8 +49,9 @@ export function consumeAuthIntent(): string | null {
   // Check TTL
   if (Date.now() - intent.createdAt > AUTH_INTENT_TTL_MS) return null;
 
-  // Re-validate URL on read (defense against localStorage tampering)
-  return validateRedirectUrl(intent.returnUrl);
+  // Re-validate URL on read (defense against localStorage tampering) — a
+  // tampered value pointing at another origin must not survive the round-trip.
+  return validateRedirectUrl(intent.returnUrl, { sameOrigin: true });
 }
 
 /**
