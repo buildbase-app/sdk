@@ -54,9 +54,9 @@ Byte-identical-output refactors only; anything requiring a logic change was skip
 - [x] ⚪ **Branding alias** — `BuildBaseProvider` (+`BuildBaseProviderProps`) exported from `/react` as an identical alias of `SaaSOSProvider`; docs mention it; no deprecation yet.
 - [x] 🟡 (part of return-shape finding) **`useSaaSWorkspaces` return object memoized** — stable identity between renders; values unchanged. The naming-convention part of the finding (isLoading vs loading etc.) remains open — it's a breaking rename.
 
-### New findings (from wave 2, not yet fixed)
+### New findings (from wave 2)
 
-- [ ] 🟡 **Possible latent bug: 4 `displayCurrency` table-cell computations skip the currency-match check.** `SubscriptionDialog.tsx` (features/limits/quotas/per-seat cells) use `pricingVariants?.length ? effectiveCurrency : …` without the `.some(v => v.currency === effectiveCurrency)` guard the card/header use — so when variants exist but none match the effective currency, cells assume `effectiveCurrency` while the card falls back to the plan's base currency. Verify intended behavior, then either unify on `getDisplayCurrency` or document why cells differ.
+- [x] 🟡 **4 `displayCurrency` table-cell computations skipped the currency-match check — fixed (2026-07-13).** Verified the divergence was real: cell money comes either from a matched pricing variant (already `effectiveCurrency`) or from legacy quota slices in the plan's **base** currency — in the variants-exist-but-none-match case the inline `pricingVariants?.length ? effectiveCurrency : …` labeled base-currency values with the effective currency's symbol while the card/header fell back to base. All 4 cells (features/limits/quotas/per-seat) now use `getDisplayCurrency(planVersion, effectiveCurrency)` — correct in every branch and consistent with the card/header (6 call sites total, 0 inline computations left).
 
 ## Batch 4 wave 1 (mechanical polish) — done (2026-07-10, unreleased)
 

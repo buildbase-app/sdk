@@ -870,9 +870,10 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                             </td>
                             {sortedPlans.map(planVersion => {
                               const value = getValueForPlan(planVersion, item, selectedInterval);
-                              const displayCurrency = planVersion.pricingVariants?.length
-                                ? effectiveCurrency
-                                : (planVersion.plan?.currency ?? effectiveCurrency ?? '');
+                              const displayCurrency = getDisplayCurrency(
+                                planVersion,
+                                effectiveCurrency
+                              );
                               const formatted = formatValue(value, item, displayCurrency);
                               const isEnabled =
                                 item.type === SubscriptionItemType.Feature && value === true;
@@ -928,9 +929,10 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                             </td>
                             {sortedPlans.map(planVersion => {
                               const value = getValueForPlan(planVersion, item, selectedInterval);
-                              const displayCurrency = planVersion.pricingVariants?.length
-                                ? effectiveCurrency
-                                : (planVersion.plan?.currency ?? effectiveCurrency ?? '');
+                              const displayCurrency = getDisplayCurrency(
+                                planVersion,
+                                effectiveCurrency
+                              );
                               const formatted = formatValue(value, item, displayCurrency);
                               return (
                                 <td
@@ -982,9 +984,10 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                             </td>
                             {sortedPlans.map(planVersion => {
                               const value = getValueForPlan(planVersion, item, selectedInterval);
-                              const displayCurrency = planVersion.pricingVariants?.length
-                                ? effectiveCurrency
-                                : (planVersion.plan?.currency ?? effectiveCurrency ?? '');
+                              const displayCurrency = getDisplayCurrency(
+                                planVersion,
+                                effectiveCurrency
+                              );
                               const formatted = formatValue(value, item, displayCurrency);
                               return (
                                 <td
@@ -1090,9 +1093,10 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                                 effectiveCurrency,
                                 selectedInterval
                               );
-                              const displayCurrency = planVersion.pricingVariants?.length
-                                ? effectiveCurrency
-                                : (planVersion.plan?.currency ?? effectiveCurrency ?? '');
+                              const displayCurrency = getDisplayCurrency(
+                                planVersion,
+                                effectiveCurrency
+                              );
                               return (
                                 <td
                                   key={planVersion._id}
