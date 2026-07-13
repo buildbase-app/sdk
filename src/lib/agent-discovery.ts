@@ -1411,14 +1411,20 @@ export async function resolveAgentPath(
 
 // ─── WebMCP (browser-side) ────────────────────────────────────────────────────
 
-/** A WebMCP tool definition exposed to in-page agents via `navigator.modelContext`. */
-export interface WebMcpTool {
+/**
+ * A WebMCP tool definition exposed to in-page agents via `navigator.modelContext`.
+ * `TInput` is the shape your `inputSchema` describes — type your `execute`
+ * parameter inline (`execute: (input: { path: string }) => …`) or pin it with
+ * `WebMcpTool<{ path: string }>`. The default is deliberately loose: the input
+ * arrives from the agent unvalidated, so treat it as untrusted regardless.
+ */
+export interface WebMcpTool<TInput = any> {
   name: string;
   description: string;
   /** JSON Schema for the tool's input. */
   inputSchema: Record<string, unknown>;
   /** Called when an agent invokes the tool. */
-  execute: (input: any) => unknown | Promise<unknown>;
+  execute: (input: TInput) => unknown | Promise<unknown>;
 }
 
 /**

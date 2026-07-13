@@ -2,7 +2,7 @@
 
 Full-codebase review (core/API, state/providers/hooks, UI screens, packaging/types/i18n/docs).
 43 verified findings. Status: **Batches 1–3, MCP hardening, Batch 2 (money & security), and the state-layer batch all done (last: 2026-07-10)** — check items off as they land.
-Remaining: Batch 4 (structure & polish: SettingsSubscription/SubscriptionDialog extractions, selector `useSyncExternalStore` rework, `useSaaSWorkspaces` → real provider, `any`-index signatures, formatter dedup, branding alias, WorkspaceApi AbortSignal threading, response-handling dedup) + remaining test gaps.
+Remaining (4, all behavior-changing by design — need explicit sign-off): selector `useSyncExternalStore` rework, `useSaaSWorkspaces` → real provider, hook return-shape renames, response-envelope unification (`selectFreePlan`/`requestAuth`). Plus 1 new 🟡 finding from wave 2 (displayCurrency cell divergence, below).
 
 Legend: 🔴 critical · 🟠 high · 🟡 medium · ⚪ low
 
@@ -45,6 +45,29 @@ Deferred from Batch 3 (larger, want tests first): `useSaaSWorkspaces` lifecycle 
 - [x] ⚪ **`createWorkspace` 300ms timer** — tracked in a ref, cleared on unmount and re-invocation. (`workspace/hooks.ts`)
 - [x] ⚪ **`settingsManager`** — `clearParams()` notifies subscribers (no-op when params already empty); `getState()` returns the stable internal snapshot (`useSyncExternalStore`-ready). (`settings-manager.ts`)
 
+## Batch 4 wave 2 (pure structural extractions) — done (2026-07-10, unreleased)
+
+Byte-identical-output refactors only; anything requiring a logic change was skipped and noted.
+
+- [x] 🟠 **SettingsSubscription.tsx 1,473 → 1,040 lines** — extracted to `ui/subscription/`: `SubscriptionStatusBadge`, `TrialBanner`, ONE `SubscriptionNoticeBanner` primitive (replaces the 4 near-identical banners; call sites pass their original classes/icon/JSX verbatim), `PlanDetailsSection` (+`getPlanDetailsFromItems`), `CancelSubscriptionDialog`/`ResumeSubscriptionDialog`, shared `formatPeriodEndDate`. Left inline deliberately: the plan-header block (shares ~10 derived values with PlanDetailsSection — extraction would restructure the IIFE), the deprecation banner (different shape), the button-picker IIFE.
+- [x] 🟡 **SubscriptionDialog.tsx 1,356 → 1,249 lines** — extracted to `ui/subscription-dialog/`: `utils.ts` (`getAllSubscriptionItems`, `getDisplayCurrency`, `getCreditRenewalModeKey`, `calculateSavings`, `INTERVAL_LABEL_KEYS`), `PlanTrialBadge`, `PlanPriceBlock`, `CreditGrantSummary` — only the byte-identical mobile/desktop pieces; divergent wrappers/savings-badge/seat-price left per-variant. 2 of 6 `displayCurrency` computations unified; the other 4 use a shorter expression (see new finding below).
+- [x] ⚪ **Branding alias** — `BuildBaseProvider` (+`BuildBaseProviderProps`) exported from `/react` as an identical alias of `SaaSOSProvider`; docs mention it; no deprecation yet.
+- [x] 🟡 (part of return-shape finding) **`useSaaSWorkspaces` return object memoized** — stable identity between renders; values unchanged. The naming-convention part of the finding (isLoading vs loading etc.) remains open — it's a breaking rename.
+
+### New findings (from wave 2, not yet fixed)
+
+- [ ] 🟡 **Possible latent bug: 4 `displayCurrency` table-cell computations skip the currency-match check.** `SubscriptionDialog.tsx` (features/limits/quotas/per-seat cells) use `pricingVariants?.length ? effectiveCurrency : …` without the `.some(v => v.currency === effectiveCurrency)` guard the card/header use — so when variants exist but none match the effective currency, cells assume `effectiveCurrency` while the card falls back to the plan's base currency. Verify intended behavior, then either unify on `getDisplayCurrency` or document why cells differ.
+
+## Batch 4 wave 1 (mechanical polish) — done (2026-07-10, unreleased)
+
+- [x] 🟡 **WorkspaceApi AbortSignal** — all 49 public methods take a trailing `signal?: AbortSignal` (UserApi/AuthApi convention).
+- [x] 🟡 **Response-handling dedup** — `BaseApi.fetchUnwrapped<T>()` collapses 24 identical fetch→error→unwrap call sites. Left divergent on purpose: `consumeCredits` (custom 402→INSUFFICIENT_CREDITS mapping), `selectFreePlan` / `AuthApi.requestAuth` (raw `response.json()` — convention unification still open).
+- [x] 🟡 **`<NoPermission/>` instead of blank pane** — SettingsSubscription renders it, and the permission check moved above the skeleton (no flash-then-blank).
+- [x] 🟡 **`useTransientStatus()` hook** — replaces the ×4 copy-pasted message-timer blocks (SettingsSubscription ×3, SettingsUsers ×1); timer cleared on unmount and re-schedule.
+- [x] 🟡 **Dead logic removed** — unused `hasNewerVersion`, the duplicated error StatusBanner (kept the top-level one; the inline slot now renders only the EmptyState when there is no error), unused required `WorkspaceItemProps.onClose`, `sortedPlans` no-op copy (and `getAllSubscriptionItems` is memoized now).
+- [x] ⚪ **Formatter dedup** — new shared `formatMinorAmountIntl` (locale-aware Intl, zero-decimal-safe) replaces SettingsInvoices' local copy (which still had the JPY ÷100 bug); SettingsSubscription's `formatPeriodEndDate` and ConnectedAgents' date formatting delegate to `format-utils.formatDate`.
+- [x] 🟡 **`any`-index signatures** — `ISettings` and `NotificationData` index signatures are `unknown` (⚠️ type-level change for consumers who read arbitrary keys without narrowing). `WebMcpTool` became generic (`<TInput = any>`) instead of `unknown` — plain `unknown` broke inline-typed `execute` handlers in the reference webapp (parameter contravariance); the generic keeps them working while enabling strict typing.
+
 ## Batch 2 (money & security) — done (2026-07-10, unreleased)
 
 - [x] 🔴 **Retries replay non-idempotent POSTs** — retries now gated on RFC 9110 idempotent methods (GET/HEAD/OPTIONS/PUT/DELETE); POST/PATCH never replayed. Backoff sleep is abort-aware (caller abort or timeout ends it immediately). (`api-base.ts`) ⚠️ behavior change: POSTs no longer retry on 5xx/network error.
@@ -65,8 +88,8 @@ Tests added (vitest, now 85 total): `permissions`, `security`, `url-params`, `ap
 - [x] 🟡 **Path params not URI-encoded.** `workspace-api.ts:137,175,263,374`, `user-api.ts:41` — IDs containing `/ ? # ../` retarget the request path; query params in the same file ARE encoded. Wrap path segments in `encodeURIComponent()`.
 - [x] 🟡 **Permission overrides can't revoke; unknown roles gain member perms.** `src/lib/permissions.ts:164-184` — `length > 0` checks mean `[]` (explicit revoke) falls through to defaults; unknown roles fall back to `member` (grant-by-default). Also doc at :121 claims `applySettingRestrictions` handles `canCreateWorkspace` but it only handles `canInviteMembers` (:210-226). Distinguish "present but empty" from "absent"; deny unknown roles.
 - [x] 🟡 **`formatCents` breaks zero-decimal currencies (JPY).** `src/api/billing/currency-utils.ts:95-97` — `formatCents(1000,'jpy')` → "¥10.00" instead of ¥1,000; `jpy` is in `PLAN_CURRENCY_CODES`. Same bug in `formatOverageRate`/`formatQuotaWithPrice`. Maintain a zero-decimal set or use `Intl.NumberFormat`.
-- [ ] 🟡 **~20× copy-pasted response handling + 3 divergent conventions.** `workspace-api.ts:278-865` repeats fetch→throwResponseError→unwrapResponse; others use `fetchJson`; `selectFreePlan` (:410) / `AuthApi.requestAuth` (auth-api.ts:45) return raw `response.json()` unchecked. Add `BaseApi.fetchUnwrapped<T>()`; one envelope convention.
-- [ ] 🟡 **WorkspaceApi methods can't be aborted.** All ~40 methods lack `AbortSignal` params (Auth/User/Settings APIs have them). Thread an optional `signal` through.
+- [x] 🟡 **~20× copy-pasted response handling + 3 divergent conventions.** `workspace-api.ts:278-865` repeats fetch→throwResponseError→unwrapResponse; others use `fetchJson`; `selectFreePlan` (:410) / `AuthApi.requestAuth` (auth-api.ts:45) return raw `response.json()` unchecked. Add `BaseApi.fetchUnwrapped<T>()`; one envelope convention.
+- [x] 🟡 **WorkspaceApi methods can't be aborted.** All ~40 methods lack `AbortSignal` params (Auth/User/Settings APIs have them). Thread an optional `signal` through.
 - [x] ⚪ **`createBBUrl` swaps invalid base for `https://localhost`.** `src/lib/url-params.ts:122-130` — a typo'd base yields Stripe return URLs pointing at localhost with no error. Throw/return null instead. Related: retry backoff (`api-base.ts:215,241`) ignores the abort signal during sleep.
 
 ## State / providers / hooks
@@ -85,26 +108,26 @@ Tests added (vitest, now 85 total): `permissions`, `security`, `url-params`, `ap
 
 - [x] 🟠 **Hardcoded English strings bypass i18n.** `SettingsSubscription.tsx:732` `(ends {date})`; `:830` `Version {n}`; `:465` `aria-label="Subscription tabs"`; `SettingsUsers.tsx:478` placeholder email; `provider.tsx:561` + `BetaForm.tsx:268,270` alt texts. Add keys to types.ts + all 8 locales.
 - [x] 🟠 **Keyboard-inaccessible settings trigger in personal mode.** `provider.tsx:146` — plain `div onClick` with no role/tabIndex/key handler; keyboard/AT users can't open settings when `showSwitcher` is false. Use `DialogTrigger asChild`.
-- [ ] 🟠 **`SettingsSubscription.tsx` is 1,467 lines.** Extraction seams: `SubscriptionStatusBadge` (696-747), `TrialBanner` (645-686), one `SubscriptionNoticeBanner` primitive replacing 4 near-identical banners (905-1021), `PlanDetailsSection` (1023-1239), `CancelSubscriptionDialog`/`ResumeSubscriptionDialog` (1332-1462).
+- [x] 🟠 **`SettingsSubscription.tsx` is 1,467 lines.** Extraction seams: `SubscriptionStatusBadge` (696-747), `TrialBanner` (645-686), one `SubscriptionNoticeBanner` primitive replacing 4 near-identical banners (905-1021), `PlanDetailsSection` (1023-1239), `CancelSubscriptionDialog`/`ResumeSubscriptionDialog` (1332-1462).
 - [x] 🟠 **Forbidden palette class.** `SettingsSubscription.tsx:1450` `focus:ring-red-600` → `focus:ring-destructive`. (Note: current lint:tokens grep doesn't catch `ring-*` — consider widening the regex.)
-- [ ] 🟡 **Blank pane instead of `<NoPermission/>`.** `SettingsSubscription.tsx:415` `if (!canViewBilling) return null` (after the skeleton return → skeleton flash then nothing). Siblings do it right.
+- [x] 🟡 **Blank pane instead of `<NoPermission/>`.** `SettingsSubscription.tsx:415` `if (!canViewBilling) return null` (after the skeleton return → skeleton flash then nothing). Siblings do it right.
 - [x] 🟡 **ARIA tabs without tab semantics.** `SettingsSubscription.tsx:465-493` — `role="tablist"/"tab"` but no `aria-controls`/ids/tabpanel/arrow-keys. Complete the pattern or drop the roles.
 - [x] 🟡 **`hasActiveSubscription` wrong while loading.** `SettingsSubscription.tsx:1291` — `subscription?.subscription !== null` is `true` when `undefined`. Use `!= null`.
 - [x] 🟡 **Paid plan with missing interval price renders "Free".** `SubscriptionDialog.tsx:609-613, 889-893` — dead ternary branch; `formatPrice(null)` → `'' || t('pricing.free')`. Show `'—'` for `price === null`.
-- [ ] 🟡 **Mobile/desktop plan rendering duplicated.** `SubscriptionDialog.tsx:543-800` vs `827-1350` (+ third credits copy in `SettingsSubscription.tsx:1196-1235`); `displayCurrency` recomputed inline 6×. Extract `PlanTrialBadge`, `PlanPriceBlock`, `CreditGrantSummary`, `getDisplayCurrency()`.
-- [ ] 🟡 **Transient-message timer boilerplate ×4.** `SettingsSubscription.tsx:350-357, 376-383, 401-408`, `SettingsUsers.tsx:451-458`. Extract `useTransientStatus()`.
-- [ ] 🟡 **Dead/contradictory logic.** Unused `hasNewerVersion` (`SettingsSubscription.tsx:187-200`); double error banners (`:430-440` + `:1260-1270`); unused required `WorkspaceItemProps.onClose` (`provider.tsx:286`); `sortedPlans` no-op copy + unmemoized `getAllSubscriptionItems` (`SubscriptionDialog.tsx:197-201`).
-- [ ] ⚪ **Local formatters duplicate shared utils.** `SettingsInvoices.tsx:16-24` re-implements `fmtCents` (hardcodes `en-US` default); `SettingsSubscription.tsx:70-83` + ConnectedAgents re-implement `format-utils.formatDate`.
+- [x] 🟡 **Mobile/desktop plan rendering duplicated.** `SubscriptionDialog.tsx:543-800` vs `827-1350` (+ third credits copy in `SettingsSubscription.tsx:1196-1235`); `displayCurrency` recomputed inline 6×. Extract `PlanTrialBadge`, `PlanPriceBlock`, `CreditGrantSummary`, `getDisplayCurrency()`.
+- [x] 🟡 **Transient-message timer boilerplate ×4.** `SettingsSubscription.tsx:350-357, 376-383, 401-408`, `SettingsUsers.tsx:451-458`. Extract `useTransientStatus()`.
+- [x] 🟡 **Dead/contradictory logic.** Unused `hasNewerVersion` (`SettingsSubscription.tsx:187-200`); double error banners (`:430-440` + `:1260-1270`); unused required `WorkspaceItemProps.onClose` (`provider.tsx:286`); `sortedPlans` no-op copy + unmemoized `getAllSubscriptionItems` (`SubscriptionDialog.tsx:197-201`).
+- [x] ⚪ **Local formatters duplicate shared utils.** `SettingsInvoices.tsx:16-24` re-implements `fmtCents` (hardcodes `en-US` default); `SettingsSubscription.tsx:70-83` + ConnectedAgents re-implement `format-utils.formatDate`.
 
 ## Packaging / types / i18n / docs
 
 - [x] 🔴 **`/react` d.ts declares ~60 runtime values that don't exist.** `src/react.ts:19` `export type * from './core'` → `rollup-plugin-dts` flattens to value exports in `dist/react/index.d.ts`; runtime bundle has none (verified: `Permission`, `formatCents` missing). README (incl. the UI-config `useUIVisibility`+`Permission` example) and JSDoc teach the broken import. Fix: `export * from './core'` (values) — matches docs/intent.
 - [x] 🟡 **`@hookform/resolvers` is a runtime import but devDependency-only.** Imported in 4 shipped files; silently bundled (contradicts 0.0.50 externalization claim), version-skew risk vs external `zod`/`react-hook-form`. Move to `dependencies`.
 - [x] 🟡 **Public-signature types not exported.** `IWorkspace`, `ISettings`, `IUser`, `WorkspaceContextValue`, `TranslationKey` appear in exported signatures but aren't name-exported from `/react`. Add to exports.
-- [ ] 🟡 **`any`-index signatures defeat typing.** `ISettings` (`providers/types.ts:29`) and `NotificationData` (`workspace-api.ts:92`) — use `unknown` index or dedicated `extensions`/`mergeTags` fields. Also `WebMcpTool.execute(input: any)` (`agent-discovery.ts:625`).
+- [x] 🟡 **`any`-index signatures defeat typing.** `ISettings` (`providers/types.ts:29`) and `NotificationData` (`workspace-api.ts:92`) — use `unknown` index or dedicated `extensions`/`mergeTags` fields. Also `WebMcpTool.execute(input: any)` (`agent-discovery.ts:625`).
 - [x] 🟡 **AGENTS.md still says webhook verification is "Node only".** `AGENTS.md:72` — contradicts 0.0.50 runtime-agnostic fix (README was updated, AGENTS.md missed).
 - [x] 🟡 **Unbounded `lucide-react >=0.544.0`.** package.json:100 — 0.x releases rename/remove icons; now externalized so consumers get newest. Bound it (`>=0.544.0 <1`).
-- [ ] ⚪ **Branding split.** `@buildbase/sdk` + `BuildBase()` vs `SaaSOSProvider`/`useSaaS*`/`saas-os-` CSS scope. Consider `BuildBaseProvider` alias + deprecation before the API calcifies.
+- [x] ⚪ **Branding split.** `@buildbase/sdk` + `BuildBase()` vs `SaaSOSProvider`/`useSaaS*`/`saas-os-` CSS scope. Consider `BuildBaseProvider` alias + deprecation before the API calcifies.
 - [x] ⚪ **Stale i18n comment.** `i18n/types.ts:612` says "3 levels" but `Level4` exists and depth-4 keys are real. (Locale files themselves verified healthy: 8×527 identical keys, compiler-enforced.)
 - [x] ⚪ **Zero test infrastructure.** Done (2026-07-10): vitest, 113 tests — `permissions`, `url-params`, `security`, `sha256`, `api-base` retry/abort, `currency-utils`/`quota-utils`, `agent-auth`, `agent-stack`, `webhook-verification`, `agent-bridge` JWT vectors, and `packaging.test.ts` (asserts every d.ts value exists in the runtime bundle — auto-catches the 🔴 export bug class; requires a fresh `npm run build`). `@types/node` added; tests are typechecked via `tsconfig.json` (build excludes them via `tsconfig.build.json`).
 

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useMemo } from 'react';
 import { resolveMaxUsers, validateInvite } from '../../api/billing/pricing-variant-utils';
 import { IUser } from '../../api/types';
 import { useAppDispatch, useAppSelector, workspaceActions } from '../../contexts';
@@ -627,33 +627,66 @@ export const useSaaSWorkspaces = () => {
     [api, workspace.workspaces, workspace.currentWorkspace, dispatch, currentUser]
   );
 
-  return {
-    workspaces: workspace.workspaces,
-    loading: workspace.loading,
-    error: workspace.error,
-    fetchWorkspaces,
-    refreshWorkspaces,
-    refreshing: workspace.refreshing,
-    currentWorkspace: workspace.currentWorkspace,
-    setCurrentWorkspace: setCurrentWorkspaceWithStorage,
-    switchToWorkspace,
-    resetCurrentWorkspace: resetCurrentWorkspaceWithStorage,
-    createWorkspace,
-    allFeatures: workspace.allFeatures,
-    getFeatures,
-    updateFeature,
-    updateWorkspaceSettings,
-    updateWorkspacePermissions,
-    getWorkspace,
-    updateWorkspace,
-    getUsers,
-    addUser,
-    removeUser,
-    updateUser,
-    getProfile,
-    updateUserProfile,
-    deleteWorkspace,
-    switching: workspace.switchingToId !== null,
-    switchingToId: workspace.switchingToId,
-  };
+  // Stable identity between renders: without the memo every render of every
+  // consumer produced a fresh ~25-key object, defeating downstream memo/effect
+  // dependencies. Values and behavior are unchanged.
+  return useMemo(
+    () => ({
+      workspaces: workspace.workspaces,
+      loading: workspace.loading,
+      error: workspace.error,
+      fetchWorkspaces,
+      refreshWorkspaces,
+      refreshing: workspace.refreshing,
+      currentWorkspace: workspace.currentWorkspace,
+      setCurrentWorkspace: setCurrentWorkspaceWithStorage,
+      switchToWorkspace,
+      resetCurrentWorkspace: resetCurrentWorkspaceWithStorage,
+      createWorkspace,
+      allFeatures: workspace.allFeatures,
+      getFeatures,
+      updateFeature,
+      updateWorkspaceSettings,
+      updateWorkspacePermissions,
+      getWorkspace,
+      updateWorkspace,
+      getUsers,
+      addUser,
+      removeUser,
+      updateUser,
+      getProfile,
+      updateUserProfile,
+      deleteWorkspace,
+      switching: workspace.switchingToId !== null,
+      switchingToId: workspace.switchingToId,
+    }),
+    [
+      workspace.workspaces,
+      workspace.loading,
+      workspace.error,
+      workspace.refreshing,
+      workspace.currentWorkspace,
+      workspace.allFeatures,
+      workspace.switchingToId,
+      fetchWorkspaces,
+      refreshWorkspaces,
+      setCurrentWorkspaceWithStorage,
+      switchToWorkspace,
+      resetCurrentWorkspaceWithStorage,
+      createWorkspace,
+      getFeatures,
+      updateFeature,
+      updateWorkspaceSettings,
+      updateWorkspacePermissions,
+      getWorkspace,
+      updateWorkspace,
+      getUsers,
+      addUser,
+      removeUser,
+      updateUser,
+      getProfile,
+      updateUserProfile,
+      deleteWorkspace,
+    ]
+  );
 };

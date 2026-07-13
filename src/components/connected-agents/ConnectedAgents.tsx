@@ -3,6 +3,7 @@
 import { Bot } from 'lucide-react';
 import { useUIConfig } from '../../contexts/UIConfigContext';
 import { useTranslation } from '../../i18n';
+import { formatDate } from '../../lib/format-utils';
 import { cn } from '../../lib/utils';
 import { useConnectedAgents } from '../../providers/connected-agents/hooks';
 import { Button } from '../ui/button';
@@ -48,14 +49,8 @@ export function ConnectedAgents({
   const resolvedDisconnectLabel = disconnectLabel ?? t('security.connectedAgentsDisconnect');
   const resolvedEmptyLabel = emptyLabel ?? t('security.connectedAgentsEmpty');
 
-  const formatDate = (isoDate: string): string => {
-    const date = new Date(isoDate);
-    if (Number.isNaN(date.getTime())) return '';
-    return new Intl.DateTimeFormat(
-      formattingLocale,
-      formats?.date ?? { dateStyle: 'medium' }
-    ).format(date);
-  };
+  const formatGrantedDate = (isoDate: string): string =>
+    formatDate(isoDate, formattingLocale, formats?.date ?? { dateStyle: 'medium' });
 
   return (
     <div className={cn('space-y-4', className)}>
@@ -94,7 +89,7 @@ export function ConnectedAgents({
                 )}
                 {agent.lastGrantedAt && (
                   <span className="text-muted-foreground text-xs">
-                    {t('security.connectedAgentsGranted')}: {formatDate(agent.lastGrantedAt)}
+                    {t('security.connectedAgentsGranted')}: {formatGrantedDate(agent.lastGrantedAt)}
                   </span>
                 )}
               </div>

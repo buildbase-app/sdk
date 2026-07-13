@@ -198,7 +198,6 @@ export function WorkspaceSwitcher(props: {
                 isCurrentWorkspace={true}
                 switchToWorkspace={switchToWorkspace}
                 switchingToId={switchingToId}
-                onClose={() => setOpen(false)}
                 setCurrentWorkspace={setCurrentWorkspace}
                 setOpen={setOpen}
                 workspacesToUse={workspacesToUse}
@@ -263,7 +262,6 @@ export function WorkspaceSwitcher(props: {
                           isCurrentWorkspace={isCurrentWorkspace}
                           switchToWorkspace={switchToWorkspace}
                           switchingToId={switchingToId}
-                          onClose={() => setOpen(false)}
                           setCurrentWorkspace={setCurrentWorkspace}
                           setOpen={setOpen}
                           workspacesToUse={workspacesToUse}
@@ -297,7 +295,6 @@ interface WorkspaceItemProps {
   isCurrentWorkspace?: boolean;
   switchToWorkspace: (workspace: IWorkspace) => Promise<void>;
   switchingToId: string | null;
-  onClose: () => void;
   setCurrentWorkspace: (workspace: IWorkspace) => void;
   setOpen: (open: boolean) => void;
   workspacesToUse: IWorkspace[];

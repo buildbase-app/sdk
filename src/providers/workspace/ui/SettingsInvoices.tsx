@@ -1,5 +1,6 @@
 import { Download, ExternalLink, FileText } from 'lucide-react';
 import React from 'react';
+import { formatMinorAmountIntl } from '../../../api/billing/currency-utils';
 import { IInvoice, InvoiceStatuses } from '../../../api/types';
 import { Button } from '../../../components/ui/button';
 import { EmptyState } from '../../../components/ui/empty-state';
@@ -11,17 +12,6 @@ import { Permission } from '../../../lib/permissions';
 import { useInvoices } from '../subscription-hooks';
 import NoPermission from './NoPermission';
 import SettingSkeleton from './Skeleton';
-
-// Helper function to format currency amount. Caller must pass currency and locale.
-const formatCurrency = (amount: number, currency: string, locale = 'en-US'): string => {
-  const c = (currency ?? '').trim();
-  if (!c) return (amount / 100).toFixed(2);
-  return new Intl.NumberFormat(locale, {
-    style: 'currency',
-    currency: c.toUpperCase(),
-    minimumFractionDigits: 2,
-  }).format(amount / 100);
-};
 
 import { formatUnixDate as formatDate } from '../../../lib/format-utils';
 
@@ -171,7 +161,7 @@ const WorkspaceSettingsInvoices: React.FC<WorkspaceSettingsInvoicesProps> = ({
                 {/* Middle: amount + date — wrap on mobile */}
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-sm text-muted-foreground mb-2.5">
                   <span className="font-medium text-foreground">
-                    {formatCurrency(invoice.amount_due, invoice.currency, formattingLocale)}
+                    {formatMinorAmountIntl(invoice.amount_due, invoice.currency, formattingLocale)}
                   </span>
                   {invoice.created && (
                     <>
@@ -182,7 +172,7 @@ const WorkspaceSettingsInvoices: React.FC<WorkspaceSettingsInvoicesProps> = ({
                   {invoice.amount_paid > 0 && invoice.amount_due > 0 && (
                     <span className="text-xs text-muted-foreground">
                       {t('invoices.paidAmount', {
-                        amount: formatCurrency(
+                        amount: formatMinorAmountIntl(
                           invoice.amount_paid,
                           invoice.currency,
                           formattingLocale

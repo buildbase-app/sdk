@@ -1,6 +1,6 @@
 import { SelectValue } from '@radix-ui/react-select';
 import { Loader2, TrashIcon } from 'lucide-react';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { IUser } from '../../../api/types';
 import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
@@ -22,6 +22,7 @@ import { IWorkspace, IWorkspaceUser } from '../types';
 import { isWorkspaceOwner } from '../utils';
 import NoPermission from './NoPermission';
 import SettingSkeleton from './Skeleton';
+import { useTransientStatus } from './useTransientStatus';
 
 const WorkspaceSettingsUsers: React.FC<{ workspace: IWorkspace }> = ({ workspace }) => {
   const { user: currentUser } = useSaaSAuth();
@@ -401,14 +402,8 @@ function InviteMember({ onInvite, workspaceId }: { onInvite: () => void; workspa
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [workspace, setWorkspace] = useState<IWorkspace | null>(null);
-  const messageTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
+  const scheduleMessageClear = useTransientStatus();
   const roles = settings?.workspace.roles ?? workspace?.roles ?? [];
-
-  useEffect(() => {
-    return () => {
-      if (messageTimerRef.current) clearTimeout(messageTimerRef.current);
-    };
-  }, []);
 
   useEffect(() => {
     if (!workspaceId) return;
@@ -451,10 +446,7 @@ function InviteMember({ onInvite, workspaceId }: { onInvite: () => void; workspa
       .finally(() => {
         setInviting(false);
 
-        if (messageTimerRef.current) clearTimeout(messageTimerRef.current);
-        messageTimerRef.current = setTimeout(() => {
-          clearMessages();
-        }, 6000);
+        scheduleMessageClear(clearMessages, 6000);
       });
   };
 

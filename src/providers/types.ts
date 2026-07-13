@@ -26,5 +26,5 @@ export interface ISettings {
     /** Auto-create workspace on first login */
     autoCreateFirst: boolean;
   };
-  [key: string]: any;
+  [key: string]: unknown;
 }

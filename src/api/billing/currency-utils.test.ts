@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   formatCents,
+  formatMinorAmountIntl,
   formatOverageRate,
   formatOverageRateWithLabel,
   isZeroDecimalCurrency,
@@ -40,6 +41,31 @@ describe('formatCents', () => {
   it('formats JPY without a cents division', () => {
     expect(formatCents(1000, 'jpy')).toBe('¥1,000');
     expect(formatCents(500, 'jpy')).toBe('¥500');
+  });
+});
+
+describe('formatMinorAmountIntl', () => {
+  it('formats decimal currencies via Intl', () => {
+    expect(formatMinorAmountIntl(1999, 'usd')).toBe('$19.99');
+    expect(formatMinorAmountIntl(1299, 'usd')).toBe('$12.99');
+    expect(formatMinorAmountIntl(0, 'usd')).toBe('$0.00');
+  });
+
+  it('formats zero-decimal currencies without a cents division', () => {
+    expect(formatMinorAmountIntl(1000, 'jpy')).toBe('¥1,000');
+    expect(formatMinorAmountIntl(500, 'krw')).toBe('₩500');
+  });
+
+  it('respects the locale argument', () => {
+    // Non-breaking spaces vary by ICU version — compare loosely on digits/symbol.
+    const fr = formatMinorAmountIntl(1999, 'eur', 'fr-FR');
+    expect(fr).toContain('19,99');
+    expect(fr).toContain('€');
+  });
+
+  it('falls back to the symbol table for empty or unknown currency codes', () => {
+    expect(formatMinorAmountIntl(1999, '')).toBe('19.99');
+    expect(formatMinorAmountIntl(1999, 'zzz')).toContain('19.99');
   });
 });
 

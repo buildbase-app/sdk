@@ -4,12 +4,9 @@ import {
   getBasePriceCents,
   getBillingIntervalAndCurrencyFromPriceId,
   getPerSeatPriceCents,
-  getQuotaDisplayWithVariant,
   getSeatPricing,
   getStripePriceIdForInterval,
 } from '../../../api/billing/pricing-variant-utils';
-import type { QuotaDisplayValue } from '../../../api/billing/quota-utils';
-import { getQuotaDisplayParts, getQuotaDisplayValue } from '../../../api/billing/quota-utils';
 import {
   BillingInterval,
   BillingIntervals,
@@ -17,22 +14,9 @@ import {
   DunningState,
   ICheckoutSessionResponse,
   IPlanGroupVersionWithPlans,
-  IPlanVersion,
-  ISubscriptionItem,
   ISubscriptionUpdateResponse,
-  SubscriptionItemType,
   SubscriptionStatus,
 } from '../../../api/types';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '../../../components/ui/alert-dialog';
 import { Button } from '../../../components/ui/button';
 import { EmptyState } from '../../../components/ui/empty-state';
 import { LoadingState } from '../../../components/ui/loading-state';
@@ -57,8 +41,19 @@ import {
 } from '../subscription-hooks';
 import { IWorkspace } from '../types';
 import { useWorkspaceApiWithOs } from '../use-workspace-api';
+import NoPermission from './NoPermission';
 import WorkspaceSettingsInvoices from './SettingsInvoices';
 import SettingSkeleton from './Skeleton';
+import { formatPeriodEndDate } from './subscription/format';
+import { PlanDetailsSection } from './subscription/PlanDetailsSection';
+import {
+  CancelSubscriptionDialog,
+  ResumeSubscriptionDialog,
+} from './subscription/SubscriptionDialogs';
+import { SubscriptionNoticeBanner } from './subscription/SubscriptionNoticeBanner';
+import { SubscriptionStatusBadge } from './subscription/SubscriptionStatusBadge';
+import { TrialBanner } from './subscription/TrialBanner';
+import { useTransientStatus } from './useTransientStatus';
 // Lazy load SubscriptionDialog to reduce bundle size
 // This component is only rendered when subscription dialog is opened
 import { lazy, Suspense } from 'react';
@@ -66,62 +61,9 @@ const SubscriptionDialog = lazy(() =>
   import('./SubscriptionDialog').then(m => ({ default: m.default }))
 );
 
-// Format ISO date string to readable date
-const formatPeriodEndDate = (locale: string, isoDate: string | undefined | null): string => {
-  if (!isoDate) return '';
-  try {
-    const date = new Date(isoDate);
-    if (isNaN(date.getTime())) return '';
-    return new Intl.DateTimeFormat(locale, {
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric',
-    }).format(date);
-  } catch {
-    return '';
-  }
-};
-
-// Helper function to get plan details from subscriptionItems (optionally with currency for multi-currency quota overage)
-const getPlanDetailsFromItems = (
-  planVersion: IPlanVersion | null | undefined,
-  currency?: string,
-  interval: BillingInterval = BillingIntervals.Monthly
-) => {
-  if (!planVersion?.subscriptionItems) {
-    return { features: [], limits: [], quotas: [] };
-  }
-
-  const features: Array<{ item: ISubscriptionItem; enabled: boolean }> = [];
-  const limits: Array<{ item: ISubscriptionItem; value: number }> = [];
-  const quotas: Array<{ item: ISubscriptionItem; value: QuotaDisplayValue }> = [];
-
-  planVersion.subscriptionItems.forEach(item => {
-    const slug = item.slug;
-
-    if (item.type === SubscriptionItemType.Feature) {
-      const enabled = planVersion.features?.[slug] ?? false;
-      features.push({ item, enabled });
-    } else if (item.type === SubscriptionItemType.Limit) {
-      const value = planVersion.limits?.[slug] ?? 0;
-      limits.push({ item, value });
-    } else if (item.type === SubscriptionItemType.Quota) {
-      const value =
-        currency && planVersion.pricingVariants?.length
-          ? getQuotaDisplayWithVariant(planVersion, currency, slug, interval)
-          : getQuotaDisplayValue(planVersion.quotas?.[slug], interval);
-      if (value !== null && value !== undefined) {
-        quotas.push({ item, value });
-      }
-    }
-  });
-
-  return { features, limits, quotas };
-};
-
 const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ workspace }) => {
   const workspaceId = workspace._id?.toString();
-  const { t, formattingLocale, fmtNum, fmtCents } = useTranslation();
+  const { t, formattingLocale, fmtCents } = useTranslation();
   const { api } = useWorkspaceApiWithOs();
   const { can } = usePermissions();
   const { settings: orgSettings } = useSaaSSettings();
@@ -195,7 +137,6 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
     return {
       currentVersion: userCurrentVersion,
       latestVersion: latest,
-      hasNewerVersion: hasNewer,
       // Only show deprecation if user has subscription AND there's a newer version
       isDeprecated: hasNewer && hasActiveSubscription,
       plansToShow: plans,
@@ -205,7 +146,7 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
   const [updating, setUpdating] = useState(false);
   const [updateError, setUpdateError] = useState<string | null>(null);
   const [updateSuccess, setUpdateSuccess] = useState<string | null>(null);
-  const messageTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
+  const scheduleMessageClear = useTransientStatus();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
 
@@ -241,11 +182,6 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
     uiBehavior?.autoOpenPlanDialog,
   ]);
 
-  useEffect(() => {
-    return () => {
-      if (messageTimerRef.current) clearTimeout(messageTimerRef.current);
-    };
-  }, []);
   const [resumeDialogOpen, setResumeDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'subscription' | 'invoices'>('subscription');
 
@@ -349,11 +285,10 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
       setUpdateError(errorMessage);
     } finally {
       setUpdating(false);
-      if (messageTimerRef.current) clearTimeout(messageTimerRef.current);
-      messageTimerRef.current = setTimeout(() => {
+      scheduleMessageClear(() => {
         setUpdateError(null);
         setUpdateSuccess(null);
-      }, 5000);
+      });
     }
   };
 
@@ -375,11 +310,10 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
       setUpdateError(errorMessage);
     } finally {
       setUpdating(false);
-      if (messageTimerRef.current) clearTimeout(messageTimerRef.current);
-      messageTimerRef.current = setTimeout(() => {
+      scheduleMessageClear(() => {
         setUpdateError(null);
         setUpdateSuccess(null);
-      }, 5000);
+      });
     }
   };
 
@@ -400,19 +334,18 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
       setUpdateError(errorMessage);
     } finally {
       setUpdating(false);
-      if (messageTimerRef.current) clearTimeout(messageTimerRef.current);
-      messageTimerRef.current = setTimeout(() => {
+      scheduleMessageClear(() => {
         setUpdateError(null);
         setUpdateSuccess(null);
-      }, 5000);
+      });
     }
   };
+
+  if (!canViewBilling) return <NoPermission />;
 
   if (loading && !subscription && !planGroupVersions) {
     return <SettingSkeleton />;
   }
-
-  if (!canViewBilling) return null;
 
   const currentPlanVersionId = subscription?.planVersion?._id || null;
 
@@ -672,46 +605,13 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                   >
                     {/* Trial Banner — hide when trial is already scheduled for cancellation */}
                     {subscription.subscription.subscriptionStatus === SubscriptionStatus.Trialing &&
-                      !subscription.subscription.cancelAtPeriodEnd &&
-                      (() => {
-                        const trialEndStr =
-                          subscription.subscription.trialEnd ||
-                          subscription.subscription.stripeCurrentPeriodEnd;
-                        const trialEndRaw = trialEndStr ? new Date(trialEndStr) : null;
-                        const trialEnd =
-                          trialEndRaw && !isNaN(trialEndRaw.getTime()) ? trialEndRaw : null;
-                        const daysRemaining = trialEnd
-                          ? Math.max(
-                              0,
-                              Math.ceil((trialEnd.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
-                            )
-                          : null;
-                        const isUrgent = daysRemaining !== null && daysRemaining <= 3;
-                        return (
-                          <div
-                            className={`px-4 py-3 sm:px-5 text-sm flex flex-col sm:flex-row sm:items-center justify-between gap-2 ${isUrgent ? 'bg-warning/10 text-warning border-b border-warning/30' : 'bg-info/10 text-info border-b border-info/20'}`}
-                          >
-                            <span>
-                              {daysRemaining !== null && daysRemaining <= 0
-                                ? t('subscription.trialEnded')
-                                : daysRemaining !== null
-                                  ? t('subscription.trialEndsIn', { days: daysRemaining })
-                                  : t('subscription.onTrial')}{' '}
-                              {t('subscription.upgradeToKeepAccess')}
-                            </span>
-                            {showChangePlan && (
-                              <Button
-                                size="sm"
-                                variant={isUrgent ? 'default' : 'outline'}
-                                className={`shrink-0 ${isUrgent ? '' : 'border-info/30 text-info hover:bg-info/15'}`}
-                                onClick={() => setDialogOpen(true)}
-                              >
-                                {t('subscription.upgradePlan')}
-                              </Button>
-                            )}
-                          </div>
-                        );
-                      })()}
+                      !subscription.subscription.cancelAtPeriodEnd && (
+                        <TrialBanner
+                          subscription={subscription.subscription}
+                          showChangePlan={showChangePlan}
+                          setDialogOpen={setDialogOpen}
+                        />
+                      )}
 
                     {/* Plan Header */}
                     <div className={`p-4 sm:p-5 ${isDeprecated ? 'bg-warning/5' : 'bg-muted/30'}`}>
@@ -721,34 +621,7 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                           {subscription.plan?.name || t('subscription.noPlanAssigned')}
                         </h3>
                         {/* Status Badge */}
-                        <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            subscription.subscription.subscriptionStatus ===
-                            SubscriptionStatus.Active
-                              ? subscription.subscription.cancelAtPeriodEnd
-                                ? 'bg-warning/15 text-warning'
-                                : 'bg-success/15 text-success'
-                              : subscription.subscription.subscriptionStatus ===
-                                  SubscriptionStatus.Trialing
-                                ? 'bg-info/15 text-info'
-                                : subscription.subscription.subscriptionStatus ===
-                                    SubscriptionStatus.Canceled
-                                  ? 'bg-muted text-foreground'
-                                  : 'bg-destructive/15 text-destructive'
-                          }`}
-                        >
-                          {subscription.subscription.subscriptionStatus ===
-                            SubscriptionStatus.Active &&
-                            (subscription.subscription.cancelAtPeriodEnd
-                              ? t('subscription.status.canceling')
-                              : t('subscription.status.active'))}
-                          {subscription.subscription.subscriptionStatus ===
-                            SubscriptionStatus.Trialing && t('subscription.status.trial')}
-                          {subscription.subscription.subscriptionStatus ===
-                            SubscriptionStatus.Canceled && t('subscription.status.canceled')}
-                          {subscription.subscription.subscriptionStatus ===
-                            SubscriptionStatus.PastDue && t('subscription.status.pastDue')}
-                        </span>
+                        <SubscriptionStatusBadge subscription={subscription.subscription} />
                         {subscription.subscription.subscriptionStatus ===
                           SubscriptionStatus.Trialing &&
                           formatPeriodEndDate(
@@ -935,338 +808,128 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
                     {/* Past Due Warning Banner */}
                     {subscription.subscription.subscriptionStatus ===
                       SubscriptionStatus.PastDue && (
-                      <div className="px-5 py-3 bg-destructive/10 border-t border-destructive/20">
-                        <div className="flex items-start gap-3">
+                      <SubscriptionNoticeBanner
+                        className="px-5 py-3 bg-destructive/10 border-t border-destructive/20"
+                        icon={
                           <AlertTriangle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
-                          <div>
-                            <p className="text-sm font-medium text-destructive">
-                              {t('subscription.paymentPastDue')}
-                            </p>
-                            <p className="text-sm text-destructive mt-0.5">
-                              {t('subscription.paymentPastDueDescription')}
-                            </p>
-                            {showInvoicesTab && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="mt-2 border-destructive/20 text-destructive hover:bg-destructive/15"
-                                onClick={() => setActiveTab('invoices')}
-                              >
-                                {t('subscription.viewInvoices')}
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      </div>
+                        }
+                        titleClassName="text-sm font-medium text-destructive"
+                        title={t('subscription.paymentPastDue')}
+                        descriptionClassName="text-sm text-destructive mt-0.5"
+                        description={t('subscription.paymentPastDueDescription')}
+                      >
+                        {showInvoicesTab && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="mt-2 border-destructive/20 text-destructive hover:bg-destructive/15"
+                            onClick={() => setActiveTab('invoices')}
+                          >
+                            {t('subscription.viewInvoices')}
+                          </Button>
+                        )}
+                      </SubscriptionNoticeBanner>
                     )}
 
                     {/* Dunning Banner (payment recovery in progress) */}
                     {subscription.subscription.subscriptionStatus === SubscriptionStatus.PastDue &&
                       subscription.subscription.dunningState &&
                       subscription.subscription.dunningState !== DunningState.None && (
-                        <div className="px-5 py-3 bg-destructive/10 border-t border-destructive/20">
-                          <div className="flex items-start gap-3">
+                        <SubscriptionNoticeBanner
+                          className="px-5 py-3 bg-destructive/10 border-t border-destructive/20"
+                          icon={
                             <AlertTriangle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
-                            <div>
-                              <p className="text-sm font-medium text-destructive">
-                                {subscription.subscription.dunningState === DunningState.Final
-                                  ? t('subscription.dunningFinal')
-                                  : subscription.subscription.dunningState ===
-                                      DunningState.Suspended
-                                    ? t('subscription.dunningSuspended')
-                                    : t('subscription.dunningRecovery')}
-                              </p>
-                              <p className="text-sm text-destructive mt-0.5">
-                                {subscription.subscription.dunningState === DunningState.Suspended
-                                  ? t('subscription.dunningSuspendedDescription')
-                                  : t('subscription.dunningRecoveryDescription')}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
+                          }
+                          titleClassName="text-sm font-medium text-destructive"
+                          title={
+                            subscription.subscription.dunningState === DunningState.Final
+                              ? t('subscription.dunningFinal')
+                              : subscription.subscription.dunningState === DunningState.Suspended
+                                ? t('subscription.dunningSuspended')
+                                : t('subscription.dunningRecovery')
+                          }
+                          descriptionClassName="text-sm text-destructive mt-0.5"
+                          description={
+                            subscription.subscription.dunningState === DunningState.Suspended
+                              ? t('subscription.dunningSuspendedDescription')
+                              : t('subscription.dunningRecoveryDescription')
+                          }
+                        />
                       )}
 
                     {/* Paused Banner */}
                     {subscription.subscription.subscriptionStatus === SubscriptionStatus.Paused && (
-                      <div className="px-5 py-3 bg-info/10 border-t border-info/20">
-                        <div className="flex items-start gap-3">
-                          <Calendar className="h-5 w-5 text-info flex-shrink-0 mt-0.5" />
-                          <div>
-                            <p className="text-sm font-medium text-info">
-                              {t('subscription.subscriptionPaused')}
-                            </p>
-                            <p className="text-sm text-info mt-0.5">
-                              {t('subscription.subscriptionPausedDescription')}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
+                      <SubscriptionNoticeBanner
+                        className="px-5 py-3 bg-info/10 border-t border-info/20"
+                        icon={<Calendar className="h-5 w-5 text-info flex-shrink-0 mt-0.5" />}
+                        titleClassName="text-sm font-medium text-info"
+                        title={t('subscription.subscriptionPaused')}
+                        descriptionClassName="text-sm text-info mt-0.5"
+                        description={t('subscription.subscriptionPausedDescription')}
+                      />
                     )}
 
                     {/* Cancellation Warning Banner */}
                     {subscription.subscription.cancelAtPeriodEnd && (
-                      <div className="px-5 py-3 bg-warning/10 border-t border-warning/30">
-                        <div className="flex items-start gap-3">
-                          <Calendar className="h-5 w-5 text-warning flex-shrink-0 mt-0.5" />
-                          <div>
-                            <p className="text-sm font-medium text-warning">
+                      <SubscriptionNoticeBanner
+                        className="px-5 py-3 bg-warning/10 border-t border-warning/30"
+                        icon={<Calendar className="h-5 w-5 text-warning flex-shrink-0 mt-0.5" />}
+                        titleClassName="text-sm font-medium text-warning"
+                        title={
+                          subscription.subscription.subscriptionStatus ===
+                          SubscriptionStatus.Trialing
+                            ? t('subscription.scheduledTrialCancellation')
+                            : t('subscription.scheduledCancellation')
+                        }
+                        descriptionClassName="text-sm text-warning mt-0.5"
+                        description={
+                          formatPeriodEndDate(
+                            formattingLocale,
+                            subscription.subscription.subscriptionStatus ===
+                              SubscriptionStatus.Trialing
+                              ? subscription.subscription.trialEnd ||
+                                  subscription.subscription.stripeCurrentPeriodEnd
+                              : subscription.subscription.stripeCurrentPeriodEnd
+                          ) ? (
+                            <>
                               {subscription.subscription.subscriptionStatus ===
                               SubscriptionStatus.Trialing
-                                ? t('subscription.scheduledTrialCancellation')
-                                : t('subscription.scheduledCancellation')}
-                            </p>
-                            <p className="text-sm text-warning mt-0.5">
-                              {formatPeriodEndDate(
-                                formattingLocale,
-                                subscription.subscription.subscriptionStatus ===
-                                  SubscriptionStatus.Trialing
-                                  ? subscription.subscription.trialEnd ||
-                                      subscription.subscription.stripeCurrentPeriodEnd
-                                  : subscription.subscription.stripeCurrentPeriodEnd
-                              ) ? (
-                                <>
-                                  {subscription.subscription.subscriptionStatus ===
-                                  SubscriptionStatus.Trialing
-                                    ? t('subscription.trialEndDescription')
-                                    : t('subscription.cancelEndDescription')}{' '}
-                                  <span className="font-medium">
-                                    {formatPeriodEndDate(
-                                      formattingLocale,
-                                      subscription.subscription.subscriptionStatus ===
-                                        SubscriptionStatus.Trialing
-                                        ? subscription.subscription.trialEnd ||
-                                            subscription.subscription.stripeCurrentPeriodEnd
-                                        : subscription.subscription.stripeCurrentPeriodEnd
-                                    )}
-                                  </span>
-                                  .
-                                </>
-                              ) : (
-                                t('subscription.cancelEndFallback')
-                              )}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
+                                ? t('subscription.trialEndDescription')
+                                : t('subscription.cancelEndDescription')}{' '}
+                              <span className="font-medium">
+                                {formatPeriodEndDate(
+                                  formattingLocale,
+                                  subscription.subscription.subscriptionStatus ===
+                                    SubscriptionStatus.Trialing
+                                    ? subscription.subscription.trialEnd ||
+                                        subscription.subscription.stripeCurrentPeriodEnd
+                                    : subscription.subscription.stripeCurrentPeriodEnd
+                                )}
+                              </span>
+                              .
+                            </>
+                          ) : (
+                            t('subscription.cancelEndFallback')
+                          )
+                        }
+                      />
                     )}
 
                     {/* Plan Details */}
-                    {showPlanDetails &&
-                      subscription.planVersion &&
-                      (() => {
-                        const planDetails = getPlanDetailsFromItems(
-                          subscription.planVersion,
-                          subscriptionCurrency,
-                          billingInterval ?? 'monthly'
-                        );
-                        const hasDetails =
-                          planDetails.features.length > 0 ||
-                          planDetails.limits.length > 0 ||
-                          planDetails.quotas.length > 0;
-
-                        if (!hasDetails) return null;
-
-                        return (
-                          <div className="px-4 py-4 sm:px-5 sm:py-5 border-t border-border/60">
-                            <div className="space-y-5">
-                              {/* Features */}
-                              {planDetails.features.length > 0 && (
-                                <div>
-                                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                                    {t('subscription.items.features')}
-                                  </h4>
-                                  <ul className="space-y-1.5">
-                                    {planDetails.features
-                                      .sort(a => (a.enabled ? -1 : 1))
-                                      .map(({ item, enabled }) => (
-                                        <li
-                                          key={item._id}
-                                          className="flex items-center gap-2 text-sm"
-                                        >
-                                          <span
-                                            className={`w-4 text-center shrink-0 ${enabled ? 'text-success' : 'text-muted-foreground/50'}`}
-                                          >
-                                            {enabled ? '✓' : '✕'}
-                                          </span>
-                                          <span
-                                            className={
-                                              enabled
-                                                ? 'text-foreground'
-                                                : 'text-muted-foreground/70'
-                                            }
-                                          >
-                                            {item.name}
-                                          </span>
-                                        </li>
-                                      ))}
-                                  </ul>
-                                </div>
-                              )}
-
-                              {/* Limits */}
-                              {planDetails.limits.length > 0 && (
-                                <div>
-                                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                                    {t('subscription.items.limits')}
-                                  </h4>
-                                  <ul className="space-y-1.5">
-                                    {planDetails.limits.map(({ item, value }) => (
-                                      <li
-                                        key={item._id}
-                                        className="flex items-center justify-between text-sm"
-                                      >
-                                        <span className="text-muted-foreground">{item.name}</span>
-                                        <span className="font-medium text-foreground">
-                                          {fmtNum(value)}
-                                        </span>
-                                      </li>
-                                    ))}
-                                  </ul>
-                                </div>
-                              )}
-
-                              {/* Quotas */}
-                              {planDetails.quotas.length > 0 && (
-                                <div>
-                                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                                    {t('subscription.items.quotas')}
-                                  </h4>
-                                  <ul className="space-y-1.5">
-                                    {planDetails.quotas.map(({ item, value }) => {
-                                      const parts = getQuotaDisplayParts(
-                                        value,
-                                        item.name.toLowerCase(),
-                                        { currency: subscriptionCurrency, locale: formattingLocale }
-                                      );
-                                      const quotaDisplay = parts
-                                        ? parts.hasOverage
-                                          ? t('quota.includedWithOverage', {
-                                              count: parts.included,
-                                              price: parts.price,
-                                              unit: parts.unit,
-                                            })
-                                          : t('quota.includedOnly', { count: parts.included })
-                                        : '—';
-                                      return (
-                                        <li key={item._id} className="text-sm">
-                                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-0.5">
-                                            <span className="text-muted-foreground">
-                                              {item.name}
-                                            </span>
-                                            <span className="font-medium text-foreground text-xs sm:text-sm">
-                                              {quotaDisplay}
-                                            </span>
-                                          </div>
-                                        </li>
-                                      );
-                                    })}
-                                  </ul>
-                                </div>
-                              )}
-
-                              {/* Seats — hidden in personal mode */}
-                              {seatPricingConfig && !isPersonalMode && (
-                                <div>
-                                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                                    {t('subscription.seats.title')}
-                                  </h4>
-                                  <div className="bg-muted/50 rounded-lg p-3 space-y-1.5">
-                                    <div className="flex items-center justify-between text-sm">
-                                      <span className="text-muted-foreground">
-                                        {t('subscription.seats.members')}
-                                      </span>
-                                      <span className="font-semibold text-foreground">
-                                        {fmtNum(memberCount)}
-                                      </span>
-                                    </div>
-                                    <div className="flex items-center justify-between text-sm">
-                                      <span className="text-muted-foreground">
-                                        {t('subscription.seats.included')}
-                                      </span>
-                                      <span className="text-foreground">
-                                        {fmtNum(includedSeats)}
-                                      </span>
-                                    </div>
-                                    {billableSeats > 0 && (
-                                      <div className="flex items-center justify-between text-sm">
-                                        <span className="text-muted-foreground">
-                                          {t('subscription.seats.billable')}
-                                        </span>
-                                        <span className="font-medium text-warning">
-                                          {fmtNum(billableSeats)} {t('subscription.seats.extra')}
-                                        </span>
-                                      </div>
-                                    )}
-                                    {perSeatPrice != null && perSeatPrice > 0 && (
-                                      <div className="flex items-center justify-between text-sm">
-                                        <span className="text-muted-foreground">
-                                          {t('subscription.seats.perExtraSeat')}
-                                        </span>
-                                        <span className="text-foreground">
-                                          {fmtCents(perSeatPrice, subscriptionCurrency)}
-                                          {intervalLabel}
-                                        </span>
-                                      </div>
-                                    )}
-                                    {(seatPricingConfig?.maxSeats ?? 0) > 0 && (
-                                      <div className="flex items-center justify-between text-sm">
-                                        <span className="text-muted-foreground">
-                                          {t('subscription.seats.limit')}
-                                        </span>
-                                        <span className="text-foreground">
-                                          {fmtNum(seatPricingConfig!.maxSeats!)}
-                                        </span>
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              )}
-
-                              {/* Credits */}
-                              {subscription.planVersion?.creditGrant?.enabled &&
-                                typeof subscription.planVersion.creditGrant.creditPackage ===
-                                  'object' &&
-                                subscription.planVersion.creditGrant.creditPackage !== null && (
-                                  <div>
-                                    <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                                      {t('subscription.items.credits')}
-                                    </h4>
-                                    <div className="bg-info/10 rounded-lg p-3 space-y-1.5">
-                                      <div className="flex items-center justify-between text-sm">
-                                        <span className="text-muted-foreground">
-                                          {subscription.planVersion.creditGrant.renewOnPeriod
-                                            ? t('subscription.items.creditsPerMonth')
-                                            : t('subscription.items.creditsOneTime')}
-                                        </span>
-                                        <span className="font-semibold text-info">
-                                          {fmtNum(
-                                            typeof subscription.planVersion.creditGrant
-                                              .creditPackage === 'object'
-                                              ? subscription.planVersion.creditGrant.creditPackage
-                                                  .creditAmount
-                                              : 0
-                                          )}
-                                        </span>
-                                      </div>
-                                      <div className="flex items-center justify-between text-sm">
-                                        <span className="text-muted-foreground">
-                                          {t('subscription.items.creditRenewal')}
-                                        </span>
-                                        <span className="font-medium text-foreground">
-                                          {!subscription.planVersion.creditGrant.renewOnPeriod
-                                            ? t('subscription.items.creditModeLifetime')
-                                            : subscription.planVersion.creditGrant.mode === 'reset'
-                                              ? t('subscription.items.creditModeReset')
-                                              : t('subscription.items.creditModeTopup')}
-                                        </span>
-                                      </div>
-                                    </div>
-                                  </div>
-                                )}
-                            </div>
-                          </div>
-                        );
-                      })()}
+                    {showPlanDetails && subscription.planVersion && (
+                      <PlanDetailsSection
+                        planVersion={subscription.planVersion}
+                        subscriptionCurrency={subscriptionCurrency}
+                        billingInterval={billingInterval}
+                        seatPricingConfig={seatPricingConfig}
+                        isPersonalMode={isPersonalMode}
+                        memberCount={memberCount}
+                        includedSeats={includedSeats}
+                        billableSeats={billableSeats}
+                        perSeatPrice={perSeatPrice}
+                        intervalLabel={intervalLabel}
+                      />
+                    )}
                   </div>
                 );
               })()
@@ -1287,28 +950,17 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
             )}
           </div>
 
-          {!planGroupVersions &&
-            !loading &&
-            (error ? (
-              <StatusBanner
-                variant="error"
-                title={t('subscription.errorLoading')}
-                message={error}
-                actionLabel={t('settings.common.refreshAction', { loading: String(loading) })}
-                onAction={refetch}
-                actionDisabled={loading}
-              />
-            ) : (
-              <EmptyState
-                title={t('subscription.errorLoading')}
-                description={t('subscription.noPlansAvailable')}
-                action={
-                  <Button variant="outline" size="sm" progress={loading} onClick={refetch}>
-                    {t('settings.common.refreshAction', { loading: String(loading) })}
-                  </Button>
-                }
-              />
-            ))}
+          {!planGroupVersions && !loading && !error && (
+            <EmptyState
+              title={t('subscription.errorLoading')}
+              description={t('subscription.noPlansAvailable')}
+              action={
+                <Button variant="outline" size="sm" progress={loading} onClick={refetch}>
+                  {t('settings.common.refreshAction', { loading: String(loading) })}
+                </Button>
+              }
+            />
+          )}
         </div>
       )}
 
@@ -1365,136 +1017,22 @@ const WorkspaceSettingsSubscription: React.FC<{ workspace: IWorkspace }> = ({ wo
       )}
 
       {/* Resume Subscription Confirmation Dialog */}
-      <AlertDialog open={resumeDialogOpen} onOpenChange={setResumeDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t('subscription.resumeTitle')}</AlertDialogTitle>
-            <AlertDialogDescription asChild>
-              <div className="space-y-3">
-                <p>{t('subscription.resumeConfirm')}</p>
-                <div className="bg-warning/10 border border-warning/30 rounded-lg p-4 space-y-2 text-sm">
-                  <div className="flex items-start gap-2">
-                    <AlertTriangle className="h-4 w-4 text-warning mt-0.5 flex-shrink-0" />
-                    <span>
-                      {t('subscription.resumeChargeDate')}{' '}
-                      {subscription?.subscription?.stripeCurrentPeriodEnd &&
-                      formatPeriodEndDate(
-                        formattingLocale,
-                        subscription.subscription.stripeCurrentPeriodEnd
-                      ) ? (
-                        <span className="font-medium">
-                          {formatPeriodEndDate(
-                            formattingLocale,
-                            subscription.subscription.stripeCurrentPeriodEnd
-                          )}
-                        </span>
-                      ) : (
-                        t('subscription.resumeChargeFallback')
-                      )}
-                    </span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <span className="text-warning mt-0.5">•</span>
-                    <span>{t('subscription.resumeContinue')}</span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <span className="text-info mt-0.5">ℹ</span>
-                    <span>{t('subscription.resumeCancelAnytime')}</span>
-                  </div>
-                </div>
-              </div>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={resumeLoading}>
-              {t('subscription.resumeKeep')}
-            </AlertDialogCancel>
-            <AlertDialogAction onClick={handleResumeSubscription} disabled={resumeLoading}>
-              {resumeLoading ? t('subscription.resuming') : t('subscription.resumeButton')}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ResumeSubscriptionDialog
+        resumeDialogOpen={resumeDialogOpen}
+        setResumeDialogOpen={setResumeDialogOpen}
+        resumeLoading={resumeLoading}
+        handleResumeSubscription={handleResumeSubscription}
+        subscription={subscription}
+      />
 
       {/* Cancel Subscription Confirmation Dialog */}
-      {(() => {
-        const isTrialing =
-          subscription?.subscription?.subscriptionStatus === SubscriptionStatus.Trialing;
-        const endDate = isTrialing
-          ? subscription?.subscription?.trialEnd ||
-            subscription?.subscription?.stripeCurrentPeriodEnd
-          : subscription?.subscription?.stripeCurrentPeriodEnd;
-
-        return (
-          <AlertDialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>
-                  {isTrialing ? t('subscription.cancelTrialTitle') : t('subscription.cancelTitle')}
-                </AlertDialogTitle>
-                <AlertDialogDescription asChild>
-                  <div className="space-y-3">
-                    <p>
-                      {isTrialing
-                        ? t('subscription.cancelTrialConfirm')
-                        : t('subscription.cancelConfirm')}
-                    </p>
-                    <div className="bg-muted/50 rounded-lg p-4 space-y-2 text-sm">
-                      <div className="flex items-start gap-2">
-                        <span className="text-success mt-0.5">✓</span>
-                        <span>
-                          {isTrialing
-                            ? t('subscription.cancelTrialAccess')
-                            : t('subscription.retainAccess')}{' '}
-                          {endDate && formatPeriodEndDate(formattingLocale, endDate) ? (
-                            <span className="font-medium">
-                              {formatPeriodEndDate(formattingLocale, endDate)}
-                            </span>
-                          ) : (
-                            t('subscription.retainAccessFallback')
-                          )}
-                        </span>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <span className="text-success mt-0.5">✓</span>
-                        <span>
-                          {isTrialing
-                            ? t('subscription.cancelTrialNoCharge')
-                            : t('subscription.cancelNotCharged')}
-                        </span>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <span className="text-info mt-0.5">ℹ</span>
-                        <span>
-                          {isTrialing
-                            ? t('subscription.cancelTrialResume')
-                            : t('subscription.cancelResumeAnytime')}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel disabled={cancelLoading}>
-                  {isTrialing ? t('subscription.cancelTrialKeep') : t('subscription.cancelKeep')}
-                </AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={handleCancelSubscription}
-                  disabled={cancelLoading}
-                  className="bg-destructive hover:bg-destructive/90 focus:ring-destructive"
-                >
-                  {cancelLoading
-                    ? t('subscription.canceling')
-                    : isTrialing
-                      ? t('subscription.cancelTrialButton')
-                      : t('subscription.cancelButton')}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        );
-      })()}
+      <CancelSubscriptionDialog
+        cancelDialogOpen={cancelDialogOpen}
+        setCancelDialogOpen={setCancelDialogOpen}
+        cancelLoading={cancelLoading}
+        handleCancelSubscription={handleCancelSubscription}
+        subscription={subscription}
+      />
     </div>
   );
 };

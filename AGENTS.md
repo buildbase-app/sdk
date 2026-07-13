@@ -34,6 +34,8 @@ import { SaaSOSProvider } from '@buildbase/sdk/react';
 </SaaSOSProvider>;
 ```
 
+`BuildBaseProvider` is the brand-aligned alias of `SaaSOSProvider` (same component/props; prefer it in new code).
+
 Everything below `SaaSOSProvider` can use the hooks and gate components. **Prefer SDK hooks over reaching into internal context/Redux.**
 
 ## Server setup

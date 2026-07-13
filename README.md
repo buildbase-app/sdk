@@ -87,6 +87,7 @@ import '@buildbase/sdk/css';
 // components/provider.tsx
 'use client';
 
+// BuildBaseProvider is an identical brand-aligned alias — prefer it in new code
 import { SaaSOSProvider } from '@buildbase/sdk/react';
 import { ApiVersion } from '@buildbase/sdk';
 

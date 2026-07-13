@@ -114,20 +114,88 @@ const ZERO_DECIMAL_CURRENCIES = new Set([
   'xpf',
 ]);
 
+/**
+ * ISO 4217 three-decimal currencies (per Stripe): the minor unit is 1/1000
+ * (fils/baisa) — amounts divide by 1000, not 100.
+ */
+const THREE_DECIMAL_CURRENCIES = new Set(['bhd', 'jod', 'kwd', 'omr', 'tnd']);
+
+const currencyDecimalsCache = new Map<string, number>();
+
+/**
+ * Minor-unit digits for a currency per ISO 4217: 0 (JPY, KRW, …), 2 (most),
+ * or 3 (KWD, BHD, …). The zero- and three-decimal sets are pinned to Stripe's
+ * treatment (the billing backend defines amount semantics); ISK is pinned to 2
+ * (Stripe legacy — ISO 4217 says 0). Any other code defers to the runtime's
+ * CLDR data (IQD/LYD → 3, CLF/UYW → 4, UYI → 0), falling back to 2 for codes
+ * unknown to Intl or malformed.
+ */
+export function getCurrencyDecimals(currency: string | null | undefined): number {
+  const key = (currency ?? '').trim().toLowerCase();
+  if (!key) return 2;
+  if (ZERO_DECIMAL_CURRENCIES.has(key)) return 0;
+  if (THREE_DECIMAL_CURRENCIES.has(key)) return 3;
+  if (key === 'isk') return 2; // Stripe requires ISK amounts divisible by 100, despite ISO exponent 0
+  let d = currencyDecimalsCache.get(key);
+  if (d === undefined) {
+    try {
+      d =
+        new Intl.NumberFormat('en-US', {
+          style: 'currency',
+          currency: key.toUpperCase(),
+        }).resolvedOptions().maximumFractionDigits ?? 2;
+    } catch {
+      d = 2;
+    }
+    currencyDecimalsCache.set(key, d);
+  }
+  return d;
+}
+
 /** True when `currency` has no minor unit (JPY, KRW, …) — amounts are whole units, not cents. */
 export function isZeroDecimalCurrency(currency: string | null | undefined): boolean {
-  return ZERO_DECIMAL_CURRENCIES.has((currency ?? '').trim().toLowerCase());
+  return (currency ?? '').trim() !== '' && getCurrencyDecimals(currency) === 0;
 }
 
 /**
  * Convert a minor-unit amount to its display number for `currency`:
  * `minorAmountToDisplay(1999, 'usd')` → `"19.99"`,
- * `minorAmountToDisplay(1000, 'jpy')` → `"1,000"` (zero-decimal — no division).
+ * `minorAmountToDisplay(1000, 'jpy')` → `"1,000"` (zero-decimal — no division),
+ * `minorAmountToDisplay(12345, 'kwd')` → `"12.345"` (three-decimal — ÷1000).
  */
 export function minorAmountToDisplay(amount: number, currency: string): string {
-  return isZeroDecimalCurrency(currency)
+  const decimals = getCurrencyDecimals(currency);
+  return decimals === 0
     ? amount.toLocaleString('en-US')
-    : (amount / 100).toFixed(2);
+    : (amount / 10 ** decimals).toFixed(decimals);
+}
+
+/**
+ * Locale-aware currency formatting of a minor-unit amount via `Intl.NumberFormat`
+ * (`(1999, 'usd', 'en-US')` → `"$19.99"`; `(1000, 'jpy', 'ja-JP')` → `"￥1,000"`;
+ * `(12345, 'kwd')` → `"KWD 12.345"`). The divisor follows the currency's ISO 4217
+ * minor-unit digits (see `getCurrencyDecimals`) — zero-decimal currencies are
+ * never divided, three-decimal divide by 1000. Falls back to the symbol table
+ * when the currency code is empty or malformed.
+ */
+export function formatMinorAmountIntl(amount: number, currency: string, locale = 'en-US'): string {
+  const c = (currency ?? '').trim();
+  const decimals = getCurrencyDecimals(c);
+  const value = amount / 10 ** decimals;
+  if (!c) return value.toFixed(decimals);
+  try {
+    return new Intl.NumberFormat(locale, {
+      style: 'currency',
+      currency: c.toUpperCase(),
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+    }).format(value);
+  } catch {
+    return (
+      getCurrencySymbol(c) +
+      (decimals === 0 ? value.toLocaleString('en-US') : value.toFixed(decimals))
+    );
+  }
 }
 
 /** Format cents as money string (e.g. 1999, "usd" -> "$19.99"; 1000, "jpy" -> "¥1,000"). Caller must pass currency (e.g. from plan or workspace). */

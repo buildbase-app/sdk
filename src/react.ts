@@ -25,6 +25,11 @@ export * from './core';
 // ─── Main Provider ─────────────────────────────────────────────────────────────
 export { SaaSOSProvider } from './providers/SaaSOSProvider';
 export type { SaaSOSProviderProps } from './providers/SaaSOSProvider';
+// Brand-aligned alias (the package is @buildbase/sdk): same component, same
+// props — new code should prefer BuildBaseProvider; SaaSOSProvider stays
+// supported indefinitely.
+export { SaaSOSProvider as BuildBaseProvider } from './providers/SaaSOSProvider';
+export type { SaaSOSProviderProps as BuildBaseProviderProps } from './providers/SaaSOSProvider';
 
 // ─── Auth Hooks & Gate Components ──────────────────────────────────────────────
 export { WhenAuthenticated, WhenUnauthenticated } from './components/user/auth';

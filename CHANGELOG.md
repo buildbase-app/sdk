@@ -42,6 +42,22 @@ MCP + agent-readiness brought to **MCP 2025-06-18** compliance, a one-config set
 - **`createWorkspace`'s delayed plan-picker open is cancelled on unmount** — it can no longer pop open after the user navigated away or signed out during the 300ms delay.
 - **`workspaceSettingsManager.clearParams()` notifies subscribers** (React state no longer diverges from the manager), and `getState()` returns a stable snapshot reference.
 
+### Added
+
+- **Every `WorkspaceApi` method accepts a trailing `signal?: AbortSignal`** (49 methods) — matching the Auth/User/Settings API classes, so callers can cancel in-flight workspace/billing/credit requests.
+- **`formatMinorAmountIntl(amount, currency, locale?)`** — locale-aware `Intl.NumberFormat` money formatting of minor-unit amounts, zero-decimal-safe (used by the invoices screen; exported for consumers).
+- **`UserContextValue` per-resource state**: `attributesLoading` / `featuresLoading` / `attributesError` / `featuresError` alongside the combined `isLoading`/`error`.
+- **`RedirectValidationOptions`** exported from the core entry.
+- **Settings subscription screen renders `<NoPermission/>`** instead of a blank pane when the user lacks `workspace:billing:view` (and the permission check runs before the loading skeleton).
+- **`NotificationData`/`ISettings` extra keys are typed `unknown`** instead of `any` — narrow before use. ⚠️ Type-level change for code that read arbitrary keys untyped. **`WebMcpTool` is now generic** (`WebMcpTool<TInput = any>`): inline-typed `execute` handlers keep working, and consumers can pin the input shape (`WebMcpTool<{ path: string }>`); verified against the reference webapp.
+- **`BuildBaseProvider` / `BuildBaseProviderProps`** — brand-aligned aliases of `SaaSOSProvider`/`SaaSOSProviderProps` on `/react` (identical component; prefer in new code).
+
+### Internal (structure only — rendered output unchanged)
+
+- **`SettingsSubscription.tsx` decomposed (1,473 → 1,040 lines)** into `ui/subscription/`: `SubscriptionStatusBadge`, `TrialBanner`, a single `SubscriptionNoticeBanner` primitive behind the four notice banners, `PlanDetailsSection`, `CancelSubscriptionDialog`/`ResumeSubscriptionDialog`.
+- **`SubscriptionDialog.tsx` decomposed (1,356 → 1,249 lines)** into `ui/subscription-dialog/`: shared `getDisplayCurrency`/`getCreditRenewalModeKey`/`getAllSubscriptionItems` utils plus `PlanTrialBadge`, `PlanPriceBlock`, `CreditGrantSummary` for the byte-identical mobile/desktop pieces.
+- **`useSaaSWorkspaces()` return object is memoized** — stable identity between renders (values unchanged), so consumer memo/effect dependencies stop re-firing on every render.
+
 ### Removed
 
 - **`verifyClientJwt`'s legacy bare-`number` third argument.** ⚠️ **Behavior change.** The third parameter is now `VerifyClientJwtOptions` only (`{ clockToleranceSec?, requireExp?, issuer?, audience? }`); pass `{ clockToleranceSec: n }` instead of a bare number.

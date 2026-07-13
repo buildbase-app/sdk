@@ -74,6 +74,7 @@ const NOT_READY_MESSAGE = 'SDK is not ready (missing serverUrl, version, or orgI
  * - getAuthHeaders()
  * - fetchJson<T>(path, init, errorMessage): GET/POST/etc. with handleApiResponse
  * - fetchResponse(path, init): raw Response for custom parsing (e.g. non-JSON or custom error handling)
+ * - fetchUnwrapped<T>(path, init, errorMessage): fetch → throw on !ok → unwrap { success, data } envelope
  */
 export abstract class BaseApi {
   protected readonly serverUrl: string;
@@ -329,6 +330,21 @@ export abstract class BaseApi {
   protected async fetchResponse(path: string, init: RequestInit = {}): Promise<Response> {
     this.ensureReady();
     return this.executeFetch(path, init);
+  }
+
+  /**
+   * Execute request, throw a parsed error on !response.ok, and unwrap the
+   * `{ success, data }` envelope. Shorthand for the common
+   * fetchResponse → throwResponseError → unwrapResponse sequence.
+   */
+  protected async fetchUnwrapped<T>(
+    path: string,
+    init: RequestInit = {},
+    errorMessage: string = 'Request failed'
+  ): Promise<T> {
+    const response = await this.fetchResponse(path, init);
+    if (!response.ok) await this.throwResponseError(response, errorMessage);
+    return this.unwrapResponse<T>(response, errorMessage);
   }
 
   /**

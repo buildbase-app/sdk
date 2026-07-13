@@ -89,7 +89,7 @@ export interface NotificationData {
     push?: boolean;
   };
   /** Any additional merge tags available as {{key}} in the email template. */
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /** Result of sending a notification. */
@@ -120,60 +120,69 @@ export class WorkspaceApi extends BaseApi {
     super({ ...config, requireOrgId: true });
   }
 
-  async getWorkspaces(): Promise<IWorkspace[]> {
-    return this.fetchJson<IWorkspace[]>('workspaces', {}, 'Failed to fetch workspaces');
+  async getWorkspaces(signal?: AbortSignal): Promise<IWorkspace[]> {
+    return this.fetchJson<IWorkspace[]>('workspaces', { signal }, 'Failed to fetch workspaces');
   }
 
-  async createWorkspace(data: { name: string; image?: string }): Promise<IWorkspace> {
+  async createWorkspace(
+    data: { name: string; image?: string },
+    signal?: AbortSignal
+  ): Promise<IWorkspace> {
     return this.fetchJson<IWorkspace>(
       'workspaces',
-      { method: 'POST', body: JSON.stringify(data) },
+      { method: 'POST', body: JSON.stringify(data), signal },
       'Failed to create workspace'
     );
   }
 
-  async updateWorkspace(id: string, data: Partial<IWorkspace>): Promise<IWorkspace> {
+  async updateWorkspace(
+    id: string,
+    data: Partial<IWorkspace>,
+    signal?: AbortSignal
+  ): Promise<IWorkspace> {
     return this.fetchJson<IWorkspace>(
       this.apiPath`workspaces/${id}`,
-      { method: 'PUT', body: JSON.stringify(data) },
+      { method: 'PUT', body: JSON.stringify(data), signal },
       'Failed to update workspace'
     );
   }
 
-  async deleteWorkspace(id: string): Promise<{ success: boolean }> {
+  async deleteWorkspace(id: string, signal?: AbortSignal): Promise<{ success: boolean }> {
     return this.fetchJson<{ success: boolean }>(
       this.apiPath`workspaces/${id}`,
-      { method: 'DELETE' },
+      { method: 'DELETE', signal },
       'Failed to delete workspace'
     );
   }
 
-  async getWorkspaceUsers(workspaceId: string): Promise<IWorkspaceUser[]> {
+  async getWorkspaceUsers(workspaceId: string, signal?: AbortSignal): Promise<IWorkspaceUser[]> {
     return this.fetchJson<IWorkspaceUser[]>(
       this.apiPath`workspaces/${workspaceId}/users`,
-      {},
+      { signal },
       'Failed to fetch workspace users'
     );
   }
 
   async addUser(
     workspaceId: string,
-    config: { email: string; role: string }
+    config: { email: string; role: string },
+    signal?: AbortSignal
   ): Promise<{ userId: string; workspace: IWorkspace; message: string }> {
     return this.fetchJson(
       this.apiPath`workspaces/${workspaceId}/users/add`,
-      { method: 'POST', body: JSON.stringify(config) },
+      { method: 'POST', body: JSON.stringify(config), signal },
       'Failed to invite member'
     );
   }
 
   async removeUser(
     workspaceId: string,
-    userId: string
+    userId: string,
+    signal?: AbortSignal
   ): Promise<{ userId: string; workspace: IWorkspace; message: string }> {
     return this.fetchJson(
       this.apiPath`workspaces/${workspaceId}/users/${userId}`,
-      { method: 'DELETE' },
+      { method: 'DELETE', signal },
       'Failed to remove user'
     );
   }
@@ -181,69 +190,80 @@ export class WorkspaceApi extends BaseApi {
   async updateUser(
     workspaceId: string,
     userId: string,
-    data: Partial<IWorkspaceUser>
+    data: Partial<IWorkspaceUser>,
+    signal?: AbortSignal
   ): Promise<{ userId: string; workspace: IWorkspace; message: string }> {
     return this.fetchJson(
       this.apiPath`workspaces/${workspaceId}/users/${userId}`,
-      { method: 'PATCH', body: JSON.stringify(data) },
+      { method: 'PATCH', body: JSON.stringify(data), signal },
       'Failed to update user'
     );
   }
 
-  async updateSettings(data: { permissions: Record<string, string[]> }): Promise<any> {
+  async updateSettings(
+    data: { permissions: Record<string, string[]> },
+    signal?: AbortSignal
+  ): Promise<any> {
     return this.fetchJson(
       'workspaces/settings',
-      { method: 'PATCH', body: JSON.stringify(data) },
+      { method: 'PATCH', body: JSON.stringify(data), signal },
       'Failed to update workspace settings'
     );
   }
 
   async updateWorkspacePermissions(
     workspaceId: string,
-    permissions: Record<string, string[]>
+    permissions: Record<string, string[]>,
+    signal?: AbortSignal
   ): Promise<any> {
     return this.fetchJson(
       this.apiPath`workspaces/${workspaceId}/permissions`,
-      { method: 'PATCH', body: JSON.stringify({ permissions }) },
+      { method: 'PATCH', body: JSON.stringify({ permissions }), signal },
       'Failed to update workspace permissions'
     );
   }
 
-  async getFeatures(): Promise<IWorkspaceFeature[]> {
+  async getFeatures(signal?: AbortSignal): Promise<IWorkspaceFeature[]> {
     return this.fetchJson<IWorkspaceFeature[]>(
       'workspaces/features',
-      {},
+      { signal },
       'Failed to fetch features'
     );
   }
 
-  async updateFeature(workspaceId: string, key: string, value: boolean): Promise<IWorkspace> {
+  async updateFeature(
+    workspaceId: string,
+    key: string,
+    value: boolean,
+    signal?: AbortSignal
+  ): Promise<IWorkspace> {
     return this.fetchJson<IWorkspace>(
       this.apiPath`workspaces/${workspaceId}/features`,
       {
         method: 'PATCH',
         body: JSON.stringify({ features: { [key]: value } }),
+        signal,
       },
       'Failed to update feature'
     );
   }
 
-  async getWorkspace(workspaceId: string): Promise<IWorkspace> {
+  async getWorkspace(workspaceId: string, signal?: AbortSignal): Promise<IWorkspace> {
     return this.fetchJson<IWorkspace>(
       this.apiPath`workspaces/${workspaceId}`,
-      {},
+      { signal },
       'Failed to fetch workspace'
     );
   }
 
-  async getProfile(): Promise<IUser> {
-    return this.fetchJson<IUser>('profile', {}, 'Failed to fetch profile');
+  async getProfile(signal?: AbortSignal): Promise<IUser> {
+    return this.fetchJson<IUser>('profile', { signal }, 'Failed to fetch profile');
   }
 
-  async updateUserProfile(config: Partial<IUser>): Promise<IUser> {
+  async updateUserProfile(config: Partial<IUser>, signal?: AbortSignal): Promise<IUser> {
     return this.fetchJson<IUser>(
       'profile',
-      { method: 'PATCH', body: JSON.stringify(config) },
+      { method: 'PATCH', body: JSON.stringify(config), signal },
       'Failed to update user profile'
     );
   }
@@ -252,27 +272,27 @@ export class WorkspaceApi extends BaseApi {
   // Registration is not available here: WebAuthn credentials are bound to the
   // hosted auth domain, so enrollment happens during sign-in on that domain.
 
-  async getPasskeys(): Promise<IPasskeySummary[]> {
+  async getPasskeys(signal?: AbortSignal): Promise<IPasskeySummary[]> {
     const data = await this.fetchJson<{ passkeys: IPasskeySummary[] }>(
       'passkeys',
-      {},
+      { signal },
       'Failed to fetch passkeys'
     );
     return data?.passkeys ?? [];
   }
 
-  async renamePasskey(passkeyId: string, name: string): Promise<void> {
+  async renamePasskey(passkeyId: string, name: string, signal?: AbortSignal): Promise<void> {
     await this.fetchJson(
       this.apiPath`passkeys/${passkeyId}`,
-      { method: 'PATCH', body: JSON.stringify({ name }) },
+      { method: 'PATCH', body: JSON.stringify({ name }), signal },
       'Failed to rename passkey'
     );
   }
 
-  async deletePasskey(passkeyId: string): Promise<void> {
+  async deletePasskey(passkeyId: string, signal?: AbortSignal): Promise<void> {
     await this.fetchJson(
       this.apiPath`passkeys/${passkeyId}`,
-      { method: 'DELETE' },
+      { method: 'DELETE', signal },
       'Failed to remove passkey'
     );
   }
@@ -283,10 +303,15 @@ export class WorkspaceApi extends BaseApi {
    * Get current subscription for a workspace
    * Returns subscription details including plan, plan version, and group information
    */
-  async getCurrentSubscription(workspaceId: string): Promise<ISubscriptionResponse> {
-    const response = await this.fetchResponse(this.apiPath`workspaces/${workspaceId}/subscription`);
-    if (!response.ok) await this.throwResponseError(response, 'Failed to fetch subscription');
-    return this.unwrapResponse<ISubscriptionResponse>(response, 'Failed to fetch subscription');
+  async getCurrentSubscription(
+    workspaceId: string,
+    signal?: AbortSignal
+  ): Promise<ISubscriptionResponse> {
+    return this.fetchUnwrapped<ISubscriptionResponse>(
+      this.apiPath`workspaces/${workspaceId}/subscription`,
+      { signal },
+      'Failed to fetch subscription'
+    );
   }
 
   /**
@@ -294,12 +319,12 @@ export class WorkspaceApi extends BaseApi {
    * Returns the plan group containing the current plan if subscription exists,
    * otherwise returns the latest published group
    */
-  async getPlanGroup(workspaceId: string): Promise<IPlanGroupResponse> {
-    const response = await this.fetchResponse(
-      this.apiPath`workspaces/${workspaceId}/subscription/plan-group`
+  async getPlanGroup(workspaceId: string, signal?: AbortSignal): Promise<IPlanGroupResponse> {
+    return this.fetchUnwrapped<IPlanGroupResponse>(
+      this.apiPath`workspaces/${workspaceId}/subscription/plan-group`,
+      { signal },
+      'Failed to fetch plan group'
     );
-    if (!response.ok) await this.throwResponseError(response, 'Failed to fetch plan group');
-    return this.unwrapResponse<IPlanGroupResponse>(response, 'Failed to fetch plan group');
   }
 
   /**
@@ -310,14 +335,15 @@ export class WorkspaceApi extends BaseApi {
    */
   async getPlanGroupByVersion(
     workspaceId: string,
-    groupVersionId: string
+    groupVersionId: string,
+    signal?: AbortSignal
   ): Promise<IPlanGroupResponse> {
-    const response = await this.fetchResponse(
+    return this.fetchUnwrapped<IPlanGroupResponse>(
       this.apiPath`workspaces/${workspaceId}/subscription/plan-group` +
-        `?groupVersionId=${encodeURIComponent(groupVersionId)}`
+        `?groupVersionId=${encodeURIComponent(groupVersionId)}`,
+      { signal },
+      'Failed to fetch plan group version'
     );
-    if (!response.ok) await this.throwResponseError(response, 'Failed to fetch plan group version');
-    return this.unwrapResponse<IPlanGroupResponse>(response, 'Failed to fetch plan group version');
   }
 
   /**
@@ -329,14 +355,13 @@ export class WorkspaceApi extends BaseApi {
    * @param workspaceId - The workspace ID
    * @returns Plan group versions response with currentVersion and availableVersions
    */
-  async getPlanGroupVersions(workspaceId: string): Promise<IPlanGroupVersionsResponse> {
-    const response = await this.fetchResponse(
-      this.apiPath`workspaces/${workspaceId}/subscription/plan-group/versions`
-    );
-    if (!response.ok)
-      await this.throwResponseError(response, 'Failed to fetch plan group versions');
-    return this.unwrapResponse<IPlanGroupVersionsResponse>(
-      response,
+  async getPlanGroupVersions(
+    workspaceId: string,
+    signal?: AbortSignal
+  ): Promise<IPlanGroupVersionsResponse> {
+    return this.fetchUnwrapped<IPlanGroupVersionsResponse>(
+      this.apiPath`workspaces/${workspaceId}/subscription/plan-group/versions`,
+      { signal },
       'Failed to fetch plan group versions'
     );
   }
@@ -349,13 +374,13 @@ export class WorkspaceApi extends BaseApi {
    * @param slug - Plan group slug (e.g. 'default', 'enterprise')
    * @returns Plan group versions response with currentVersion and availableVersions
    */
-  async getPublicPlans(slug: string): Promise<IPublicPlansResponse> {
+  async getPublicPlans(slug: string, signal?: AbortSignal): Promise<IPublicPlansResponse> {
     if (!this.orgId) throw new Error('orgId is required for getPublicPlans');
-    const response = await this.fetchResponse(
-      this.apiPath`${this.orgId}/plans/${encodeURIComponent(slug)}`
+    return this.fetchUnwrapped<IPublicPlansResponse>(
+      this.apiPath`${this.orgId}/plans/${encodeURIComponent(slug)}`,
+      { signal },
+      'Failed to fetch plans'
     );
-    if (!response.ok) await this.throwResponseError(response, 'Failed to fetch plans');
-    return this.unwrapResponse<IPublicPlansResponse>(response, 'Failed to fetch plans');
   }
 
   /**
@@ -365,12 +390,11 @@ export class WorkspaceApi extends BaseApi {
    *
    * @returns Credit packages with pricing variants
    */
-  async getPublicCreditPackages(): Promise<IPublicCreditPackagesResponse> {
+  async getPublicCreditPackages(signal?: AbortSignal): Promise<IPublicCreditPackagesResponse> {
     if (!this.orgId) throw new Error('orgId is required for getPublicCreditPackages');
-    const response = await this.fetchResponse(this.apiPath`${this.orgId}/credit-packages`);
-    if (!response.ok) await this.throwResponseError(response, 'Failed to fetch credit packages');
-    return this.unwrapResponse<IPublicCreditPackagesResponse>(
-      response,
+    return this.fetchUnwrapped<IPublicCreditPackagesResponse>(
+      this.apiPath`${this.orgId}/credit-packages`,
+      { signal },
       'Failed to fetch credit packages'
     );
   }
@@ -383,10 +407,15 @@ export class WorkspaceApi extends BaseApi {
    * @param groupVersionId - The plan group version ID to fetch
    * @returns Plan group version with populated plan versions
    */
-  async getPlanGroupVersion(groupVersionId: string): Promise<IPlanGroupVersion> {
-    const response = await this.fetchResponse(this.apiPath`plan-group-versions/${groupVersionId}`);
-    if (!response.ok) await this.throwResponseError(response, 'Failed to fetch plan group version');
-    return this.unwrapResponse<IPlanGroupVersion>(response, 'Failed to fetch plan group version');
+  async getPlanGroupVersion(
+    groupVersionId: string,
+    signal?: AbortSignal
+  ): Promise<IPlanGroupVersion> {
+    return this.fetchUnwrapped<IPlanGroupVersion>(
+      this.apiPath`plan-group-versions/${groupVersionId}`,
+      { signal },
+      'Failed to fetch plan group version'
+    );
   }
 
   /**
@@ -397,28 +426,31 @@ export class WorkspaceApi extends BaseApi {
    */
   async createCheckoutSession(
     workspaceId: string,
-    request: ICheckoutSessionRequest
+    request: ICheckoutSessionRequest,
+    signal?: AbortSignal
   ): Promise<CheckoutResult> {
-    const response = await this.fetchResponse(
+    return this.fetchUnwrapped<CheckoutResult>(
       this.apiPath`workspaces/${workspaceId}/subscription/checkout`,
       {
         method: 'POST',
         body: JSON.stringify(request),
-      }
+        signal,
+      },
+      'Failed to create checkout session'
     );
-    if (!response.ok) await this.throwResponseError(response, 'Failed to create checkout session');
-    return this.unwrapResponse<CheckoutResult>(response, 'Failed to create checkout session');
   }
 
   async selectFreePlan(
     workspaceId: string,
-    planVersionId: string
+    planVersionId: string,
+    signal?: AbortSignal
   ): Promise<{ success: boolean; message: string }> {
     const response = await this.fetchResponse(
       this.apiPath`workspaces/${workspaceId}/subscription/select-free-plan`,
       {
         method: 'POST',
         body: JSON.stringify({ planVersionId }),
+        signal,
       }
     );
     if (!response.ok) await this.throwResponseError(response, 'Failed to select free plan');
@@ -433,18 +465,16 @@ export class WorkspaceApi extends BaseApi {
    */
   async updateSubscription(
     workspaceId: string,
-    request: ISubscriptionUpdateRequest
+    request: ISubscriptionUpdateRequest,
+    signal?: AbortSignal
   ): Promise<ISubscriptionUpdateResponse | ICheckoutSessionResponse> {
-    const response = await this.fetchResponse(
+    return this.fetchUnwrapped<ISubscriptionUpdateResponse | ICheckoutSessionResponse>(
       this.apiPath`workspaces/${workspaceId}/subscription`,
       {
         method: 'PATCH',
         body: JSON.stringify(request),
-      }
-    );
-    if (!response.ok) await this.throwResponseError(response, 'Failed to update subscription');
-    return this.unwrapResponse<ISubscriptionUpdateResponse | ICheckoutSessionResponse>(
-      response,
+        signal,
+      },
       'Failed to update subscription'
     );
   }
@@ -455,11 +485,13 @@ export class WorkspaceApi extends BaseApi {
    */
   async createBillingPortalSession(
     workspaceId: string,
-    returnUrl?: string
+    returnUrl?: string,
+    signal?: AbortSignal
   ): Promise<{ url: string }> {
     return this.fetchJson(this.apiPath`workspaces/${workspaceId}/subscription/billing-portal`, {
       method: 'POST',
       body: JSON.stringify(returnUrl ? { returnUrl } : {}),
+      signal,
     });
   }
 
@@ -473,7 +505,8 @@ export class WorkspaceApi extends BaseApi {
   async listInvoices(
     workspaceId: string,
     limit: number = 10,
-    startingAfter?: string
+    startingAfter?: string,
+    signal?: AbortSignal
   ): Promise<IInvoiceListResponse> {
     const params = new URLSearchParams();
     params.append('limit', limit.toString());
@@ -481,11 +514,11 @@ export class WorkspaceApi extends BaseApi {
       params.append('starting_after', startingAfter);
     }
 
-    const response = await this.fetchResponse(
-      this.apiPath`workspaces/${workspaceId}/subscription/invoices` + `?${params.toString()}`
+    return this.fetchUnwrapped<IInvoiceListResponse>(
+      this.apiPath`workspaces/${workspaceId}/subscription/invoices` + `?${params.toString()}`,
+      { signal },
+      'Failed to fetch invoices'
     );
-    if (!response.ok) await this.throwResponseError(response, 'Failed to fetch invoices');
-    return this.unwrapResponse<IInvoiceListResponse>(response, 'Failed to fetch invoices');
   }
 
   /**
@@ -494,12 +527,16 @@ export class WorkspaceApi extends BaseApi {
    * @param invoiceId - The invoice ID
    * @returns Invoice details
    */
-  async getInvoice(workspaceId: string, invoiceId: string): Promise<IInvoiceResponse> {
-    const response = await this.fetchResponse(
-      this.apiPath`workspaces/${workspaceId}/subscription/invoices/${invoiceId}`
+  async getInvoice(
+    workspaceId: string,
+    invoiceId: string,
+    signal?: AbortSignal
+  ): Promise<IInvoiceResponse> {
+    return this.fetchUnwrapped<IInvoiceResponse>(
+      this.apiPath`workspaces/${workspaceId}/subscription/invoices/${invoiceId}`,
+      { signal },
+      'Failed to fetch invoice'
     );
-    if (!response.ok) await this.throwResponseError(response, 'Failed to fetch invoice');
-    return this.unwrapResponse<IInvoiceResponse>(response, 'Failed to fetch invoice');
   }
 
   /**
@@ -508,13 +545,15 @@ export class WorkspaceApi extends BaseApi {
    * @param workspaceId - The workspace ID
    * @returns Updated subscription with cancelAtPeriodEnd and stripeCurrentPeriodEnd
    */
-  async cancelSubscriptionAtPeriodEnd(workspaceId: string): Promise<ISubscriptionResponse> {
-    const response = await this.fetchResponse(
+  async cancelSubscriptionAtPeriodEnd(
+    workspaceId: string,
+    signal?: AbortSignal
+  ): Promise<ISubscriptionResponse> {
+    return this.fetchUnwrapped<ISubscriptionResponse>(
       this.apiPath`workspaces/${workspaceId}/subscription/cancel-at-period-end`,
-      { method: 'POST' }
+      { method: 'POST', signal },
+      'Failed to cancel subscription'
     );
-    if (!response.ok) await this.throwResponseError(response, 'Failed to cancel subscription');
-    return this.unwrapResponse<ISubscriptionResponse>(response, 'Failed to cancel subscription');
   }
 
   /**
@@ -523,15 +562,18 @@ export class WorkspaceApi extends BaseApi {
    * @param workspaceId - The workspace ID
    * @returns Updated subscription with cancelAtPeriodEnd set to false
    */
-  async resumeSubscription(workspaceId: string): Promise<ISubscriptionResponse> {
-    const response = await this.fetchResponse(
+  async resumeSubscription(
+    workspaceId: string,
+    signal?: AbortSignal
+  ): Promise<ISubscriptionResponse> {
+    return this.fetchUnwrapped<ISubscriptionResponse>(
       this.apiPath`workspaces/${workspaceId}/subscription/resume`,
       {
         method: 'POST',
-      }
+        signal,
+      },
+      'Failed to resume subscription'
     );
-    if (!response.ok) await this.throwResponseError(response, 'Failed to resume subscription');
-    return this.unwrapResponse<ISubscriptionResponse>(response, 'Failed to resume subscription');
   }
 
   // Quota Usage Methods
@@ -544,17 +586,18 @@ export class WorkspaceApi extends BaseApi {
    */
   async recordUsage(
     workspaceId: string,
-    request: IRecordUsageRequest
+    request: IRecordUsageRequest,
+    signal?: AbortSignal
   ): Promise<IRecordUsageResponse> {
-    const response = await this.fetchResponse(
+    return this.fetchUnwrapped<IRecordUsageResponse>(
       this.apiPath`workspaces/${workspaceId}/subscription/usage`,
       {
         method: 'POST',
         body: JSON.stringify(request),
-      }
+        signal,
+      },
+      'Failed to record usage'
     );
-    if (!response.ok) await this.throwResponseError(response, 'Failed to record usage');
-    return this.unwrapResponse<IRecordUsageResponse>(response, 'Failed to record usage');
   }
 
   /**
@@ -582,7 +625,8 @@ export class WorkspaceApi extends BaseApi {
         source?: string;
         idempotencyKey?: string;
       }>;
-    }
+    },
+    signal?: AbortSignal
   ): Promise<{
     success: boolean;
     total: number;
@@ -590,15 +634,15 @@ export class WorkspaceApi extends BaseApi {
     failed: number;
     results: Array<{ success: boolean; quotaSlug: string; quantity: number; error?: string }>;
   }> {
-    const response = await this.fetchResponse(
+    return this.fetchUnwrapped(
       this.apiPath`workspaces/${workspaceId}/subscription/usage/batch`,
       {
         method: 'POST',
         body: JSON.stringify(request),
-      }
+        signal,
+      },
+      'Failed to record batch usage'
     );
-    if (!response.ok) await this.throwResponseError(response, 'Failed to record batch usage');
-    return this.unwrapResponse(response, 'Failed to record batch usage');
   }
 
   /**
@@ -609,15 +653,13 @@ export class WorkspaceApi extends BaseApi {
    */
   async getQuotaUsageStatus(
     workspaceId: string,
-    quotaSlug: string
+    quotaSlug: string,
+    signal?: AbortSignal
   ): Promise<IQuotaUsageStatusResponse> {
-    const response = await this.fetchResponse(
+    return this.fetchUnwrapped<IQuotaUsageStatusResponse>(
       this.apiPath`workspaces/${workspaceId}/subscription/usage/status` +
-        `?quotaSlug=${encodeURIComponent(quotaSlug)}`
-    );
-    if (!response.ok) await this.throwResponseError(response, 'Failed to fetch quota usage status');
-    return this.unwrapResponse<IQuotaUsageStatusResponse>(
-      response,
+        `?quotaSlug=${encodeURIComponent(quotaSlug)}`,
+      { signal },
       'Failed to fetch quota usage status'
     );
   }
@@ -627,12 +669,15 @@ export class WorkspaceApi extends BaseApi {
    * @param workspaceId - The workspace ID
    * @returns All quota usage statuses keyed by quota slug
    */
-  async getAllQuotaUsage(workspaceId: string): Promise<IAllQuotaUsageResponse> {
-    const response = await this.fetchResponse(
-      this.apiPath`workspaces/${workspaceId}/subscription/usage/all`
+  async getAllQuotaUsage(
+    workspaceId: string,
+    signal?: AbortSignal
+  ): Promise<IAllQuotaUsageResponse> {
+    return this.fetchUnwrapped<IAllQuotaUsageResponse>(
+      this.apiPath`workspaces/${workspaceId}/subscription/usage/all`,
+      { signal },
+      'Failed to fetch all quota usage'
     );
-    if (!response.ok) await this.throwResponseError(response, 'Failed to fetch all quota usage');
-    return this.unwrapResponse<IAllQuotaUsageResponse>(response, 'Failed to fetch all quota usage');
   }
 
   /**
@@ -641,7 +686,11 @@ export class WorkspaceApi extends BaseApi {
    * @param query - Optional filters: quotaSlug, from, to, source, page, limit
    * @returns Paginated usage log entries
    */
-  async getUsageLogs(workspaceId: string, query?: IUsageLogsQuery): Promise<IUsageLogsResponse> {
+  async getUsageLogs(
+    workspaceId: string,
+    query?: IUsageLogsQuery,
+    signal?: AbortSignal
+  ): Promise<IUsageLogsResponse> {
     const params = new URLSearchParams();
     if (query?.quotaSlug) params.append('quotaSlug', query.quotaSlug);
     if (query?.from) params.append('from', query.from);
@@ -655,9 +704,7 @@ export class WorkspaceApi extends BaseApi {
       this.apiPath`workspaces/${workspaceId}/subscription/usage/logs` +
       (queryString ? `?${queryString}` : '');
 
-    const response = await this.fetchResponse(url);
-    if (!response.ok) await this.throwResponseError(response, 'Failed to fetch usage logs');
-    return this.unwrapResponse<IUsageLogsResponse>(response, 'Failed to fetch usage logs');
+    return this.fetchUnwrapped<IUsageLogsResponse>(url, { signal }, 'Failed to fetch usage logs');
   }
 
   // Notification Preferences
@@ -690,7 +737,8 @@ export class WorkspaceApi extends BaseApi {
     workspaceId: string,
     event: string,
     userId?: string,
-    data?: NotificationData
+    data?: NotificationData,
+    signal?: AbortSignal
   ): Promise<NotificationResult> {
     const body: Record<string, any> = { event };
     if (userId) body.userId = userId;
@@ -698,29 +746,33 @@ export class WorkspaceApi extends BaseApi {
 
     return this.fetchJson(
       this.apiPath`workspaces/${workspaceId}/notifications/send`,
-      { method: 'POST', body: JSON.stringify(body) },
+      { method: 'POST', body: JSON.stringify(body), signal },
       'Failed to send notification'
     );
   }
 
   // Notification Events & Preferences
 
-  async getNotificationEvents(workspaceId: string): Promise<NotificationEvent[]> {
+  async getNotificationEvents(
+    workspaceId: string,
+    signal?: AbortSignal
+  ): Promise<NotificationEvent[]> {
     return this.fetchJson(
       this.apiPath`workspaces/${workspaceId}/notification-events`,
-      {},
+      { signal },
       'Failed to fetch notification events'
     );
   }
 
   async getNotificationPreferences(
-    workspaceId: string
+    workspaceId: string,
+    signal?: AbortSignal
   ): Promise<Record<string, { email?: boolean; push?: boolean }>> {
     const result = await this.fetchJson<{
       notificationPreferences: Record<string, { email?: boolean; push?: boolean }>;
     }>(
       this.apiPath`workspaces/${workspaceId}/notification-preferences`,
-      {},
+      { signal },
       'Failed to fetch notification preferences'
     );
     return result.notificationPreferences ?? {};
@@ -728,7 +780,8 @@ export class WorkspaceApi extends BaseApi {
 
   async updateNotificationPreferences(
     workspaceId: string,
-    preferences: Record<string, { email?: boolean; push?: boolean }>
+    preferences: Record<string, { email?: boolean; push?: boolean }>,
+    signal?: AbortSignal
   ): Promise<Record<string, { email?: boolean; push?: boolean }>> {
     const result = await this.fetchJson<{
       notificationPreferences: Record<string, { email?: boolean; push?: boolean }>;
@@ -737,6 +790,7 @@ export class WorkspaceApi extends BaseApi {
       {
         method: 'PATCH',
         body: JSON.stringify({ notificationPreferences: preferences }),
+        signal,
       },
       'Failed to update notification preferences'
     );
@@ -750,10 +804,12 @@ export class WorkspaceApi extends BaseApi {
    * @param workspaceId - The workspace ID
    * @returns Credit balance with available, totalGranted, totalConsumed, totalExpired, totalRefunded
    */
-  async getCreditBalance(workspaceId: string): Promise<ICreditBalance> {
-    const response = await this.fetchResponse(this.apiPath`workspaces/${workspaceId}/credits`);
-    if (!response.ok) await this.throwResponseError(response, 'Failed to fetch credit balance');
-    return this.unwrapResponse<ICreditBalance>(response, 'Failed to fetch credit balance');
+  async getCreditBalance(workspaceId: string, signal?: AbortSignal): Promise<ICreditBalance> {
+    return this.fetchUnwrapped<ICreditBalance>(
+      this.apiPath`workspaces/${workspaceId}/credits`,
+      { signal },
+      'Failed to fetch credit balance'
+    );
   }
 
   /**
@@ -765,13 +821,15 @@ export class WorkspaceApi extends BaseApi {
    */
   async consumeCredits(
     workspaceId: string,
-    request: IConsumeCreditsRequest
+    request: IConsumeCreditsRequest,
+    signal?: AbortSignal
   ): Promise<IConsumeCreditsResponse> {
     const response = await this.fetchResponse(
       this.apiPath`workspaces/${workspaceId}/credits/consume`,
       {
         method: 'POST',
         body: JSON.stringify(request),
+        signal,
       }
     );
 
@@ -800,20 +858,16 @@ export class WorkspaceApi extends BaseApi {
    */
   async purchaseCredits(
     workspaceId: string,
-    request: ICreditPurchaseRequest
+    request: ICreditPurchaseRequest,
+    signal?: AbortSignal
   ): Promise<ICreditPurchaseResponse> {
-    const response = await this.fetchResponse(
+    return this.fetchUnwrapped<ICreditPurchaseResponse>(
       this.apiPath`workspaces/${workspaceId}/credits/purchase`,
       {
         method: 'POST',
         body: JSON.stringify(request),
-      }
-    );
-
-    if (!response.ok)
-      await this.throwResponseError(response, 'Failed to create credit purchase checkout');
-    return this.unwrapResponse<ICreditPurchaseResponse>(
-      response,
+        signal,
+      },
       'Failed to create credit purchase checkout'
     );
   }
@@ -824,12 +878,12 @@ export class WorkspaceApi extends BaseApi {
    * @param workspaceId - The workspace ID
    * @returns Array of credit packages
    */
-  async getCreditPackages(workspaceId: string): Promise<ICreditPackage[]> {
-    const response = await this.fetchResponse(
-      this.apiPath`workspaces/${workspaceId}/credits/packages`
+  async getCreditPackages(workspaceId: string, signal?: AbortSignal): Promise<ICreditPackage[]> {
+    const data = await this.fetchUnwrapped<any>(
+      this.apiPath`workspaces/${workspaceId}/credits/packages`,
+      { signal },
+      'Failed to fetch credit packages'
     );
-    if (!response.ok) await this.throwResponseError(response, 'Failed to fetch credit packages');
-    const data = await this.unwrapResponse<any>(response, 'Failed to fetch credit packages');
     return data.docs ?? data;
   }
 
@@ -841,7 +895,8 @@ export class WorkspaceApi extends BaseApi {
    */
   async getCreditTransactions(
     workspaceId: string,
-    query?: ICreditTransactionsQuery
+    query?: ICreditTransactionsQuery,
+    signal?: AbortSignal
   ): Promise<ICreditTransactionsResponse> {
     const params = new URLSearchParams();
     if (query?.type) params.append('type', query.type);
@@ -853,11 +908,9 @@ export class WorkspaceApi extends BaseApi {
       this.apiPath`workspaces/${workspaceId}/credits/transactions` +
       (queryString ? `?${queryString}` : '');
 
-    const response = await this.fetchResponse(url);
-    if (!response.ok)
-      await this.throwResponseError(response, 'Failed to fetch credit transactions');
-    return this.unwrapResponse<ICreditTransactionsResponse>(
-      response,
+    return this.fetchUnwrapped<ICreditTransactionsResponse>(
+      url,
+      { signal },
       'Failed to fetch credit transactions'
     );
   }
@@ -870,7 +923,8 @@ export class WorkspaceApi extends BaseApi {
    */
   async getCreditBuckets(
     workspaceId: string,
-    query?: ICreditBucketsQuery
+    query?: ICreditBucketsQuery,
+    signal?: AbortSignal
   ): Promise<ICreditBucketsResponse> {
     const params = new URLSearchParams();
     if (query?.status) params.append('status', query.status);
@@ -883,9 +937,11 @@ export class WorkspaceApi extends BaseApi {
       this.apiPath`workspaces/${workspaceId}/credits/buckets` +
       (queryString ? `?${queryString}` : '');
 
-    const response = await this.fetchResponse(url);
-    if (!response.ok) await this.throwResponseError(response, 'Failed to fetch credit buckets');
-    return this.unwrapResponse<ICreditBucketsResponse>(response, 'Failed to fetch credit buckets');
+    return this.fetchUnwrapped<ICreditBucketsResponse>(
+      url,
+      { signal },
+      'Failed to fetch credit buckets'
+    );
   }
 
   /**
@@ -894,14 +950,15 @@ export class WorkspaceApi extends BaseApi {
    * @param days - Look-ahead window in days (1-90, default 7)
    * @returns Expiring credits summary with bucket list
    */
-  async getExpiringCredits(workspaceId: string, days?: number): Promise<IExpiringCreditsResponse> {
+  async getExpiringCredits(
+    workspaceId: string,
+    days?: number,
+    signal?: AbortSignal
+  ): Promise<IExpiringCreditsResponse> {
     const params = days ? `?days=${days}` : '';
-    const response = await this.fetchResponse(
-      this.apiPath`workspaces/${workspaceId}/credits/expiring` + params
-    );
-    if (!response.ok) await this.throwResponseError(response, 'Failed to fetch expiring credits');
-    return this.unwrapResponse<IExpiringCreditsResponse>(
-      response,
+    return this.fetchUnwrapped<IExpiringCreditsResponse>(
+      this.apiPath`workspaces/${workspaceId}/credits/expiring` + params,
+      { signal },
       'Failed to fetch expiring credits'
     );
   }

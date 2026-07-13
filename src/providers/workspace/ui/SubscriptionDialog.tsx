@@ -26,6 +26,16 @@ import {
 import { useTranslation, type TranslationKey } from '../../../i18n';
 import { useSaaSSettings } from '../../os/hooks';
 import { WorkspaceModes } from '../../types';
+import CreditGrantSummary from './subscription-dialog/CreditGrantSummary';
+import PlanPriceBlock from './subscription-dialog/PlanPriceBlock';
+import PlanTrialBadge from './subscription-dialog/PlanTrialBadge';
+import {
+  calculateSavings,
+  getAllSubscriptionItems,
+  getCreditRenewalModeKey,
+  getDisplayCurrency,
+  INTERVAL_LABEL_KEYS,
+} from './subscription-dialog/utils';
 
 interface SubscriptionDialogProps {
   open: boolean;
@@ -57,54 +67,6 @@ interface SubscriptionDialogProps {
   loading?: boolean;
 }
 
-// Get all unique subscription items across all plans
-const getAllSubscriptionItems = (planVersions: IPlanVersionWithPlan[]) => {
-  const allItems = new Map<string, ISubscriptionItem>();
-
-  planVersions.forEach(planVersion => {
-    planVersion.subscriptionItems?.forEach(item => {
-      if (!allItems.has(item._id)) {
-        allItems.set(item._id, item);
-      }
-    });
-  });
-
-  return Array.from(allItems.values());
-};
-
-// formatPrice is defined inside the component to use formattingLocale (see fmtPrice)
-
-// Interval label keys — resolved via t() inside the component
-const INTERVAL_LABEL_KEYS: Record<string, TranslationKey> = {
-  [BillingIntervals.Monthly]: 'subscription.billingInterval.perMonth',
-  [BillingIntervals.Quarterly]: 'subscription.billingInterval.perQuarter',
-  [BillingIntervals.Yearly]: 'subscription.billingInterval.perYear',
-};
-
-// Calculate savings percentage for yearly/quarterly vs monthly
-const calculateSavings = (
-  monthlyPrice: number,
-  intervalPrice: number,
-  interval: BillingInterval
-): number | null => {
-  if (!monthlyPrice || monthlyPrice === 0) return null;
-
-  let monthlyEquivalent: number;
-  switch (interval) {
-    case BillingIntervals.Yearly:
-      monthlyEquivalent = intervalPrice / 12;
-      break;
-    case BillingIntervals.Quarterly:
-      monthlyEquivalent = intervalPrice / 3;
-      break;
-    default:
-      return null;
-  }
-
-  const savings = ((monthlyPrice - monthlyEquivalent) / monthlyPrice) * 100;
-  return savings > 0 ? Math.round(savings) : null;
-};
-
 const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
   open,
   onOpenChange,
@@ -124,11 +86,6 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
   const { t, formattingLocale, dir, fmtNum, fmtCents } = useTranslation();
   const { settings: orgSettings } = useSaaSSettings();
   const isPersonalMode = orgSettings?.workspace?.mode === WorkspaceModes.Personal;
-  /** Format price in cents for display. Returns '' for 0/null. */
-  const formatPrice = (priceInCents: number | undefined | null, currency: string): string => {
-    if (priceInCents === undefined || priceInCents === null || priceInCents === 0) return '';
-    return fmtCents(priceInCents, currency);
-  };
   const getIntervalLabel = (interval: BillingInterval): string =>
     t(INTERVAL_LABEL_KEYS[interval] ?? INTERVAL_LABEL_KEYS[BillingIntervals.Monthly]);
   const [processingPlanId, setProcessingPlanId] = useState<string | null>(null);
@@ -193,12 +150,10 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
     availableCurrencies,
   ]);
 
-  // Preserve plan order from planVersionIds (admin-configured display order)
-  const sortedPlans = useMemo(() => {
-    return [...propPlanVersions];
-  }, [propPlanVersions]);
+  // Plan order comes from planVersionIds (admin-configured display order).
+  const sortedPlans = propPlanVersions;
 
-  const allItems = getAllSubscriptionItems(sortedPlans);
+  const allItems = useMemo(() => getAllSubscriptionItems(sortedPlans), [sortedPlans]);
 
   const features = allItems.filter(item => item.type === SubscriptionItemType.Feature);
   const limits = allItems.filter(item => item.type === SubscriptionItemType.Limit);
@@ -546,13 +501,7 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                     const isPlanLoading = isLoading && planVersion._id === processingPlanId;
                     const price = getPriceForInterval(planVersion);
                     const hasVariant = hasVariantForCurrency(planVersion);
-                    const displayCurrency =
-                      planVersion.pricingVariants?.length &&
-                      planVersion.pricingVariants.some(
-                        v => v.currency?.toLowerCase() === effectiveCurrency.toLowerCase()
-                      )
-                        ? effectiveCurrency
-                        : (planVersion.plan?.currency ?? effectiveCurrency ?? '');
+                    const displayCurrency = getDisplayCurrency(planVersion, effectiveCurrency);
                     const monthlyPrice =
                       getBasePriceCents(planVersion, effectiveCurrency, BillingIntervals.Monthly) ??
                       0;
@@ -577,17 +526,12 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                               <h3 className="text-lg font-bold text-foreground">
                                 {planVersion.plan.name}
                               </h3>
-                              {planVersion.trial?.enabled &&
-                                planVersion.trial.durationDays > 0 &&
-                                !isCurrent &&
-                                !trialUsedAt &&
-                                !currentStripePriceId && (
-                                  <span className="shrink-0 rounded-md bg-success/15 text-success px-2 py-0.5 text-xs font-semibold uppercase tracking-wider">
-                                    {t('subscription.trialBadge', {
-                                      days: planVersion.trial.durationDays,
-                                    })}
-                                  </span>
-                                )}
+                              <PlanTrialBadge
+                                planVersion={planVersion}
+                                isCurrent={isCurrent}
+                                trialUsedAt={trialUsedAt}
+                                currentStripePriceId={currentStripePriceId}
+                              />
                             </div>
                             {planVersion.plan.description && (
                               <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
@@ -605,16 +549,13 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                         {/* Price */}
                         <div className="mb-4">
                           <div className="flex items-baseline gap-1 whitespace-nowrap">
-                            <span className="text-2xl font-bold text-foreground">
-                              {hasVariant && price !== null
-                                ? formatPrice(price, displayCurrency) || t('pricing.free')
-                                : '—'}
-                            </span>
-                            {price !== null && price > 0 && hasVariant && (
-                              <span className="text-sm text-muted-foreground">
-                                {getIntervalLabel(selectedInterval)}
-                              </span>
-                            )}
+                            <PlanPriceBlock
+                              hasVariant={hasVariant}
+                              price={price}
+                              displayCurrency={displayCurrency}
+                              selectedInterval={selectedInterval}
+                              getIntervalLabel={getIntervalLabel}
+                            />
                           </div>
                           {savings !== null && savings > 0 && hasVariant && (
                             <span className="text-xs text-success font-medium">
@@ -744,39 +685,7 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                         )}
 
                         {/* Credits */}
-                        {planVersion.creditGrant?.enabled &&
-                          typeof planVersion.creditGrant.creditPackage === 'object' &&
-                          planVersion.creditGrant.creditPackage !== null && (
-                            <div className="mb-3">
-                              <div className="text-xs font-semibold text-info uppercase tracking-wider mb-1.5">
-                                {t('subscription.items.credits')}
-                              </div>
-                              <div className="space-y-1 text-sm">
-                                <div className="flex justify-between">
-                                  <span className="text-muted-foreground">
-                                    {planVersion.creditGrant.renewOnPeriod
-                                      ? t('subscription.items.creditsPerMonth')
-                                      : t('subscription.items.creditsOneTime')}
-                                  </span>
-                                  <span className="font-semibold text-info">
-                                    {fmtNum(planVersion.creditGrant.creditPackage.creditAmount)}
-                                  </span>
-                                </div>
-                                <div className="flex justify-between">
-                                  <span className="text-muted-foreground">
-                                    {t('subscription.items.creditRenewal')}
-                                  </span>
-                                  <span className="font-medium text-foreground">
-                                    {!planVersion.creditGrant.renewOnPeriod
-                                      ? t('subscription.items.creditModeLifetime')
-                                      : planVersion.creditGrant.mode === 'reset'
-                                        ? t('subscription.items.creditModeReset')
-                                        : t('subscription.items.creditModeTopup')}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                          )}
+                        <CreditGrantSummary planVersion={planVersion} />
 
                         {/* Action button */}
                         <Button
@@ -838,13 +747,7 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                             ? calculateSavings(monthlyPrice, price, selectedInterval)
                             : null;
                         const hasVariant = hasVariantForCurrency(planVersion);
-                        const displayCurrency =
-                          planVersion.pricingVariants?.length &&
-                          planVersion.pricingVariants.some(
-                            v => v.currency?.toLowerCase() === effectiveCurrency.toLowerCase()
-                          )
-                            ? effectiveCurrency
-                            : (planVersion.plan?.currency ?? effectiveCurrency ?? '');
+                        const displayCurrency = getDisplayCurrency(planVersion, effectiveCurrency);
 
                         return (
                           <th
@@ -861,17 +764,12 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                                   <h3 className="text-base font-bold text-foreground truncate">
                                     {planVersion.plan.name}
                                   </h3>
-                                  {planVersion.trial?.enabled &&
-                                    planVersion.trial.durationDays > 0 &&
-                                    !isCurrent &&
-                                    !trialUsedAt &&
-                                    !currentStripePriceId && (
-                                      <span className="shrink-0 rounded-md bg-success/15 text-success px-2 py-0.5 text-xs font-semibold uppercase tracking-wider">
-                                        {t('subscription.trialBadge', {
-                                          days: planVersion.trial.durationDays,
-                                        })}
-                                      </span>
-                                    )}
+                                  <PlanTrialBadge
+                                    planVersion={planVersion}
+                                    isCurrent={isCurrent}
+                                    trialUsedAt={trialUsedAt}
+                                    currentStripePriceId={currentStripePriceId}
+                                  />
                                 </div>
                                 {isCurrent && (
                                   <span className="shrink-0 rounded-md bg-info px-2 py-0.5 text-xs font-semibold uppercase tracking-wider text-info-foreground">
@@ -883,16 +781,13 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                               {/* Pricing Display */}
                               <div className="flex flex-col items-start min-h-[3rem]">
                                 <div className="flex items-baseline gap-1 flex-wrap">
-                                  <span className="text-2xl font-bold text-foreground">
-                                    {hasVariant && price !== null
-                                      ? formatPrice(price, displayCurrency) || t('pricing.free')
-                                      : '—'}
-                                  </span>
-                                  {price !== null && price > 0 && hasVariant && (
-                                    <span className="text-sm text-muted-foreground">
-                                      {getIntervalLabel(selectedInterval)}
-                                    </span>
-                                  )}
+                                  <PlanPriceBlock
+                                    hasVariant={hasVariant}
+                                    price={price}
+                                    displayCurrency={displayCurrency}
+                                    selectedInterval={selectedInterval}
+                                    getIntervalLabel={getIntervalLabel}
+                                  />
                                   {savings !== null && savings > 0 && hasVariant && (
                                     <span className="text-xs px-1.5 py-0.5 bg-success/15 text-success rounded-full font-semibold whitespace-nowrap">
                                       {t('subscription.savingsPercent', { percent: savings })}
@@ -1329,11 +1224,7 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
                               >
                                 {cg?.enabled ? (
                                   <span className="text-sm font-medium text-foreground">
-                                    {!cg.renewOnPeriod
-                                      ? t('subscription.items.creditModeLifetime')
-                                      : cg.mode === 'reset'
-                                        ? t('subscription.items.creditModeReset')
-                                        : t('subscription.items.creditModeTopup')}
+                                    {t(getCreditRenewalModeKey(cg))}
                                   </span>
                                 ) : (
                                   <span className="text-sm text-muted-foreground/70">—</span>
