@@ -40,7 +40,7 @@ describe('createAgentStack', () => {
     const parsed = JSON.parse(mcpCard!.body);
     expect(parsed.$schema).toBe('https://modelcontextprotocol.io/schemas/server-card/v1.0');
     expect(parsed.version).toBe('1.0');
-    expect(parsed.protocolVersion).toBe('2025-06-18');
+    expect(parsed.protocolVersion).toBe('2025-11-25');
     expect(parsed.transport).toEqual({ type: 'streamable-http', url: stack.mcpEndpoint });
     expect(parsed.capabilities).toEqual({ tools: true, resources: false, prompts: false });
 

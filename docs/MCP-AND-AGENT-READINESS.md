@@ -200,7 +200,7 @@ Almost everything is **yours**, defined locally in `AgentReadyConfig` and served
 
 ## The MCP server
 
-A live, stateless **Streamable HTTP** MCP server (MCP 2025-06-18). It speaks JSON-RPC over a single POST endpoint. Pure functions plus a Web-standard `fetch(Request)` adapter, so it runs on Node 18+, edge, Deno, Bun. Server-only, zero React; the `@buildbase/sdk/mcp` entry is separate because it uses zod at runtime.
+A live, stateless **Streamable HTTP** MCP server (MCP 2025-11-25, negotiating down to 2024-11-05). It speaks JSON-RPC over a single POST endpoint. Pure functions plus a Web-standard `fetch(Request)` adapter, so it runs on Node 18+, edge, Deno, Bun. Server-only, zero React; the `@buildbase/sdk/mcp` entry is separate because it uses zod at runtime.
 
 ### The request lifecycle
 
@@ -263,6 +263,73 @@ defineMcpTool({
 ```
 
 `ctx` is `{ bb, auth, workspaceId, custom }` — `bb` is the session-scoped BuildBase client, `auth` the verified `McpAuthInfo`, `custom` whatever your `context(auth, req)` factory returned (your Prisma client, services, request info). A custom tool named like a built-in **replaces** it.
+
+**Tool results.** Return any JSON-serializable value and the handler wraps it (string → one text block; object → JSON text + `structuredContent`). For full control — images, audio, resource links, mixed blocks, or the `isError` flag — return a wire-shaped `McpToolResult` built with the exported helpers:
+
+```ts
+import { mcpImage, mcpResourceLink, mcpText } from '@buildbase/sdk/mcp';
+
+execute: async (input, ctx) => ({
+  content: [
+    mcpText('Revenue chart for Q2:'),
+    mcpImage(chartPngBase64, 'image/png'),
+    mcpResourceLink('https://app.example.com/reports/q2.pdf', 'q2-report', {
+      mimeType: 'application/pdf',
+    }),
+  ],
+  structuredContent: { totalCents: 1_299_00, currency: 'usd' },
+});
+```
+
+### Resources & prompts
+
+Beyond tools, the handler serves the other two MCP server primitives — both **opt-in**, and the `initialize` capabilities only advertise what you actually configured:
+
+- **Resources** (`resources/list` / `resources/read` / `resources/templates/list`) — context a host loads without spending tool calls. `builtinResources: true` exposes a deliberately small BuildBase catalog: `buildbase://profile`, `buildbase://workspaces`, and the `buildbase://workspace/{workspaceId}` template (richer data — subscription, usage, credits — stays tools-only). Add your own with `defineMcpResource` / `defineMcpResourceTemplate`:
+
+  ```ts
+  createMcpHandler({
+    buildbase,
+    builtinResources: true,
+    resources: [
+      defineMcpResource({
+        uri: 'app://docs/getting-started',
+        name: 'getting-started',
+        mimeType: 'text/markdown',
+        read: () => gettingStartedMarkdown,
+      }),
+    ],
+    resourceTemplates: [
+      defineMcpResourceTemplate({
+        uriTemplate: 'app://orders/{orderId}',
+        name: 'order',
+        read: (params, _uri, ctx) => ctx.custom.db.order.find(params.orderId),
+      }),
+    ],
+  });
+  ```
+
+  `read` may return a string (text contents), any object (pretty-printed JSON), or an explicit `{ text }` / `{ blob }` shape. `requiredScopes` gates visibility exactly like tools; an under-scoped token gets the same `-32002` as a nonexistent URI (no existence oracle).
+
+- **Prompts** (`prompts/list` / `prompts/get`) — user-facing workflow templates (hosts surface them as slash-commands). No built-ins — they're app-specific by nature:
+
+  ```ts
+  prompts: [
+    defineMcpPrompt({
+      name: 'analyze_usage',
+      description: 'Review quota usage and suggest actions',
+      arguments: [{ name: 'workspaceId', required: true }],
+      get: async (args, ctx) => {
+        const usage = await ctx.bb.usage.getAll(args.workspaceId);
+        return `Review this workspace's quota usage and suggest actions:\n${JSON.stringify(usage)}`;
+      },
+    }),
+  ],
+  ```
+
+  `get` may return a string (one user text message) or full `McpPromptMessage[]` with mixed content (text, images, audio, embedded resources).
+
+**Deliberately not implemented** (they need a server→client push channel; the stateless transport has none — and that statelessness is what keeps the handler edge-safe): resource subscriptions, `listChanged` notifications, sampling, elicitation, roots. Experimental spec features (tasks) wait until they stabilize.
 
 ### Production hardening
 
@@ -771,7 +838,7 @@ Never expose `SYSTEM_SECRET` or `BUILDBASE_CLIENT_SECRET` to the browser — the
 
 | Spec                        | Target        | Where it lives                                                                                                                                                                                                 |
 | --------------------------- | ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| MCP protocol                | 2025-06-18    | `initialize` advertises it; server card `protocolVersion`                                                                                                                                                      |
+| MCP protocol                | 2025-11-25    | `initialize` advertises it; server card `protocolVersion`                                                                                                                                                      |
 | MCP auth                    | 2025-06-18    | RFC 9728 challenge → RFC 8414 metadata → DCR + PKCE                                                                                                                                                            |
 | Server card                 | SEP-1649 v1.0 | `buildMcpServerCard` — `$schema`, `version:"1.0"`, `transport:{type,url}`, boolean caps                                                                                                                        |
 | Discovery manifest          | SEP-1960      | `buildMcpDiscoveryManifest` — `$schema`, `version:"1.0"`, per-server `transport` object                                                                                                                        |

@@ -20,7 +20,7 @@
  */
 
 import { z } from 'zod';
-import type { McpToolContext, McpToolDefinition } from './mcp-server';
+import type { AnyMcpTool, McpToolContext } from './mcp-server';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -41,7 +41,7 @@ const readOnly = { readOnlyHint: true } as const;
 
 // ─── Read-only tools (default set) ───────────────────────────────────────────
 
-const readonlyTools: McpToolDefinition<any>[] = [
+const readonlyTools: AnyMcpTool[] = [
   {
     name: 'list_workspaces',
     description: "List the authenticated user's workspaces (id, name, roles).",
@@ -304,7 +304,7 @@ const readonlyTools: McpToolDefinition<any>[] = [
 
 // ─── Mutating tools (opt-in) ─────────────────────────────────────────────────
 
-const mutatingTools: McpToolDefinition<any>[] = [
+const mutatingTools: AnyMcpTool[] = [
   {
     name: 'record_usage',
     description: 'Record quota usage for a workspace (metered billing).',
@@ -579,7 +579,7 @@ const mutatingTools: McpToolDefinition<any>[] = [
 // ─── Selection ───────────────────────────────────────────────────────────────
 
 /** Every built-in tool, keyed by name. */
-export const builtinMcpTools: ReadonlyMap<string, McpToolDefinition<any>> = new Map(
+export const builtinMcpTools: ReadonlyMap<string, AnyMcpTool> = new Map(
   [...readonlyTools, ...mutatingTools].map(tool => [tool.name, tool])
 );
 
@@ -637,7 +637,7 @@ export function selectBuiltinTools(
     | 'readonly'
     | false
     | { include?: BuiltinMcpToolName[]; exclude?: BuiltinMcpToolName[] }
-): McpToolDefinition<any>[] {
+): AnyMcpTool[] {
   if (selection === false) return [];
   if (selection === 'readonly') return [...readonlyTools];
   if (selection === 'all') return [...readonlyTools, ...mutatingTools];

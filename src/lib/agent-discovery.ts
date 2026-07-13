@@ -118,7 +118,7 @@ export interface McpServerCard {
   endpoint: string;
   /** Transport type. Defaults to `"streamable-http"`. */
   transport?: string;
-  /** MCP protocol version the server speaks. Defaults to `"2025-06-18"`. */
+  /** MCP protocol version the server speaks. Defaults to `"2025-11-25"`. */
   protocolVersion?: string;
   /**
    * Capability flags. Booleans per SEP-1649 v1.0; a legacy object value
@@ -918,7 +918,7 @@ export function buildApiCatalog(config: AgentReadyConfig): DiscoveryDocument | n
   };
 }
 
-const MCP_PROTOCOL_VERSION = '2025-06-18';
+const MCP_PROTOCOL_VERSION = '2025-11-25';
 
 /**
  * Normalize a card's capabilities to SEP-1649 v1.0 boolean flags. Legacy

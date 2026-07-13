@@ -11,17 +11,43 @@
  */
 
 // ─── MCP server ───────────────────────────────────────────────────────────────
-export { createMcpHandler, defineMcpTool } from './lib/mcp-server';
+export {
+  createMcpHandler,
+  defineMcpPrompt,
+  defineMcpResource,
+  defineMcpResourceTemplate,
+  defineMcpTool,
+  mcpAudio,
+  mcpEmbeddedResource,
+  mcpImage,
+  mcpResourceLink,
+  mcpText,
+} from './lib/mcp-server';
 export type {
+  AnyMcpTool,
   CreateMcpHandlerConfig,
+  McpAudioContent,
   McpAuthInfo,
   McpBuildBaseClient,
+  McpContentBlock,
+  McpEmbeddedResourceContent,
   McpHandler,
   McpHttpRequest,
   McpHttpResponse,
+  McpIcon,
+  McpImageContent,
+  McpPromptContent,
+  McpPromptDefinition,
+  McpPromptMessage,
+  McpResourceDefinition,
+  McpResourceLinkContent,
+  McpResourceReadResult,
+  McpResourceTemplateDefinition,
+  McpTextContent,
   McpToolAnnotations,
   McpToolContext,
   McpToolDefinition,
+  McpToolResult,
 } from './lib/mcp-server';
 
 // ─── Built-in BuildBase tools ─────────────────────────────────────────────────
@@ -36,6 +62,7 @@ export {
   signClientJwt,
   verifyClientJwt,
 } from './lib/agent-bridge';
+export type { VerifiedJwtPayload } from './lib/agent-bridge';
 
 // ─── One-config agent stack (MCP server + full discovery surface) ─────────────
 export { createAgentStack } from './lib/agent-stack';
