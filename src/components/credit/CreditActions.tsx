@@ -82,7 +82,7 @@ export interface CreditActionsProviderProps {
  *
  *       {packages.map(pkg => (
  *         <button key={pkg._id} onClick={() => purchase(pkg)} disabled={purchasing}>
- *           Buy {pkg.creditAmount} for ${pkg.pricingVariants[0]?.amount / 100}
+ *           Buy {pkg.creditAmount} for {formatCents(pkg.pricingVariants[0]?.amount ?? 0, pkg.pricingVariants[0]?.currency ?? 'usd')}
  *         </button>
  *       ))}
  *     </div>

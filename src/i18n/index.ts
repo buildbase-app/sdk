@@ -2,6 +2,7 @@
 
 import IntlMessageFormat from 'intl-messageformat';
 import React, { createContext, useContext, useMemo } from 'react';
+import { formatMinorAmountIntl } from '../api/billing/currency-utils';
 import { en } from './messages/en';
 import type { PartialSDKMessages, SDKLocale, SDKMessages, TranslationKey } from './types';
 
@@ -295,23 +296,10 @@ export function useTranslation() {
     return (n: number) => n.toLocaleString(formattingLocale);
   }, [formattingLocale]);
 
-  /** Format cents as locale-aware currency (e.g. 100, 'usd' → $1.00 or ١٫٠٠ US$) */
+  /** Format a minor-unit amount as locale-aware currency (e.g. 100, 'usd' → $1.00 or ١٫٠٠ US$; 1000, 'jpy' → ¥1,000 — zero-decimal currencies are not divided by 100) */
   const fmtCents = useMemo(() => {
-    return (cents: number, currency: string): string => {
-      const code = (currency ?? '').trim().toUpperCase();
-      if (!code)
-        return (cents / 100).toLocaleString(formattingLocale, { minimumFractionDigits: 2 });
-      try {
-        return new Intl.NumberFormat(formattingLocale, {
-          style: 'currency',
-          currency: code,
-          minimumFractionDigits: 2,
-        }).format(cents / 100);
-      } catch {
-        // Fallback for unknown currency codes
-        return (cents / 100).toLocaleString(formattingLocale, { minimumFractionDigits: 2 });
-      }
-    };
+    return (cents: number, currency: string): string =>
+      formatMinorAmountIntl(cents, currency, formattingLocale);
   }, [formattingLocale]);
 
   return { t, locale, formattingLocale, dir, fmtNum, fmtCents, messages };

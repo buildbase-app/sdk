@@ -68,7 +68,7 @@ export interface CreditStorePageProps {
  *           <div key={pkg._id}>
  *             <h3>{pkg.name}</h3>
  *             <p>{pkg.creditAmount} credits</p>
- *             <p>${(pkg.pricingVariants[0]?.amount / 100).toFixed(2)}</p>
+ *             <p>{formatCents(pkg.pricingVariants[0]?.amount ?? 0, pkg.pricingVariants[0]?.currency ?? 'usd')}</p>
  *             <button onClick={() => selectPackage(pkg._id)}>Buy</button>
  *           </div>
  *         ))}

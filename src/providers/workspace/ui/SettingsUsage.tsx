@@ -1,6 +1,6 @@
 import { AlertTriangle, BarChart3, Calendar, RefreshCw } from 'lucide-react';
 import React, { useMemo, useState } from 'react';
-import { getCurrencySymbol } from '../../../api/billing/currency-utils';
+import { formatMinorAmountIntl } from '../../../api/billing/currency-utils';
 import { getQuotaOverageCents } from '../../../api/billing/pricing-variant-utils';
 import type { IQuotaUsageStatus } from '../../../api/types';
 import { Button } from '../../../components/ui/button';
@@ -72,14 +72,8 @@ interface QuotaOverageInfo {
   overageCents: number;
   unitSize: number;
   currency: string;
-  currencySymbol: string;
-  estimatedCost: number;
-}
-
-function formatCost(amount: number, symbol: string, locale?: string): string {
-  return (
-    symbol + amount.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-  );
+  /** Estimated overage charge in minor units (cents; whole units for zero-decimal currencies). */
+  estimatedCostCents: number;
 }
 
 import { formatDate } from '../../../lib/format-utils';
@@ -114,7 +108,6 @@ const WorkspaceSettingsUsage: React.FC = () => {
   const { quotas, loading, error, refetch } = useQuotaUsageContext();
   const { t, formattingLocale, fmtNum } = useTranslation();
   const { can } = usePermissions();
-  const fmtCost = (amount: number, symbol: string) => formatCost(amount, symbol, formattingLocale);
   const { response: subResponse } = useSubscriptionContext();
   const [refreshing, setRefreshing] = useState(false);
 
@@ -126,7 +119,6 @@ const WorkspaceSettingsUsage: React.FC = () => {
     const subscription = subResponse.subscription;
     const interval = subscription.billingInterval ?? 'monthly';
     const currency = subscription.plan?.currency ?? 'usd';
-    const symbol = getCurrencySymbol(currency);
 
     if (!quotas) return map;
 
@@ -141,9 +133,9 @@ const WorkspaceSettingsUsage: React.FC = () => {
       const quota = quotas[slug];
       const overageUnits = quota.overage;
       const billableBlocks = unitSize > 1 ? Math.ceil(overageUnits / unitSize) : overageUnits;
-      const estimatedCost = (billableBlocks * overageCents) / 100;
+      const estimatedCostCents = billableBlocks * overageCents;
 
-      map[slug] = { overageCents, unitSize, currency, currencySymbol: symbol, estimatedCost };
+      map[slug] = { overageCents, unitSize, currency, estimatedCostCents };
     }
 
     return map;
@@ -220,11 +212,14 @@ const WorkspaceSettingsUsage: React.FC = () => {
         )
       : 0;
 
-  const totalOverageCost = Object.values(overagePricing).reduce(
-    (sum, info) => sum + info.estimatedCost,
+  const totalOverageCostCents = Object.values(overagePricing).reduce(
+    (sum, info) => sum + info.estimatedCostCents,
     0
   );
-  const anyCurrency = Object.values(overagePricing)[0]?.currencySymbol ?? '$';
+  // All quotas share the subscription's currency (see overagePricing above).
+  const overageCurrency = Object.values(overagePricing)[0]?.currency ?? 'usd';
+  const fmtCost = (cents: number) =>
+    formatMinorAmountIntl(cents, overageCurrency, formattingLocale);
 
   return (
     <div className="space-y-4">
@@ -286,11 +281,11 @@ const WorkspaceSettingsUsage: React.FC = () => {
             {fmtNum(overageCount)}
           </p>
         </div>
-        {overageCount > 0 && totalOverageCost > 0 && (
+        {overageCount > 0 && totalOverageCostCents > 0 && (
           <div className="border border-destructive/20 bg-destructive/10 rounded-lg p-3 sm:p-4">
             <p className="text-xs text-muted-foreground font-medium">{t('usage.estOverageCost')}</p>
             <p className="text-lg sm:text-xl font-semibold mt-1 text-destructive">
-              {fmtCost(totalOverageCost, anyCurrency)}
+              {fmtCost(totalOverageCostCents)}
             </p>
           </div>
         )}
@@ -308,9 +303,9 @@ const WorkspaceSettingsUsage: React.FC = () => {
               <p className="text-sm text-warning">
                 {t('usage.overageWarning', { count: overageCount })}
               </p>
-              {totalOverageCost > 0 && (
+              {totalOverageCostCents > 0 && (
                 <p className="text-sm text-warning font-medium mt-1">
-                  {t('usage.estOverageCharges', { amount: fmtCost(totalOverageCost, anyCurrency) })}
+                  {t('usage.estOverageCharges', { amount: fmtCost(totalOverageCostCents) })}
                 </p>
               )}
             </div>
@@ -356,7 +351,8 @@ function QuotaCard({
 }) {
   const { t, formattingLocale } = useTranslation();
   const fmtN = (n: number) => formatNumber(n, formattingLocale);
-  const fmtCost = (amount: number, symbol: string) => formatCost(amount, symbol, formattingLocale);
+  const fmtCost = (cents: number, currency: string) =>
+    formatMinorAmountIntl(cents, currency, formattingLocale);
   return (
     <div className="border border-border rounded-lg p-4 sm:p-5">
       <div className="flex flex-wrap items-center justify-between gap-y-1 mb-3">
@@ -428,7 +424,7 @@ function QuotaCard({
             <span className="text-muted-foreground">{t('usage.rate')}</span>
             <span className="font-medium text-foreground">
               {t('usage.rateDisplay', {
-                rate: fmtCost(pricing.overageCents / 100, pricing.currencySymbol),
+                rate: fmtCost(pricing.overageCents, pricing.currency),
                 unitSize: pricing.unitSize,
               })}
             </span>
@@ -444,7 +440,7 @@ function QuotaCard({
           <div className="flex items-center justify-between text-xs pt-2 border-t border-border">
             <span className="font-medium text-destructive">{t('usage.estimatedCharge')}</span>
             <span className="font-semibold text-destructive">
-              {fmtCost(pricing.estimatedCost, pricing.currencySymbol)}
+              {fmtCost(pricing.estimatedCostCents, pricing.currency)}
             </span>
           </div>
         </div>
@@ -455,7 +451,7 @@ function QuotaCard({
         <div className="mt-2 text-xs text-muted-foreground">
           {t('usage.overageRateDisplay', {
             rate: t('usage.rateDisplay', {
-              rate: fmtCost(pricing.overageCents / 100, pricing.currencySymbol),
+              rate: fmtCost(pricing.overageCents, pricing.currency),
               unitSize: pricing.unitSize,
             }),
           })}

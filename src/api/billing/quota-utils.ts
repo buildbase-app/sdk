@@ -1,5 +1,5 @@
 import type { BillingInterval, IQuotaByInterval } from '../types';
-import { getCurrencySymbol, isZeroDecimalCurrency } from './currency-utils';
+import { getCurrencyDecimals, getCurrencySymbol } from './currency-utils';
 
 export type QuotaDisplayValue = {
   included: number;
@@ -79,15 +79,15 @@ export function formatQuotaWithPrice(
   const includedStr = `${included} ${labels.included}`;
   if (value.allowOverage === false) return `${includedStr} (hard limit)`;
   if (overage === undefined || overage === null) return includedStr;
-  // Zero-decimal currencies (JPY, KRW, …) have no minor unit: the amount is
-  // already whole units — never divide by 100, never show decimals.
-  const zeroDecimal = isZeroDecimalCurrency(currency);
-  const priceNum = overageInCents && !zeroDecimal ? overage / 100 : overage;
+  // Divide by the currency's ISO 4217 minor-unit factor: zero-decimal (JPY,
+  // KRW, …) amounts are already whole units; three-decimal (KWD, BHD, …) use 1000.
+  const decimals = getCurrencyDecimals(currency);
+  const priceNum = overageInCents && decimals > 0 ? overage / 10 ** decimals : overage;
   const price =
     typeof priceNum === 'number' && Number.isFinite(priceNum)
-      ? zeroDecimal
+      ? decimals === 0
         ? priceNum.toLocaleString('en-US')
-        : priceNum.toFixed(2)
+        : priceNum.toFixed(decimals)
       : String(overage);
   const unit =
     unitName && 'unitSize' in value && value.unitSize != null && value.unitSize > 0
@@ -136,11 +136,10 @@ export function getQuotaDisplayParts(
     return { included, hasOverage: false, allowOverage: true, price: '', unit: '' };
   }
 
-  // Format price with locale-aware currency formatting. Zero-decimal
-  // currencies (JPY, KRW, …) have no minor unit: no ÷100, no decimals.
-  const zeroDecimal = isZeroDecimalCurrency(currency);
-  const priceNum = overageInCents && !zeroDecimal ? overage / 100 : overage;
-  const fractionDigits = zeroDecimal ? 0 : 2;
+  // Format price with locale-aware currency formatting. The divisor follows
+  // the currency's ISO 4217 minor-unit digits (0 for JPY/KRW, 3 for KWD/BHD).
+  const fractionDigits = getCurrencyDecimals(currency);
+  const priceNum = overageInCents && fractionDigits > 0 ? overage / 10 ** fractionDigits : overage;
   const currencyCode = (currency ?? '').trim().toUpperCase();
   let price: string;
   if (currencyCode && typeof priceNum === 'number' && Number.isFinite(priceNum)) {
@@ -149,6 +148,7 @@ export function getQuotaDisplayParts(
         style: 'currency',
         currency: currencyCode,
         minimumFractionDigits: fractionDigits,
+        maximumFractionDigits: fractionDigits,
       }).format(priceNum);
     } catch {
       const symbol = options.currencySymbol ?? getCurrencySymbol(currency ?? '');
