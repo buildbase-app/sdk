@@ -7,6 +7,7 @@ Also works server-side (Next.js API routes, Express, Hono) — see [Server-Side 
 ## 📑 Table of Contents
 
 - [Features](#-features)
+- [Customization Map](#-customization-map)
 - [Installation](#installation)
 - [Quick Start](#quick-start)
 - [UI Configuration](#️-ui-configuration)
@@ -65,6 +66,30 @@ Also works server-side (Next.js API routes, Express, Hono) — see [Server-Side 
 - **🖥️ Server-Side SDK** - `BuildBase()` factory for API routes, background jobs, Express, Hono — zero React dependency
 - **🌐 Internationalization (i18n)** - 8 locales (en, es, fr, de, ja, zh, hi, ar), ICU MessageFormat, RTL support, native numerals
 - **🏠 Workspace Modes** - Personal (solo B2C) or Platform (multi-user B2B), configured from admin dashboard
+
+## 🎨 Customization Map
+
+Everything the SDK lets you configure, override, or extend — one row per knob, so you can see the whole surface before reading any deep-dive section. The philosophy throughout: **safe defaults, everything overridable, the SDK accelerates but never gates.**
+
+| What you customize                     | How                                                                                                                                                                        | Where to read more                                                                |
+| -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| Provider setup & workspace behavior    | `<SaaSOSProvider>` / `<BuildBaseProvider>` props (`serverUrl`, `orgId`, `locale`, workspace auto-create, redirects)                                                        | [Configuration Reference](#️-configuration-reference)                              |
+| Which SDK UI renders at all            | `ui` prop: hide/show settings sections, workspace switcher, per-screen toggles                                                                                             | [UI Configuration](#️-ui-configuration) · `docs/UI-CONFIG.md`                      |
+| Every user-facing string               | `ui.messages` deep-override (e.g. rename "Subscription" → "Billing"), per-locale                                                                                           | [UI Configuration](#️-ui-configuration)                                            |
+| Language & number systems              | `locale` prop — 8 locales, ICU plurals, RTL (`ar`), native numerals                                                                                                        | [Internationalization](#-internationalization-i18n)                               |
+| Look & feel                            | CSS custom properties (`--primary`, `--destructive`, …) — semantic tokens, light/dark, no palette lock-in                                                                  | `docs/THEMING.md`                                                                 |
+| Date/number formats                    | `ui.formats` (`Intl` options passed through)                                                                                                                               | `docs/UI-CONFIG.md`                                                               |
+| Conditional UI                         | Gate components: `WhenAuthenticated`, `WhenPermission`, `WhenWorkspaceFeatureEnabled`, `WhenSubscription`, `WhenTrialing`, `WhenQuotaAvailable`, `WhenCreditsAvailable`, … | [Subscription Gates](#-subscription-gates) & siblings                             |
+| Checkout behavior                      | `getCheckoutStripeParams` (affiliate/referral params), plan-picker behavior config                                                                                         | [Affiliate Tracking](#affiliate--referral-tracking)                               |
+| Error presentation                     | `ui.errorBoundary`, centralized `handleError` reporting                                                                                                                    | [Error Handling](#️-error-handling)                                                |
+| React-free server access               | `BuildBase()` factory — workspaces, usage, credits, notifications from API routes/jobs                                                                                     | [Server-Side Usage](#server-side-usage)                                           |
+| Agent discovery surface                | `createAgentStack` / `resolveAgentPath`: robots.txt, llms.txt, `.well-known/*`, all documents overridable (e.g. `config.llmsTxt`)                                          | [Agent Readiness](#agent-readiness-discovery) · `docs/MCP-AND-AGENT-READINESS.md` |
+| MCP tools                              | `builtinTools` (`'readonly'`/`'all'`/`false`/include/exclude) + your own via `defineMcpTool` (custom tools override built-ins)                                             | [MCP Server](#mcp-server-buildbasesdkmcp)                                         |
+| MCP resources & prompts                | Opt-in `builtinResources` catalog + `defineMcpResource`/`defineMcpResourceTemplate`/`defineMcpPrompt`                                                                      | [MCP Server](#mcp-server-buildbasesdkmcp)                                         |
+| MCP auth & hardening                   | `auth.verify` (your token format) or `buildbaseAuth` preset; `rateLimit`, `cors`, `allowedOrigins`, `formatToolError`                                                      | `docs/MCP-AND-AGENT-READINESS.md`                                                 |
+| Per-request context for your MCP tools | `context(auth, req)` factory → `ctx.custom` (your DB, services)                                                                                                            | [MCP Server](#mcp-server-buildbasesdkmcp)                                         |
+| Money display                          | `formatMinorAmountIntl`/`formatCents`/`getCurrencyDecimals` — full ISO 4217 (0/2/3-decimal currencies)                                                                     | [Multi-Currency](#-multi-currency--pricing-utilities)                             |
+| Webhooks from the platform             | `verifyWebhookSignature` (HMAC, timing-safe)                                                                                                                               | [Webhook Verification](#webhook-verification)                                     |
 
 ## Installation
 
@@ -3058,7 +3083,7 @@ Clean split, no duplication: **your app owns discovery content, the platform own
 
 > **Full guide:** [`docs/MCP-AND-AGENT-READINESS.md`](docs/MCP-AND-AGENT-READINESS.md).
 
-Turn your app into a **live MCP server** so AI agents can operate it: the built-in tools expose your BuildBase state (workspaces, subscription, quotas, credits, feature flags, permissions) and you add your own product tools with zod schemas. Stateless Streamable HTTP (MCP 2025-06-18) — pure functions plus a Web-standard `Request`/`Response` adapter, so it runs on Node 18+, edge, Deno, and Bun. Server-only, zero React; split from the core entry because it uses `zod` at runtime.
+Turn your app into a **live MCP server** so AI agents can operate it: the built-in tools expose your BuildBase state (workspaces, subscription, quotas, credits, feature flags, permissions) and you add your own product tools with zod schemas — plus **resources** (context a host loads without tool calls) and **prompts** (user-facing workflow templates). Stateless Streamable HTTP (MCP 2025-11-25, negotiating down to 2024-11-05) — pure functions plus a Web-standard `Request`/`Response` adapter, so it runs on Node 18+, edge, Deno, and Bun. Server-only, zero React; split from the core entry because it uses `zod` at runtime.
 
 The fast path bundles the server + the whole discovery surface from one config:
 
@@ -3165,6 +3190,62 @@ builtinTools: {
 The agent acts as an authenticated app user — it knows your app, not BuildBase — so the built-ins carry **no BuildBase-specific scope requirement**. Workspace-scoped tools take an optional `workspaceId` and fall back to the one pinned on the verified token (`McpAuthInfo.workspaceId`); pin it and cross-workspace access is refused even for tools you exposed.
 
 Want per-scope gating on top? Set `requiredScopes` on your own custom tools and return the granted `scopes` from `auth.verify` — the handler hides a tool from `tools/list` (and refuses the call) when its `requiredScopes` aren't all granted. A token that carries **no** scopes sees only tools that require none (the built-ins), so a token minted without a `scope` claim can never unlock a scoped tool. Opt-in, using **your** scope names — the SDK never imposes its own.
+
+### Rich tool results (images, links, mixed content)
+
+Return any JSON-serializable value and the handler wraps it (string → text block; object → JSON text + `structuredContent`). For full control — images, audio, resource links, mixed blocks, or the `isError` flag — return a wire-shaped `McpToolResult` built with the exported helpers:
+
+```ts
+import { mcpImage, mcpResourceLink, mcpText } from '@buildbase/sdk/mcp';
+
+execute: async (input, ctx) => ({
+  content: [
+    mcpText('Revenue chart for Q2:'),
+    mcpImage(chartPngBase64, 'image/png'),
+    mcpResourceLink('https://app.example.com/reports/q2.pdf', 'q2-report'),
+  ],
+  structuredContent: { totalCents: 1_299_00, currency: 'usd' },
+});
+```
+
+### Resources & prompts
+
+Both are **opt-in**, and `initialize` capabilities only advertise what you actually configured — existing servers are byte-identical until you opt in.
+
+```ts
+createMcpHandler({
+  buildbase,
+  // Lean built-in context catalog: buildbase://profile, buildbase://workspaces,
+  // buildbase://workspace/{workspaceId}. Richer data stays tools-only.
+  builtinResources: true,
+  resources: [
+    defineMcpResource({
+      uri: 'app://docs/getting-started',
+      name: 'getting-started',
+      mimeType: 'text/markdown',
+      read: () => gettingStartedMarkdown, // string | object (JSON) | { text } | { blob }
+    }),
+  ],
+  resourceTemplates: [
+    defineMcpResourceTemplate({
+      uriTemplate: 'app://orders/{orderId}',
+      name: 'order',
+      read: (params, _uri, ctx) => ctx.custom.db.order.find(params.orderId),
+    }),
+  ],
+  prompts: [
+    defineMcpPrompt({
+      name: 'analyze_usage',
+      description: 'Review quota usage and suggest actions',
+      arguments: [{ name: 'workspaceId', required: true }],
+      get: async (args, ctx) =>
+        `Review this workspace's quota usage:\n${JSON.stringify(await ctx.bb.usage.getAll(args.workspaceId))}`,
+    }),
+  ],
+});
+```
+
+`requiredScopes` gates resources and prompts exactly like tools. Deliberately out of scope (the stateless transport has no push channel): resource subscriptions, `listChanged`, sampling, elicitation.
 
 ### Production hardening
 
