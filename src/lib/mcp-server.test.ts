@@ -56,9 +56,14 @@ describe('content block helpers', () => {
       data: 'BBBB',
       mimeType: 'audio/wav',
     });
-    expect(mcpResourceLink('https://x.test/r.pdf', 'report', { mimeType: 'application/pdf' })).toEqual(
-      { type: 'resource_link', uri: 'https://x.test/r.pdf', name: 'report', mimeType: 'application/pdf' }
-    );
+    expect(
+      mcpResourceLink('https://x.test/r.pdf', 'report', { mimeType: 'application/pdf' })
+    ).toEqual({
+      type: 'resource_link',
+      uri: 'https://x.test/r.pdf',
+      name: 'report',
+      mimeType: 'application/pdf',
+    });
     expect(mcpEmbeddedResource({ uri: 'mem://a', text: 'body' })).toEqual({
       type: 'resource',
       resource: { uri: 'mem://a', text: 'body' },

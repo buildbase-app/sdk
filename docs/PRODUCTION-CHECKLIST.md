@@ -1,6 +1,6 @@
 # Production-Readiness Checklist
 
-The gate for every new component, screen, module, hook, or API method — and for reviewing existing ones. Work through the sections that match what you're adding; every unchecked box is either a fix or a written justification. `CONVENTIONS.md` explains the *patterns*; this file is the *audit list*. Each rule earned its place — most trace back to a shipped bug or a review finding (see `REVIEW-FINDINGS.md`).
+The gate for every new component, screen, module, hook, or API method — and for reviewing existing ones. Work through the sections that match what you're adding; every unchecked box is either a fix or a written justification. `CONVENTIONS.md` explains the _patterns_; this file is the _audit list_. Each rule earned its place — most trace back to a shipped bug or a review finding (see `REVIEW-FINDINGS.md`).
 
 **Automated checks** (run all before considering anything done):
 

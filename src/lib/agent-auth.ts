@@ -42,7 +42,11 @@
  * `createCipheriv("aes-256-gcm", ...)` implementations of the same layout.
  */
 
-import type { AppTokenRequestClaims, VerifiedJwtPayload, VerifyClientJwtOptions } from './agent-bridge';
+import type {
+  AppTokenRequestClaims,
+  VerifiedJwtPayload,
+  VerifyClientJwtOptions,
+} from './agent-bridge';
 import { signClientJwt, verifyClientJwt } from './agent-bridge';
 import { base64UrlToBytes, bytesToBase64Url } from './base64url';
 import type { McpAuthInfo, McpHttpRequest } from './mcp-server';
