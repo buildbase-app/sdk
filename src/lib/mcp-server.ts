@@ -30,7 +30,7 @@
  *
  * export const mcp = createMcpHandler({
  *   buildbase,
- *   serverInfo: { name: 'imejis', version: '1.0.0' },
+ *   serverInfo: { name: 'acme', version: '1.0.0' },
  *   auth: {
  *     verify: (token) => {
  *       const c = verifyClientJwt(token, process.env.BUILDBASE_CLIENT_SECRET!);
@@ -41,7 +41,7 @@
  *         scopes: Array.isArray(c.scope) ? (c.scope as string[]) : undefined,
  *       };
  *     },
- *     resourceMetadataUrl: 'https://imejis.io/.well-known/oauth-protected-resource',
+ *     resourceMetadataUrl: 'https://example.com/.well-known/oauth-protected-resource',
  *   },
  * });
  *

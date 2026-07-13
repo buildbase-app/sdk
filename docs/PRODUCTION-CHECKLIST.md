@@ -93,6 +93,7 @@ npm run build         # rollup all 4 entries + d.ts bundling
 - [ ] No new runtime dependency without discussion — deps are externalized, so every one becomes the consumer's install burden. Prefer `Intl`/platform APIs (see the no-money-library decision).
 - [ ] Nothing test-only or dev-only reachable from an entry point (test files never imported by `src/core|react|data|mcp`).
 - [ ] After build: `npm pack --dry-run` shows no new unexpected files; heavy UI landed in a chunk, not the entry bundle.
+- [ ] No real product domains or internal codenames anywhere that ships — JSDoc examples land in the published `.d.ts` (editor hover docs), and README/docs go to npm. Use RFC 2606 examples only (`example.com`, "Acme"). Sweep: `grep -ri "imejis\|ord/server" src docs README.md AGENTS.md dist`.
 
 ## 11. Tests
 

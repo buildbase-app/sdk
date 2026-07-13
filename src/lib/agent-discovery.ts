@@ -29,8 +29,8 @@
  * export const agentConfig: AgentReadyConfig = {
  *   serverUrl: process.env.BUILDBASE_URL!,
  *   orgId: process.env.BUILDBASE_ORG_ID!,
- *   siteUrl: "https://imejis.io",
- *   site: { name: "Imejis", description: "Generate images from templates via API." },
+ *   siteUrl: "https://example.com",
+ *   site: { name: "Acme", description: "Generate images from templates via API." },
  *   robots: { contentSignals: { search: true, aiInput: true, aiTrain: false } },
  * };
  * export async function serveAgentPath(req: Request): Promise<Response> {
@@ -79,7 +79,7 @@ export interface AgentReadinessBundle {
 
 /** An Agent Skill (Agent Skills Discovery RFC v0.2.0) published by this app. */
 export interface AgentSkill {
-  /** Stable slug, e.g. `imejis-api`. */
+  /** Stable slug, e.g. `acme-api`. */
   name: string;
   /** One-line human/agent-readable summary. */
   description: string;
@@ -96,7 +96,7 @@ export interface AgentSkill {
 
 /** One API described in an API Catalog (RFC 9727 / RFC 9264 linkset). */
 export interface ApiCatalogApi {
-  /** Anchor URL identifying the API, e.g. `https://api.imejis.io`. */
+  /** Anchor URL identifying the API, e.g. `https://api.example.com`. */
   anchor: string;
   /** OpenAPI / machine-readable description URL (link rel `service-desc`). */
   serviceDesc?: string;
@@ -230,7 +230,7 @@ export interface AgentReadyConfig {
   /** The org id (24-hex) whose agent-readiness config to serve. */
   orgId: string;
   /**
-   * This app's public origin, e.g. `https://imejis.io`. Used to build absolute
+   * This app's public origin, e.g. `https://example.com`. Used to build absolute
    * URLs in the Agent Card and to match RFC 9728 resource paths.
    */
   siteUrl: string;

@@ -309,7 +309,7 @@ function MembersPanel() {
 
 `useUIConfig()` gives you the raw `ui` object if you only need the config values; `mergeUIConfig(base, override)` is the deep-merge used for per-dialog overrides.
 
-📖 **Full guide with the complete toggle reference, precedence rules, and recipes (single-tenant, external billing, white-label, read-only): [docs/UI-CONFIG.md](./docs/UI-CONFIG.md)**
+📖 **Full guide with the complete toggle reference, precedence rules, and recipes (single-tenant, external billing, white-label, read-only): [docs/UI-CONFIG.md](https://unpkg.com/@buildbase/sdk/docs/UI-CONFIG.md)**
 
 ## 🔐 Authentication
 
@@ -2099,7 +2099,7 @@ import { eventEmitter } from '@buildbase/sdk';
 
 ## 🛡️ Error Handling
 
-The SDK handles errors internally: API failures, auth errors, and component errors are logged and surfaced through hook states (e.g. `error` from `useSaaSWorkspaces`) and callbacks. **SaaSOSProvider** wraps its children in an internal **SDKErrorBoundary** to catch React render errors inside the SDK tree. For app-level errors, wrap your app (or routes) in your own error boundary (e.g. React’s `ErrorBoundary` or your framework’s error UI). For failed async operations, check the `error` property on hooks and show user feedback (e.g. toast or inline message). See [Error codes](docs/ERROR_CODES.md) for SDK error codes and HTTP mappings.
+The SDK handles errors internally: API failures, auth errors, and component errors are logged and surfaced through hook states (e.g. `error` from `useSaaSWorkspaces`) and callbacks. **SaaSOSProvider** wraps its children in an internal **SDKErrorBoundary** to catch React render errors inside the SDK tree. For app-level errors, wrap your app (or routes) in your own error boundary (e.g. React’s `ErrorBoundary` or your framework’s error UI). For failed async operations, check the `error` property on hooks and show user feedback (e.g. toast or inline message). See [Error codes](https://unpkg.com/@buildbase/sdk/docs/ERROR_CODES.md) for SDK error codes and HTTP mappings.
 
 ## ⚙️ Settings
 
@@ -2209,12 +2209,12 @@ Using hooks keeps your code stable if internal state shape changes and avoids di
 
 ### Types
 
-All TypeScript types are exported for type safety. See the [TypeScript definitions](./dist/index.d.ts) for complete type information.
+All TypeScript types are exported for type safety. See the [TypeScript definitions](https://unpkg.com/@buildbase/sdk/dist/index.d.ts) for complete type information.
 
 ### Further documentation
 
-- [Architecture](docs/ARCHITECTURE.md) – Layers, providers, APIs (BaseApi, UserApi, WorkspaceApi, SettingsApi), state, auth flow
-- [Error codes](docs/ERROR_CODES.md) – SDK error codes and HTTP status mappings
+- [Architecture](https://unpkg.com/@buildbase/sdk/docs/ARCHITECTURE.md) – Layers, providers, APIs (BaseApi, UserApi, WorkspaceApi, SettingsApi), state, auth flow
+- [Error codes](https://unpkg.com/@buildbase/sdk/docs/ERROR_CODES.md) – SDK error codes and HTTP status mappings
 
 ## ⚙️ Configuration Reference
 
@@ -2967,11 +2967,11 @@ app.post('/webhooks/buildbase', (req, res) => {
 
 ## Agent Readiness (Discovery)
 
-> **Full guide:** [`docs/MCP-AND-AGENT-READINESS.md`](docs/MCP-AND-AGENT-READINESS.md) covers the whole surface — the fast path, the auth model, and the scope/resource customization spectrum. This section is the overview.
+> **Full guide:** [`docs/MCP-AND-AGENT-READINESS.md`](https://unpkg.com/@buildbase/sdk/docs/MCP-AND-AGENT-READINESS.md) covers the whole surface — the fast path, the auth model, and the scope/resource customization spectrum. This section is the overview.
 
 Make a consuming app [agent ready](https://isitagentready.com) by serving the machine-readable discovery documents an AI client looks for — Agent Card, A2A card, OAuth metadata (RFC 8414/9728), Agent Skills, API Catalog (RFC 9727), MCP Server Card (SEP-1649 v1.0) + discovery manifest (SEP-1960), `robots.txt` with AI-bot rules + Content Signals, `sitemap.xml`, `security.txt`, `llms.txt`/`llms-full.txt`, and `auth.md`. Framework-agnostic and zero React: every function returns a plain `DiscoveryDocument` (`{ status, contentType, body, cacheControl, vary? }`).
 
-The fast path is [`createAgentStack`](docs/MCP-AND-AGENT-READINESS.md#fast-path--createagentstack) — one config derives the MCP handler **and** the whole discovery surface. To wire the discovery layer on its own, use `resolveAgentPath`:
+The fast path is [`createAgentStack`](https://unpkg.com/@buildbase/sdk/docs/MCP-AND-AGENT-READINESS.md#fast-path--createagentstack) — one config derives the MCP handler **and** the whole discovery surface. To wire the discovery layer on its own, use `resolveAgentPath`:
 
 ```ts
 // lib/agent-ready.ts
@@ -2980,17 +2980,17 @@ import { resolveAgentPath, type AgentReadyConfig } from '@buildbase/sdk';
 export const agentConfig: AgentReadyConfig = {
   serverUrl: process.env.BUILDBASE_URL!,
   orgId: process.env.BUILDBASE_ORG_ID!,
-  siteUrl: 'https://imejis.io',
-  site: { name: 'Imejis', description: 'Generate images from templates via API.' },
+  siteUrl: 'https://example.com',
+  site: { name: 'Acme', description: 'Generate images from templates via API.' },
   // Discovery content is YOURS — defined here in code, not in the platform:
   scopes: [
     { name: 'designs:read', description: 'View designs' },
     { name: 'render:execute', description: 'Render images' },
   ],
-  llmsTxt: '# Imejis\n\n> Generate images from templates via API.',
+  llmsTxt: '# Acme\n\n> Generate images from templates via API.',
   robots: { contentSignals: { search: true, aiInput: true, aiTrain: false } },
   sitemap: { urls: ['/', '/pricing'] }, // omit if you already generate sitemaps
-  protectedResources: [{ resource: 'https://imejis.io/mcp' }], // scopes inherited from catalog
+  protectedResources: [{ resource: 'https://example.com/mcp' }], // scopes inherited from catalog
   // skills, security, apiCatalog, mcpServerCard, a2aCard, extraPaths — all optional
 };
 
@@ -3081,7 +3081,7 @@ Clean split, no duplication: **your app owns discovery content, the platform own
 
 ## MCP Server (`@buildbase/sdk/mcp`)
 
-> **Full guide:** [`docs/MCP-AND-AGENT-READINESS.md`](docs/MCP-AND-AGENT-READINESS.md).
+> **Full guide:** [`docs/MCP-AND-AGENT-READINESS.md`](https://unpkg.com/@buildbase/sdk/docs/MCP-AND-AGENT-READINESS.md).
 
 Turn your app into a **live MCP server** so AI agents can operate it: the built-in tools expose your BuildBase state (workspaces, subscription, quotas, credits, feature flags, permissions) and you add your own product tools with zod schemas — plus **resources** (context a host loads without tool calls) and **prompts** (user-facing workflow templates). Stateless Streamable HTTP (MCP 2025-11-25, negotiating down to 2024-11-05) — pure functions plus a Web-standard `Request`/`Response` adapter, so it runs on Node 18+, edge, Deno, and Bun. Server-only, zero React; split from the core entry because it uses `zod` at runtime.
 
@@ -3095,8 +3095,8 @@ import { z } from 'zod';
 export const agent = createAgentStack({
   serverUrl: process.env.NEXT_PUBLIC_BUILDBASE_SERVER_URL!,
   orgId: process.env.NEXT_PUBLIC_BUILDBASE_ORG_ID!,
-  siteUrl: 'https://imejis.io',
-  site: { name: 'Imejis', description: 'Generate images from templates via API.' },
+  siteUrl: 'https://example.com',
+  site: { name: 'Acme', description: 'Generate images from templates via API.' },
   secret: process.env.SYSTEM_SECRET!, // derives buildbaseAuth (verify + aud + sid decrypt)
   scopes: [{ name: 'render:execute', description: 'Render images' }],
   mcp: {
@@ -3134,10 +3134,10 @@ const buildbase = BuildBase({
 
 export const mcp = createMcpHandler({
   buildbase,
-  serverInfo: { name: 'imejis', version: '1.0.0' },
+  serverInfo: { name: 'acme', version: '1.0.0' },
   auth: buildbaseAuth({
     secret: process.env.SYSTEM_SECRET!,
-    resource: ['https://imejis.io/mcp', 'https://imejis.io/api/mcp'],
+    resource: ['https://example.com/mcp', 'https://example.com/api/mcp'],
     requireAudience: true,
   }),
   builtinTools: 'readonly',
@@ -3155,14 +3155,14 @@ app.post('/mcp', async (req, res) => {
 });
 ```
 
-> **Copy-paste recipes for every framework** — Next.js (App + Pages Router), Express, Fastify, Hono, Bun, Deno, Cloudflare Workers, and React/SPA (WebMCP) — plus the per-framework mint route and a production checklist: [`docs/MCP-AND-AGENT-READINESS.md`](docs/MCP-AND-AGENT-READINESS.md#framework-recipes). Two adapters cover them all: `mcp.fetch(Request)` (web standard — App Router, Hono, Bun, Deno, edge) and `mcp.handle({method,headers,body})` (pure — Express, Fastify, Pages Router).
+> **Copy-paste recipes for every framework** — Next.js (App + Pages Router), Express, Fastify, Hono, Bun, Deno, Cloudflare Workers, and React/SPA (WebMCP) — plus the per-framework mint route and a production checklist: [`docs/MCP-AND-AGENT-READINESS.md`](https://unpkg.com/@buildbase/sdk/docs/MCP-AND-AGENT-READINESS.md#framework-recipes). Two adapters cover them all: `mcp.fetch(Request)` (web standard — App Router, Hono, Bun, Deno, edge) and `mcp.handle({method,headers,body})` (pure — Express, Fastify, Pages Router).
 
 Advertise it via the server card so agents find the endpoint (the stack sets this automatically):
 
 ```ts
 export const agentConfig: AgentReadyConfig = {
   // ...
-  mcpServerCard: mcp.serverCard({ endpoint: 'https://imejis.io/api/mcp' }),
+  mcpServerCard: mcp.serverCard({ endpoint: 'https://example.com/api/mcp' }),
 };
 ```
 
@@ -3263,7 +3263,7 @@ export const mcp = createMcpHandler({
   buildbase,
   auth: { verify, resourceMetadataUrl },
   builtinTools: { include: ['get_quota_usage', 'record_usage'] },
-  allowedOrigins: ['https://app.imejis.io'],
+  allowedOrigins: ['https://app.example.com'],
   maxRequestBytes: 512 * 1024,
   rateLimit: async auth => ({ ok: await limiter.allow(auth?.userId), retryAfter: 30 }),
   onError: (err, ctx) => logger.error({ err, ...ctx }, 'mcp error'),
@@ -3311,7 +3311,7 @@ mintToken: (claims) => mintAgentToken({ claims, secret: process.env.SYSTEM_SECRE
 
 // verify (MCP server) — HS256 + RFC 8707 audience + sid decrypt → McpAuthInfo
 import { buildbaseAuth } from '@buildbase/sdk/mcp';
-auth: buildbaseAuth({ secret: process.env.SYSTEM_SECRET!, resource: 'https://imejis.io/mcp' }),
+auth: buildbaseAuth({ secret: process.env.SYSTEM_SECRET!, resource: 'https://example.com/mcp' }),
 ```
 
 Bringing your own token format? `auth.verify(token, req) → McpAuthInfo` accepts any Bearer token; set `auth.resourceMetadataUrl` so 401s carry the RFC 9728 challenge. Set `auth: false` to disable auth (local dev only). Debug audience mismatches with `MCP_AUTH_DEBUG=1`. Test with the MCP Inspector: `npx @modelcontextprotocol/inspector --cli http://localhost:3000/api/mcp --transport http --header "Authorization: Bearer <token>" --method tools/list`.
@@ -3320,7 +3320,7 @@ Bringing your own token format? `auth.verify(token, req) → McpAuthInfo` accept
 
 ### Scopes & resources — restrict or open up
 
-Scopes and resources are **app-owned** — the shared BuildBase authorization server stays scope/resource-agnostic. Scopes have three levers: **declare** a catalog (`scopes: [{ name, description }]` → `scopes_supported` in your own RFC 9728 protected-resource metadata), **gate per tool** (`requiredScopes` on a custom tool → hidden/refused unless the token carries them), and the **floor** (every tool runs under the user's BuildBase session, so the platform enforces the user's real permissions — an agent never exceeds the user). Resources have two: **declare** `protectedResources` (RFC 9728) and **bind** the token audience via `buildbaseAuth({ resource, requireAudience })` (RFC 8707) — the audience check at your resource is the whole gate. Built-ins are restricted with `builtinTools`, not scopes. Public clients (Claude Desktop, Cursor, Inspector) self-register with PKCE and no secret. Full model: [the guide](docs/MCP-AND-AGENT-READINESS.md#scopes--resources-restrict-or-open-up).
+Scopes and resources are **app-owned** — the shared BuildBase authorization server stays scope/resource-agnostic. Scopes have three levers: **declare** a catalog (`scopes: [{ name, description }]` → `scopes_supported` in your own RFC 9728 protected-resource metadata), **gate per tool** (`requiredScopes` on a custom tool → hidden/refused unless the token carries them), and the **floor** (every tool runs under the user's BuildBase session, so the platform enforces the user's real permissions — an agent never exceeds the user). Resources have two: **declare** `protectedResources` (RFC 9728) and **bind** the token audience via `buildbaseAuth({ resource, requireAudience })` (RFC 8707) — the audience check at your resource is the whole gate. Built-ins are restricted with `builtinTools`, not scopes. Public clients (Claude Desktop, Cursor, Inspector) self-register with PKCE and no secret. Full model: [the guide](https://unpkg.com/@buildbase/sdk/docs/MCP-AND-AGENT-READINESS.md#scopes--resources-restrict-or-open-up).
 
 ## OAuth2 App Bridge
 
@@ -3331,7 +3331,7 @@ BuildBase runs the full OAuth2 authorization flow (login, consent, code, PKCE, r
 
 Both requests carry `Authorization: Bearer <JWT>`, an HS256 JWT signed with your client secret. This toolkit verifies those requests (timing-safe, no `alg` confusion) and shapes the exact response body the platform expects, so you write only the part that's yours: minting/invalidating a token in your own format.
 
-> For the common case, `mintToken: (claims) => mintAgentToken({ claims, secret })` is the preset — it signs HS256 with your secret, binds `aud` to the granted RFC 8707 resource, and embeds the encrypted `sid`. The examples below show the hand-rolled equivalent, for apps that mint their own token format (e.g. one shared with their web sessions). See [the guide](docs/MCP-AND-AGENT-READINESS.md#auth-minting--verifying-the-token).
+> For the common case, `mintToken: (claims) => mintAgentToken({ claims, secret })` is the preset — it signs HS256 with your secret, binds `aud` to the granted RFC 8707 resource, and embeds the encrypted `sid`. The examples below show the hand-rolled equivalent, for apps that mint their own token format (e.g. one shared with their web sessions). See [the guide](https://unpkg.com/@buildbase/sdk/docs/MCP-AND-AGENT-READINESS.md#auth-minting--verifying-the-token).
 
 ```ts
 // applicationTokenUrl handler (Next.js Pages Router)
@@ -3372,7 +3372,7 @@ When an agent calls your protected API without a valid token, reply with an RFC 
 import { bearerChallenge } from '@buildbase/sdk';
 
 const c = bearerChallenge({
-  resourceMetadataUrl: 'https://imejis.io/.well-known/oauth-protected-resource',
+  resourceMetadataUrl: 'https://example.com/.well-known/oauth-protected-resource',
   error: 'invalid_token',
 });
 res.writeHead(c.status, c.headers).end(c.body);

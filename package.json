@@ -58,7 +58,12 @@
     "README.md",
     "LICENSE",
     "AGENTS.md",
-    "CHANGELOG.md"
+    "CHANGELOG.md",
+    "docs/ARCHITECTURE.md",
+    "docs/ERROR_CODES.md",
+    "docs/MCP-AND-AGENT-READINESS.md",
+    "docs/THEMING.md",
+    "docs/UI-CONFIG.md"
   ],
   "sideEffects": [
     "**/*.css"

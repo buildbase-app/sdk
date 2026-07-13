@@ -44,8 +44,8 @@ Four parties take part. Keep them straight and every flow below reads cleanly.
 | Actor                  | What it is                                                      | What it holds                                                     | What it does                                                                         |
 | ---------------------- | --------------------------------------------------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
 | **Agent / MCP client** | Claude Desktop, ChatGPT, Cursor, MCP Inspector, or your own bot | An access token (after login)                                     | Discovers your app, logs in, calls tools                                             |
-| **Your app**           | The site built on `@buildbase/sdk` (e.g. the webapp, imejis)    | `SYSTEM_SECRET` (signs its own tokens), `BUILDBASE_CLIENT_SECRET` | Serves discovery docs, runs the MCP server, **mints & verifies its own tokens**      |
-| **Platform AS**        | The BuildBase authorization server (`ord/server`)               | Its own signing keys, the OAuth client registry                   | Runs login/consent/PKCE, publishes RFC 8414 metadata, calls your app to mint a token |
+| **Your app**           | The site built on `@buildbase/sdk` (your product)               | `SYSTEM_SECRET` (signs its own tokens), `BUILDBASE_CLIENT_SECRET` | Serves discovery docs, runs the MCP server, **mints & verifies its own tokens**      |
+| **Platform AS**        | The BuildBase authorization server                              | Its own signing keys, the OAuth client registry                   | Runs login/consent/PKCE, publishes RFC 8414 metadata, calls your app to mint a token |
 | **The SDK**            | `@buildbase/sdk` + `@buildbase/sdk/mcp` in your app's process   | Nothing — it's a library                                          | Builds discovery docs, runs the MCP handler, does the crypto for mint/verify         |
 
 The SDK is **not** a network service. It runs inside your app. When this guide says "the SDK verifies the token," it means your app verifies it, using SDK code, with your secret, in your process.
@@ -74,7 +74,7 @@ The SDK is **not** a network service. It runs inside your app. When this guide s
          │ (authorize, consent, PKCE)         │    (signed webhook call)       │
          ▼                                    │                                │
    ┌──────────────────────────────────────────┴───────┐                       │
-   │              PLATFORM AS (ord/server)             │      user's real      │
+   │              PLATFORM AS (BuildBase)              │      user's real      │
    │  /.well-known/oauth-authorization-server (8414)   │      permissions ◀────┘
    │  /authorize  /token  /register(DCR)  /consent     │
    └───────────────────────────────────────────────────┘

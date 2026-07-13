@@ -394,7 +394,7 @@ export async function handleAppRevokeRequest(options: {
  * @example
  * ```ts
  * if (!isValid(token)) {
- *   const c = bearerChallenge({ resourceMetadataUrl: "https://imejis.io/.well-known/oauth-protected-resource" });
+ *   const c = bearerChallenge({ resourceMetadataUrl: "https://example.com/.well-known/oauth-protected-resource" });
  *   res.writeHead(c.status, c.headers).end(c.body);
  * }
  * ```
