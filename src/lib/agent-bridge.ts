@@ -100,8 +100,30 @@ export interface AppRevokeRequestClaims {
 
 // ─── JWT (HS256) verification ─────────────────────────────────────────────────
 
-function jsonFromB64Url(b64url: string): Record<string, any> {
-  return JSON.parse(new TextDecoder().decode(base64UrlToBytes(b64url)));
+/**
+ * A verified JWT payload: registered claims (RFC 7519) are typed, every other
+ * claim is `unknown` — claims are attacker-influenced input until you narrow
+ * them (`typeof payload.sid === 'string'`), even after the signature checks out.
+ */
+export interface VerifiedJwtPayload {
+  iss?: string;
+  sub?: string;
+  aud?: string | string[];
+  exp?: number;
+  nbf?: number;
+  iat?: number;
+  jti?: string;
+  [claim: string]: unknown;
+}
+
+function jsonFromB64Url(b64url: string): Record<string, unknown> {
+  const parsed: unknown = JSON.parse(new TextDecoder().decode(base64UrlToBytes(b64url)));
+  // A segment can be valid JSON without being an object ("null", "42") — the
+  // callers index into it, so reject non-objects here with a clean error.
+  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+    throw new Error('JWT segment is not a JSON object');
+  }
+  return parsed as Record<string, unknown>;
 }
 
 /** Options for {@link verifyClientJwt} (all optional; secure defaults). */
@@ -130,7 +152,7 @@ export function verifyClientJwt(
   token: string,
   clientSecret: string,
   options: VerifyClientJwtOptions = {}
-): Record<string, any> {
+): VerifiedJwtPayload {
   const clockToleranceSec = options.clockToleranceSec ?? 60;
   const requireExp = options.requireExp ?? true;
 
@@ -148,11 +170,11 @@ export function verifyClientJwt(
   // header pick the algorithm (alg-confusion / alg:none). Checking alg first —
   // before computing the HMAC — keeps this robust even if the verifier is later
   // extended to support asymmetric algorithms.
-  let header: Record<string, any>;
-  let payload: Record<string, any>;
+  let header: Record<string, unknown>;
+  let payload: VerifiedJwtPayload;
   try {
     header = jsonFromB64Url(headerB64);
-    payload = jsonFromB64Url(payloadB64);
+    payload = jsonFromB64Url(payloadB64) as VerifiedJwtPayload;
   } catch {
     throw new AppBridgeError('invalid_token', 'Unreadable JWT segments');
   }

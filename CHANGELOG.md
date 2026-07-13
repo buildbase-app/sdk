@@ -46,6 +46,7 @@ MCP + agent-readiness brought to **MCP 2025-06-18** compliance, a one-config set
 
 ### Added
 
+- **`VerifiedJwtPayload`** — `verifyClientJwt` (and `buildbaseAuth`'s internals) now return RFC 7519-typed claims with everything else `unknown` instead of `Record<string, any>`. ⚠️ Type-level change: custom claims must be narrowed before use (`typeof c.sid === 'string'`) — they're attacker-influenced input even after the signature verifies. Also fixed: a JWT whose payload segment is valid JSON but not an object (`"null"`, `"42"`) now fails with a clean `invalid_token` error instead of a `TypeError`.
 - **Every `WorkspaceApi` method accepts a trailing `signal?: AbortSignal`** (49 methods) — matching the Auth/User/Settings API classes, so callers can cancel in-flight workspace/billing/credit requests.
 - **`formatMinorAmountIntl(amount, currency, locale?)`** — locale-aware `Intl.NumberFormat` money formatting of minor-unit amounts, zero-decimal-safe (used by the invoices screen; exported for consumers).
 - **`UserContextValue` per-resource state**: `attributesLoading` / `featuresLoading` / `attributesError` / `featuresError` alongside the combined `isLoading`/`error`.
