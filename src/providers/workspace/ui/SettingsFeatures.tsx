@@ -37,7 +37,7 @@ const WorkspaceSettingsFeatures: React.FC<{ workspaceId: string }> = ({ workspac
       const data = await updateFeature(workspace._id, key, value);
       setWorkspace(data);
       const feature = allFeatures.find(f => f.slug === key);
-      const featureName = feature?.name || 'Feature';
+      const featureName = feature?.name || t('features.fallbackName');
       success.show(t('features.updateSuccess', { feature: featureName, enabled: String(value) }));
     } catch (error) {
       handleError(error, {

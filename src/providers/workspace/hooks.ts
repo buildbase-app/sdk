@@ -3,7 +3,8 @@ import { resolveMaxUsers, validateInvite } from '../../api/billing/pricing-varia
 import { IUser } from '../../api/types';
 import { useAppDispatch, useAppSelector, workspaceActions } from '../../contexts';
 import { invalidateSubscription } from '../../contexts/SubscriptionContext/subscriptionInvalidation';
-import { handleError } from '../../lib/error-handler';
+import { useTranslation } from '../../i18n';
+import { getHookErrorMessage, handleError } from '../../lib/error-handler';
 import { eventEmitter } from '../events';
 import { useSaaSSettings } from '../os/hooks';
 import { workspaceSettingsManager } from './settings-manager';
@@ -125,6 +126,7 @@ export const useSaaSWorkspaces = () => {
   const dispatch = useAppDispatch();
   const { os, api } = useWorkspaceApiWithOs();
   const { settings } = useSaaSSettings();
+  const { t } = useTranslation();
 
   // Select all workspace state at once - only re-renders when any selected field changes
   const workspace = useAppSelector(state => state.workspaces);
@@ -264,13 +266,13 @@ export const useSaaSWorkspaces = () => {
       }
     } catch (err) {
       dispatch.workspaces(
-        workspaceActions.setError(err instanceof Error ? err.message : 'Failed to fetch workspaces')
+        workspaceActions.setError(getHookErrorMessage(err, 'errors.fetchWorkspaces', t))
       );
     } finally {
       dispatch.workspaces(workspaceActions.setLoading(false));
       fetchingRef.current = false;
     }
-  }, [api, workspace.loading, dispatch, switchToWorkspace]);
+  }, [api, workspace.loading, dispatch, switchToWorkspace, t]);
 
   // Background refresh (does not block UI, updates memo/data)
   const refreshWorkspaces = useCallback(async () => {

@@ -51,6 +51,7 @@ export const en: SDKMessages = {
       billingManageOnly: 'Only users with billing management permissions can perform this action.',
       openSettings: 'Open settings',
       back: 'Back',
+      close: 'Close',
     },
   },
   subscription: {
@@ -351,6 +352,7 @@ export const en: SDKMessages = {
     featureSuccess: 'successfully',
     updateSuccess: '{feature} {enabled, select, true {enabled} other {disabled}} successfully',
     actionStatus: '{action, select, enabling {Enabling} disabling {Disabling} other {}}',
+    fallbackName: 'Feature',
   },
   danger: {
     title: 'Delete Workspace',
@@ -582,6 +584,7 @@ export const en: SDKMessages = {
     purchaseFailed: 'Credit purchase failed. Please try again or contact support.',
     errorLoading: 'Failed to load credit data',
     insufficientCredits: 'Not enough credits',
+    insufficientDetail: 'Insufficient credits. Available: {available}, requested: {requested}',
   },
   loading: {
     restoringSession: 'Restoring your session...',
@@ -617,6 +620,7 @@ export const en: SDKMessages = {
     fetchCreditPackages: 'Failed to fetch credit packages',
     fetchCreditTransactions: 'Failed to fetch credit transactions',
     fetchExpiringCredits: 'Failed to fetch expiring credits',
+    fetchWorkspaces: 'Failed to fetch workspaces',
   },
   security: {
     connectedAgentsTitle: 'Connected agents',
@@ -626,6 +630,8 @@ export const en: SDKMessages = {
     connectedAgentsEmpty: 'No connected agents.',
     connectedAgentsAccess: 'Access',
     connectedAgentsGranted: 'Granted',
+    connectedAgentsLoadFailed: 'Failed to load connected agents',
+    connectedAgentsRevokeFailed: 'Failed to disconnect',
     inactive: 'Inactive',
     inactiveHint:
       'Registered on a previous sign-in domain and can no longer be used. You can remove it.',

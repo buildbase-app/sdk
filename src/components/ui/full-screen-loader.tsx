@@ -2,10 +2,12 @@
 
 import React from 'react';
 
+import { useTranslation } from '../../i18n';
+
 export interface FullScreenLoaderProps {
   /** Content to display centered on screen. Falls back to a default spinner + message. */
   children?: React.ReactNode;
-  /** Message shown below the default spinner (only used when no children are provided). Defaults to "Loading..." */
+  /** Message shown below the default spinner (only used when no children are provided). Defaults to the translated "Loading..." */
   message?: string;
   /** Background color of the overlay. Defaults to white (dark mode: near-black). */
   backgroundColor?: string;
@@ -70,9 +72,12 @@ const DefaultSpinner = ({ message }: { message: string }) => (
  */
 export const FullScreenLoader = ({
   children,
-  message = 'Loading...',
+  message: messageProp,
   backgroundColor,
-}: FullScreenLoaderProps) => (
+}: FullScreenLoaderProps) => {
+  const { t } = useTranslation();
+  const message = messageProp ?? t('settings.common.loading');
+  return (
   <div
     role="status"
     aria-live="polite"
@@ -120,6 +125,7 @@ export const FullScreenLoader = ({
       }
     `}</style>
   </div>
-);
+  );
+};
 
 FullScreenLoader.displayName = 'FullScreenLoader';

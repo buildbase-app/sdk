@@ -52,6 +52,7 @@ export const de: SDKMessages = {
         'Nur Benutzer mit Abrechnungsverwaltungsberechtigungen können diese Aktion durchführen.',
       openSettings: 'Einstellungen öffnen',
       back: 'Zurück',
+      close: 'Schließen',
     },
   },
   subscription: {
@@ -355,6 +356,7 @@ export const de: SDKMessages = {
     updateSuccess: '{feature} erfolgreich {enabled, select, true {aktiviert} other {deaktiviert}}',
     actionStatus:
       '{action, select, enabling {Wird aktiviert} disabling {Wird deaktiviert} other {}}',
+    fallbackName: 'Funktion',
   },
   danger: {
     title: 'Arbeitsbereich löschen',
@@ -589,6 +591,7 @@ export const de: SDKMessages = {
       'Guthabenkauf fehlgeschlagen. Bitte versuche es erneut oder kontaktiere den Support.',
     errorLoading: 'Guthabendaten konnten nicht geladen werden',
     insufficientCredits: 'Nicht genügend Guthaben',
+    insufficientDetail: 'Nicht genügend Guthaben. Verfügbar: {available}, angefordert: {requested}',
   },
   loading: {
     restoringSession: 'Sitzung wird wiederhergestellt...',
@@ -624,6 +627,7 @@ export const de: SDKMessages = {
     fetchCreditPackages: 'Guthabenpakete konnten nicht abgerufen werden',
     fetchCreditTransactions: 'Guthabentransaktionen konnten nicht abgerufen werden',
     fetchExpiringCredits: 'Ablaufendes Guthaben konnte nicht abgerufen werden',
+    fetchWorkspaces: 'Arbeitsbereiche konnten nicht geladen werden',
   },
   security: {
     connectedAgentsTitle: 'Verbundene Agents',
@@ -633,6 +637,8 @@ export const de: SDKMessages = {
     connectedAgentsEmpty: 'Keine verbundenen Agents.',
     connectedAgentsAccess: 'Zugriff',
     connectedAgentsGranted: 'Gewährt',
+    connectedAgentsLoadFailed: 'Verbundene Agents konnten nicht geladen werden',
+    connectedAgentsRevokeFailed: 'Trennen fehlgeschlagen',
     inactive: 'Inaktiv',
     inactiveHint:
       'Auf einer früheren Anmeldedomain registriert und nicht mehr verwendbar. Sie können ihn entfernen.',

@@ -51,6 +51,7 @@ export const hi: SDKMessages = {
       billingManageOnly: 'केवल बिलिंग प्रबंधन अनुमतियों वाले उपयोगकर्ता ही यह कार्य कर सकते हैं।',
       openSettings: 'सेटिंग्स खोलें',
       back: 'वापस',
+      close: 'बंद करें',
     },
   },
   subscription: {
@@ -353,6 +354,7 @@ export const hi: SDKMessages = {
       '{feature} सफलतापूर्वक {enabled, select, true {सक्रिय} other {निष्क्रिय}} किया गया',
     actionStatus:
       '{action, select, enabling {सक्रिय किया जा रहा है} disabling {निष्क्रिय किया जा रहा है} other {}}',
+    fallbackName: 'फ़ीचर',
   },
   danger: {
     title: 'वर्कस्पेस हटाएँ',
@@ -582,6 +584,7 @@ export const hi: SDKMessages = {
     purchaseFailed: 'क्रेडिट खरीदारी विफल रही। कृपया पुनः प्रयास करें या सहायता से संपर्क करें।',
     errorLoading: 'क्रेडिट डेटा लोड करने में विफल',
     insufficientCredits: 'पर्याप्त क्रेडिट नहीं',
+    insufficientDetail: 'पर्याप्त क्रेडिट नहीं। उपलब्ध: {available}, अनुरोधित: {requested}',
   },
   loading: {
     restoringSession: 'सत्र पुनर्स्थापित हो रहा है...',
@@ -617,6 +620,7 @@ export const hi: SDKMessages = {
     fetchCreditPackages: 'क्रेडिट पैकेज लाने में विफल',
     fetchCreditTransactions: 'क्रेडिट लेनदेन लाने में विफल',
     fetchExpiringCredits: 'समाप्त होने वाले क्रेडिट लाने में विफल',
+    fetchWorkspaces: 'वर्कस्पेस लोड करने में विफल',
   },
   security: {
     connectedAgentsTitle: 'कनेक्टेड एजेंट',
@@ -626,6 +630,8 @@ export const hi: SDKMessages = {
     connectedAgentsEmpty: 'कोई कनेक्टेड एजेंट नहीं।',
     connectedAgentsAccess: 'पहुँच',
     connectedAgentsGranted: 'प्रदान किया गया',
+    connectedAgentsLoadFailed: 'कनेक्टेड एजेंट लोड करने में विफल',
+    connectedAgentsRevokeFailed: 'डिस्कनेक्ट करने में विफल',
     inactive: 'निष्क्रिय',
     inactiveHint:
       'पिछले साइन-इन डोमेन पर पंजीकृत और अब उपयोग नहीं की जा सकती। आप इसे हटा सकते हैं।',

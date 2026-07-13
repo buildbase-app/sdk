@@ -219,23 +219,25 @@ export interface OverageLabels {
   hardLimit?: string;
 }
 
-const DEFAULT_OVERAGE_LABELS: OverageLabels = {
+const DEFAULT_OVERAGE_LABELS: Required<OverageLabels> = {
   unit: 'unit',
   units: 'units',
   included: 'Included',
   afterThat: 'after that',
   afterIncluded: 'After included',
+  hardLimit: 'hard limit',
 };
 
 /**
  * Format overage rate for display. When unitSize > 1: "$1.00/1,000 units"; else "$1.00/unit".
- * Pass `labels` for i18n support.
+ * Pass `labels` for i18n support and `locale` to group numbers in the display locale.
  */
 export function formatOverageRate(
   overageCents: number | undefined,
   unitSize: number | undefined,
   currency: string,
-  labels?: Partial<OverageLabels>
+  labels?: Partial<OverageLabels>,
+  locale?: string
 ): string | null {
   if (overageCents == null || overageCents < 0) return null;
   const l = { ...DEFAULT_OVERAGE_LABELS, ...labels };
@@ -243,13 +245,14 @@ export function formatOverageRate(
   const symbol = getCurrencySymbol(currency);
   const amount = minorAmountToDisplay(overageCents, currency);
   if (unitSizeN === 1) return `${symbol}${amount}/${l.unit}`;
-  return `${symbol}${amount}/${unitSizeN.toLocaleString()} ${l.units}`;
+  return `${symbol}${amount}/${unitSizeN.toLocaleString(locale)} ${l.units}`;
 }
 
 /**
  * Format overage rate with optional unit label for comparison/preview UIs.
  * e.g. formatOverageRateWithLabel(50, 1000, "video", "usd") -> "$0.50/1,000 videos"
  * Pass `labels` for i18n support. Pass `pluralUnitLabel` to avoid English "s" pluralization.
+ * Pass `locale` to group numbers in the display locale.
  */
 export function formatOverageRateWithLabel(
   overageCents: number | undefined,
@@ -257,7 +260,8 @@ export function formatOverageRateWithLabel(
   unitLabel: string | undefined,
   currency: string,
   pluralUnitLabel?: string,
-  labels?: Partial<OverageLabels>
+  labels?: Partial<OverageLabels>,
+  locale?: string
 ): string | null {
   if (overageCents == null || overageCents < 0) return null;
   const l = { ...DEFAULT_OVERAGE_LABELS, ...labels };
@@ -266,11 +270,11 @@ export function formatOverageRateWithLabel(
   const amount = minorAmountToDisplay(overageCents, currency);
   if (unitLabel) {
     const plural = pluralUnitLabel ?? (unitLabel.endsWith('s') ? unitLabel : `${unitLabel}s`);
-    if (unitSizeN >= 2) return `${symbol}${amount}/${unitSizeN.toLocaleString()} ${plural}`;
+    if (unitSizeN >= 2) return `${symbol}${amount}/${unitSizeN.toLocaleString(locale)} ${plural}`;
     return `${symbol}${amount}/${unitLabel}`;
   }
   if (unitSizeN === 1) return `${symbol}${amount}/${l.unit}`;
-  return `${symbol}${amount}/${unitSizeN.toLocaleString()} ${l.units}`;
+  return `${symbol}${amount}/${unitSizeN.toLocaleString(locale)} ${l.units}`;
 }
 
 /**
@@ -311,7 +315,8 @@ export function getQuotaUnitLabelFromName(nameOrSlug: string, fallback = 'unit')
 
 /**
  * Format quota "included + overage" for display.
- * Pass `labels` and `pluralUnitLabel` for i18n support.
+ * Pass `labels` and `pluralUnitLabel` for i18n support, and `locale` to group
+ * numbers in the display locale.
  */
 export function formatQuotaIncludedOverage(
   included: number | undefined,
@@ -321,21 +326,21 @@ export function formatQuotaIncludedOverage(
   unitSize?: number,
   pluralUnitLabel?: string,
   labels?: Partial<OverageLabels>,
-  allowOverage?: boolean
+  allowOverage?: boolean,
+  locale?: string
 ): string {
   const l = { ...DEFAULT_OVERAGE_LABELS, ...labels };
   if (allowOverage === false) {
-    if (included != null)
-      return `${l.included}: ${included.toLocaleString()} (${l.hardLimit ?? 'hard limit'})`;
-    return l.hardLimit ?? 'Hard limit';
+    if (included != null) return `${l.included}: ${included.toLocaleString(locale)} (${l.hardLimit})`;
+    return l.hardLimit;
   }
   const plural = pluralUnitLabel ?? (unitLabel.endsWith('s') ? unitLabel : `${unitLabel}s`);
   const perUnit =
-    unitSize != null && unitSize >= 2 ? `${unitSize.toLocaleString()} ${plural}` : unitLabel;
+    unitSize != null && unitSize >= 2 ? `${unitSize.toLocaleString(locale)} ${plural}` : unitLabel;
   if (included != null && overageCents != null) {
-    return `${l.included}: ${included.toLocaleString()}, ${l.afterThat} ${formatCents(overageCents, currency)}/${perUnit}`;
+    return `${l.included}: ${included.toLocaleString(locale)}, ${l.afterThat} ${formatCents(overageCents, currency)}/${perUnit}`;
   }
-  if (included != null) return `${l.included}: ${included.toLocaleString()}`;
+  if (included != null) return `${l.included}: ${included.toLocaleString(locale)}`;
   if (overageCents != null)
     return `${l.afterIncluded}: ${formatCents(overageCents, currency)}/${perUnit}`;
   return '\u2014';

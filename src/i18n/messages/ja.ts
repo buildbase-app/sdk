@@ -51,6 +51,7 @@ export const ja: SDKMessages = {
       billingManageOnly: '請求管理権限を持つユーザーのみがこの操作を実行できます。',
       openSettings: '設定を開く',
       back: '戻る',
+      close: '閉じる',
     },
   },
   subscription: {
@@ -350,6 +351,7 @@ export const ja: SDKMessages = {
     featureSuccess: '成功',
     updateSuccess: '{feature}が正常に{enabled, select, true {有効化} other {無効化}}されました',
     actionStatus: '{action, select, enabling {有効化中} disabling {無効化中} other {}}',
+    fallbackName: '機能',
   },
   danger: {
     title: 'ワークスペースを削除',
@@ -580,6 +582,7 @@ export const ja: SDKMessages = {
       'クレジットの購入に失敗しました。再度お試しいただくか、サポートにお問い合わせください。',
     errorLoading: 'クレジットデータの読み込みに失敗しました',
     insufficientCredits: 'クレジットが不足しています',
+    insufficientDetail: 'クレジットが不足しています。利用可能: {available}、リクエスト済み: {requested}',
   },
   loading: {
     restoringSession: 'セッションを復元中...',
@@ -615,6 +618,7 @@ export const ja: SDKMessages = {
     fetchCreditPackages: 'クレジットパッケージの取得に失敗しました',
     fetchCreditTransactions: 'クレジット取引履歴の取得に失敗しました',
     fetchExpiringCredits: '期限切れ間近のクレジットの取得に失敗しました',
+    fetchWorkspaces: 'ワークスペースの取得に失敗しました',
   },
   security: {
     connectedAgentsTitle: '接続済みエージェント',
@@ -624,6 +628,8 @@ export const ja: SDKMessages = {
     connectedAgentsEmpty: '接続済みのエージェントはありません。',
     connectedAgentsAccess: 'アクセス',
     connectedAgentsGranted: '許可日',
+    connectedAgentsLoadFailed: '接続済みエージェントの読み込みに失敗しました',
+    connectedAgentsRevokeFailed: '接続解除に失敗しました',
     inactive: '無効',
     inactiveHint: '以前のサインインドメインで登録されたため使用できません。削除できます。',
     passkeysTitle: 'パスキー',

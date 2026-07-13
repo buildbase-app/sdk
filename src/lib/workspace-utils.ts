@@ -7,9 +7,9 @@ import { getStorageItem, removeStorageItem, setStorageItem } from './storage';
 
 const WORKSPACE_STORAGE_KEY = 'saas-workspace-current';
 
-// ─── Workspace types (imported from shared-types to avoid circular deps) ───────
-// Using inline types to keep this file dependency-free from providers/
-interface WorkspaceLike {
+// ─── Workspace types (inline to keep this file dependency-free from providers/) ─
+/** Minimal workspace shape needed for ownership/role checks. Extended by `permissions.WorkspaceLike`. */
+export interface WorkspaceLike {
   _id: string;
   createdBy: string | { _id: string } | null | undefined;
   users?: Array<string | { _id: string; role?: string }>;

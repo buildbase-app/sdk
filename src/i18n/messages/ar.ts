@@ -52,6 +52,7 @@ export const ar: SDKMessages = {
         'فقط المستخدمون الذين لديهم أذونات إدارة الفواتير يمكنهم تنفيذ هذا الإجراء.',
       openSettings: 'فتح الإعدادات',
       back: 'رجوع',
+      close: 'إغلاق',
     },
   },
   subscription: {
@@ -351,6 +352,7 @@ export const ar: SDKMessages = {
     featureSuccess: 'بنجاح',
     updateSuccess: 'تم {enabled, select, true {تفعيل} other {تعطيل}} {feature} بنجاح',
     actionStatus: '{action, select, enabling {جارٍ التفعيل} disabling {جارٍ التعطيل} other {}}',
+    fallbackName: 'الميزة',
   },
   danger: {
     title: 'حذف مساحة العمل',
@@ -578,6 +580,7 @@ export const ar: SDKMessages = {
     purchaseFailed: 'فشل شراء الرصيد. يرجى المحاولة مرة أخرى أو التواصل مع الدعم.',
     errorLoading: 'فشل في تحميل بيانات الرصيد',
     insufficientCredits: 'رصيد غير كافٍ',
+    insufficientDetail: 'رصيد غير كافٍ. المتاح: {available}، المطلوب: {requested}',
   },
   loading: {
     restoringSession: 'جارٍ استعادة الجلسة...',
@@ -613,6 +616,7 @@ export const ar: SDKMessages = {
     fetchCreditPackages: 'فشل في جلب حزم الرصيد',
     fetchCreditTransactions: 'فشل في جلب معاملات الرصيد',
     fetchExpiringCredits: 'فشل في جلب الرصيد المنتهي قريباً',
+    fetchWorkspaces: 'فشل في تحميل مساحات العمل',
   },
   security: {
     connectedAgentsTitle: 'الوكلاء المتصلون',
@@ -622,6 +626,8 @@ export const ar: SDKMessages = {
     connectedAgentsEmpty: 'لا يوجد وكلاء متصلون.',
     connectedAgentsAccess: 'الوصول',
     connectedAgentsGranted: 'مُنح',
+    connectedAgentsLoadFailed: 'فشل في تحميل الوكلاء المتصلين',
+    connectedAgentsRevokeFailed: 'فشل في قطع الاتصال',
     inactive: 'غير نشط',
     inactiveHint: 'سُجّل على نطاق تسجيل دخول سابق ولم يعد قابلاً للاستخدام. يمكنك إزالته.',
     passkeysTitle: 'مفاتيح المرور',

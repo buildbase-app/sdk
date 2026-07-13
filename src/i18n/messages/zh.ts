@@ -50,6 +50,7 @@ export const zh: SDKMessages = {
       billingManageOnly: '只有具有账单管理权限的用户才能执行此操作。',
       openSettings: '打开设置',
       back: '返回',
+      close: '关闭',
     },
   },
   subscription: {
@@ -339,6 +340,7 @@ export const zh: SDKMessages = {
     featureSuccess: '成功',
     updateSuccess: '{feature}已成功{enabled, select, true {启用} other {禁用}}',
     actionStatus: '{action, select, enabling {正在启用} disabling {正在禁用} other {}}',
+    fallbackName: '功能',
   },
   danger: {
     title: '删除工作区',
@@ -562,6 +564,7 @@ export const zh: SDKMessages = {
     purchaseFailed: '积分购买失败。请重试或联系客服。',
     errorLoading: '加载积分数据失败',
     insufficientCredits: '积分不足',
+    insufficientDetail: '积分不足。可用：{available}，请求：{requested}',
   },
   loading: {
     restoringSession: '正在恢复会话...',
@@ -597,6 +600,7 @@ export const zh: SDKMessages = {
     fetchCreditPackages: '获取积分套餐包失败',
     fetchCreditTransactions: '获取积分交易记录失败',
     fetchExpiringCredits: '获取即将过期的积分失败',
+    fetchWorkspaces: '获取工作区失败',
   },
   security: {
     connectedAgentsTitle: '已连接的代理',
@@ -606,6 +610,8 @@ export const zh: SDKMessages = {
     connectedAgentsEmpty: '没有已连接的代理。',
     connectedAgentsAccess: '访问权限',
     connectedAgentsGranted: '授权时间',
+    connectedAgentsLoadFailed: '加载已连接的代理失败',
+    connectedAgentsRevokeFailed: '断开连接失败',
     inactive: '已失效',
     inactiveHint: '注册于之前的登录域名，已无法使用。您可以将其移除。',
     passkeysTitle: '通行密钥',

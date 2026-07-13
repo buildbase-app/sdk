@@ -21,6 +21,9 @@ self.addEventListener('push', function(event) {
 
   try {
     const payload = event.data.json();
+    // i18n exception: service workers run outside the SDK's translation
+    // provider, so this last-resort fallback stays English. The server should
+    // always send a localized payload.title.
     const title = payload.title || 'Notification';
     const options = {
       body: payload.body || '',

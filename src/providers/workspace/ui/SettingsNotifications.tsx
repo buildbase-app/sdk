@@ -9,6 +9,7 @@ import { useTranslation, type TranslationKey } from '../../../i18n';
 import { handleError } from '../../../lib/error-handler';
 import { Permission } from '../../../lib/permissions';
 import { usePushNotifications } from '../../push/PushNotificationContext';
+import type { NotificationEvent } from '../../../api/services/workspace-api';
 import { IWorkspace } from '../types';
 import { useWorkspaceApiWithOs } from '../use-workspace-api';
 
@@ -30,14 +31,6 @@ const BROWSER_STEP_COUNT: Record<BrowserId, number> = {
 };
 
 // ─── Types ───────────────────────────────────────────────────────
-
-interface NotificationEvent {
-  slug: string;
-  name: string;
-  description: string;
-  category: string;
-  channels: { email: boolean; push: boolean };
-}
 
 type ChannelPref = { email?: boolean; push?: boolean };
 type Preferences = Record<string, ChannelPref>;

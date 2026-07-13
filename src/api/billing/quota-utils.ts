@@ -48,11 +48,14 @@ export interface QuotaLabels {
   included: string;
   /** e.g. "then" — separator between included and price */
   then: string;
+  /** e.g. "hard limit" — shown when overage is not allowed */
+  hardLimit?: string;
 }
 
-const DEFAULT_LABELS: QuotaLabels = {
+const DEFAULT_LABELS: Required<QuotaLabels> = {
   included: 'included',
   then: 'then',
+  hardLimit: 'hard limit',
 };
 
 /**
@@ -72,12 +75,12 @@ export function formatQuotaWithPrice(
   options: FormatQuotaWithPriceOptions = {}
 ): string {
   const { overageInCents = true, currency } = options;
-  const labels = options.labels ?? DEFAULT_LABELS;
+  const labels = { ...DEFAULT_LABELS, ...options.labels };
   const currencySymbol = options.currencySymbol ?? getCurrencySymbol(currency ?? '');
   if (value === null || value === undefined) return '—';
   const { included, overage } = value;
   const includedStr = `${included} ${labels.included}`;
-  if (value.allowOverage === false) return `${includedStr} (hard limit)`;
+  if (value.allowOverage === false) return `${includedStr} (${labels.hardLimit})`;
   if (overage === undefined || overage === null) return includedStr;
   // Divide by the currency's ISO 4217 minor-unit factor: zero-decimal (JPY,
   // KRW, …) amounts are already whole units; three-decimal (KWD, BHD, …) use 1000.

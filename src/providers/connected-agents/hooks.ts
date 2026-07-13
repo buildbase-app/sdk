@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { IConnectedAgent } from '../../api/services/connected-agents-api';
-import { handleErrorUnlessAborted } from '../../lib/error-handler';
+import { useTranslation } from '../../i18n';
+import { getHookErrorMessage, handleErrorUnlessAborted } from '../../lib/error-handler';
 import { useConnectedAgentsApi } from './api';
 
 export interface UseConnectedAgents {
@@ -25,6 +26,7 @@ export interface UseConnectedAgents {
  */
 export function useConnectedAgents(): UseConnectedAgents {
   const api = useConnectedAgentsApi();
+  const { t } = useTranslation();
   const [agents, setAgents] = useState<IConnectedAgent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -48,14 +50,14 @@ export function useConnectedAgents(): UseConnectedAgents {
         component: 'useConnectedAgents',
         action: 'list',
       });
-      setError(err instanceof Error ? err.message : 'Failed to load');
+      setError(getHookErrorMessage(err, 'security.connectedAgentsLoadFailed', t));
     } finally {
       if (activeRef.current === controller) {
         activeRef.current = null;
         setLoading(false);
       }
     }
-  }, [api]);
+  }, [api, t]);
 
   useEffect(() => {
     refresh();
@@ -74,12 +76,12 @@ export function useConnectedAgents(): UseConnectedAgents {
           component: 'useConnectedAgents',
           action: 'revoke',
         });
-        setError(err instanceof Error ? err.message : 'Failed to disconnect');
+        setError(getHookErrorMessage(err, 'security.connectedAgentsRevokeFailed', t));
       } finally {
         setRevoking(null);
       }
     },
-    [api]
+    [api, t]
   );
 
   return useMemo(

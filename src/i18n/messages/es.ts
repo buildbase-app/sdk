@@ -52,6 +52,7 @@ export const es: SDKMessages = {
         'Solo los usuarios con permisos de gestión de facturación pueden realizar esta acción.',
       openSettings: 'Abrir configuración',
       back: 'Atrás',
+      close: 'Cerrar',
     },
   },
   subscription: {
@@ -354,6 +355,7 @@ export const es: SDKMessages = {
     updateSuccess:
       '{feature} {enabled, select, true {habilitada} other {deshabilitada}} correctamente',
     actionStatus: '{action, select, enabling {Habilitando} disabling {Deshabilitando} other {}}',
+    fallbackName: 'Función',
   },
   danger: {
     title: 'Eliminar espacio de trabajo',
@@ -585,6 +587,7 @@ export const es: SDKMessages = {
       'La compra de créditos falló. Por favor, inténtalo de nuevo o contacta a soporte.',
     errorLoading: 'Error al cargar los datos de créditos',
     insufficientCredits: 'Créditos insuficientes',
+    insufficientDetail: 'Créditos insuficientes. Disponibles: {available}, solicitados: {requested}',
   },
   loading: {
     restoringSession: 'Restaurando tu sesión...',
@@ -620,6 +623,7 @@ export const es: SDKMessages = {
     fetchCreditPackages: 'Error al obtener los paquetes de créditos',
     fetchCreditTransactions: 'Error al obtener las transacciones de créditos',
     fetchExpiringCredits: 'Error al obtener los créditos próximos a expirar',
+    fetchWorkspaces: 'Error al cargar los espacios de trabajo',
   },
   security: {
     connectedAgentsTitle: 'Agentes conectados',
@@ -629,6 +633,8 @@ export const es: SDKMessages = {
     connectedAgentsEmpty: 'No hay agentes conectados.',
     connectedAgentsAccess: 'Acceso',
     connectedAgentsGranted: 'Concedido',
+    connectedAgentsLoadFailed: 'Error al cargar los agentes conectados',
+    connectedAgentsRevokeFailed: 'Error al desconectar',
     inactive: 'Inactiva',
     inactiveHint:
       'Registrada en un dominio de inicio de sesión anterior y ya no se puede usar. Puede eliminarla.',

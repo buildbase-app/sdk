@@ -11,6 +11,8 @@ export interface SDKMessages {
     connectedAgentsEmpty: string;
     connectedAgentsAccess: string;
     connectedAgentsGranted: string;
+    connectedAgentsLoadFailed: string;
+    connectedAgentsRevokeFailed: string;
     inactive: string;
     inactiveHint: string;
     passkeysTitle: string;
@@ -74,6 +76,7 @@ export interface SDKMessages {
       billingManageOnly: string;
       openSettings: string;
       back: string;
+      close: string;
     };
   };
   subscription: {
@@ -360,6 +363,7 @@ export interface SDKMessages {
     featureSuccess: string;
     updateSuccess: string;
     actionStatus: string;
+    fallbackName: string;
   };
   danger: {
     title: string;
@@ -560,6 +564,7 @@ export interface SDKMessages {
     purchaseFailed: string;
     errorLoading: string;
     insufficientCredits: string;
+    insufficientDetail: string;
   };
   loading: {
     restoringSession: string;
@@ -595,6 +600,7 @@ export interface SDKMessages {
     fetchCreditPackages: string;
     fetchCreditTransactions: string;
     fetchExpiringCredits: string;
+    fetchWorkspaces: string;
   };
 }
 

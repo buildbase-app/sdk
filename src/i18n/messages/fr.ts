@@ -52,6 +52,7 @@ export const fr: SDKMessages = {
         'Seuls les utilisateurs disposant des autorisations de gestion de la facturation peuvent effectuer cette action.',
       openSettings: 'Ouvrir les paramètres',
       back: 'Retour',
+      close: 'Fermer',
     },
   },
   subscription: {
@@ -359,6 +360,7 @@ export const fr: SDKMessages = {
     featureSuccess: 'avec succès',
     updateSuccess: '{feature} {enabled, select, true {activée} other {désactivée}} avec succès',
     actionStatus: '{action, select, enabling {Activation} disabling {Désactivation} other {}}',
+    fallbackName: 'Fonctionnalité',
   },
   danger: {
     title: "Supprimer l'espace de travail",
@@ -593,6 +595,7 @@ export const fr: SDKMessages = {
     purchaseFailed: "L'achat de crédits a échoué. Veuillez réessayer ou contacter le support.",
     errorLoading: 'Échec du chargement des données de crédits',
     insufficientCredits: 'Crédits insuffisants',
+    insufficientDetail: 'Crédits insuffisants. Disponibles : {available}, demandés : {requested}',
   },
   loading: {
     restoringSession: 'Restauration de votre session...',
@@ -628,6 +631,7 @@ export const fr: SDKMessages = {
     fetchCreditPackages: 'Échec de la récupération des packs de crédits',
     fetchCreditTransactions: 'Échec de la récupération des transactions de crédits',
     fetchExpiringCredits: 'Échec de la récupération des crédits expirant bientôt',
+    fetchWorkspaces: 'Échec du chargement des espaces de travail',
   },
   security: {
     connectedAgentsTitle: 'Agents connectés',
@@ -637,6 +641,8 @@ export const fr: SDKMessages = {
     connectedAgentsEmpty: 'Aucun agent connecté.',
     connectedAgentsAccess: 'Accès',
     connectedAgentsGranted: 'Accordé',
+    connectedAgentsLoadFailed: 'Échec du chargement des agents connectés',
+    connectedAgentsRevokeFailed: 'Échec de la déconnexion',
     inactive: 'Inactive',
     inactiveHint:
       'Enregistrée sur un ancien domaine de connexion et ne peut plus être utilisée. Vous pouvez la supprimer.',

@@ -16,7 +16,11 @@
  * platform permissions + any app permissions defined in the config.
  */
 
-import { getWorkspaceUserRole, isWorkspaceOwner } from './workspace-utils';
+import {
+  getWorkspaceUserRole,
+  isWorkspaceOwner,
+  type WorkspaceLike as WorkspaceBase,
+} from './workspace-utils';
 
 // ─── Platform Permission Constants ────────────────────────────────────────────
 
@@ -67,10 +71,7 @@ export const DEFAULT_ROLE_PERMISSIONS: RolePermissionMap = {
 
 // ─── Permission Context ───────────────────────────────────────────────────────
 
-export interface WorkspaceLike {
-  _id: string;
-  createdBy: string | { _id: string } | null | undefined;
-  users?: Array<string | { _id: string; role?: string }>;
+export interface WorkspaceLike extends WorkspaceBase {
   permissions?: Record<string, string[]>;
 }
 

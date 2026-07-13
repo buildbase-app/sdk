@@ -19,23 +19,14 @@ import { SectionHeader } from '../../../components/ui/section-header';
 import { useUIVisibility } from '../../../hooks/useUIVisibility';
 import { useTranslation } from '../../../i18n';
 import { handleError } from '../../../lib/error-handler';
+import { formatDate } from '../../../lib/format-utils';
 import { useWorkspaceApiWithOs } from '../use-workspace-api';
 import SettingSkeleton from './Skeleton';
-
-const formatDate = (
-  isoDate: string,
-  locale: string,
-  options?: Intl.DateTimeFormatOptions
-): string => {
-  const date = new Date(isoDate);
-  if (Number.isNaN(date.getTime())) return '';
-  return new Intl.DateTimeFormat(locale, options ?? { dateStyle: 'medium' }).format(date);
-};
 
 const WorkspaceSettingsSecurity: React.FC = () => {
   const { t, formattingLocale } = useTranslation();
   const { visible, ui } = useUIVisibility();
-  const dateFormat = ui.formats?.date;
+  const dateFormat = ui.formats?.date ?? { dateStyle: 'medium' as const };
   const canRename = visible(ui => ui.settings?.security?.passkeyRename);
   const canDelete = visible(ui => ui.settings?.security?.passkeyDelete);
   const { api } = useWorkspaceApiWithOs();
