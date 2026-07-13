@@ -2,6 +2,8 @@
 
 Rules for keeping every component, screen, and page visually and structurally consistent. When adding a new screen, copy the patterns below — don't hand-roll markup that a shared primitive already covers.
 
+> **Before shipping anything, run through [`docs/PRODUCTION-CHECKLIST.md`](docs/PRODUCTION-CHECKLIST.md)** — the per-artifact audit gate (components, modules, API methods, hooks, money/i18n/CSS/a11y/packaging). This file explains the patterns; the checklist is what you verify against.
+
 ## Shared primitives (`src/components/ui/`)
 
 Always use these instead of ad-hoc markup:
@@ -19,7 +21,7 @@ Always use these instead of ad-hoc markup:
 
 ## Component tiers
 
-- **Public components** (`src/components/<feature>/`): named exports, `index.ts` barrel, PascalCase files inside kebab-case folders. Labels default to `useTranslation()` keys but are overrideable via props (`title?: string | null` — `null` hides, `undefined` uses the translated default). Example: `ConnectedAgents`.
+- **Public components** (`src/components/<feature>/`): named exports, `index.ts` barrel, PascalCase files inside kebab-case folders. Labels default to `useTranslation()` keys but are overridable via props (`title?: string | null` — `null` hides, `undefined` uses the translated default). Example: `ConnectedAgents`.
 - **Settings screens** (`src/providers/<name>/ui/`): default export of `WorkspaceSettingsX: React.FC` from a `SettingsX.tsx` file. The dialog renders the screen title — screens must not render their own top-level title.
 - **When a settings screen reuses a public component**, wrap it in a thin `SettingsX.tsx` default-export screen (see `SettingsConnectedAgents.tsx`) so `SettingsDialog` always imports screens the same way — never import from `components/*` directly in the dialog.
 
