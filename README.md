@@ -1246,19 +1246,23 @@ Plans support **pricing variants** (multi-currency). Use these utilities for dis
 
 ### Currency utilities
 
-| Export                               | Purpose                                                   |
-| ------------------------------------ | --------------------------------------------------------- |
-| `CURRENCY_DISPLAY`                   | Map of currency code → symbol (e.g. `usd` → `$`)          |
-| `CURRENCY_FLAG`                      | Map of currency code → flag emoji                         |
-| `PLAN_CURRENCY_CODES`                | Allowed billing currency codes (for dropdowns/validation) |
-| `PLAN_CURRENCY_OPTIONS`              | Options array for plan currency selects                   |
-| `getCurrencySymbol(currency)`        | Symbol for a Stripe currency code                         |
-| `getCurrencyFlag(currency)`          | Flag emoji for a currency code                            |
-| `formatCents(cents, currency)`       | Format cents as localized price string                    |
-| `formatOverageRate(cents, currency)` | Format overage rate for display                           |
-| `formatOverageRateWithLabel(...)`    | Overage rate with optional unit label                     |
-| `formatQuotaIncludedOverage(...)`    | "X included, then $Y / unit" style text                   |
-| `getQuotaUnitLabelFromName(name)`    | Human-readable unit label from quota name                 |
+| Export                                             | Purpose                                                         |
+| -------------------------------------------------- | --------------------------------------------------------------- |
+| `CURRENCY_DISPLAY`                                 | Map of currency code → symbol (e.g. `usd` → `$`)                |
+| `CURRENCY_FLAG`                                    | Map of currency code → flag emoji                               |
+| `PLAN_CURRENCY_CODES`                              | Allowed billing currency codes (for dropdowns/validation)       |
+| `PLAN_CURRENCY_OPTIONS`                            | Options array for plan currency selects                         |
+| `getCurrencySymbol(currency)`                      | Symbol for a Stripe currency code                               |
+| `getCurrencyFlag(currency)`                        | Flag emoji for a currency code                                  |
+| `formatCents(cents, currency)`                     | Format a minor-unit amount with the symbol table                |
+| `formatMinorAmountIntl(amount, currency, locale?)` | Locale-aware `Intl` money formatting of minor units             |
+| `getCurrencyDecimals(currency)`                    | ISO 4217 minor-unit digits (0 JPY, 2 USD, 3 KWD; CLDR fallback) |
+| `isZeroDecimalCurrency(currency)`                  | True when the currency has no minor unit (JPY, KRW, …)          |
+| `minorAmountToDisplay(amount, currency)`           | Minor units → display number string (no symbol)                 |
+| `formatOverageRate(cents, currency)`               | Format overage rate for display                                 |
+| `formatOverageRateWithLabel(...)`                  | Overage rate with optional unit label                           |
+| `formatQuotaIncludedOverage(...)`                  | "X included, then $Y / unit" style text                         |
+| `getQuotaUnitLabelFromName(name)`                  | Human-readable unit label from quota name                       |
 
 ### Pricing variant utilities
 
@@ -1298,7 +1302,9 @@ import {
 const variant = getPricingVariant(planVersion, 'usd');
 const cents = getBasePriceCents(planVersion, 'usd', 'monthly');
 if (cents != null) {
-  console.log(getCurrencySymbol('usd') + (cents / 100).toFixed(2));
+  // Never divide by 100 yourself — formatCents applies the currency's ISO 4217
+  // minor-unit factor (JPY ¥1,000 stays whole, KWD divides by 1000, USD by 100).
+  console.log(formatCents(cents, 'usd')); // "$12.99"
 }
 
 // Quota display with overage
