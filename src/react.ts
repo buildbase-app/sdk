@@ -46,16 +46,20 @@ export { usePermissions } from './hooks/usePermissions';
 
 // ─── Connected Agents (screen + headless hook) ─────────────────────────────────
 export {
+  ConnectMcpGuide,
   ConnectedAgents,
   ConnectedAgentsApi,
   useConnectedAgents,
   useConnectedAgentsApi,
 } from './components/connected-agents';
 export type {
+  ConnectMcpGuideProps,
   ConnectedAgentsProps,
   IConnectedAgent,
   UseConnectedAgents,
 } from './components/connected-agents';
+export { fillMcpTemplate, mcpServerKey, useMcpConnection } from './contexts/McpConfigContext';
+export type { McpClientGuide, McpConnectionConfig } from './contexts/McpConfigContext';
 
 // ─── Feature Gate Components ───────────────────────────────────────────────────
 export {

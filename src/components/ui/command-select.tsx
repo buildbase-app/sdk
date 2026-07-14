@@ -35,10 +35,12 @@ export function CommandSelect({
   options,
   value: valueProp,
   onChange,
-  placeholder = 'Search...',
-  emptyLabel = 'Choose option',
+  placeholder: placeholderProp,
+  emptyLabel: emptyLabelProp,
 }: CommandSelectProps) {
   const { t } = useTranslation();
+  const placeholder = placeholderProp ?? t('dropdowns.search');
+  const emptyLabel = emptyLabelProp ?? t('dropdowns.chooseOption');
   const [value, setValue] = useState(valueProp ?? '');
   const [open, setOpen] = useState(false);
 

@@ -31,6 +31,8 @@ function resolveSection(params: Record<string, string>): WorkspaceSettingsSectio
       return SettingsScreen.Subscription;
     case BBAction.CreditPurchase:
       return SettingsScreen.Credits;
+    case BBAction.OpenConnectGuide:
+      return SettingsScreen.ConnectedAgents;
     default:
       return null;
   }

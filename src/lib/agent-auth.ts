@@ -298,7 +298,7 @@ export function buildbaseAuth(options: BuildBaseAuthOptions): {
         typeof payload.sid === 'string' ? await sessionCrypto.decryptSessionRef(payload.sid) : null;
 
       const scopes = Array.isArray(payload.scope)
-        ? (payload.scope as string[])
+        ? payload.scope.filter((s): s is string => typeof s === 'string')
         : typeof payload.scope === 'string'
           ? payload.scope.split(' ').filter(Boolean)
           : undefined;

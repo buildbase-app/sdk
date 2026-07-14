@@ -404,7 +404,7 @@ export const AI_BOT_USER_AGENTS: readonly string[] = [
 
 // ─── Small utilities ──────────────────────────────────────────────────────────
 
-function trimTrailingSlash(url: string): string {
+export function trimTrailingSlash(url: string): string {
   return url.replace(/\/+$/, '');
 }
 
@@ -434,6 +434,11 @@ const DEFAULT_FETCH_TIMEOUT_MS = 5000;
 /**
  * `fetch` with a bounded timeout via `AbortController`, so a hung platform
  * connection rejects (and the caller fail-softs) instead of pending forever.
+ *
+ * Deliberately NOT `api-utils.fetchWithTimeout`: this one takes an injected
+ * `doFetch` (testability for the discovery path) and must never combine a
+ * caller signal or throw a synthetic timeout error — the fail-soft callers
+ * only need the promise to settle.
  */
 async function fetchWithTimeout(
   doFetch: typeof fetch,

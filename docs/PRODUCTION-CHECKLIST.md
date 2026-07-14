@@ -49,7 +49,7 @@ npm run build         # rollup all 4 entries + d.ts bundling
 
 ## 5. New data hook
 
-- [ ] Returns `{ data, loading, error, refetch }` (existing naming; the `isLoading` rename is a parked breaking change — don't mix conventions).
+- [ ] Returns `{ data, loading, error, refetch }` — the convention landed 2026-07-14 (`useUserAttributes`/`useUserFeatures`/`useSaaSSettings`); old `isLoading`/`refreshX` names exist only as `@deprecated` aliases, never in new hooks.
 - [ ] Stale-response safe: uses `useLatestRequest()` (`src/lib/use-latest-request.ts`) so a workspace switch can't render the previous workspace's data; only the latest request clears `loading`; unmount aborts.
 - [ ] Errors reported via `handleError` / `handleErrorUnlessAborted` with `{ component, action }`.
 - [ ] Timers/deferred actions tracked in refs and cleared on unmount (the `createWorkspace` 300ms plan-picker bug).

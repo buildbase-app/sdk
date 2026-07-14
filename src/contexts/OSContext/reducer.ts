@@ -1,5 +1,5 @@
 import { ApiVersion, type IOsState } from '../../providers/os/types';
-import { updateField, updateFields } from '../shared/utils/reducerHelpers';
+import { updateFields } from '../shared/utils/reducerHelpers';
 import type { OSAction } from './types';
 
 /**
@@ -11,6 +11,8 @@ export const getInitialOSState = (): IOsState => {
     version: ApiVersion.V1,
     orgId: '',
     settings: null,
+    settingsStatus: 'idle',
+    settingsError: null,
   };
 };
 
@@ -27,7 +29,17 @@ export const osReducer = (state: IOsState, action: OSAction): IOsState => {
       return getInitialOSState();
 
     case 'SET_SETTINGS':
-      return updateField(state, 'settings', action.payload);
+      return updateFields(state, {
+        settings: action.payload,
+        settingsStatus: 'loaded',
+        settingsError: null,
+      });
+
+    case 'SET_SETTINGS_STATUS':
+      return updateFields(state, {
+        settingsStatus: action.payload.status,
+        settingsError: action.payload.error ?? null,
+      });
 
     default:
       return state;

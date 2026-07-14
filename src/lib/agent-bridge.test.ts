@@ -94,6 +94,34 @@ describe('verifyClientJwt hardening', () => {
     expect(() => verifyClientJwt('not-a-jwt', SECRET)).toThrowError(AppBridgeError);
     expect(() => verifyClientJwt('a.b', SECRET)).toThrowError(AppBridgeError);
   });
+
+  it('rejects mistyped registered claims — the VerifiedJwtPayload types are runtime-checked', () => {
+    const now = Math.floor(Date.now() / 1000);
+    const header = { alg: 'HS256', typ: 'JWT' };
+    // A validly-signed token whose registered claims lie about their types
+    // must not reach consumers as a "verified" payload.
+    expect(() => verifyClientJwt(forgeJwt(header, { sub: 42, exp: now + 3600 }), SECRET)).toThrow(
+      /sub/
+    );
+    expect(() =>
+      verifyClientJwt(forgeJwt(header, { iss: { url: 'x' }, exp: now + 3600 }), SECRET)
+    ).toThrow(/iss/);
+    expect(() =>
+      verifyClientJwt(forgeJwt(header, { sub: 'u1', exp: 'soon' }), SECRET, { requireExp: false })
+    ).toThrow(/exp/);
+    expect(() =>
+      verifyClientJwt(forgeJwt(header, { sub: 'u1', exp: now + 3600, aud: [1, 2] }), SECRET)
+    ).toThrow(/aud/);
+    expect(() =>
+      verifyClientJwt(forgeJwt(header, { sub: 'u1', exp: now + 3600, iat: 'now' }), SECRET)
+    ).toThrow(/iat/);
+    // Well-typed claims still pass, including array aud.
+    const ok = verifyClientJwt(
+      forgeJwt(header, { sub: 'u1', exp: now + 3600, aud: ['rs-a', 'rs-b'] }),
+      SECRET
+    );
+    expect(ok.aud).toEqual(['rs-a', 'rs-b']);
+  });
 });
 
 describe('extractBearerToken', () => {

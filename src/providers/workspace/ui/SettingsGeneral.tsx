@@ -168,7 +168,10 @@ const WorkspaceSettingsGeneral: React.FC<{ workspace: IWorkspace }> = ({ workspa
                     <div className="w-12 h-12 rounded-lg border-2 border-border flex items-center justify-center text-2xl bg-muted">
                       {selectedEmoji && <span className="text-2xl">{selectedEmoji}</span>}
                       {!selectedEmoji && form.watch('image')?.trim() && (
-                        <img src={form.watch('image') || undefined} alt="Workspace preview" />
+                        <img
+                          src={form.watch('image') || undefined}
+                          alt={t('general.previewImageAlt')}
+                        />
                       )}
                     </div>
                   </div>
@@ -223,7 +226,7 @@ const WorkspaceSettingsGeneral: React.FC<{ workspace: IWorkspace }> = ({ workspa
                         <img
                           src={form.watch('image') || undefined}
                           className="w-full h-full object-cover"
-                          alt="Workspace preview"
+                          alt={t('general.previewImageAlt')}
                         />
                       </div>
                     </div>

@@ -639,6 +639,28 @@ export const de: SDKMessages = {
     connectedAgentsGranted: 'Gewährt',
     connectedAgentsLoadFailed: 'Verbundene Agents konnten nicht geladen werden',
     connectedAgentsRevokeFailed: 'Trennen fehlgeschlagen',
+    mcpConnectAction: 'Agenten verbinden',
+    mcpGuideTitle: 'KI-Agent verbinden',
+    mcpGuideDescription:
+      'Lass einen KI-Assistenten sicher in deinem Konto arbeiten. Wähle unten deine App und folge den Schritten — es dauert nur eine Minute.',
+    mcpServerUrlLabel: 'Serveradresse',
+    mcpServerUrlHint: 'Manche Apps fragen einfach nach dieser Adresse.',
+    mcpPromptLabel: 'Oder füge dies in deine KI ein',
+    mcpPromptHint:
+      'Funktioniert mit Chat-Assistenten, die Tools hinzufügen können — füge es in den Chat ein und sende es ab.',
+    mcpPromptTemplate:
+      'Verbinde dich mit meinem {{name}}-Konto über den MCP-Server unter {{url}} und nutze dann seine Tools, um mir zu helfen.',
+    mcpClientsLabel: 'Schritt für Schritt für beliebte Apps',
+    mcpAddToConfigFile: 'Öffne die Datei {path} und füge dies hinzu:',
+    mcpClientChatgptInstructions:
+      'Öffne in ChatGPT Einstellungen → Konnektoren, wähle „Benutzerdefinierten Konnektor hinzufügen“ und füge die obige Serveradresse ein.',
+    mcpClientClaudeInstructions:
+      'Öffne in Claude Einstellungen → Konnektoren, wähle „Benutzerdefinierten Konnektor hinzufügen“ und füge die obige Serveradresse ein.',
+    mcpClientClineInstructions:
+      'Öffne in Cline das MCP-Server-Panel, wähle „Remote-Server hinzufügen“ und füge die obige Serveradresse ein.',
+    mcpCopy: 'Kopieren',
+    mcpCopied: 'Kopiert',
+    mcpLearnMore: 'Mehr erfahren',
     inactive: 'Inaktiv',
     inactiveHint:
       'Auf einer früheren Anmeldedomain registriert und nicht mehr verwendbar. Sie können ihn entfernen.',

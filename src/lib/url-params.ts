@@ -39,6 +39,7 @@ export const BBAction = {
   SelectPlan: 'selectPlan',
   CreditPurchase: 'creditPurchase',
   OpenCreditStore: 'openCreditStore',
+  OpenConnectGuide: 'openConnectGuide',
   Invite: 'invite',
 } as const;
 export type BBActionType = (typeof BBAction)[keyof typeof BBAction];

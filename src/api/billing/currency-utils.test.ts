@@ -4,6 +4,7 @@ import {
   formatMinorAmountIntl,
   formatOverageRate,
   formatOverageRateWithLabel,
+  formatQuotaIncludedOverage,
   isZeroDecimalCurrency,
   minorAmountToDisplay,
 } from './currency-utils';
@@ -83,6 +84,39 @@ describe('formatOverageRate', () => {
 describe('formatOverageRateWithLabel', () => {
   it('handles zero-decimal currencies', () => {
     expect(formatOverageRateWithLabel(50, 1000, 'video', 'jpy')).toBe('¥50/1,000 videos');
+  });
+});
+
+describe('formatQuotaIncludedOverage (hard limit)', () => {
+  it('uses the capitalized default for the standalone hard-limit label', () => {
+    expect(
+      formatQuotaIncludedOverage(
+        undefined,
+        undefined,
+        'video',
+        'usd',
+        1,
+        undefined,
+        undefined,
+        false
+      )
+    ).toBe('Hard limit');
+  });
+
+  it('keeps the mid-sentence hard-limit label lowercase', () => {
+    expect(
+      formatQuotaIncludedOverage(10, undefined, 'video', 'usd', 1, undefined, undefined, false)
+    ).toBe('Included: 10 (hard limit)');
+  });
+
+  it('uses the caller-provided hard-limit label in both positions', () => {
+    const labels = { hardLimit: 'límite fijo' };
+    expect(
+      formatQuotaIncludedOverage(undefined, undefined, 'video', 'usd', 1, undefined, labels, false)
+    ).toBe('límite fijo');
+    expect(
+      formatQuotaIncludedOverage(10, undefined, 'video', 'usd', 1, undefined, labels, false)
+    ).toContain('(límite fijo)');
   });
 });
 

@@ -51,16 +51,4 @@ export interface IWorkspaceUser {
   role: string;
 }
 
-export interface WorkspaceContextValue {
-  workspaces: IWorkspace[];
-  currentWorkspace: IWorkspace | null;
-  loading: boolean;
-  switchingToId: string | null;
-  refreshing: boolean;
-  error: string | null;
-  fetchWorkspaces: () => Promise<void>; // Manual trigger to fetch workspaces
-  refreshWorkspaces: () => Promise<void>;
-}
-
-// Import IUser from your main types if needed
 import type { ISubscription, IUser } from '../../api/types';

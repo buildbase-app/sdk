@@ -1,6 +1,10 @@
 import { Coins } from 'lucide-react';
 import React, { useMemo, useState } from 'react';
-import { getCurrencySymbol } from '../../../api/billing/currency-utils';
+import {
+  formatMinorAmountIntl,
+  getCurrencyDecimals,
+  getCurrencySymbol,
+} from '../../../api/billing/currency-utils';
 import type { ICreditPackage } from '../../../api/types';
 import { Button } from '../../../components/ui/button';
 import {
@@ -11,6 +15,34 @@ import {
 } from '../../../components/ui/dialog';
 import { useTranslation } from '../../../i18n';
 import { cn } from '../../../lib/utils';
+
+/**
+ * Format a per-credit amount given in (possibly fractional) minor units. Amounts
+ * of at least one minor unit go through the standard formatter; sub-minor-unit
+ * amounts (e.g. $0.004/credit) get just enough extra fraction digits to show a
+ * meaningful value instead of rounding down to "$0.00".
+ */
+function formatPerCreditMinor(minorAmount: number, currency: string, locale: string): string {
+  const rounded = Math.round(minorAmount);
+  if (rounded >= 1) return formatMinorAmountIntl(rounded, currency, locale);
+  const decimals = getCurrencyDecimals(currency);
+  const value = minorAmount / 10 ** decimals;
+  // Enough digits for two significant figures, capped at 4 extra places.
+  const fractionDigits = Math.min(
+    decimals + 4,
+    Math.max(decimals, Math.ceil(-Math.log10(value)) + 1)
+  );
+  try {
+    return new Intl.NumberFormat(locale, {
+      style: 'currency',
+      currency: currency.trim().toUpperCase(),
+      minimumFractionDigits: fractionDigits,
+      maximumFractionDigits: fractionDigits,
+    }).format(value);
+  } catch {
+    return getCurrencySymbol(currency) + value.toFixed(fractionDigits);
+  }
+}
 
 interface CreditPackagesDialogProps {
   open: boolean;
@@ -33,7 +65,7 @@ const CreditPackagesDialog: React.FC<CreditPackagesDialogProps> = ({
   purchasingPackageId,
   loading: isUpdating = false,
 }) => {
-  const { t, dir, fmtNum, fmtCents } = useTranslation();
+  const { t, dir, fmtNum, fmtCents, formattingLocale } = useTranslation();
 
   const allCurrencies = useMemo(() => {
     const currencies = new Set<string>();
@@ -121,9 +153,13 @@ const CreditPackagesDialog: React.FC<CreditPackagesDialogProps> = ({
                 const price = variant?.amount;
                 const variantCurrency = variant?.currency ?? effectiveCurrency;
                 const isPurchasing = purchasingPackageId === pkg._id;
-                const perCredit =
+                const perCreditLabel =
                   price != null && price > 0 && pkg.creditAmount > 0
-                    ? Math.round(price / pkg.creditAmount)
+                    ? formatPerCreditMinor(
+                        price / pkg.creditAmount,
+                        variantCurrency,
+                        formattingLocale
+                      )
                     : null;
 
                 return (
@@ -154,10 +190,10 @@ const CreditPackagesDialog: React.FC<CreditPackagesDialogProps> = ({
                             ? t('credits.validityDays', { count: pkg.validityDays })
                             : t('credits.validityUnlimited')}
                         </span>
-                        {perCredit != null && (
+                        {perCreditLabel != null && (
                           <span>
                             {t('credits.perCredit', {
-                              price: fmtCents(perCredit, variantCurrency),
+                              price: perCreditLabel,
                             })}
                           </span>
                         )}

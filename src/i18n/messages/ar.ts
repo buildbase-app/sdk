@@ -628,6 +628,27 @@ export const ar: SDKMessages = {
     connectedAgentsGranted: 'مُنح',
     connectedAgentsLoadFailed: 'فشل في تحميل الوكلاء المتصلين',
     connectedAgentsRevokeFailed: 'فشل في قطع الاتصال',
+    mcpConnectAction: 'توصيل وكيل',
+    mcpGuideTitle: 'توصيل وكيل ذكاء اصطناعي',
+    mcpGuideDescription:
+      'اسمح لمساعد ذكاء اصطناعي بالعمل بأمان في حسابك. اختر تطبيقك أدناه واتبع الخطوات — لن يستغرق الأمر سوى دقيقة.',
+    mcpServerUrlLabel: 'عنوان الخادم',
+    mcpServerUrlHint: 'بعض التطبيقات تطلب فقط لصق هذا العنوان.',
+    mcpPromptLabel: 'أو الصق هذا في الذكاء الاصطناعي',
+    mcpPromptHint: 'يعمل مع مساعدي الدردشة الذين يمكنهم إضافة أدوات — الصقه في الدردشة وأرسله.',
+    mcpPromptTemplate:
+      'يرجى الاتصال بحسابي على {{name}} باستخدام خادم MCP على {{url}}، ثم استخدم أدواته لمساعدتي.',
+    mcpClientsLabel: 'خطوة بخطوة للتطبيقات الشائعة',
+    mcpAddToConfigFile: 'افتح الملف {path} وأضِف هذا:',
+    mcpClientChatgptInstructions:
+      'في ChatGPT، انتقل إلى الإعدادات ← الموصّلات، اختر «إضافة موصّل مخصص»، والصق عنوان الخادم أعلاه.',
+    mcpClientClaudeInstructions:
+      'في Claude، انتقل إلى الإعدادات ← الموصّلات، اختر «إضافة موصّل مخصص»، والصق عنوان الخادم أعلاه.',
+    mcpClientClineInstructions:
+      'في Cline، افتح لوحة خوادم MCP، اختر «إضافة خادم بعيد»، والصق عنوان الخادم أعلاه.',
+    mcpCopy: 'نسخ',
+    mcpCopied: 'تم النسخ',
+    mcpLearnMore: 'اعرف المزيد',
     inactive: 'غير نشط',
     inactiveHint: 'سُجّل على نطاق تسجيل دخول سابق ولم يعد قابلاً للاستخدام. يمكنك إزالته.',
     passkeysTitle: 'مفاتيح المرور',

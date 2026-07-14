@@ -440,22 +440,29 @@ export class WorkspaceApi extends BaseApi {
     );
   }
 
+  /**
+   * Assign a free (freemium) plan to the workspace without a Stripe checkout.
+   *
+   * This endpoint's envelope carries no `data` payload — it is
+   * `{ success, message }` — so `fetchUnwrapped` resolves with the envelope
+   * itself (its unwrap only extracts `data` when present). On resolution
+   * `success` is therefore always `true`: non-2xx responses and 2xx envelopes
+   * with `success: false` both throw a structured Error.
+   */
   async selectFreePlan(
     workspaceId: string,
     planVersionId: string,
     signal?: AbortSignal
   ): Promise<{ success: boolean; message: string }> {
-    const response = await this.fetchResponse(
+    return this.fetchUnwrapped<{ success: boolean; message: string }>(
       this.apiPath`workspaces/${workspaceId}/subscription/select-free-plan`,
       {
         method: 'POST',
         body: JSON.stringify({ planVersionId }),
         signal,
-      }
+      },
+      'Failed to select free plan'
     );
-    if (!response.ok) await this.throwResponseError(response, 'Failed to select free plan');
-    // Return full response — type includes success/message which callers may use
-    return response.json();
   }
 
   /**

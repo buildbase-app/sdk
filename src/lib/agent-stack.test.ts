@@ -1,12 +1,20 @@
 import { describe, expect, it } from 'vitest';
 import { createAgentStack } from './agent-stack';
 
+// The protected-resource path reconciles issuers via a real agent-readiness
+// fetch — stub it so no test ever does network I/O.
+const stubReadinessFetch: typeof fetch = async () =>
+  new Response(JSON.stringify({ enabled: false }), {
+    headers: { 'Content-Type': 'application/json' },
+  });
+
 const stack = createAgentStack({
   serverUrl: 'https://api.buildbase.test',
   orgId: 'a'.repeat(24),
   siteUrl: 'https://app.example.com/',
   site: { name: 'Example App', description: 'Test app' },
   secret: 'test-secret',
+  discovery: { fetch: stubReadinessFetch },
 });
 
 describe('createAgentStack', () => {
@@ -63,6 +71,7 @@ describe('createAgentStack', () => {
       site: { name: 'Example App' },
       secret: 'test-secret',
       discovery: {
+        fetch: stubReadinessFetch,
         extraPaths: {
           '/openapi.json': '{"openapi":"3.1.0"}',
           '/robots.txt': { body: 'User-agent: *\nDisallow:', contentType: 'text/plain' },

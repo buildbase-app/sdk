@@ -138,7 +138,10 @@ export const useConsumeCredits = (workspaceId: string | null | undefined) => {
       } catch (err: any) {
         const errorMessage =
           err.code === 'INSUFFICIENT_CREDITS'
-            ? t('credits.insufficientDetail', { available: err.available, requested: err.requested })
+            ? t('credits.insufficientDetail', {
+                available: err.available,
+                requested: err.requested,
+              })
             : getHookErrorMessage(err, 'errors.consumeCredits', t);
         setError(errorMessage);
         handleError(err, {

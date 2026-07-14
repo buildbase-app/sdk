@@ -612,6 +612,27 @@ export const zh: SDKMessages = {
     connectedAgentsGranted: '授权时间',
     connectedAgentsLoadFailed: '加载已连接的代理失败',
     connectedAgentsRevokeFailed: '断开连接失败',
+    mcpConnectAction: '连接代理',
+    mcpGuideTitle: '连接 AI 代理',
+    mcpGuideDescription:
+      '让 AI 助手安全地在你的账户中操作。在下面选择你的应用并按步骤操作，只需一分钟。',
+    mcpServerUrlLabel: '服务器地址',
+    mcpServerUrlHint: '有些应用只需你粘贴这个地址。',
+    mcpPromptLabel: '或将此粘贴到你的 AI',
+    mcpPromptHint: '适用于可以添加工具的聊天助手——把它粘贴到聊天中并发送。',
+    mcpPromptTemplate:
+      '请使用 {{url}} 上的 MCP 服务器连接到我的 {{name}} 账户，然后使用它的工具来帮助我。',
+    mcpClientsLabel: '热门应用的分步指南',
+    mcpAddToConfigFile: '打开文件 {path} 并添加以下内容：',
+    mcpClientChatgptInstructions:
+      '在 ChatGPT 中，进入“设置 → 连接器”，选择“添加自定义连接器”，然后粘贴上面的服务器地址。',
+    mcpClientClaudeInstructions:
+      '在 Claude 中，进入“设置 → 连接器”，选择“添加自定义连接器”，然后粘贴上面的服务器地址。',
+    mcpClientClineInstructions:
+      '在 Cline 中，打开 MCP 服务器面板，选择“添加远程服务器”，然后粘贴上面的服务器地址。',
+    mcpCopy: '复制',
+    mcpCopied: '已复制',
+    mcpLearnMore: '了解更多',
     inactive: '已失效',
     inactiveHint: '注册于之前的登录域名，已无法使用。您可以将其移除。',
     passkeysTitle: '通行密钥',

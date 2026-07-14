@@ -632,6 +632,28 @@ export const en: SDKMessages = {
     connectedAgentsGranted: 'Granted',
     connectedAgentsLoadFailed: 'Failed to load connected agents',
     connectedAgentsRevokeFailed: 'Failed to disconnect',
+    mcpConnectAction: 'Connect an agent',
+    mcpGuideTitle: 'Connect an AI agent',
+    mcpGuideDescription:
+      'Let an AI assistant securely work in your account. Choose your app below and follow the steps — it only takes a minute.',
+    mcpServerUrlLabel: 'Server address',
+    mcpServerUrlHint: 'Some apps just ask you to paste this address.',
+    mcpPromptLabel: 'Or paste this into your AI',
+    mcpPromptHint:
+      'Works with chat assistants that can add tools — paste it into the chat and send.',
+    mcpPromptTemplate:
+      'Please connect to my {{name}} account using the MCP server at {{url}}, then use its tools to help me.',
+    mcpClientsLabel: 'Step-by-step for popular apps',
+    mcpAddToConfigFile: 'Open the file {path} and add this:',
+    mcpClientChatgptInstructions:
+      'In ChatGPT, go to Settings → Connectors, choose “Add custom connector”, and paste the server address above.',
+    mcpClientClaudeInstructions:
+      'In Claude, go to Settings → Connectors, choose “Add custom connector”, and paste the server address above.',
+    mcpClientClineInstructions:
+      'In Cline, open the MCP Servers panel, choose “Add remote server”, and paste the server address above.',
+    mcpCopy: 'Copy',
+    mcpCopied: 'Copied',
+    mcpLearnMore: 'Learn more',
     inactive: 'Inactive',
     inactiveHint:
       'Registered on a previous sign-in domain and can no longer be used. You can remove it.',

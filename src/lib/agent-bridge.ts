@@ -101,9 +101,12 @@ export interface AppRevokeRequestClaims {
 // ─── JWT (HS256) verification ─────────────────────────────────────────────────
 
 /**
- * A verified JWT payload: registered claims (RFC 7519) are typed, every other
- * claim is `unknown` — claims are attacker-influenced input until you narrow
- * them (`typeof payload.sid === 'string'`), even after the signature checks out.
+ * A verified JWT payload: registered claims (RFC 7519) are typed AND
+ * runtime-validated by {@link verifyClientJwt} (a signed token whose `sub` is
+ * a number is rejected, so the types here are real guarantees). Every other
+ * claim is `unknown` — custom claims are attacker-influenced input until you
+ * narrow them (`typeof payload.sid === 'string'`), even after the signature
+ * checks out.
  */
 export interface VerifiedJwtPayload {
   iss?: string;
@@ -114,6 +117,37 @@ export interface VerifiedJwtPayload {
   iat?: number;
   jti?: string;
   [claim: string]: unknown;
+}
+
+/**
+ * RFC 7519 registered-claim type validation. Runs AFTER signature verification
+ * (a forged token must never learn anything from claim errors) and rejects the
+ * token outright: a signed token with e.g. `sub: 42` means a broken issuer or
+ * a crafted payload, and letting it through would silently falsify the
+ * {@link VerifiedJwtPayload} types consumers rely on.
+ */
+function assertRegisteredClaimTypes(
+  payload: Record<string, unknown>
+): asserts payload is VerifiedJwtPayload {
+  for (const claim of ['iss', 'sub', 'jti'] as const) {
+    if (payload[claim] !== undefined && typeof payload[claim] !== 'string') {
+      throw new AppBridgeError('invalid_token', `JWT ${claim} claim must be a string`);
+    }
+  }
+  for (const claim of ['exp', 'nbf', 'iat'] as const) {
+    const value = payload[claim];
+    if (value !== undefined && (typeof value !== 'number' || !Number.isFinite(value))) {
+      throw new AppBridgeError('invalid_token', `JWT ${claim} claim must be a finite number`);
+    }
+  }
+  const aud = payload.aud;
+  if (
+    aud !== undefined &&
+    typeof aud !== 'string' &&
+    !(Array.isArray(aud) && aud.every(entry => typeof entry === 'string'))
+  ) {
+    throw new AppBridgeError('invalid_token', 'JWT aud claim must be a string or string array');
+  }
 }
 
 function jsonFromB64Url(b64url: string): Record<string, unknown> {
@@ -171,10 +205,10 @@ export function verifyClientJwt(
   // before computing the HMAC — keeps this robust even if the verifier is later
   // extended to support asymmetric algorithms.
   let header: Record<string, unknown>;
-  let payload: VerifiedJwtPayload;
+  let payload: Record<string, unknown>;
   try {
     header = jsonFromB64Url(headerB64);
-    payload = jsonFromB64Url(payloadB64) as VerifiedJwtPayload;
+    payload = jsonFromB64Url(payloadB64);
   } catch {
     throw new AppBridgeError('invalid_token', 'Unreadable JWT segments');
   }
@@ -192,6 +226,8 @@ export function verifyClientJwt(
   if (!timingSafeEqualBytes(expected, provided)) {
     throw new AppBridgeError('invalid_signature', 'JWT signature verification failed');
   }
+
+  assertRegisteredClaimTypes(payload);
 
   const now = Math.floor(Date.now() / 1000);
   if (requireExp && typeof payload.exp !== 'number') {

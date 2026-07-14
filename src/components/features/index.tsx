@@ -100,9 +100,9 @@ export const WhenWorkspaceFeatureDisabled = (props: IProps) => {
  * ```tsx
  * // Edge case: Feature not loaded yet
  * function FeatureContent() {
- *   const { isLoading } = useUserFeatures();
+ *   const { loading } = useUserFeatures();
  *
- *   if (isLoading) return <Loading />;
+ *   if (loading) return <Loading />;
  *
  *   return (
  *     <WhenUserFeatureEnabled slug="feature-x">

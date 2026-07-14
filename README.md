@@ -20,6 +20,7 @@ Also works server-side (Next.js API routes, Express, Hono) — see [Server-Side 
 - [Trial Gates](#-trial-gates)
 - [Push Notifications](#-push-notifications)
 - [Notifications](#-notifications)
+- [Connected Agents](#-connected-agents)
 - [User Management](#-user-management)
 - [Workspace Management](#-complete-workspace-management)
 - [Public Pricing (No Login)](#-public-pricing-no-login)
@@ -53,6 +54,7 @@ Also works server-side (Next.js API routes, Express, Hono) — see [Server-Side 
 - **⏳ Trial Gates** - `WhenTrialing`, `WhenNotTrialing`, `WhenTrialEnding` components + `useTrialStatus` hook
 - **🔔 Push Notifications** - Browser push notifications with `usePushNotifications` hook, auto-triggers for billing events, and campaign management
 - **📬 Notifications** - Email + push notification system with per-event channel control, workspace preferences, and server-side `notification.send()` API
+- **🔌 Connected Agents** - `<ConnectedAgents />` screen to list/revoke authorized AI agents, plus a built-in "Connect an agent" setup guide (ChatGPT, Claude, Cursor, VS Code, Windsurf, Cline) driven by an `mcp` provider prop
 - **💺 Seat-Based Pricing** - Per-seat billing with included seats, billable seat tracking, and seat limit enforcement
 - **💱 Multi-Currency** - Per-currency pricing variants with workspace billing currency lock
 - **🤝 Affiliate Tracking** - Pass referral data to Stripe checkout via `getCheckoutStripeParams` prop (Rewardful, Endorsely, FirstPromoter, etc.)
@@ -81,6 +83,7 @@ Everything the SDK lets you configure, override, or extend — one row per knob,
 | Date/number formats                    | `ui.formats` (`Intl` options passed through)                                                                                                                               | `docs/UI-CONFIG.md`                                                               |
 | Conditional UI                         | Gate components: `WhenAuthenticated`, `WhenPermission`, `WhenWorkspaceFeatureEnabled`, `WhenSubscription`, `WhenTrialing`, `WhenQuotaAvailable`, `WhenCreditsAvailable`, … | [Subscription Gates](#-subscription-gates) & siblings                             |
 | Checkout behavior                      | `getCheckoutStripeParams` (affiliate/referral params), plan-picker behavior config                                                                                         | [Affiliate Tracking](#affiliate--referral-tracking)                               |
+| Connect-an-agent guide                 | `mcp` prop (`url`, `name`, `docsUrl`, `clients`, `prompt`) → in-app setup guide + `<ConnectedAgents />` screen                                                             | [Connected Agents](#-connected-agents)                                            |
 | Error presentation                     | `ui.errorBoundary`, centralized `handleError` reporting                                                                                                                    | [Error Handling](#️-error-handling)                                                |
 | React-free server access               | `BuildBase()` factory — workspaces, usage, credits, notifications from API routes/jobs                                                                                     | [Server-Side Usage](#server-side-usage)                                           |
 | Agent discovery surface                | `createAgentStack` / `resolveAgentPath`: robots.txt, llms.txt, `.well-known/*`, all documents overridable (e.g. `config.llmsTxt`)                                          | [Agent Readiness](#agent-readiness-discovery) · `docs/MCP-AND-AGENT-READINESS.md` |
@@ -372,7 +375,14 @@ openWorkspaceSettings('users'); // Workspace members
 openWorkspaceSettings('subscription'); // Plan & Billing
 openWorkspaceSettings('usage'); // Quota usage dashboard
 openWorkspaceSettings('features'); // Feature toggles
+openWorkspaceSettings('connected-agents'); // Connected AI agents + connect guide
 openWorkspaceSettings('danger'); // Delete workspace (owner only)
+```
+
+Some sections accept an optional second `action` argument to deep-link past the screen. For connected agents, open the setup guide directly:
+
+```tsx
+openWorkspaceSettings('connected-agents', { action: 'openConnectGuide' });
 ```
 
 ### Authentication Components
@@ -530,7 +540,9 @@ Use the `useUserFeatures` hook to check feature flags programmatically:
 import { useUserFeatures } from '@buildbase/sdk/react';
 
 function FeatureCheck() {
-  const { features, isFeatureEnabled, refreshFeatures } = useUserFeatures();
+  // { features, isFeatureEnabled, loading, error, refetch }
+  // (the older `isLoading` / `refreshFeatures` names still work but are deprecated)
+  const { features, isFeatureEnabled, refetch } = useUserFeatures();
 
   return (
     <div>{isFeatureEnabled('premium-features') ? <PremiumContent /> : <StandardContent />}</div>
@@ -1100,6 +1112,57 @@ Platform mode supports granular overrides from the admin dashboard:
 
 These let you achieve team-like, managed, or enterprise-like behavior without a separate mode.
 
+## 🔌 Connected Agents
+
+Let users connect AI agents to their account and manage them. `<ConnectedAgents />` is a ready-made screen (also a workspace settings section) that lists the agents a user has authorized — each with a **Disconnect** action — and, when you provide an MCP server address, shows a **Connect an agent** button that opens a plain-language setup guide.
+
+### Enable the connect guide
+
+Pass an `mcp` config to the provider. Without it the screen still lists and revokes agents; with it, the "Connect an agent" button and setup dialog appear.
+
+```tsx
+<SaaSOSProvider
+  // ...serverUrl, orgId, auth
+  mcp={{
+    url: 'https://app.example.com/api/mcp', // your MCP server endpoint (required to show the guide)
+    name: 'Acme', // friendly name used in prose + config snippets
+    docsUrl: 'https://docs.example.com/agents', // optional "Learn more" link
+  }}
+>
+```
+
+The dialog walks users through the major AI apps — **ChatGPT, Claude, Cursor, VS Code, Windsurf, Cline** — each with the exact click-path or config-file snippet (your server URL is filled in for them), plus a copy-and-paste prompt for chat assistants. It's fully translated (all 8 locales), RTL-aware, and responsive (full-screen on mobile, centered card on desktop).
+
+### The screen
+
+```tsx
+import { ConnectedAgents } from '@buildbase/sdk/react';
+
+function AgentsPage() {
+  return <ConnectedAgents />;
+}
+```
+
+Props: `title`, `description`, `disconnectLabel`, `emptyLabel` (all default to translated strings; pass `null` to hide the heading) and `showConnectGuide` (default `true` — set `false` to hide the connect button even when `mcp` is configured).
+
+Because it's a settings section, you can also open it programmatically:
+
+```tsx
+const { openWorkspaceSettings } = useSaaSAuth();
+
+openWorkspaceSettings('connected-agents'); // the screen (list + connect button)
+openWorkspaceSettings('connected-agents', { action: 'openConnectGuide' }); // straight to the setup dialog
+```
+
+The same deep link works via URL: `?bb=action:openConnectGuide`.
+
+### Custom UI
+
+- **`useConnectedAgents()`** — headless `{ agents, loading, error, revoking, refresh, revoke }` for a fully custom list.
+- **`useMcpConnection()`** — the `mcp` config you passed (or `null`), for building your own guide.
+- **`<ConnectMcpGuide />`** — the guide body on its own (copyable server URL + paste-in prompt + per-client accordion), embeddable anywhere. Override the app list via `mcp.clients` and the prompt via `mcp.prompt` (`false` hides it).
+- **`fillMcpTemplate` / `mcpServerKey`** — the placeholder helpers (`{{url}}` / `{{name}}` / `{{key}}`) for building custom client snippets.
+
 ## 👤 User Management
 
 ### User Attributes
@@ -1110,8 +1173,9 @@ Manage custom user attributes (key-value pairs):
 import { useUserAttributes } from '@buildbase/sdk/react';
 
 function UserProfile() {
-  const { attributes, isLoading, updateAttribute, updateAttributes, refreshAttributes } =
-    useUserAttributes();
+  // { attributes, loading, error, refetch, updateAttribute, updateAttributes }
+  // (the older `isLoading` / `refreshAttributes` names still work but are deprecated)
+  const { attributes, loading, updateAttribute, updateAttributes, refetch } = useUserAttributes();
 
   const handleUpdate = async () => {
     // Update single attribute
@@ -2109,7 +2173,11 @@ Access OS-level settings:
 import { useSaaSSettings } from '@buildbase/sdk/react';
 
 function SettingsExample() {
-  const { settings, getSettings } = useSaaSSettings();
+  // { settings, loading, error, refetch } — `loading` is true until the one-time
+  // fetch settles, so you can wait instead of rendering with partial defaults.
+  const { settings, loading, refetch } = useSaaSSettings();
+
+  if (loading) return <Spinner />;
 
   return (
     <div>
@@ -2187,9 +2255,11 @@ Prefer these SDK hooks for state and operations instead of `useAppSelector`:
 | `useSaaSAuth()`             | Auth state (user, session, status), signIn(returnUrl?), signOut, openWorkspaceSettings                                                                                                                                                                                    |
 | `useSaaSWorkspaces()`       | Workspaces, currentWorkspace, loading, switching/switchingToId, CRUD and switch actions                                                                                                                                                                                   |
 | `useSaaSOs()`               | OS config (serverUrl, version, orgId, auth, settings) when you need the full config object                                                                                                                                                                                |
-| `useSaaSSettings()`         | Organization settings and getSettings (prefer this when you only need settings)                                                                                                                                                                                           |
-| `useUserAttributes()`       | User attributes and update/refresh                                                                                                                                                                                                                                        |
-| `useUserFeatures()`         | User feature flags                                                                                                                                                                                                                                                        |
+| `useSaaSSettings()`         | Organization settings — `{ settings, loading, error, refetch }` (prefer this when you only need settings)                                                                                                                                                                 |
+| `useUserAttributes()`       | User attributes — `{ attributes, loading, error, refetch, updateAttribute, updateAttributes }`                                                                                                                                                                            |
+| `useUserFeatures()`         | User feature flags — `{ features, isFeatureEnabled, loading, error, refetch }`                                                                                                                                                                                            |
+| `useConnectedAgents()`      | Authorized AI agents — `{ agents, loading, error, revoking, refresh, revoke }`                                                                                                                                                                                            |
+| `useMcpConnection()`        | The `mcp` connection config passed to the provider (or `null`), for a custom connect guide                                                                                                                                                                                |
 | `useSubscriptionContext()`  | Subscription for current workspace (response, loading, refetch); use inside SubscriptionContextProvider                                                                                                                                                                   |
 | `useTrialStatus()`          | Trial state: `isTrialing`, `daysRemaining`, `trialEndsAt`, `isTrialEnding`                                                                                                                                                                                                |
 | `usePushNotifications()`    | Push notification state and actions: `isSubscribed`, `subscribe()`, `unsubscribe()`                                                                                                                                                                                       |

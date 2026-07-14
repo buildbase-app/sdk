@@ -331,8 +331,11 @@ export function formatQuotaIncludedOverage(
 ): string {
   const l = { ...DEFAULT_OVERAGE_LABELS, ...labels };
   if (allowOverage === false) {
-    if (included != null) return `${l.included}: ${included.toLocaleString(locale)} (${l.hardLimit})`;
-    return l.hardLimit;
+    if (included != null)
+      return `${l.included}: ${included.toLocaleString(locale)} (${l.hardLimit})`;
+    // Standalone default is sentence-cased ("Hard limit"); the parenthesized
+    // mid-sentence form above stays lowercase ("hard limit").
+    return labels?.hardLimit ?? 'Hard limit';
   }
   const plural = pluralUnitLabel ?? (unitLabel.endsWith('s') ? unitLabel : `${unitLabel}s`);
   const perUnit =

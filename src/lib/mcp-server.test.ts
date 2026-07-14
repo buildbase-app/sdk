@@ -249,6 +249,132 @@ describe('resources', () => {
     expect(read.error.code).toBe(-32002);
     expect(read.error.data.uri).toBe('app://nope');
   });
+
+  it('rejects a missing or non-string uri with -32602, not -32002', async () => {
+    const missing = await rpc(resourceHandler(), 'resources/read', {});
+    expect(missing.error.code).toBe(-32602);
+    const nonString = await rpc(resourceHandler(), 'resources/read', { uri: 42 });
+    expect(nonString.error.code).toBe(-32602);
+  });
+});
+
+// ─── Scope gating (hostile / under-scoped tokens) ─────────────────────────────
+
+/** Tokens map 1:1 to scope grants: 'admin' → ['admin'], anything else → []. */
+const scopedHandler = () =>
+  createMcpHandler({
+    auth: {
+      verify: token => ({ sessionId: 's1', scopes: token === 'admin' ? ['admin'] : [] }),
+      resourceMetadataUrl: 'https://app.example.com/.well-known/oauth-protected-resource',
+    },
+    resources: [
+      {
+        uri: 'app://secret/data',
+        name: 'secret',
+        requiredScopes: ['admin'],
+        read: () => 'classified',
+      },
+      { uri: 'app://public/data', name: 'public', read: () => 'open' },
+    ],
+    resourceTemplates: [
+      // Deliberately overlaps app://secret/data — a laxer template must never
+      // serve a URI owned by a stricter exact resource.
+      {
+        uriTemplate: 'app://secret/{what}',
+        name: 'secret-template',
+        read: params => `template:${params.what}`,
+      },
+      {
+        uriTemplate: 'app://admin/{what}',
+        name: 'admin-template',
+        requiredScopes: ['admin'],
+        read: params => `admin:${params.what}`,
+      },
+    ],
+    prompts: [
+      {
+        name: 'admin_prompt',
+        requiredScopes: ['admin'],
+        get: () => 'for admins only',
+      },
+      { name: 'open_prompt', get: () => 'for everyone' },
+    ],
+  });
+
+async function rpcAs(
+  handler: ReturnType<typeof createMcpHandler>,
+  token: string,
+  method: string,
+  params?: unknown
+) {
+  const res = await handler.handle({
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ jsonrpc: '2.0', id: 9, method, params: params ?? {} }),
+  });
+  return JSON.parse(res.body);
+}
+
+describe('scope gating', () => {
+  it('an under-scoped exact resource does NOT fall through to a laxer matching template', async () => {
+    const handler = scopedHandler();
+    const read = await rpcAs(handler, 'noscope', 'resources/read', { uri: 'app://secret/data' });
+    // Must be indistinguishable from not-found — and above all must not serve
+    // the template's content for the exact resource's URI.
+    expect(read.result).toBeUndefined();
+    expect(read.error.code).toBe(-32002);
+  });
+
+  it('a sufficiently-scoped token reads the exact resource, not the template', async () => {
+    const read = await rpcAs(scopedHandler(), 'admin', 'resources/read', {
+      uri: 'app://secret/data',
+    });
+    expect(read.result.contents[0].text).toBe('classified');
+  });
+
+  it('the overlapping template still serves URIs the exact resource does not own', async () => {
+    const read = await rpcAs(scopedHandler(), 'noscope', 'resources/read', {
+      uri: 'app://secret/other',
+    });
+    expect(read.result.contents[0].text).toBe('template:other');
+  });
+
+  it('an under-scoped template read returns -32002', async () => {
+    const read = await rpcAs(scopedHandler(), 'noscope', 'resources/read', {
+      uri: 'app://admin/logs',
+    });
+    expect(read.error.code).toBe(-32002);
+    const ok = await rpcAs(scopedHandler(), 'admin', 'resources/read', {
+      uri: 'app://admin/logs',
+    });
+    expect(ok.result.contents[0].text).toBe('admin:logs');
+  });
+
+  it('resources/list and resources/templates/list hide under-scoped entries', async () => {
+    const handler = scopedHandler();
+    const list = await rpcAs(handler, 'noscope', 'resources/list');
+    expect(list.result.resources.map((r: { uri: string }) => r.uri)).toEqual(['app://public/data']);
+    const templates = await rpcAs(handler, 'noscope', 'resources/templates/list');
+    expect(templates.result.resourceTemplates.map((t: { name: string }) => t.name)).toEqual([
+      'secret-template',
+    ]);
+    const adminList = await rpcAs(handler, 'admin', 'resources/list');
+    expect(adminList.result.resources).toHaveLength(2);
+  });
+
+  it('prompts/list hides under-scoped prompts and prompts/get treats them as unknown', async () => {
+    const handler = scopedHandler();
+    const list = await rpcAs(handler, 'noscope', 'prompts/list');
+    expect(list.result.prompts.map((p: { name: string }) => p.name)).toEqual(['open_prompt']);
+    const got = await rpcAs(handler, 'noscope', 'prompts/get', { name: 'admin_prompt' });
+    expect(got.result).toBeUndefined();
+    expect(got.error.code).toBe(-32602);
+    const ok = await rpcAs(handler, 'admin', 'prompts/get', { name: 'admin_prompt' });
+    expect(ok.result.messages[0].content.text).toBe('for admins only');
+  });
 });
 
 describe('prompts', () => {

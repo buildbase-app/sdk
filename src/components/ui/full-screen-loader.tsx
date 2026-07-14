@@ -78,40 +78,40 @@ export const FullScreenLoader = ({
   const { t } = useTranslation();
   const message = messageProp ?? t('settings.common.loading');
   return (
-  <div
-    role="status"
-    aria-live="polite"
-    aria-busy="true"
-    className="bb-fs-loader"
-    style={{
-      position: 'fixed',
-      inset: 0,
-      zIndex: 2147483647,
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: backgroundColor ?? undefined,
-    }}
-  >
-    {/* Screen-reader-only live text for message updates */}
-    <span
+    <div
+      role="status"
+      aria-live="polite"
+      aria-busy="true"
+      className="bb-fs-loader"
       style={{
-        position: 'absolute',
-        width: 1,
-        height: 1,
-        padding: 0,
-        margin: -1,
-        overflow: 'hidden',
-        clip: 'rect(0,0,0,0)',
-        whiteSpace: 'nowrap',
-        border: 0,
+        position: 'fixed',
+        inset: 0,
+        zIndex: 2147483647,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: backgroundColor ?? undefined,
       }}
     >
-      {message}
-    </span>
-    {children ?? <DefaultSpinner message={message} />}
-    <style>{`
+      {/* Screen-reader-only live text for message updates */}
+      <span
+        style={{
+          position: 'absolute',
+          width: 1,
+          height: 1,
+          padding: 0,
+          margin: -1,
+          overflow: 'hidden',
+          clip: 'rect(0,0,0,0)',
+          whiteSpace: 'nowrap',
+          border: 0,
+        }}
+      >
+        {message}
+      </span>
+      {children ?? <DefaultSpinner message={message} />}
+      <style>{`
       .bb-fs-loader {
         background-color: hsl(var(--background, 0 0% 100%));
       }
@@ -124,7 +124,7 @@ export const FullScreenLoader = ({
         }
       }
     `}</style>
-  </div>
+    </div>
   );
 };
 

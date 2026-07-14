@@ -7,4 +7,5 @@ export {
   useWorkspaceDispatch,
   useWorkspaceSelector,
   useWorkspaceState,
+  useWorkspaceStore,
 } from './WorkspaceContext';

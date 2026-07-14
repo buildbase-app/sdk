@@ -582,7 +582,8 @@ export const ja: SDKMessages = {
       'クレジットの購入に失敗しました。再度お試しいただくか、サポートにお問い合わせください。',
     errorLoading: 'クレジットデータの読み込みに失敗しました',
     insufficientCredits: 'クレジットが不足しています',
-    insufficientDetail: 'クレジットが不足しています。利用可能: {available}、リクエスト済み: {requested}',
+    insufficientDetail:
+      'クレジットが不足しています。利用可能: {available}、リクエスト済み: {requested}',
   },
   loading: {
     restoringSession: 'セッションを復元中...',
@@ -630,6 +631,28 @@ export const ja: SDKMessages = {
     connectedAgentsGranted: '許可日',
     connectedAgentsLoadFailed: '接続済みエージェントの読み込みに失敗しました',
     connectedAgentsRevokeFailed: '接続解除に失敗しました',
+    mcpConnectAction: 'エージェントを接続',
+    mcpGuideTitle: 'AIエージェントを接続',
+    mcpGuideDescription:
+      'AIアシスタントがあなたのアカウントで安全に作業できるようにします。下からアプリを選んで手順に従ってください。1分ほどで完了します。',
+    mcpServerUrlLabel: 'サーバーアドレス',
+    mcpServerUrlHint: 'アプリによっては、このアドレスを貼り付けるだけで済みます。',
+    mcpPromptLabel: 'またはAIに次を貼り付け',
+    mcpPromptHint:
+      'ツールを追加できるチャットアシスタントで使えます。チャットに貼り付けて送信してください。',
+    mcpPromptTemplate:
+      '{{url}} のMCPサーバーを使って私の {{name}} アカウントに接続し、そのツールを使って手伝ってください。',
+    mcpClientsLabel: '主要なアプリの手順',
+    mcpAddToConfigFile: 'ファイル {path} を開いて、次を追加します：',
+    mcpClientChatgptInstructions:
+      'ChatGPTで「設定 → コネクタ」を開き、「カスタムコネクタを追加」を選んで、上のサーバーアドレスを貼り付けます。',
+    mcpClientClaudeInstructions:
+      'Claudeで「設定 → コネクタ」を開き、「カスタムコネクタを追加」を選んで、上のサーバーアドレスを貼り付けます。',
+    mcpClientClineInstructions:
+      'ClineでMCPサーバーのパネルを開き、「リモートサーバーを追加」を選んで、上のサーバーアドレスを貼り付けます。',
+    mcpCopy: 'コピー',
+    mcpCopied: 'コピーしました',
+    mcpLearnMore: '詳細',
     inactive: '無効',
     inactiveHint: '以前のサインインドメインで登録されたため使用できません。削除できます。',
     passkeysTitle: 'パスキー',

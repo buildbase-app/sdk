@@ -1,19 +1,57 @@
 'use client';
 
-import React, { createContext, useMemo, useReducer, type Dispatch, type ReactNode } from 'react';
-import { useSelectWithEquality } from './useSelectWithEquality';
+import React, { createContext, useMemo, useRef, type Dispatch, type ReactNode } from 'react';
+import { useStoreSelector } from './useStoreSelector';
 
 /** Shared suffix for all context-outside-provider errors. */
 const CONTEXT_ERROR_SUFFIX = 'Make sure SaaSOSProvider is wrapping your application.';
 
 /**
- * Generic context factory with performance optimizations
- * Creates a context, provider, and hooks with minimal boilerplate
+ * The mutable store a context provider owns. State lives here (not in React
+ * state), so a dispatch only re-renders components whose selection changed.
+ */
+export interface ContextStore<State, Action> {
+  /** Current state — stable snapshot, safe for `useSyncExternalStore`. */
+  getState: () => State;
+  /** Reduce + notify. No-op (no notification) when the reducer returns the same reference. */
+  dispatch: Dispatch<Action>;
+  /** Subscribe to state changes; returns the unsubscribe function. */
+  subscribe: (listener: () => void) => () => void;
+}
+
+/** Build a {@link ContextStore}. Pure — exported for tests. */
+export function createStore<State, Action>(
+  initialState: State,
+  reducer: (state: State, action: Action) => State,
+  initializer?: (initialState: State) => State
+): ContextStore<State, Action> {
+  let state = initializer ? initializer(initialState) : initialState;
+  const listeners = new Set<() => void>();
+  return {
+    getState: () => state,
+    dispatch: action => {
+      const next = reducer(state, action);
+      if (Object.is(next, state)) return;
+      state = next;
+      listeners.forEach(listener => listener());
+    },
+    subscribe: listener => {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
+    },
+  };
+}
+
+/**
+ * Generic context factory backed by `useSyncExternalStore`.
  *
- * Optimizations:
- * - Memoized context value to prevent unnecessary re-renders
- * - Stable dispatch reference (already stable from useReducer)
- * - Split state/dispatch for selective subscriptions
+ * The provider puts a stable store object in context instead of the state
+ * itself, so dispatching never re-renders consumers wholesale:
+ * - `useSelector(fn)` re-renders only when `fn`'s result changes
+ * - `useState()` subscribes to the whole state (re-renders on every change)
+ * - `useDispatch()` never re-renders (the store — and its dispatch — is stable)
  */
 export function createContextProvider<State, Action>({
   name,
@@ -26,25 +64,15 @@ export function createContextProvider<State, Action>({
   reducer: (state: State, action: Action) => State;
   initializer?: (initialState: State) => State;
 }) {
-  // Split contexts for better performance - components can subscribe to only what they need
-  const StateContext = createContext<State | null>(null);
-  const DispatchContext = createContext<Dispatch<Action> | null>(null);
-  const CombinedContext = createContext<{ state: State; dispatch: Dispatch<Action> } | null>(null);
+  const StoreContext = createContext<ContextStore<State, Action> | null>(null);
+  StoreContext.displayName = `${name}StoreContext`;
 
   const Provider: React.FC<{ children: ReactNode }> = React.memo(({ children }) => {
-    const [state, dispatch] = useReducer(reducer, initialState, initializer || (state => state));
-
-    // Memoize context values to prevent unnecessary re-renders
-    // dispatch is already stable from useReducer, but we memoize the object
-    const combinedValue = useMemo(() => ({ state, dispatch }), [state, dispatch]);
-
-    return (
-      <CombinedContext.Provider value={combinedValue}>
-        <StateContext.Provider value={state}>
-          <DispatchContext.Provider value={dispatch}>{children}</DispatchContext.Provider>
-        </StateContext.Provider>
-      </CombinedContext.Provider>
-    );
+    const storeRef = useRef<ContextStore<State, Action> | null>(null);
+    if (storeRef.current === null) {
+      storeRef.current = createStore(initialState, reducer, initializer);
+    }
+    return <StoreContext.Provider value={storeRef.current}>{children}</StoreContext.Provider>;
   });
 
   Provider.displayName = `${name}Provider`;
@@ -52,27 +80,16 @@ export function createContextProvider<State, Action>({
   const contextError = (hook: string) =>
     new Error(`use${name}${hook} must be used within a ${name}Provider. ${CONTEXT_ERROR_SUFFIX}`);
 
-  const useContext = (): { state: State; dispatch: Dispatch<Action> } => {
-    const context = React.useContext(CombinedContext);
-    if (!context) throw contextError('Context');
-    return context;
-  };
-
-  const useState = (): State => {
-    const state = React.useContext(StateContext);
-    if (state === null) throw contextError('State');
-    return state;
-  };
-
-  const useDispatch = () => {
-    const dispatch = React.useContext(DispatchContext);
-    if (dispatch === null) throw contextError('Dispatch');
-    return dispatch;
+  const useStore = (hook = 'Store'): ContextStore<State, Action> => {
+    const store = React.useContext(StoreContext);
+    if (!store) throw contextError(hook);
+    return store;
   };
 
   /**
-   * Selector hook - only re-renders when selected value changes
-   * Optimized to avoid double renders using useMemo with proper dependency tracking
+   * Selector hook — re-renders ONLY when the selected value changes.
+   * Pass a stable selector (module-level or memoized) for the bailout to
+   * hold across renders.
    *
    * @param selector Optional function that selects a value from state. If not provided, returns entire state.
    * @param equalityFn Optional equality function for comparison (default: Object.is)
@@ -96,9 +113,21 @@ export function createContextProvider<State, Action>({
     selector?: (state: State) => Selected,
     equalityFn?: (a: Selected, b: Selected) => boolean
   ): Selected => {
-    const state = useState();
-    const actualSelector = selector || ((s: State) => s as unknown as Selected);
-    return useSelectWithEquality(state, actualSelector, equalityFn);
+    const store = useStore('Selector');
+    return useStoreSelector(store.getState, store.subscribe, selector, equalityFn);
+  };
+
+  const useState = (): State => {
+    const store = useStore('State');
+    return useStoreSelector(store.getState, store.subscribe);
+  };
+
+  const useDispatch = (): Dispatch<Action> => useStore('Dispatch').dispatch;
+
+  const useContext = (): { state: State; dispatch: Dispatch<Action> } => {
+    const store = useStore('Context');
+    const state = useStoreSelector(store.getState, store.subscribe);
+    return useMemo(() => ({ state, dispatch: store.dispatch }), [state, store]);
   };
 
   return {
@@ -107,5 +136,6 @@ export function createContextProvider<State, Action>({
     useState,
     useDispatch,
     useSelector,
+    useStore,
   };
 }

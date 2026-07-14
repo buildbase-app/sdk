@@ -42,9 +42,9 @@ const WorkspaceSettingsDialog = lazy(() =>
   import('./ui/SettingsDialog').then(m => ({ default: m.default }))
 );
 
-export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
-  return <>{children}</>;
-};
+// The real provider lives in lifecycle.tsx (single-instance workspace
+// lifecycle + actions); re-exported here for backward-compatible imports.
+export { WorkspaceProvider } from './lifecycle';
 
 export function WorkspaceSwitcher(props: {
   trigger: (isLoading: boolean, currentWorkspace: IWorkspace | null) => ReactNode;
@@ -65,7 +65,7 @@ export function WorkspaceSwitcher(props: {
     setCurrentWorkspace,
     switchToWorkspace,
   } = useSaaSWorkspaces();
-  const { settings } = useSaaSSettings();
+  const { settings, loading: settingsLoading } = useSaaSSettings();
   const { visible } = useUIVisibility();
   const [open, setOpen] = useState(false);
   const [reloadWorkspacesCount, setReloadWorkspacesCount] = useState<number>(0);
@@ -138,6 +138,13 @@ export function WorkspaceSwitcher(props: {
       });
     }
   }, [showSwitcher, workspaces, currentWorkspace]);
+
+  // Workspace mode unknown until settings resolve — render only the loading
+  // trigger instead of guessing with the `?? true` defaults (which flashed the
+  // switcher UI in orgs configured without one).
+  if (settingsLoading && !settings) {
+    return <>{props.trigger?.(true, currentWorkspace)}</>;
+  }
 
   // In personal mode (no switcher), clicking the trigger opens workspace settings directly
   if (!showSwitcher && currentWorkspace) {

@@ -48,10 +48,20 @@ const PER_LOCALE_ALLOW = {
 const IGNORE_VALUE = /^(?:[A-Z]{2,5}|OK|\W*|\d[\d\s.,%]*)$/;
 
 const loadLocale = locale => {
-  let src = readFileSync(join(MESSAGES_DIR, `${locale}.ts`), 'utf8');
-  src = src.replace(/^import[^;]+;/m, '');
-  src = src.replace(new RegExp(`export const ${locale}\\s*:\\s*SDKMessages\\s*=`), 'globalThis.__m ='); // eslint-disable-line
-  eval(src);
+  const file = `${locale}.ts`;
+  let src = readFileSync(join(MESSAGES_DIR, file), 'utf8');
+  // Strip ALL import statements (incl. multi-line), not just the first one.
+  src = src.replace(/^import[^;]+;/gm, '');
+  // Normalize the export (with any type annotation) into a plain assignment.
+  src = src.replace(/export const \w+\s*(?::\s*[\w.<>[\]]+)?\s*=/, 'globalThis.__m =');
+  // Tolerate `as const` / `satisfies X` suffixes on the object literal.
+  src = src.replace(/\s+(?:as const|satisfies\s+[\w.<>[\]]+)\s*(;?\s*)$/, '$1');
+  try {
+    eval(src); // eslint-disable-line
+  } catch (err) {
+    console.error(`check-i18n: failed to evaluate ${file}: ${err?.message ?? err}`);
+    process.exit(1);
+  }
   return globalThis.__m;
 };
 

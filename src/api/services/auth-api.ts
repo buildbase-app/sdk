@@ -17,12 +17,14 @@ export interface AuthRequestParams {
   state?: string;
 }
 
+/**
+ * Unwrapped payload of a successful auth request.
+ * ⚠️ Prior to the envelope unification this type described the raw
+ * `{ success, data, message }` wire envelope; `requestAuth` now unwraps the
+ * envelope like every other SDK method and resolves with the payload only.
+ */
 export interface AuthRequestResponse {
-  success: boolean;
-  data: {
-    redirectUrl: string;
-  };
-  message: string;
+  redirectUrl: string;
 }
 
 export class AuthApi extends BaseApi {
@@ -31,18 +33,22 @@ export class AuthApi extends BaseApi {
   }
 
   /**
-   * Initiate OAuth sign-in flow. Returns redirect URL to the auth provider.
+   * Initiate OAuth sign-in flow. Resolves with the redirect URL to the auth provider.
    * Auth endpoints sit at /api/v1/auth/ (outside the /public basePath),
-   * so we use fetchAbsoluteUrl to get timeout, retry, and error handling via BaseApi.
+   * so we use fetchAbsoluteUrl to get timeout, retry, and error handling via
+   * BaseApi, then apply the standard throwResponseError → unwrapResponse
+   * sequence (the fetchUnwrapped convention). Non-2xx responses and 2xx
+   * envelopes with `success: false` both throw a structured Error.
    */
   async requestAuth(params: AuthRequestParams): Promise<AuthRequestResponse> {
     const url = `${this.serverUrl}/api/${this.version}/auth/request`;
+    const errorMessage = 'Failed to initiate authentication';
     const response = await this.fetchAbsoluteUrl(url, {
       method: 'POST',
       body: JSON.stringify(params),
     });
-    if (!response.ok) await this.throwResponseError(response, 'Failed to initiate authentication');
-    return response.json();
+    if (!response.ok) await this.throwResponseError(response, errorMessage);
+    return this.unwrapResponse<AuthRequestResponse>(response, errorMessage);
   }
 
   /** Fetch user profile with the given session ID (used after OAuth redirect or from storage). */

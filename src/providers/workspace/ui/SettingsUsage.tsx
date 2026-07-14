@@ -14,11 +14,12 @@ import { Permission } from '../../../lib/permissions';
 import { cn } from '../../../lib/utils';
 import SettingSkeleton from './Skeleton';
 
+/** Compact locale-aware count (1234 → "1.2K" in en; 1234567 → "1,2 Mio." in de, "123.5万" in ja). */
 function formatNumber(n: number, locale?: string): string {
-  if (n >= 1_000_000)
-    return (n / 1_000_000).toLocaleString(locale, { maximumFractionDigits: 1 }) + 'M';
-  if (n >= 1_000) return (n / 1_000).toLocaleString(locale, { maximumFractionDigits: 1 }) + 'K';
-  return n.toLocaleString(locale);
+  return new Intl.NumberFormat(locale, {
+    notation: 'compact',
+    maximumFractionDigits: 1,
+  }).format(n);
 }
 
 function formatSlug(slug: string): string {

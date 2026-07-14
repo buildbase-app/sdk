@@ -35,6 +35,13 @@ export function useConnectedAgents(): UseConnectedAgents {
   // Guards against stale writes: only the most recent in-flight list may commit.
   const activeRef = useRef<AbortController | null>(null);
 
+  // Latest `t` without putting it in the callback deps: a locale switch must not
+  // recreate `refresh` (which would abort the in-flight list and refetch).
+  const tRef = useRef(t);
+  useEffect(() => {
+    tRef.current = t;
+  }, [t]);
+
   const refresh = useCallback(async () => {
     activeRef.current?.abort();
     const controller = new AbortController();
@@ -50,14 +57,14 @@ export function useConnectedAgents(): UseConnectedAgents {
         component: 'useConnectedAgents',
         action: 'list',
       });
-      setError(getHookErrorMessage(err, 'security.connectedAgentsLoadFailed', t));
+      setError(getHookErrorMessage(err, 'security.connectedAgentsLoadFailed', tRef.current));
     } finally {
       if (activeRef.current === controller) {
         activeRef.current = null;
         setLoading(false);
       }
     }
-  }, [api, t]);
+  }, [api]);
 
   useEffect(() => {
     refresh();
@@ -76,12 +83,12 @@ export function useConnectedAgents(): UseConnectedAgents {
           component: 'useConnectedAgents',
           action: 'revoke',
         });
-        setError(getHookErrorMessage(err, 'security.connectedAgentsRevokeFailed', t));
+        setError(getHookErrorMessage(err, 'security.connectedAgentsRevokeFailed', tRef.current));
       } finally {
         setRevoking(null);
       }
     },
-    [api, t]
+    [api]
   );
 
   return useMemo(

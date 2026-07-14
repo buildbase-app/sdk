@@ -1,3 +1,4 @@
+import { getPricingVariant } from '../../../../api/billing/pricing-variant-utils';
 import {
   BillingInterval,
   BillingIntervals,
@@ -56,15 +57,17 @@ export const calculateSavings = (
  * Resolve the currency used to display a plan's price: the effective currency when the plan
  * has a pricing variant for it, otherwise the plan's base currency (falling back to the
  * effective currency).
+ *
+ * Thin UI wrapper over the shared `getPricingVariant` matcher (see the public
+ * `getDisplayCurrency` in `api/billing/pricing-variant-utils`). Differences kept on
+ * purpose: returns the caller's casing on a variant match, and falls back to the
+ * effective currency when the plan has no base currency.
  */
 export const getDisplayCurrency = (
   planVersion: IPlanVersionWithPlan,
   effectiveCurrency: string
 ): string =>
-  planVersion.pricingVariants?.length &&
-  planVersion.pricingVariants.some(
-    v => v.currency?.toLowerCase() === effectiveCurrency.toLowerCase()
-  )
+  getPricingVariant(planVersion, effectiveCurrency)
     ? effectiveCurrency
     : (planVersion.plan?.currency ?? effectiveCurrency ?? '');
 

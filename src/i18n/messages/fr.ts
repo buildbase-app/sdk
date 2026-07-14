@@ -643,6 +643,28 @@ export const fr: SDKMessages = {
     connectedAgentsGranted: 'Accordé',
     connectedAgentsLoadFailed: 'Échec du chargement des agents connectés',
     connectedAgentsRevokeFailed: 'Échec de la déconnexion',
+    mcpConnectAction: 'Connecter un agent',
+    mcpGuideTitle: 'Connecter un agent IA',
+    mcpGuideDescription:
+      'Laissez un assistant IA agir en toute sécurité dans votre compte. Choisissez votre application ci-dessous et suivez les étapes — cela ne prend qu’une minute.',
+    mcpServerUrlLabel: 'Adresse du serveur',
+    mcpServerUrlHint: 'Certaines applications demandent simplement de coller cette adresse.',
+    mcpPromptLabel: 'Ou collez ceci dans votre IA',
+    mcpPromptHint:
+      'Fonctionne avec les assistants de chat capables d’ajouter des outils — collez-le dans le chat et envoyez.',
+    mcpPromptTemplate:
+      'Connecte-toi à mon compte {{name}} en utilisant le serveur MCP à l’adresse {{url}}, puis utilise ses outils pour m’aider.',
+    mcpClientsLabel: 'Étape par étape pour les applications populaires',
+    mcpAddToConfigFile: 'Ouvrez le fichier {path} et ajoutez ceci :',
+    mcpClientChatgptInstructions:
+      'Dans ChatGPT, allez dans Paramètres → Connecteurs, choisissez « Ajouter un connecteur personnalisé » et collez l’adresse du serveur ci-dessus.',
+    mcpClientClaudeInstructions:
+      'Dans Claude, allez dans Paramètres → Connecteurs, choisissez « Ajouter un connecteur personnalisé » et collez l’adresse du serveur ci-dessus.',
+    mcpClientClineInstructions:
+      'Dans Cline, ouvrez le panneau des serveurs MCP, choisissez « Ajouter un serveur distant » et collez l’adresse du serveur ci-dessus.',
+    mcpCopy: 'Copier',
+    mcpCopied: 'Copié',
+    mcpLearnMore: 'En savoir plus',
     inactive: 'Inactive',
     inactiveHint:
       'Enregistrée sur un ancien domaine de connexion et ne peut plus être utilisée. Vous pouvez la supprimer.',

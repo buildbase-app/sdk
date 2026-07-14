@@ -31,7 +31,7 @@ function SectionHeader({
   return (
     <div className={cn(className)}>
       {(title || actions) && (
-        <div className="flex items-center justify-between gap-2">
+        <div className={cn('flex items-center gap-2', title ? 'justify-between' : 'justify-end')}>
           {title && <h3 className={cn('text-sm font-medium', titleClassName)}>{title}</h3>}
           {actions}
         </div>

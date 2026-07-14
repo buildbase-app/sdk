@@ -48,16 +48,17 @@ import { buildbaseAuth } from './agent-auth';
 import {
   buildDiscoveryLinkHeader,
   resolveAgentPath,
+  trimTrailingSlash,
   type AgentReadyConfig,
   type AppScope,
   type DiscoveryDocument,
 } from './agent-discovery';
 import {
   createMcpHandler,
+  type AnyMcpTool,
   type CreateMcpHandlerConfig,
   type McpBuildBaseClient,
   type McpHandler,
-  type McpToolDefinition,
 } from './mcp-server';
 import BuildBase from './server-client';
 
@@ -89,7 +90,7 @@ export interface AgentStackConfig {
     /** Advertised server identity. Defaults to the site name, v1.0.0. */
     serverInfo?: { name: string; version: string };
     /** Your custom tools. */
-    tools?: McpToolDefinition<any, any>[];
+    tools?: AnyMcpTool[];
     /** Built-in tool selection. Default `'readonly'`. */
     builtinTools?: CreateMcpHandlerConfig['builtinTools'];
     /** Scopes advertised on the protected-resource metadata. */
@@ -133,10 +134,6 @@ export interface AgentStack {
     DELETE: (request: Request) => Promise<Response>;
     OPTIONS: (request: Request) => Promise<Response>;
   };
-}
-
-function trimTrailingSlash(url: string): string {
-  return url.replace(/\/+$/, '');
 }
 
 /**

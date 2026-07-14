@@ -8,6 +8,7 @@ import type { GetCheckoutStripeParams } from '../api/types';
 import { CheckoutConfigProvider } from '../contexts/CheckoutConfigContext';
 import { CreditBalanceContextProvider } from '../contexts/CreditBalanceContext';
 import { FullScreenLoaderProvider } from '../contexts/FullScreenLoaderContext';
+import { McpConfigProvider, type McpConnectionConfig } from '../contexts/McpConfigContext';
 import { PermissionConfigProvider } from '../contexts/PermissionContext';
 import { QuotaUsageContextProvider } from '../contexts/QuotaUsageContext';
 import { SubscriptionContextProvider } from '../contexts/SubscriptionContext';
@@ -23,6 +24,7 @@ import { ApiVersion, IOsState } from './os/types';
 import PortalProvider from './PortalContainer';
 import { PushNotificationProvider } from './push/PushNotificationContext';
 import { UserProvider } from './user/provider';
+import { WorkspaceProvider } from './workspace/lifecycle';
 import { WorkspaceSettingsProvider } from './workspace/WorkspaceSettingsProvider';
 
 export interface SaaSOSProviderProps extends IOsState {
@@ -116,6 +118,23 @@ export interface SaaSOSProviderProps extends IOsState {
    * ```
    */
   ui?: SDKUIConfig;
+  /**
+   * MCP server connection info. When set, the Connected Agents screen shows a
+   * "How to connect an agent" guide (copyable server URL + per-client setup
+   * snippets). Read anywhere via `useMcpConnection()`.
+   *
+   * @example
+   * ```tsx
+   * <SaaSOSProvider
+   *   mcp={{
+   *     url: 'https://app.example.com/api/mcp',
+   *     name: 'Acme',
+   *     docsUrl: 'https://docs.example.com/agents',
+   *   }}
+   * >
+   * ```
+   */
+  mcp?: McpConnectionConfig;
 }
 
 /**
@@ -265,6 +284,7 @@ const SaaSOSProviderInner: React.FC<SaaSOSProviderProps> = React.memo(
     getCheckoutStripeParams,
     loadingComponent,
     ui,
+    mcp,
     children,
   }) => {
     // Validate props synchronously - throws are caught by the parent SDKErrorBoundary
@@ -309,23 +329,29 @@ const SaaSOSProviderInner: React.FC<SaaSOSProviderProps> = React.memo(
             <AuthProviderWrapper callbacks={memoizedCallbacks}>
               <PortalProvider>
                 <ContextConfigProvider config={config} auth={auth}>
-                  <CheckoutConfigProvider getCheckoutStripeParams={getCheckoutStripeParams}>
-                    <PermissionConfigProvider appPermissions={defaultPermissions}>
-                      <UIConfigProvider ui={ui}>
-                        <UserProvider>
-                          <SubscriptionContextProvider>
-                            <QuotaUsageContextProvider>
-                              <CreditBalanceContextProvider>
-                                <PushNotificationProvider>
-                                  <WorkspaceSettingsProvider>{children}</WorkspaceSettingsProvider>
-                                </PushNotificationProvider>
-                              </CreditBalanceContextProvider>
-                            </QuotaUsageContextProvider>
-                          </SubscriptionContextProvider>
-                        </UserProvider>
-                      </UIConfigProvider>
-                    </PermissionConfigProvider>
-                  </CheckoutConfigProvider>
+                  <WorkspaceProvider>
+                    <CheckoutConfigProvider getCheckoutStripeParams={getCheckoutStripeParams}>
+                      <PermissionConfigProvider appPermissions={defaultPermissions}>
+                        <UIConfigProvider ui={ui}>
+                          <McpConfigProvider mcp={mcp}>
+                            <UserProvider>
+                              <SubscriptionContextProvider>
+                                <QuotaUsageContextProvider>
+                                  <CreditBalanceContextProvider>
+                                    <PushNotificationProvider>
+                                      <WorkspaceSettingsProvider>
+                                        {children}
+                                      </WorkspaceSettingsProvider>
+                                    </PushNotificationProvider>
+                                  </CreditBalanceContextProvider>
+                                </QuotaUsageContextProvider>
+                              </SubscriptionContextProvider>
+                            </UserProvider>
+                          </McpConfigProvider>
+                        </UIConfigProvider>
+                      </PermissionConfigProvider>
+                    </CheckoutConfigProvider>
+                  </WorkspaceProvider>
                 </ContextConfigProvider>
               </PortalProvider>
             </AuthProviderWrapper>

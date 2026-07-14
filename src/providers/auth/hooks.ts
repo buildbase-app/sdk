@@ -103,7 +103,9 @@ export function useSaaSAuth() {
       loader.show(t('loading.redirecting'));
       try {
         const state = generateOAuthState();
-        const response = await authApi.requestAuth({
+        // requestAuth throws on non-2xx and on `success: false` envelopes,
+        // so reaching this line means we have a redirect URL.
+        const { redirectUrl } = await authApi.requestAuth({
           orgId,
           clientId: authConfig?.clientId ?? '',
           redirect: {
@@ -113,14 +115,8 @@ export function useSaaSAuth() {
           state,
         });
 
-        if (response.success) {
-          safeRedirect(response.data.redirectUrl);
-          // Keep loader visible — user is navigating away
-        } else {
-          loader.hide();
-          dispatch.auth(authActions.authenticationFailed());
-          throw new Error(response.message || t('errors.generic'));
-        }
+        safeRedirect(redirectUrl);
+        // Keep loader visible — user is navigating away
       } catch (error) {
         loader.hide();
         dispatch.auth(authActions.authenticationFailed());

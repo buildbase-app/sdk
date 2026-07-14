@@ -632,6 +632,28 @@ export const hi: SDKMessages = {
     connectedAgentsGranted: 'प्रदान किया गया',
     connectedAgentsLoadFailed: 'कनेक्टेड एजेंट लोड करने में विफल',
     connectedAgentsRevokeFailed: 'डिस्कनेक्ट करने में विफल',
+    mcpConnectAction: 'एजेंट कनेक्ट करें',
+    mcpGuideTitle: 'AI एजेंट कनेक्ट करें',
+    mcpGuideDescription:
+      'किसी AI असिस्टेंट को अपने खाते में सुरक्षित रूप से काम करने दें। नीचे अपना ऐप चुनें और चरणों का पालन करें — इसमें बस एक मिनट लगता है।',
+    mcpServerUrlLabel: 'सर्वर पता',
+    mcpServerUrlHint: 'कुछ ऐप बस यही पता पेस्ट करने को कहते हैं।',
+    mcpPromptLabel: 'या इसे अपने AI में पेस्ट करें',
+    mcpPromptHint:
+      'उन चैट असिस्टेंट के साथ काम करता है जो टूल जोड़ सकते हैं — इसे चैट में पेस्ट करें और भेजें।',
+    mcpPromptTemplate:
+      'कृपया {{url}} पर मौजूद MCP सर्वर का उपयोग करके मेरे {{name}} खाते से कनेक्ट करें, फिर मेरी मदद के लिए इसके टूल का उपयोग करें।',
+    mcpClientsLabel: 'लोकप्रिय ऐप्स के लिए चरण-दर-चरण',
+    mcpAddToConfigFile: 'फ़ाइल {path} खोलें और यह जोड़ें:',
+    mcpClientChatgptInstructions:
+      'ChatGPT में, सेटिंग्स → कनेक्टर्स पर जाएँ, “कस्टम कनेक्टर जोड़ें” चुनें, और ऊपर दिया गया सर्वर पता पेस्ट करें।',
+    mcpClientClaudeInstructions:
+      'Claude में, सेटिंग्स → कनेक्टर्स पर जाएँ, “कस्टम कनेक्टर जोड़ें” चुनें, और ऊपर दिया गया सर्वर पता पेस्ट करें।',
+    mcpClientClineInstructions:
+      'Cline में, MCP सर्वर पैनल खोलें, “रिमोट सर्वर जोड़ें” चुनें, और ऊपर दिया गया सर्वर पता पेस्ट करें।',
+    mcpCopy: 'कॉपी करें',
+    mcpCopied: 'कॉपी किया गया',
+    mcpLearnMore: 'और जानें',
     inactive: 'निष्क्रिय',
     inactiveHint:
       'पिछले साइन-इन डोमेन पर पंजीकृत और अब उपयोग नहीं की जा सकती। आप इसे हटा सकते हैं।',

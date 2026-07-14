@@ -1,6 +1,6 @@
 # AGENTS.md — `@buildbase/sdk`
 
-Machine-friendly reference for AI coding agents working **with** this SDK (in a consumer app) or **on** this repo. Dense by design. For prose, examples, and props tables see [README.md](./README.md); for internals see [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) and [docs/ERROR_CODES.md](./docs/ERROR_CODES.md).
+Machine-friendly reference for AI coding agents working **with** this SDK (in a consumer app) or **on** this repo. Dense by design. For prose, examples, and props tables see [README.md](https://unpkg.com/@buildbase/sdk/README.md); for internals see [docs/ARCHITECTURE.md](https://unpkg.com/@buildbase/sdk/docs/ARCHITECTURE.md) and [docs/ERROR_CODES.md](https://unpkg.com/@buildbase/sdk/docs/ERROR_CODES.md).
 
 BuildBase is a multi-tenant SaaS platform SDK: auth, workspaces, subscriptions/billing (Stripe), quotas/usage, credits, feature flags, RBAC, notifications, i18n, and server-side agent (OAuth2 / discovery) tooling.
 

@@ -38,7 +38,9 @@
  *       return {
  *         sessionId: typeof c.sid === 'string' ? c.sid : '',
  *         userId: c.sub,
- *         scopes: Array.isArray(c.scope) ? (c.scope as string[]) : undefined,
+ *         scopes: Array.isArray(c.scope)
+ *           ? c.scope.filter((s): s is string => typeof s === 'string')
+ *           : undefined,
  *       };
  *     },
  *     resourceMetadataUrl: 'https://example.com/.well-known/oauth-protected-resource',
@@ -1169,12 +1171,21 @@ export function createMcpHandler(config: CreateMcpHandlerConfig): McpHandler {
 
       case 'resources/read': {
         if (!hasResources) break;
-        const uri = typeof params.uri === 'string' ? params.uri : '';
+        if (typeof params.uri !== 'string' || params.uri === '') {
+          return rpcError(id, INVALID_PARAMS, 'Missing required parameter: uri');
+        }
+        const uri = params.uri;
         let mimeType: string | undefined;
         let read: ((ctx: McpToolContext) => Promise<McpResourceReadResult>) | null = null;
 
         const exact = resources.get(uri);
-        if (exact && scopesSatisfied(exact.requiredScopes, auth)) {
+        if (exact) {
+          // An exact resource owns its URI outright: when the token lacks its
+          // scopes, stop here — falling through to a laxer-scoped template
+          // matching the same URI would bypass the resource's scope gate.
+          if (!scopesSatisfied(exact.requiredScopes, auth)) {
+            return rpcError(id, RESOURCE_NOT_FOUND, 'Resource not found', 200, { uri });
+          }
           mimeType = exact.mimeType;
           read = async ctx => exact.read(ctx);
         } else {

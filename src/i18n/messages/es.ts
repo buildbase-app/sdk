@@ -587,7 +587,8 @@ export const es: SDKMessages = {
       'La compra de créditos falló. Por favor, inténtalo de nuevo o contacta a soporte.',
     errorLoading: 'Error al cargar los datos de créditos',
     insufficientCredits: 'Créditos insuficientes',
-    insufficientDetail: 'Créditos insuficientes. Disponibles: {available}, solicitados: {requested}',
+    insufficientDetail:
+      'Créditos insuficientes. Disponibles: {available}, solicitados: {requested}',
   },
   loading: {
     restoringSession: 'Restaurando tu sesión...',
@@ -635,6 +636,28 @@ export const es: SDKMessages = {
     connectedAgentsGranted: 'Concedido',
     connectedAgentsLoadFailed: 'Error al cargar los agentes conectados',
     connectedAgentsRevokeFailed: 'Error al desconectar',
+    mcpConnectAction: 'Conectar un agente',
+    mcpGuideTitle: 'Conecta un agente de IA',
+    mcpGuideDescription:
+      'Permite que un asistente de IA trabaje de forma segura en tu cuenta. Elige tu aplicación abajo y sigue los pasos: solo toma un minuto.',
+    mcpServerUrlLabel: 'Dirección del servidor',
+    mcpServerUrlHint: 'Algunas aplicaciones solo te piden pegar esta dirección.',
+    mcpPromptLabel: 'O pega esto en tu IA',
+    mcpPromptHint:
+      'Funciona con asistentes de chat que pueden añadir herramientas: pégalo en el chat y envíalo.',
+    mcpPromptTemplate:
+      'Conéctate a mi cuenta de {{name}} usando el servidor MCP en {{url}} y luego usa sus herramientas para ayudarme.',
+    mcpClientsLabel: 'Paso a paso para aplicaciones populares',
+    mcpAddToConfigFile: 'Abre el archivo {path} y añade esto:',
+    mcpClientChatgptInstructions:
+      'En ChatGPT, ve a Configuración → Conectores, elige “Añadir conector personalizado” y pega la dirección del servidor de arriba.',
+    mcpClientClaudeInstructions:
+      'En Claude, ve a Configuración → Conectores, elige “Añadir conector personalizado” y pega la dirección del servidor de arriba.',
+    mcpClientClineInstructions:
+      'En Cline, abre el panel de servidores MCP, elige “Añadir servidor remoto” y pega la dirección del servidor de arriba.',
+    mcpCopy: 'Copiar',
+    mcpCopied: 'Copiado',
+    mcpLearnMore: 'Más información',
     inactive: 'Inactiva',
     inactiveHint:
       'Registrada en un dominio de inicio de sesión anterior y ya no se puede usar. Puede eliminarla.',
