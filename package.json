@@ -1,6 +1,6 @@
 {
   "name": "@buildbase/sdk",
-  "version": "0.0.56",
+  "version": "0.0.57",
   "type": "module",
   "description": "A SDK for Buildbase",
   "main": "dist/index.cjs",
