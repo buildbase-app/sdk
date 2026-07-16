@@ -41,7 +41,15 @@
  * ```
  */
 
-import { PushApi, SettingsApi, UserApi, WorkspaceApi } from '../api/services';
+import type { IDeviceView, ISessionView } from '../api/services';
+import {
+  DevicesApi,
+  PushApi,
+  SessionsApi,
+  SettingsApi,
+  UserApi,
+  WorkspaceApi,
+} from '../api/services';
 import type {
   ApiVersion,
   ISettings,
@@ -280,6 +288,26 @@ export interface PermissionActions {
   resolve(workspaceId: string, userId: string): Promise<Set<string>>;
 }
 
+/** Manage the signed-in user's devices (login history + per-device sign-out). */
+export interface DeviceActions {
+  /** List the devices the user has signed in from. */
+  list(): Promise<IDeviceView[]>;
+  /** Rename a device's user-facing label. */
+  rename(deviceId: string, name: string): Promise<void>;
+  /** Sign a device out (revoke its live sessions; keep the history row). */
+  signOut(deviceId: string): Promise<{ revokedSessions: number }>;
+  /** Sign a device out AND remove its history row ("forget"). */
+  forget(deviceId: string): Promise<{ revokedSessions: number }>;
+}
+
+/** Manage the signed-in user's active sessions. */
+export interface SessionActions {
+  /** List the user's live sessions (each joined to its device label). */
+  list(): Promise<ISessionView[]>;
+  /** Sign out one session by its public handle (`ISessionView.id`). */
+  revoke(id: string): Promise<void>;
+}
+
 export interface NotificationActions {
   /**
    * Send a notification to a user or all workspace members.
@@ -348,6 +376,8 @@ export interface ScopedActions {
   permissions: PermissionActions;
   notification: NotificationActions;
   credits: CreditActions;
+  devices: DeviceActions;
+  sessions: SessionActions;
 }
 
 // ─── BuildBase Result ──────────────────────────────────────────────────────────
@@ -396,6 +426,8 @@ export interface BuildBaseResult extends ScopedActions {
       user: UserApi;
       settings: SettingsApi;
       push: PushApi;
+      devices: DevicesApi;
+      sessions: SessionsApi;
     };
   };
 }
@@ -437,6 +469,8 @@ export default function BuildBase(config: BuildBaseConfig): BuildBaseResult {
       user: new UserApi(apiConfig),
       settings: new SettingsApi(apiConfig),
       push: new PushApi(apiConfig),
+      devices: new DevicesApi(apiConfig),
+      sessions: new SessionsApi(apiConfig),
     };
   };
 
@@ -557,6 +591,18 @@ export default function BuildBase(config: BuildBaseConfig): BuildBaseResult {
           settings,
         });
       },
+    },
+
+    devices: {
+      list: async () => (await getApi()).devices.list(),
+      rename: async (deviceId, name) => (await getApi()).devices.rename(deviceId, name),
+      signOut: async deviceId => (await getApi()).devices.signOut(deviceId),
+      forget: async deviceId => (await getApi()).devices.forget(deviceId),
+    },
+
+    sessions: {
+      list: async () => (await getApi()).sessions.list(),
+      revoke: async id => (await getApi()).sessions.revoke(id),
     },
   });
 

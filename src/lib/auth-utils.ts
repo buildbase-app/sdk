@@ -8,6 +8,7 @@ import { handleError } from './error-handler';
 import { getStorageItem, removeStorageItem, setStorageItem } from './storage';
 
 const AUTH_SESSION_ID_KEY = 'saas-session-id';
+const AUTH_DEVICE_ID_KEY = 'saas-device-id';
 const AUTH_TOKEN_PARAM = 'code';
 const AUTH_STATE_PARAM = 'state';
 
@@ -39,6 +40,41 @@ export function getAccessToken(): string | null {
   return getSessionId();
 }
 
+// ─── Device Identity ───────────────────────────────────────────────────────────
+
+/** Generate a device id that satisfies the server's `^[A-Za-z0-9._-]{8,128}$`. */
+function generateDeviceId(): string {
+  const c = (globalThis as { crypto?: Crypto }).crypto;
+  if (c?.randomUUID) return c.randomUUID();
+  // Fallback for older runtimes without crypto.randomUUID.
+  return `dev-${Math.random().toString(36).slice(2)}${Date.now().toString(36)}`;
+}
+
+/**
+ * Stable per-browser device id, persisted in localStorage. Sent as `x-device-id`
+ * so the server can tie sessions to a device (new-device alerts, the "current"
+ * flag in the device list, per-device sign-out). Created on first use.
+ * Returns null on the server (no localStorage) — device binding is client-only.
+ */
+export function getOrCreateDeviceId(): string | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    let deviceId = getStorageItem(AUTH_DEVICE_ID_KEY);
+    if (!deviceId) {
+      deviceId = generateDeviceId();
+      setStorageItem(AUTH_DEVICE_ID_KEY, deviceId);
+    }
+    return deviceId;
+  } catch (error) {
+    handleError(error, {
+      component: 'auth-utils',
+      action: 'getOrCreateDeviceId',
+      metadata: { key: AUTH_DEVICE_ID_KEY },
+    });
+    return null;
+  }
+}
+
 // ─── Auth Headers ──────────────────────────────────────────────────────────────
 
 export function getAuthHeaders(): Record<string, string> {
@@ -46,6 +82,10 @@ export function getAuthHeaders(): Record<string, string> {
   const headers: Record<string, string> = {};
   if (sessionId) {
     headers['x-session-id'] = sessionId;
+  }
+  const deviceId = getOrCreateDeviceId();
+  if (deviceId) {
+    headers['x-device-id'] = deviceId;
   }
   return headers;
 }
@@ -99,4 +139,4 @@ export function removeTokenFromUrl(): void {
 }
 
 // Re-export constants for backward compat
-export { AUTH_SESSION_ID_KEY, AUTH_STATE_PARAM, AUTH_TOKEN_PARAM };
+export { AUTH_DEVICE_ID_KEY, AUTH_SESSION_ID_KEY, AUTH_STATE_PARAM, AUTH_TOKEN_PARAM };

@@ -6,6 +6,7 @@
 export const SettingsScreen = {
   Profile: 'profile',
   Security: 'security',
+  Devices: 'devices',
   ConnectedAgents: 'connected-agents',
   General: 'general',
   Users: 'users',

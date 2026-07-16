@@ -37,6 +37,19 @@ export interface SDKUIConfig {
       passkeyRename?: boolean;
       passkeyDelete?: boolean;
     };
+    /** Devices & sessions screen — hide row actions and the sessions block. */
+    devices?: {
+      /** Rename a device. */
+      rename?: boolean;
+      /** Sign a device out (revoke its live sessions). */
+      signOut?: boolean;
+      /** Remove ("forget") a device. */
+      forget?: boolean;
+      /** The active-sessions list shown below the devices. */
+      sessions?: boolean;
+      /** Sign out an individual session (per-row action in the sessions list). */
+      sessionSignOut?: boolean;
+    };
     /** General screen — hide workspace editing affordances. */
     general?: {
       nameEdit?: boolean;

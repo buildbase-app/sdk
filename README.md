@@ -21,6 +21,7 @@ Also works server-side (Next.js API routes, Express, Hono) — see [Server-Side 
 - [Push Notifications](#-push-notifications)
 - [Notifications](#-notifications)
 - [Connected Agents](#-connected-agents)
+- [Devices & Sessions](#-devices--sessions)
 - [User Management](#-user-management)
 - [Workspace Management](#-complete-workspace-management)
 - [Public Pricing (No Login)](#-public-pricing-no-login)
@@ -55,6 +56,7 @@ Also works server-side (Next.js API routes, Express, Hono) — see [Server-Side 
 - **🔔 Push Notifications** - Browser push notifications with `usePushNotifications` hook, auto-triggers for billing events, and campaign management
 - **📬 Notifications** - Email + push notification system with per-event channel control, workspace preferences, and server-side `notification.send()` API
 - **🔌 Connected Agents** - `<ConnectedAgents />` screen to list/revoke authorized AI agents, plus a built-in "Connect an agent" setup guide (ChatGPT, Claude, Cursor, VS Code, Windsurf, Cline) driven by an `mcp` provider prop
+- **📱 Devices & Sessions** - `<Devices />` and `<Sessions />` screens (Browser · OS, location + IP) to rename / sign out / remove devices and revoke sessions; server-side `bb.devices` / `bb.sessions`, per-action show/hide + label overrides
 - **💺 Seat-Based Pricing** - Per-seat billing with included seats, billable seat tracking, and seat limit enforcement
 - **💱 Multi-Currency** - Per-currency pricing variants with workspace billing currency lock
 - **🤝 Affiliate Tracking** - Pass referral data to Stripe checkout via `getCheckoutStripeParams` prop (Rewardful, Endorsely, FirstPromoter, etc.)
@@ -84,6 +86,7 @@ Everything the SDK lets you configure, override, or extend — one row per knob,
 | Conditional UI                         | Gate components: `WhenAuthenticated`, `WhenPermission`, `WhenWorkspaceFeatureEnabled`, `WhenSubscription`, `WhenTrialing`, `WhenQuotaAvailable`, `WhenCreditsAvailable`, … | [Subscription Gates](#-subscription-gates) & siblings                             |
 | Checkout behavior                      | `getCheckoutStripeParams` (affiliate/referral params), plan-picker behavior config                                                                                         | [Affiliate Tracking](#affiliate--referral-tracking)                               |
 | Connect-an-agent guide                 | `mcp` prop (`url`, `name`, `docsUrl`, `clients`, `prompt`) → in-app setup guide + `<ConnectedAgents />` screen                                                             | [Connected Agents](#-connected-agents)                                            |
+| Devices & sessions screens             | `<Devices />` / `<Sessions />` props (`showRename`/`showSignOut`/`showRemove`, `*Label`) or `ui.settings.devices` toggles                                                  | [Devices & Sessions](#-devices--sessions)                                         |
 | Error presentation                     | `ui.errorBoundary`, centralized `handleError` reporting                                                                                                                    | [Error Handling](#️-error-handling)                                                |
 | React-free server access               | `BuildBase()` factory — workspaces, usage, credits, notifications from API routes/jobs                                                                                     | [Server-Side Usage](#server-side-usage)                                           |
 | Agent discovery surface                | `createAgentStack` / `resolveAgentPath`: robots.txt, llms.txt, `.well-known/*`, all documents overridable (e.g. `config.llmsTxt`)                                          | [Agent Readiness](#agent-readiness-discovery) · `docs/MCP-AND-AGENT-READINESS.md` |
@@ -253,6 +256,7 @@ The optional `ui` prop on `SaaSOSProvider` controls which parts of the SDK UI ar
       // Per-screen feature toggles
       profile: { currency: false, timezone: false },
       security: { passkeyDelete: false },
+      devices: { forget: false, sessions: false }, // hide "Remove" + the sessions block
       general: { iconEditor: false },
       users: { invite: false, seatPricing: false },
       subscription: { cancel: false, invoicesTab: false, planDetails: false },
@@ -277,13 +281,13 @@ The optional `ui` prop on `SaaSOSProvider` controls which parts of the SDK UI ar
     // Default fallback strings for the top-level error boundary
     errorBoundary: { title: 'Oops!', retryLabel: 'Retry' },
 
-    // Date formatting for SDK-rendered dates (passkeys, connected agents)
+    // Date formatting for SDK-rendered dates (passkeys, connected agents, devices)
     formats: { date: { dateStyle: 'short' } },
   }}
 >
 ```
 
-Section keys match the `SettingsScreen` values: `profile`, `security`, `connected-agents`, `general`, `users`, `subscription`, `usage`, `credits`, `features`, `notifications`, `permissions`, `danger`. Hidden sections are removed from the sidebar (empty groups collapse) and unreachable via deep links or `defaultSection` — the dialog falls back to the first enabled section.
+Section keys match the `SettingsScreen` values: `profile`, `security`, `devices`, `connected-agents`, `general`, `users`, `subscription`, `usage`, `credits`, `features`, `notifications`, `permissions`, `danger`. Hidden sections are removed from the sidebar (empty groups collapse) and unreachable via deep links or `defaultSection` — the dialog falls back to the first enabled section.
 
 **Per-dialog override** — `WorkspaceSettingsDialog` accepts its own `ui` prop, deep-merged over the global config, so one app can render differently-configured dialogs:
 
@@ -1162,6 +1166,91 @@ The same deep link works via URL: `?bb=action:openConnectGuide`.
 - **`useMcpConnection()`** — the `mcp` config you passed (or `null`), for building your own guide.
 - **`<ConnectMcpGuide />`** — the guide body on its own (copyable server URL + paste-in prompt + per-client accordion), embeddable anywhere. Override the app list via `mcp.clients` and the prompt via `mcp.prompt` (`false` hides it).
 - **`fillMcpTemplate` / `mcpServerKey`** — the placeholder helpers (`{{url}}` / `{{name}}` / `{{key}}`) for building custom client snippets.
+
+## 📱 Devices & Sessions
+
+Let users see and manage where they're signed in. Two ready-made screens (also combined into one workspace settings section, `devices`):
+
+- **`<Devices />`** — the devices the user has signed in from, each showing a friendly "Browser · OS" line, location + IP, last-used time, and a "This device" / "Trusted" / notifications badge. Per-row actions: **Rename**, **Sign out** (revoke that device's live sessions), and **Remove** (forget the device, with a confirm dialog).
+- **`<Sessions />`** — the user's currently-active sessions, each with a per-row **Sign out** (the current session is badged, not revocable here).
+
+Both are session-authed and scoped to the signed-in user — no config beyond wrapping your app in `<SaaSOSProvider>`. For the "This device" flag and device binding to work, the SDK automatically sends a persisted `x-device-id` header.
+
+### The screens
+
+```tsx
+import { Devices, Sessions } from '@buildbase/sdk/react';
+
+function SecurityPage() {
+  return (
+    <div className="space-y-8">
+      <Devices />
+      <Sessions />
+    </div>
+  );
+}
+```
+
+Or open the combined settings section programmatically:
+
+```tsx
+const { openWorkspaceSettings } = useSaaSAuth();
+openWorkspaceSettings('devices'); // "Devices & sessions" screen
+```
+
+### Show/hide actions & override labels
+
+Every action can be hidden and every button relabeled — an explicit prop wins, otherwise it falls back to the provider `ui.settings.devices.*` config (visible unless set to `false`).
+
+```tsx
+<Devices
+  title={null}            // hide the heading (like every screen; also `description`)
+  showRename={false}      // hide per-row actions
+  showSignOut={false}
+  showRemove={false}
+  renameLabel="Edit"      // relabel buttons (default to translated strings)
+  signOutLabel="Log out"
+  removeLabel="Delete"
+  emptyLabel="No devices yet"
+/>
+
+<Sessions showSignOut={false} signOutLabel="End session" emptyLabel="No other sessions" />
+```
+
+Provider-level equivalent (applies everywhere, incl. the settings screen):
+
+```tsx
+<SaaSOSProvider ui={{ settings: {
+  sections: { devices: false },  // hide the whole "Devices & sessions" settings section
+  devices: {
+    rename: false,        // device Rename
+    signOut: false,       // device Sign out
+    forget: false,        // device Remove
+    sessions: false,      // the active-sessions block on the settings screen
+    sessionSignOut: false // per-session Sign out
+  },
+}}}>
+```
+
+### Custom UI
+
+- **`useDevices()`** — headless `{ devices, loading, error, busyId, refresh, rename, signOut, forget }`.
+- **`useSessions()`** — headless `{ sessions, loading, error, revoking, refresh, revoke }`.
+- **`DevicesApi` / `SessionsApi`** (+ `IDeviceView` / `ISessionView` types) for direct calls.
+
+### Server-side
+
+```ts
+import BuildBase from '@buildbase/sdk';
+const bb = BuildBase({ serverUrl, orgId, getSessionId });
+
+await bb.devices.list();                 // IDeviceView[]
+await bb.devices.rename(deviceId, name);
+await bb.devices.signOut(deviceId);      // revoke the device's sessions
+await bb.devices.forget(deviceId);       // sign out + remove the row
+await bb.sessions.list();                // ISessionView[]
+await bb.sessions.revoke(sessionId);     // by the session's public handle
+```
 
 ## 👤 User Management
 

@@ -6,6 +6,7 @@ import {
   Coins,
   CreditCard,
   KeyRound,
+  MonitorSmartphone,
   SettingsIcon,
   Shield,
   ToggleRight,
@@ -45,6 +46,7 @@ const Sidebar: React.FC<Props> = ({ workspace, section, setSection }) => {
     visible(ui => ui.settings?.sections?.[target], permission);
   const showProfile = showSection(SettingsScreen.Profile);
   const showSecurity = showSection(SettingsScreen.Security);
+  const showDevices = showSection(SettingsScreen.Devices);
   const showConnectedAgents = showSection(SettingsScreen.ConnectedAgents);
   const showGeneral = showSection(SettingsScreen.General, Permission.WORKSPACE_SETTINGS_VIEW);
   const showUsers =
@@ -62,7 +64,7 @@ const Sidebar: React.FC<Props> = ({ workspace, section, setSection }) => {
   const showDanger =
     showSection(SettingsScreen.Danger, Permission.WORKSPACE_DELETE) && !isPersonalMode;
 
-  const showAccountSection = showProfile || showSecurity || showConnectedAgents;
+  const showAccountSection = showProfile || showSecurity || showDevices || showConnectedAgents;
   const showWorkspaceSection =
     showGeneral ||
     showUsers ||
@@ -138,6 +140,12 @@ const Sidebar: React.FC<Props> = ({ workspace, section, setSection }) => {
               SettingsScreen.Security,
               <KeyRound className="h-3.5 w-3.5" />,
               t('settings.sidebar.security')
+            )}
+          {showDevices &&
+            item(
+              SettingsScreen.Devices,
+              <MonitorSmartphone className="h-3.5 w-3.5" />,
+              t('settings.sidebar.devices')
             )}
           {showConnectedAgents &&
             item(

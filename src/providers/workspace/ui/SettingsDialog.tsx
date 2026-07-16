@@ -21,6 +21,7 @@ import { IWorkspace } from '../types';
 import WorkspaceSettingsConnectedAgents from './SettingsConnectedAgents';
 import WorkspaceSettingsCredits from './SettingsCredits';
 import WorkspaceSettingsDanger from './SettingsDanger';
+import WorkspaceSettingsDevices from './SettingsDevices';
 import WorkspaceSettingsFeatures from './SettingsFeatures';
 import WorkspaceSettingsGeneral from './SettingsGeneral';
 import WorkspaceSettingsNotifications from './SettingsNotifications';
@@ -43,6 +44,7 @@ export { WorkspaceSettingsDialog };
 const SCREEN_TITLE_KEYS: Record<WorkspaceSettingsSection, TranslationKey> = {
   [SettingsScreen.Profile]: 'settings.titles.profile',
   [SettingsScreen.Security]: 'settings.titles.security',
+  [SettingsScreen.Devices]: 'settings.titles.devices',
   [SettingsScreen.ConnectedAgents]: 'security.connectedAgentsTitle',
   [SettingsScreen.General]: 'settings.titles.general',
   [SettingsScreen.Users]: 'settings.titles.users',
@@ -227,6 +229,7 @@ const WorkspaceSettingsDialogInner: React.FC<Omit<WorkspaceSettingsDialogProps, 
               <WorkspaceSettingsProfile workspace={workspace} />
             )}
             {section === SettingsScreen.Security && <WorkspaceSettingsSecurity />}
+            {section === SettingsScreen.Devices && <WorkspaceSettingsDevices />}
             {section === SettingsScreen.ConnectedAgents && <WorkspaceSettingsConnectedAgents />}
             {section === SettingsScreen.General && (
               <WorkspaceSettingsGeneral workspace={workspace} />

@@ -58,6 +58,10 @@ export type {
   IConnectedAgent,
   UseConnectedAgents,
 } from './components/connected-agents';
+export { Devices, DevicesApi, useDevices, useDevicesApi } from './components/devices';
+export type { DevicesProps, IDeviceView, IIpInfoLite, UseDevices } from './components/devices';
+export { Sessions, SessionsApi, useSessions, useSessionsApi } from './components/sessions';
+export type { ISessionView, SessionsProps, UseSessions } from './components/sessions';
 export { fillMcpTemplate, mcpServerKey, useMcpConnection } from './contexts/McpConfigContext';
 export type { McpClientGuide, McpConnectionConfig } from './contexts/McpConfigContext';
 
