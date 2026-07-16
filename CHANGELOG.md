@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.57] - 2026-07-16
+
+### Changed
+
+- **CI maintenance.** Removed the redundant pull-request CI workflow (`.github/workflows/ci.yml`); tag-triggered build/release remains in `.github/workflows/main.yml`. No SDK runtime changes.
+
 ## [0.0.56] - 2026-07-16
 
 ### Added
